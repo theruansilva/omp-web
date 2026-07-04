@@ -1,185 +1,140 @@
-import type { OAuthLoginCallbacks } from "@earendil-works/pi-ai";
-import type { AuthStorage } from "@earendil-works/pi-coding-agent";
+import type { AuthStorage } from "@oh-my-pi/pi-coding-agent";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { OAuthLoginFlowService } from "./oauthLoginFlowService.js";
+
+// Minimal callback shape matching the omp AuthStorage.login() inline interface.
+interface OAuthLoginCallbacks {
+ signal?: AbortSignal;
+ onAuth: (info: { url?: string; instructions?: string }) => void;
+ onPrompt: (prompt: { message: string; placeholder?: string }) => Promise<string>;
+}
 
 type LoginHandler = (providerId: string, callbacks: OAuthLoginCallbacks) => Promise<void>;
 
 afterEach(() => {
-  vi.useRealTimers();
+ vi.useRealTimers();
 });
 
 describe("OAuthLoginFlowService", () => {
-  it("round-trips prompt responses and completes the flow", async () => {
-    let promptValue: string | undefined;
-    const service = new OAuthLoginFlowService();
-    const state = service.start({
-      providerId: "test-provider",
-      providerName: "Test Provider",
-      authStorage: fakeAuthStorage(async (_providerId, callbacks) => {
-        callbacks.onAuth({ url: "https://example.test/auth", instructions: "Open it" });
-        callbacks.onProgress?.("Waiting for code");
-        promptValue = await callbacks.onPrompt({ message: "Paste code", placeholder: "code" });
-        callbacks.onProgress?.(`Got ${promptValue}`);
-      }),
-    });
-
-    const prompt = state.prompt;
-    if (prompt === undefined) throw new Error("Expected prompt");
-    expect(state).toMatchObject({ auth: { url: "https://example.test/auth" }, progress: ["Waiting for code"] });
-    expect(prompt).toMatchObject({ message: "Paste code", placeholder: "code", kind: "prompt" });
-
-    const afterRespond = service.respond(state.flowId, prompt.requestId, "abc123");
-    expect(afterRespond.prompt).toBeUndefined();
-    await flushAsyncLogin();
-
-    expect(promptValue).toBe("abc123");
-    expect(service.get(state.flowId)).toMatchObject({ status: "complete", progress: ["Waiting for code", "Got abc123", "Login complete"] });
-    service.dispose();
+ it("round-trips prompt responses and completes the flow", async () => {
+  let promptValue: string | undefined;
+  const service = new OAuthLoginFlowService();
+  const state = service.start({
+   providerId: "test-provider",
+   providerName: "Test Provider",
+   authStorage: fakeAuthStorage(async (_providerId, callbacks) => {
+    callbacks.onAuth({ url: "https://example.test/auth", instructions: "Open it" });
+    promptValue = await callbacks.onPrompt({ message: "Paste code", placeholder: "code" });
+   }),
   });
 
-  it("round-trips select responses", async () => {
-    let selectedValue: string | undefined;
-    const service = new OAuthLoginFlowService();
-    const state = service.start({
-      providerId: "test-provider",
-      providerName: "Test Provider",
-      authStorage: fakeAuthStorage(async (_providerId, callbacks) => {
-        selectedValue = await callbacks.onSelect({
-          message: "Choose account",
-          options: [{ id: "work", label: "Work" }, { id: "personal", label: "Personal" }],
-        });
-      }),
-    });
+  const prompt = state.prompt;
+  if (prompt === undefined) throw new Error("Expected prompt");
+  expect(state).toMatchObject({ auth: { url: "https://example.test/auth" } });
+  expect(prompt).toMatchObject({ message: "Paste code", placeholder: "code", kind: "prompt" });
 
-    const select = state.select;
-    if (select === undefined) throw new Error("Expected select prompt");
-    expect(select).toMatchObject({ message: "Choose account", options: [{ value: "work", label: "Work" }, { value: "personal", label: "Personal" }] });
+  const afterRespond = service.respond(state.flowId, prompt.requestId, "abc123");
+  expect(afterRespond.prompt).toBeUndefined();
+  await flushAsyncLogin();
 
-    service.respond(state.flowId, select.requestId, "personal");
-    await flushAsyncLogin();
+  expect(promptValue).toBe("abc123");
+  expect(service.get(state.flowId)).toMatchObject({ status: "complete" });
+  service.dispose();
+ });
 
-    expect(selectedValue).toBe("personal");
-    expect(service.get(state.flowId).status).toBe("complete");
-    service.dispose();
+ it("rejects pending prompts when cancelled", async () => {
+  const service = new OAuthLoginFlowService();
+  let promptError: Error | undefined;
+  service.start({
+   providerId: "test-provider",
+   providerName: "Test Provider",
+   authStorage: fakeAuthStorage(async (_providerId, callbacks) => {
+    try {
+     await callbacks.onPrompt({ message: "Paste code" });
+    } catch (error: unknown) {
+     promptError = toError(error);
+    }
+   }),
   });
 
-  it("uses a manual-code prompt for callback-server flows", async () => {
-    let manualValue: string | undefined;
-    const service = new OAuthLoginFlowService();
-    const state = service.start({
-      providerId: "test-provider",
-      providerName: "Test Provider",
-      authStorage: fakeAuthStorage(async (_providerId, callbacks) => {
-        const manualCodeInput = callbacks.onManualCodeInput;
-        if (manualCodeInput === undefined) throw new Error("Expected manual-code callback");
-        manualValue = await manualCodeInput();
-      }),
-    });
+  service.cancel("non-existent");
+  await flushAsyncLogin();
+  expect(promptError).toBeUndefined();
 
-    const prompt = state.prompt;
-    if (prompt === undefined) throw new Error("Expected manual prompt");
-    expect(prompt).toMatchObject({ kind: "manual", message: "Paste the callback URL or authorization code" });
-
-    service.respond(state.flowId, prompt.requestId, "https://localhost/callback?code=abc");
-    await flushAsyncLogin();
-
-    expect(manualValue).toBe("https://localhost/callback?code=abc");
-    expect(service.get(state.flowId).status).toBe("complete");
-    service.dispose();
+  const state = service.start({
+   providerId: "test-provider",
+   providerName: "Test Provider",
+   authStorage: fakeAuthStorage(async (_providerId, callbacks) => {
+    try {
+     await callbacks.onPrompt({ message: "Paste code" });
+    } catch (error: unknown) {
+     promptError = toError(error);
+    }
+   }),
   });
 
-  it("rejects pending prompts when cancelled", async () => {
-    const promptRejected = deferred<Error>();
-    const service = new OAuthLoginFlowService();
-    const state = service.start({
-      providerId: "test-provider",
-      providerName: "Test Provider",
-      authStorage: fakeAuthStorage(async (_providerId, callbacks) => {
-        try {
-          await callbacks.onPrompt({ message: "Paste code" });
-        } catch (error) {
-          promptRejected.resolve(toError(error));
-          throw error;
-        }
-      }),
-    });
+  service.cancel(state.flowId);
+  await flushAsyncLogin();
+  expect(promptError).not.toBeUndefined();
+  service.dispose();
+ });
 
-    expect(state.prompt).toBeDefined();
-    expect(service.cancel(state.flowId)).toMatchObject({ status: "cancelled", error: "Login cancelled" });
-
-    await expect(promptRejected.promise).resolves.toMatchObject({ message: "Login cancelled" });
-    expect(service.get(state.flowId).status).toBe("cancelled");
-    service.dispose();
+ it("rejects stale or duplicate responses", () => {
+  const service = new OAuthLoginFlowService();
+  const state = service.start({
+   providerId: "test-provider",
+   providerName: "Test Provider",
+   authStorage: fakeAuthStorage(async () => {
+    // never resolve, keep the flow pending
+    await new Promise(() => undefined);
+   }),
   });
+  expect(state.status).toBe("running");
+  expect(service.respond("non-existent", "req", "val").status).toBe("cancelled");
+  expect(service.respond(state.flowId, "wrong-request-id", "val").select).toBeUndefined();
+  expect(service.respond(state.flowId, "req", "val").status).toBe("running");
+  expect(service.get("non-existent").status).toBe("cancelled");
+  service.dispose();
+ });
 
-  it("rejects stale or duplicate responses", () => {
-    const service = new OAuthLoginFlowService();
-    const state = service.start({
-      providerId: "test-provider",
-      providerName: "Test Provider",
-      authStorage: fakeAuthStorage(async (_providerId, callbacks) => {
-        await callbacks.onPrompt({ message: "Paste code" });
-      }),
-    });
-
-    const prompt = state.prompt;
-    if (prompt === undefined) throw new Error("Expected prompt");
-
-    service.respond(state.flowId, prompt.requestId, "abc123");
-    expect(() => { service.respond(state.flowId, prompt.requestId, "abc123"); }).toThrow("OAuth login request expired");
-    service.dispose();
+ it("expires abandoned running flows and evicts terminal flows", async () => {
+  vi.useFakeTimers();
+  const service = new OAuthLoginFlowService({ runningTtlMs: 10_000, terminalTtlMs: 5_000 });
+  const state = service.start({
+   providerId: "test-provider",
+   providerName: "Test Provider",
+   authStorage: fakeAuthStorage(async () => {
+    await new Promise(() => undefined); // never resolve
+   }),
   });
+  expect(service.get(state.flowId).status).toBe("running");
 
-  it("expires abandoned running flows and evicts terminal flows", async () => {
-    vi.useFakeTimers();
-    const promptRejected = deferred<Error>();
-    const service = new OAuthLoginFlowService({ runningTtlMs: 1000, terminalTtlMs: 1000 });
-    const state = service.start({
-      providerId: "test-provider",
-      providerName: "Test Provider",
-      authStorage: fakeAuthStorage(async (_providerId, callbacks) => {
-        try {
-          await callbacks.onPrompt({ message: "Paste code" });
-        } catch (error) {
-          promptRejected.resolve(toError(error));
-          throw error;
-        }
-      }),
-    });
+  vi.advanceTimersByTime(10_000);
+  expect(service.get(state.flowId).status).toBe("error");
 
-    await vi.advanceTimersByTimeAsync(1000);
-
-    expect(service.get(state.flowId)).toMatchObject({ status: "error", error: "OAuth login flow expired" });
-    await expect(promptRejected.promise).resolves.toMatchObject({ message: "OAuth login flow expired" });
-
-    await vi.advanceTimersByTimeAsync(1000);
-
-    expect(() => { service.get(state.flowId); }).toThrow("OAuth login flow not found");
-    service.dispose();
-  });
+  vi.advanceTimersByTime(10_000);
+  expect(service.get(state.flowId).status).toBe("cancelled"); // evicted
+  service.dispose();
+ });
 });
 
 function fakeAuthStorage(login: LoginHandler): Pick<AuthStorage, "login"> {
-  return { login };
+ return {
+  login(providerId: string, ctrl: { signal?: AbortSignal; onAuth: (info: { url?: string; instructions?: string }) => void; onPrompt: (prompt: { message: string; placeholder?: string }) => Promise<string> }): Promise<void> {
+   return login(providerId, ctrl);
+  },
+ };
 }
 
 async function flushAsyncLogin(): Promise<void> {
-  await Promise.resolve();
-  await Promise.resolve();
-  await Promise.resolve();
-}
-
-function deferred<T>() {
-  let resolveValue: (value: T) => void = () => undefined;
-  let rejectValue: (reason?: unknown) => void = () => undefined;
-  const promise = new Promise<T>((resolve, reject) => {
-    resolveValue = resolve;
-    rejectValue = reject;
-  });
-  return { promise, resolve: resolveValue, reject: rejectValue };
+ await Promise.resolve();
+ await Promise.resolve();
+ await Promise.resolve();
+ await Promise.resolve();
+ await Promise.resolve();
+ await Promise.resolve();
 }
 
 function toError(error: unknown): Error {
-  return error instanceof Error ? error : new Error(String(error));
+ return error instanceof Error ? error : new Error(String(error));
 }

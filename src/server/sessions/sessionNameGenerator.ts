@@ -1,5 +1,6 @@
-import type { Api, AssistantMessage, Model } from "@earendil-works/pi-ai";
-import type { StreamFn } from "@earendil-works/pi-agent-core";
+import type { Effort } from "@oh-my-pi/pi-catalog/effort";
+import type { Api, AssistantMessage, Model } from "@oh-my-pi/pi-ai";
+import type { StreamFn } from "@oh-my-pi/pi-agent-core";
 
 const SESSION_NAME_TIMEOUT_MS = 10_000;
 const SESSION_NAME_MAX_INPUT_CHARS = 4_000;
@@ -17,7 +18,7 @@ export async function generateShortSessionName<TApi extends Api>(streamFn: Strea
   const stream = await streamFn(
     model,
     {
-      systemPrompt: "Generate a concise title for a coding-agent chat session. Return only the title, with no quotes or punctuation wrapper.",
+      systemPrompt: ["Generate a concise title for a coding-agent chat session. Return only the title, with no quotes or punctuation wrapper."],
       messages: [{
         role: "user",
         content: `Create a 2-6 word title for this request:\n\n${truncateInput(firstMessage)}`,
@@ -26,7 +27,7 @@ export async function generateShortSessionName<TApi extends Api>(streamFn: Strea
     },
     {
       maxTokens: 24,
-      reasoning: "minimal",
+      reasoning: "minimal" as unknown as Effort,
       signal: AbortSignal.timeout(SESSION_NAME_TIMEOUT_MS),
     },
   );

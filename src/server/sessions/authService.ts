@@ -1,99 +1,124 @@
-import { AuthStorage, ModelRegistry } from "@earendil-works/pi-coding-agent";
-import type { AuthProvidersResponse, AuthType, OAuthFlowState } from "../../shared/apiTypes.js";
-import { getLoginProviderOptions, getLogoutProviderOptions } from "./authProviderOptions.js";
+import { AuthStorage, ModelRegistry } from "@oh-my-pi/pi-coding-agent";
+import type { AuthProvidersResponse, AuthType, OAuthFlowState, AuthProviderStatus } from "../../shared/apiTypes.js";
+import { getLoginProviderOptions, getLogoutProviderOptions, type AuthProviderModelRegistry } from "./authProviderOptions.js";
 import { OAuthLoginFlowService } from "./oauthLoginFlowService.js";
 
+/** Adapt omp ModelRegistry to pi-web's AuthProviderModelRegistry interface. */
+function toAuthProviderModelRegistry(mr: ModelRegistry): AuthProviderModelRegistry {
+ return {
+  authStorage: mr.authStorage as unknown as AuthProviderModelRegistry["authStorage"],
+  getAll: () => mr.getAll().map((m) => ({ provider: m.provider })),
+  getProviderDisplayName: (provider: string) => mr.getProviderBaseUrl(provider) ?? provider,
+  getProviderAuthStatus: (_provider: string): AuthProviderStatus => ({ configured: true }) as AuthProviderStatus,
+ };
+}
+
 export interface AuthChange {
-  removedProviderId?: string;
+ removedProviderId?: string;
 }
 
 type AuthChangeListener = (change: AuthChange) => void;
-type ModelRegistryInstance = ReturnType<typeof ModelRegistry.create>;
 
 export interface AuthServiceDependencies {
-  modelRegistry?: ModelRegistryInstance;
-  authFlows?: OAuthLoginFlowService;
+ modelRegistry: ModelRegistry;
+ authFlows?: OAuthLoginFlowService;
 }
 
 export class AuthService {
-  readonly modelRegistry: ModelRegistryInstance;
-  private readonly authFlows: OAuthLoginFlowService;
-  private readonly listeners = new Set<AuthChangeListener>();
+ readonly modelRegistry: ModelRegistry;
+ private readonly authFlows: OAuthLoginFlowService;
+ private readonly listeners = new Set<AuthChangeListener>();
 
-  constructor(deps: AuthServiceDependencies = {}) {
-    this.modelRegistry = deps.modelRegistry ?? ModelRegistry.create(AuthStorage.create());
-    this.authFlows = deps.authFlows ?? new OAuthLoginFlowService();
-  }
+ constructor(deps: AuthServiceDependencies) {
+  this.modelRegistry = deps.modelRegistry;
+  this.authFlows = deps.authFlows ?? new OAuthLoginFlowService();
+ }
 
-  subscribe(listener: AuthChangeListener): () => void {
-    this.listeners.add(listener);
-    return () => {
-      this.listeners.delete(listener);
-    };
-  }
+ /**
+  * Create an AuthService with the given or default model registry.
+  * The default path uses an in-memory auth storage.
+  */
+ static async create(deps: Partial<AuthServiceDependencies> = {}): Promise<AuthService> {
+  const modelRegistry = deps.modelRegistry ?? await createDefaultModelRegistry();
+  return new AuthService({ modelRegistry, ...(deps.authFlows === undefined ? {} : { authFlows: deps.authFlows }) });
+ }
 
-  dispose(): void {
-    this.authFlows.dispose();
-    this.listeners.clear();
-  }
+ subscribe(listener: AuthChangeListener): () => void {
+  this.listeners.add(listener);
+  return () => {
+   this.listeners.delete(listener);
+  };
+ }
 
-  authProviders(mode: "login" | "logout", authType?: AuthType): AuthProvidersResponse {
-    this.modelRegistry.refresh();
-    const providers = mode === "logout" ? getLogoutProviderOptions(this.modelRegistry) : getLoginProviderOptions(this.modelRegistry, authType);
-    return { providers };
-  }
+ dispose(): void {
+  this.authFlows.dispose();
+  this.listeners.clear();
+ }
 
-  saveApiKey(providerId: string, key: string): { accepted: true } {
-    if (key.trim() === "") throw new Error("API key is required");
-    this.modelRegistry.authStorage.set(providerId, { type: "api_key", key });
-    this.refreshAuthState();
-    return { accepted: true };
-  }
+ async authProviders(mode: "login" | "logout", authType?: AuthType): Promise<AuthProvidersResponse> {
+  await this.modelRegistry.refresh();
+  const adapted = toAuthProviderModelRegistry(this.modelRegistry);
+  const providers = mode === "logout" ? getLogoutProviderOptions(adapted) : getLoginProviderOptions(adapted, authType);
+  return { providers };
+ }
 
-  logoutProvider(providerId: string): { accepted: true } {
-    this.modelRegistry.authStorage.logout(providerId);
-    this.refreshAuthState({ removedProviderId: providerId });
-    return { accepted: true };
-  }
+ async saveApiKey(providerId: string, key: string): Promise<{ accepted: true }> {
+  if (key.trim() === "") throw new Error("API key is required");
+  await this.modelRegistry.authStorage.set(providerId, { type: "api_key" as const, key });
+  await this.refreshAuthState();
+  return { accepted: true };
+ }
 
-  startOAuthLogin(providerId: string): OAuthFlowState {
-    const provider = this.requireOAuthLoginProvider(providerId);
-    return this.authFlows.start({
-      providerId,
-      providerName: provider.name,
-      authStorage: this.modelRegistry.authStorage,
-      onComplete: () => {
-        this.refreshAuthState();
-      },
-    });
-  }
+ async logoutProvider(providerId: string): Promise<{ accepted: true }> {
+  await this.modelRegistry.authStorage.logout(providerId);
+  await this.refreshAuthState({ removedProviderId: providerId });
+  return { accepted: true };
+ }
 
-  oauthFlow(flowId: string): OAuthFlowState {
-    return this.authFlows.get(flowId);
-  }
+ startOAuthLogin(providerId: string): OAuthFlowState {
+  const provider = this.requireOAuthLoginProvider(providerId);
+  const view = this.authFlows.start({
+   providerId,
+   providerName: provider.name,
+   authStorage: this.modelRegistry.authStorage,
+  });
+  return { ...view, providerId, providerName: provider.name };
+ }
 
-  respondToOAuthFlow(flowId: string, requestId: string, value: string): OAuthFlowState {
-    return this.authFlows.respond(flowId, requestId, value);
-  }
+ oauthFlow(flowId: string): OAuthFlowState {
+  const view = this.authFlows.get(flowId);
+  return { ...view, providerId: "", providerName: "" };
+ }
 
-  cancelOAuthFlow(flowId: string): OAuthFlowState {
-    return this.authFlows.cancel(flowId);
-  }
+ respondToOAuthFlow(flowId: string, requestId: string, value: string): OAuthFlowState {
+  const view = this.authFlows.respond(flowId, requestId, value);
+  return { ...view, providerId: "", providerName: "" };
+ }
+ cancelOAuthFlow(flowId: string): OAuthFlowState {
+  this.authFlows.cancel(flowId);
+  const view = this.authFlows.get(flowId);
+  return { ...view, providerId: "", providerName: "" };
+ }
 
-  private refreshAuthState(change: AuthChange = {}): void {
-    this.modelRegistry.authStorage.reload();
-    this.modelRegistry.refresh();
-    this.emit(change);
-  }
+ private async refreshAuthState(change: AuthChange = {}): Promise<void> {
+  await this.modelRegistry.authStorage.reload();
+  await this.modelRegistry.refresh();
+  this.emit(change);
+ }
 
-  private emit(change: AuthChange): void {
-    for (const listener of this.listeners) listener(change);
-  }
+ private emit(change: AuthChange): void {
+  for (const listener of this.listeners) listener(change);
+ }
 
-  private requireOAuthLoginProvider(providerId: string) {
-    this.modelRegistry.refresh();
-    const provider = getLoginProviderOptions(this.modelRegistry, "oauth").find((option) => option.id === providerId);
-    if (provider === undefined) throw new Error(`OAuth provider not found: ${providerId}`);
-    return provider;
-  }
+ private requireOAuthLoginProvider(providerId: string) {
+  const adapted = toAuthProviderModelRegistry(this.modelRegistry);
+  const provider = getLoginProviderOptions(adapted, "oauth").find((option) => option.id === providerId);
+  if (provider === undefined) throw new Error(`OAuth provider not found: ${providerId}`);
+  return provider;
+ }
+}
+
+async function createDefaultModelRegistry(): Promise<ModelRegistry> {
+ const authStorage = await AuthStorage.create(":memory:");
+ return new ModelRegistry(authStorage);
 }

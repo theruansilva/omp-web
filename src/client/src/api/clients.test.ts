@@ -33,13 +33,13 @@ afterEach(() => {
 describe("machine-scoped runtime API", () => {
   it("reads machine PI WEB status through the gateway route", async () => {
     const fetchMock = stubJsonFetch({
-      packageName: "@jmfederico/pi-web",
+      packageName: "@jmfederico/omp-web",
       generatedAt: "now",
       components: {
         web: { component: "web", label: "PI WEB", available: true, stale: false },
         sessiond: { component: "sessiond", label: "PI WEB Session Daemon", available: true, stale: false },
       },
-      release: { packageName: "@jmfederico/pi-web", updateAvailable: false },
+      release: { packageName: "@jmfederico/omp-web", updateAvailable: false },
       commands: {},
       messages: [],
     });

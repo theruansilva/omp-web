@@ -21,7 +21,7 @@ describe("API parsers", () => {
 
   it("parses PI WEB runtime responses", () => {
     expect(parsePiWebRuntimeResponse({
-      packageName: "@jmfederico/pi-web",
+      packageName: "@jmfederico/omp-web",
       generatedAt: "now",
       components: {
         web: { component: "web", label: "Web/UI", runtimeVersion: "1.0.0", available: true, capabilities: [PI_WEB_CAPABILITIES.sessionsDeleteArchived, PI_WEB_CAPABILITIES.piPackagesManage, "future.capability"] },
@@ -55,13 +55,13 @@ describe("API parsers", () => {
 
   it("parses Docker PI WEB installation metadata", () => {
     const response = {
-      packageName: "@jmfederico/pi-web",
+      packageName: "@jmfederico/omp-web",
       generatedAt: "now",
       components: {
         web: { component: "web", label: "Web/UI", runtimeVersion: "1.0.0", available: true, stale: false, installation: { kind: "docker", path: "/srv/pi-web-docker", dockerMode: "runtime" } },
         sessiond: { component: "sessiond", label: "Session daemon", runtimeVersion: "1.0.0", available: true, stale: false, installation: { kind: "docker", dockerMode: "dev" } },
       },
-      release: { packageName: "@jmfederico/pi-web", updateAvailable: false },
+      release: { packageName: "@jmfederico/omp-web", updateAvailable: false },
       commands: { restart: "pi-web-docker restart", status: "pi-web-docker status" },
       messages: [],
     };

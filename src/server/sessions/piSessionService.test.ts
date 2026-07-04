@@ -1,14 +1,23 @@
 import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { createAssistantMessageEventStream, type AssistantMessage } from "@earendil-works/pi-ai";
-import type { StreamFn } from "@earendil-works/pi-agent-core";
-import { AuthStorage, ModelRegistry } from "@earendil-works/pi-coding-agent";
+import { AssistantMessageEventStream } from "@oh-my-pi/pi-ai/utils/event-stream";
+import type { AssistantMessage } from "@oh-my-pi/pi-ai";
+import type { StreamFn } from "@oh-my-pi/pi-agent-core";
 import { describe, expect, it, vi } from "vitest";
+// @ts-expect-error - bun:sqlite is available at runtime under bun
+import { Database } from "bun:sqlite";
+import { AuthStorage, ModelRegistry, SqliteAuthCredentialStore } from "@oh-my-pi/pi-coding-agent";
+
 import type { GlobalSessionEvent, SessionUiEvent } from "../../shared/apiTypes.js";
 import { SessionEventHub } from "../realtime/sessionEventHub.js";
 import { PiSessionService, type PiAgentSession, type PiSessionManager, type PiSessionRuntime, type PiSessionServiceDependencies } from "./piSessionService.js";
 import type { SpawnTargetDecision } from "./spawnTargetResolver.js";
+
+// Module-level model registry for tests that need a real ModelRegistry
+const _testAuthStorage = new AuthStorage(new SqliteAuthCredentialStore(new Database(":memory:")));
+const _testModelRegistry = new ModelRegistry(_testAuthStorage);
+
 
 class CapturingSessionEventHub extends SessionEventHub {
   readonly sessionEvents: { sessionId: string; event: SessionUiEvent }[] = [];
@@ -55,7 +64,7 @@ function sessionRef(id: string, cwd = "/workspace") {
 }
 
 function testModel(): NonNullable<PiAgentSession["model"]> {
-  const model = ModelRegistry.inMemory(AuthStorage.inMemory()).find("anthropic", "claude-3-5-sonnet-20241022");
+  const model = _testModelRegistry.find("anthropic", "claude-3-5-sonnet-20241022");
   if (model === undefined) throw new Error("test model not found");
   return model;
 }
@@ -78,7 +87,7 @@ function fakeRuntime(sessionId = "session-1", patch: Partial<TestSession> = {}) 
     isBashRunning: false,
     pendingMessageCount: 0,
     sessionManager: fakeSessionManager(),
-    modelRegistry: ModelRegistry.create(AuthStorage.inMemory()),
+    modelRegistry: _testModelRegistry,
     scopedModels: [],
     extensionRunner: { getRegisteredCommands: () => [] },
     promptTemplates: [],
@@ -154,7 +163,7 @@ function sessionGateway(records: ReturnType<typeof sessionRecord>[]): SessionGat
   return {
     create: () => fakeSessionManager(),
     list: () => Promise.resolve(records),
-    open: () => fakeSessionManager(),
+    open: () => Promise.resolve(fakeSessionManager()),
   };
 }
 
@@ -230,7 +239,7 @@ describe("PiSessionService", () => {
   it("opens legacy id-only lookups from the default session store gateway", async () => {
     const hub = new CapturingSessionEventHub();
     const fake = fakeRuntime("legacy-session");
-    const open = vi.fn(() => fakeSessionManager());
+    const open = vi.fn(() => Promise.resolve(fakeSessionManager()));
     const service = new PiSessionService(hub, {
       createAgentRuntime: runtimeCreator(fake.runtime),
       sessionManager: {
@@ -381,7 +390,7 @@ describe("PiSessionService", () => {
           { ...sessionRecord("active"), messageCount: 1, firstMessage: "hello", allMessagesText: "hello" },
           { ...sessionRecord("archived"), messageCount: 2, firstMessage: "bye", allMessagesText: "bye" },
         ]),
-        open: () => fakeSessionManager(),
+        open: () => Promise.resolve(fakeSessionManager()),
       },
       heartbeatIntervalMs: 60_000,
     });
@@ -407,7 +416,7 @@ describe("PiSessionService", () => {
       sessionManager: {
         create: () => fakeSessionManager(),
         list: () => Promise.resolve([{ ...sessionRecord("active"), messageCount: 1, firstMessage: "hello", allMessagesText: "hello" }]),
-        open: () => fakeSessionManager(),
+        open: () => Promise.resolve(fakeSessionManager()),
       },
       heartbeatIntervalMs: 60_000,
     });
@@ -445,7 +454,7 @@ describe("PiSessionService", () => {
       sessionManager: {
         create: () => fakeSessionManager(),
         list: (cwd) => Promise.resolve(cwd === "/workspace" ? [root, directChild, archivedChild, grandchild] : [otherWorkspaceChild]),
-        open: () => fakeSessionManager(),
+        open: () => Promise.resolve(fakeSessionManager()),
       },
       heartbeatIntervalMs: 60_000,
     });
@@ -494,7 +503,7 @@ describe("PiSessionService", () => {
       ["/two", [sessionRecord("c", "/two")]],
     ]);
     const listCalls: string[] = [];
-    const open = vi.fn(() => { throw new Error("bulk archive should not open inactive runtimes"); });
+    const open = vi.fn(async () => { throw new Error("bulk archive should not open inactive runtimes"); });
     const archiveMany = vi.fn((inputs: readonly { sessionId: string; cwd: string }[]) => Promise.resolve(inputs.map((input) => ({ sessionId: input.sessionId, cwd: input.cwd, archivedAt: "2026-01-03T00:00:00.000Z" }))));
     const service = new PiSessionService(new CapturingSessionEventHub(), {
       archiveStore: {
@@ -546,7 +555,7 @@ describe("PiSessionService", () => {
       sessionManager: {
         create: () => fakeSessionManager(),
         list: () => Promise.resolve([sessionRecord("busy"), sessionRecord("ok")]),
-        open: () => fakeSessionManager(),
+        open: () => Promise.resolve(fakeSessionManager()),
       },
       heartbeatIntervalMs: 60_000,
     });
@@ -584,7 +593,7 @@ describe("PiSessionService", () => {
       sessionManager: {
         create: () => fakeSessionManager(),
         list: () => Promise.resolve([sessionRecord("unarchived")]),
-        open: () => fakeSessionManager(),
+        open: () => Promise.resolve(fakeSessionManager()),
       },
       heartbeatIntervalMs: 60_000,
     });
@@ -627,7 +636,7 @@ describe("PiSessionService", () => {
           listCalls.push(cwd);
           return Promise.resolve([sessionRecord("legacy-a"), sessionRecord("legacy-b"), sessionRecord("unarchived")]);
         },
-        open: () => fakeSessionManager(),
+        open: () => Promise.resolve(fakeSessionManager()),
       },
       heartbeatIntervalMs: 60_000,
     });
@@ -676,7 +685,7 @@ describe("PiSessionService", () => {
             listAllCalls === 1 ? sessionRecord("preview-other", "/other-project") : sessionRecord("execute-other", "/other-project"),
           ]);
         },
-        open: () => fakeSessionManager(),
+        open: () => Promise.resolve(fakeSessionManager()),
       },
       heartbeatIntervalMs: 60_000,
     });
@@ -722,7 +731,7 @@ describe("PiSessionService", () => {
           return Promise.resolve([sessionRecord("legacy-a", cwd), sessionRecord("legacy-b", cwd)]);
         },
         listAll: () => Promise.resolve([]),
-        open: () => fakeSessionManager(),
+        open: () => Promise.resolve(fakeSessionManager()),
       },
       heartbeatIntervalMs: 60_000,
     });
@@ -758,7 +767,7 @@ describe("PiSessionService", () => {
         create: () => fakeSessionManager("/old-project"),
         list: () => Promise.resolve([sessionRecord("busy-open", "/old-project")]),
         listAll: () => Promise.resolve([sessionRecord("busy-open", "/old-project")]),
-        open: () => fakeSessionManager("/old-project"),
+        open: () => Promise.resolve(fakeSessionManager("/old-project")),
       },
       heartbeatIntervalMs: 60_000,
     });
@@ -878,7 +887,7 @@ describe("PiSessionService", () => {
       sessionManager: {
         create: () => fakeSessionManager(),
         list: () => Promise.resolve([]),
-        open: () => fakeSessionManager(),
+        open: () => Promise.resolve(fakeSessionManager()),
       },
       workspaceActivity: {
         applySessionStatus: () => undefined,
@@ -964,7 +973,7 @@ describe("PiSessionService", () => {
     const streamCalls: unknown[] = [];
     const streamFn: StreamFn = (streamModel, context, options) => {
       streamCalls.push({ streamModel, context, options });
-      const stream = createAssistantMessageEventStream();
+      const stream = new AssistantMessageEventStream();
       const message: AssistantMessage = {
         role: "assistant",
         content: [{ type: "text", text: "Fix login bug" }],
@@ -1140,8 +1149,9 @@ describe("PiSessionService", () => {
 
   it("refreshes auth state and dedupes warnings when logout removes the current model's credentials", async () => {
     const hub = new CapturingSessionEventHub();
-    const authStorage = AuthStorage.inMemory({ anthropic: { type: "api_key", key: "sk-test" } });
-    const modelRegistry = ModelRegistry.inMemory(authStorage);
+    const authStorage = await AuthStorage.create(":memory:");
+    await authStorage.set("anthropic", { type: "api_key", key: "sk-test" });
+    const modelRegistry = new ModelRegistry(authStorage);
     const model = modelRegistry.find("anthropic", "claude-3-5-sonnet-20241022");
     if (model === undefined) throw new Error("Expected Anthropic model fixture");
     const fake = fakeRuntime("auth-session", { model, modelRegistry });
@@ -1157,7 +1167,7 @@ describe("PiSessionService", () => {
     hub.sessionEvents.length = 0;
     hub.globalEvents.length = 0;
 
-    authStorage.logout("anthropic");
+    await authStorage.logout("anthropic");
     service.applyAuthChange({ removedProviderId: "anthropic" });
     service.applyAuthChange({ removedProviderId: "anthropic" });
 
@@ -1165,9 +1175,9 @@ describe("PiSessionService", () => {
     expect(warningCount()).toBe(1);
     expect(hub.globalEvents.some((event) => event.type === "status.update" && event.status.sessionId === "auth-session")).toBe(true);
 
-    authStorage.set("anthropic", { type: "api_key", key: "sk-new" });
+    await authStorage.set("anthropic", { type: "api_key", key: "sk-new" });
     service.applyAuthChange();
-    authStorage.logout("anthropic");
+    await authStorage.logout("anthropic");
     service.applyAuthChange({ removedProviderId: "anthropic" });
     expect(warningCount()).toBe(2);
 
@@ -1418,7 +1428,7 @@ describe("PiSessionService", () => {
         const child = fakeRuntime("child-1", { sessionFile: childFile, sessionManager: childManager });
         const runtimes = [parent.runtime, child.runtime];
         let index = 0;
-        const open = vi.fn(() => childManager);
+        const open = vi.fn(() => Promise.resolve(childManager));
         const service = new PiSessionService(new CapturingSessionEventHub(), {
           createAgentRuntime: () => {
             const runtime = runtimes[index] ?? child.runtime;
@@ -1462,7 +1472,7 @@ describe("PiSessionService", () => {
         });
         const service = new PiSessionService(new CapturingSessionEventHub(), {
           createAgentRuntime: runtimeCreator(parent.runtime),
-          sessionManager: { create: () => parent.session.sessionManager, list: () => Promise.resolve([]), listAll: () => Promise.resolve([]), open: () => fakeSessionManager() },
+          sessionManager: { create: () => parent.session.sessionManager, list: () => Promise.resolve([]), listAll: () => Promise.resolve([]), open: () => Promise.resolve(fakeSessionManager()) },
           archiveStore: emptyArchiveStore(),
           heartbeatIntervalMs: 60_000,
         });
@@ -1486,7 +1496,7 @@ describe("PiSessionService", () => {
       });
       const service = new PiSessionService(new CapturingSessionEventHub(), {
         createAgentRuntime: runtimeCreator(parent.runtime),
-        sessionManager: { create: () => parent.session.sessionManager, list: () => Promise.resolve([]), listAll: () => Promise.resolve([]), open: () => fakeSessionManager() },
+        sessionManager: { create: () => parent.session.sessionManager, list: () => Promise.resolve([]), listAll: () => Promise.resolve([]), open: () => Promise.resolve(fakeSessionManager()) },
         archiveStore: emptyArchiveStore(),
         heartbeatIntervalMs: 60_000,
       });
@@ -1507,7 +1517,7 @@ describe("PiSessionService", () => {
       });
       const service = new PiSessionService(new CapturingSessionEventHub(), {
         createAgentRuntime: runtimeCreator(parent.runtime),
-        sessionManager: { create: () => parent.session.sessionManager, list: () => Promise.resolve([]), listAll: () => Promise.resolve([]), open: () => fakeSessionManager() },
+        sessionManager: { create: () => parent.session.sessionManager, list: () => Promise.resolve([]), listAll: () => Promise.resolve([]), open: () => Promise.resolve(fakeSessionManager()) },
         archiveStore: emptyArchiveStore(),
         heartbeatIntervalMs: 60_000,
       });
@@ -1527,7 +1537,7 @@ describe("PiSessionService", () => {
       });
       const service = new PiSessionService(new CapturingSessionEventHub(), {
         createAgentRuntime: runtimeCreator(parent.runtime),
-        sessionManager: { create: () => parent.session.sessionManager, list: () => Promise.resolve([]), listAll: () => Promise.resolve([childRecord]), open: () => fakeSessionManager() },
+        sessionManager: { create: () => parent.session.sessionManager, list: () => Promise.resolve([]), listAll: () => Promise.resolve([childRecord]), open: () => Promise.resolve(fakeSessionManager()) },
         archiveStore: emptyArchiveStore(),
         heartbeatIntervalMs: 60_000,
       });
@@ -1547,7 +1557,7 @@ describe("PiSessionService", () => {
       });
       const service = new PiSessionService(new CapturingSessionEventHub(), {
         createAgentRuntime: runtimeCreator(forkedParent.runtime),
-        sessionManager: { create: () => forkedParent.session.sessionManager, list: () => Promise.resolve([]), listAll: () => Promise.resolve([]), open: () => fakeSessionManager() },
+        sessionManager: { create: () => forkedParent.session.sessionManager, list: () => Promise.resolve([]), listAll: () => Promise.resolve([]), open: () => Promise.resolve(fakeSessionManager()) },
         archiveStore: emptyArchiveStore(),
         heartbeatIntervalMs: 60_000,
       });
@@ -1577,7 +1587,7 @@ describe("PiSessionService", () => {
         const parent = fakeRuntime("parent-1", { sessionFile: parentFile, sessionManager: parentManager });
         const runtimes = [child.runtime, parent.runtime];
         let index = 0;
-        const open = vi.fn((path: string) => path === parentFile ? parentManager : childManager);
+        const open = vi.fn(async (path: string) => path === parentFile ? parentManager : childManager);
         const service = new PiSessionService(new CapturingSessionEventHub(), {
           createAgentRuntime: () => {
             const runtime = runtimes[index] ?? parent.runtime;
@@ -1633,7 +1643,7 @@ describe("PiSessionService", () => {
         const parent = fakeRuntime("parent-1", { sessionFile: parentFile, sessionManager: parentManager });
         const runtimes = [fork.runtime, child.runtime, parent.runtime];
         let index = 0;
-        const open = vi.fn((path: string) => {
+        const open = vi.fn(async (path: string) => {
           if (path === parentFile) return parentManager;
           if (path === forkParentFile) return forkManager;
           return childManager;
@@ -1694,7 +1704,7 @@ describe("PiSessionService", () => {
         const parent = fakeRuntime("parent-1", { sessionFile: parentFile, sessionManager: parentManager });
         const runtimes = [child.runtime, parent.runtime];
         let index = 0;
-        const open = vi.fn((path: string) => path === parentFile ? parentManager : childManager);
+        const open = vi.fn(async (path: string) => path === parentFile ? parentManager : childManager);
         const service = new PiSessionService(new CapturingSessionEventHub(), {
           createAgentRuntime: () => {
             const runtime = runtimes[index] ?? parent.runtime;
@@ -1753,7 +1763,7 @@ describe("PiSessionService", () => {
           if (options.sessionManager === parentManager) return Promise.resolve(parent.runtime);
           throw new Error("unexpected session manager");
         };
-        const open = vi.fn((path: string) => {
+        const open = vi.fn(async (path: string) => {
           if (path === copiedChildFile) return copiedManager;
           if (path === originalChildFile) return originalManager;
           if (path === parentFile) return parentManager;
@@ -1828,7 +1838,7 @@ describe("PiSessionService", () => {
           if (options.sessionManager === copiedParentManager) return Promise.resolve(copiedParent.runtime);
           throw new Error("unexpected session manager");
         };
-        const open = vi.fn((path: string) => {
+        const open = vi.fn(async (path: string) => {
           if (path === childFile) return childManager;
           if (path === parentFile) return parentManager;
           if (path === copiedParentFile) return copiedParentManager;
@@ -1890,7 +1900,7 @@ describe("PiSessionService", () => {
         const parent = fakeRuntime("parent-1", { sessionFile: parentFile, sessionManager: parentManager });
         const runtimes = [child.runtime, parent.runtime];
         let index = 0;
-        const open = vi.fn((path: string) => path === parentFile ? parentManager : childManager);
+        const open = vi.fn(async (path: string) => path === parentFile ? parentManager : childManager);
         const service = new PiSessionService(new CapturingSessionEventHub(), {
           createAgentRuntime: () => {
             const runtime = runtimes[index] ?? parent.runtime;
@@ -1942,7 +1952,7 @@ describe("PiSessionService", () => {
         const child = fakeRuntime("child-1", { sessionFile: childFile, sessionManager: childManager });
         const runtimes = [child.runtime, parent.runtime];
         let index = 0;
-        const open = vi.fn((path: string) => path === actualParentFile ? parent.session.sessionManager : childManager);
+        const open = vi.fn(async (path: string) => path === actualParentFile ? parent.session.sessionManager : childManager);
         const service = new PiSessionService(new CapturingSessionEventHub(), {
           createAgentRuntime: () => {
             const runtime = runtimes[index] ?? parent.runtime;
@@ -1982,7 +1992,7 @@ describe("PiSessionService", () => {
         getEntries: () => [{ type: "custom", customType: "pi-web.subsession.spawned", data: { version: 1, spawnedBySessionId: "parent-1", spawnedSessionId: "child-1" } }],
       });
       const child = fakeRuntime("child-fork-1", { sessionFile: childFile, sessionManager: childManager });
-      const open = vi.fn(() => childManager);
+      const open = vi.fn(() => Promise.resolve(childManager));
       const service = new PiSessionService(new CapturingSessionEventHub(), {
         createAgentRuntime: runtimeCreator(child.runtime),
         sessionManager: {

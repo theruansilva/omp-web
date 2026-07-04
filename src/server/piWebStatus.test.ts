@@ -45,7 +45,7 @@ describe("PI WEB status", () => {
 
     const status = await getPiWebVersionStatus(daemon);
 
-    expect(status.packageName).toBe("@jmfederico/pi-web");
+    expect(status.packageName).toBe("@jmfederico/omp-web");
     expect(status.components.web.component).toBe("web");
     expect(status.components.sessiond.runtimeVersion).toBe("1.202605.7");
     expect(status).not.toHaveProperty("release");

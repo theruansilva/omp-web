@@ -1,33 +1,24 @@
-import type { ThinkingLevel } from "@earendil-works/pi-agent-core";
+// `Effort` is a const enum — bundler module resolution can't resolve
+// Effort.Minimal etc. across module boundaries, so `ThinkingLevel` from
+// @oh-my-pi/pi-agent-core resolves to `"inherit" | "off"` only.
+// Define our own union that includes the effort levels as raw strings.
+export type ThinkingLevel = "off" | "inherit" | "minimal" | "low" | "medium" | "high" | "xhigh";
 
-// pi owns the set of thinking levels. We re-export pi's type so the domain has a
-// single source of truth, while the HTTP/wire contract (apiTypes.ts) keeps using
-// `string` so an unknown level reported by a newer pi runtime degrades gracefully
-// instead of failing to parse.
-export type { ThinkingLevel };
-
-/**
- * Known levels in increasing intensity, derived from pi's `ThinkingLevel` union.
- * The `satisfies` clause makes this fail to compile if pi removes or renames a
- * level; thinkingLevels.test.ts adds a compile-time check for additions too. When
- * either breaks, update this list and give the new level a label/description
- * where thinking levels are presented.
- */
 export const KNOWN_THINKING_LEVELS = ["off", "minimal", "low", "medium", "high", "xhigh"] as const satisfies readonly ThinkingLevel[];
 
 export function isKnownThinkingLevel(value: string): value is ThinkingLevel {
-  return KNOWN_THINKING_LEVELS.some((level) => level === value);
+ return KNOWN_THINKING_LEVELS.some((level) => level === value);
 }
 
 export function thinkingLevelLabel(level: string | undefined): string {
-  return level === undefined || level === "" ? "off" : level;
+ return level === undefined || level === "" ? "off" : level;
 }
 
 export interface ThinkingGauge {
-  /** Number of bars to render (the non-"off" levels). */
-  total: number;
-  /** Number of filled bars for the current level. */
-  filled: number;
+ /** Number of bars to render (the non-"off" levels). */
+ total: number;
+ /** Number of filled bars for the current level. */
+ filled: number;
 }
 
 /**
@@ -39,10 +30,10 @@ export interface ThinkingGauge {
  * level's rank. An unknown current level fills 0 bars instead of throwing.
  */
 export function thinkingGauge(level: string | undefined, available: readonly string[]): ThinkingGauge {
-  const pool = available.length >= 2 ? available : KNOWN_THINKING_LEVELS;
-  const total = pool.length - 1;
-  const normalized = thinkingLevelLabel(level);
-  const index = pool.indexOf(normalized);
-  const filled = index <= 0 ? 0 : Math.min(index, total);
-  return { total, filled };
+ const pool = available.length >= 2 ? available : KNOWN_THINKING_LEVELS;
+ const total = pool.length - 1;
+ const normalized = thinkingLevelLabel(level);
+ const index = pool.indexOf(normalized);
+ const filled = index <= 0 ? 0 : Math.min(index, total);
+ return { total, filled };
 }

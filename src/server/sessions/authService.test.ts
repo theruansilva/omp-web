@@ -1,40 +1,48 @@
-import { AuthStorage, ModelRegistry } from "@earendil-works/pi-coding-agent";
+import { AuthStorage, ModelRegistry, type AuthCredentialEntry } from "@oh-my-pi/pi-coding-agent";
 import { describe, expect, it } from "vitest";
 import { AuthService, type AuthChange } from "./authService.js";
 
 describe("AuthService", () => {
-  it("saves API keys and emits a global auth change", () => {
-    const { auth, authStorage, changes } = createAuthService();
+  it("saves API keys and emits a global auth change", async () => {
+    const { auth, authStorage, changes } = await createAuthService();
 
-    expect(auth.saveApiKey("anthropic", "sk-test")).toEqual({ accepted: true });
+    await auth.saveApiKey("anthropic", "sk-test");
 
     expect(authStorage.get("anthropic")).toEqual({ type: "api_key", key: "sk-test" });
     expect(changes).toEqual([{}]);
     auth.dispose();
+    authStorage.close();
   });
 
-  it("logs out providers and emits the removed provider id", () => {
-    const { auth, authStorage, changes } = createAuthService({ anthropic: { type: "api_key", key: "sk-test" } });
+  it("logs out providers and emits the removed provider id", async () => {
+    const { auth, authStorage, changes } = await createAuthService({ anthropic: { type: "api_key", key: "sk-test" } });
 
-    expect(auth.logoutProvider("anthropic")).toEqual({ accepted: true });
+    await auth.logoutProvider("anthropic");
 
     expect(authStorage.get("anthropic")).toBeUndefined();
     expect(changes).toEqual([{ removedProviderId: "anthropic" }]);
     auth.dispose();
+    authStorage.close();
   });
 
-  it("rejects blank API keys", () => {
-    const { auth, changes } = createAuthService();
+  it("rejects blank API keys", async () => {
+    const { auth, authStorage, changes } = await createAuthService();
 
-    expect(() => { auth.saveApiKey("anthropic", "   "); }).toThrow("API key is required");
+    await expect(auth.saveApiKey("anthropic", "   ")).rejects.toThrow("API key is required");
     expect(changes).toEqual([]);
     auth.dispose();
+    authStorage.close();
   });
 });
 
-function createAuthService(data: Parameters<typeof AuthStorage.inMemory>[0] = {}) {
-  const authStorage = AuthStorage.inMemory(data);
-  const modelRegistry = ModelRegistry.create(authStorage);
+async function createAuthService(data: Record<string, AuthCredentialEntry> = {}) {
+  const authStorage = await AuthStorage.create(":memory:");
+  // Seed initial data
+  for (const [provider, credential] of Object.entries(data)) {
+    await authStorage.set(provider, credential);
+  }
+  await authStorage.reload();
+  const modelRegistry = new ModelRegistry(authStorage);
   const auth = new AuthService({ modelRegistry });
   const changes: AuthChange[] = [];
   auth.subscribe((change) => { changes.push(change); });

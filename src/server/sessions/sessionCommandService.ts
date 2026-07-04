@@ -13,7 +13,7 @@ export interface CommandSession {
   isCompacting: boolean;
   pendingMessageCount: number;
   promptTemplates: readonly { name: string }[];
-  extensionRunner: { getRegisteredCommands(): readonly { invocationName: string }[] };
+  extensionRunner: { getRegisteredCommands(): readonly { name: string }[] };
   resourceLoader: { getSkills(): { skills: readonly { name: string }[] } };
   sessionManager: { getLeafId(): string | null; getHeader?: () => { parentSession?: string } | null | undefined };
   setSessionName: (name: string) => void;
@@ -73,7 +73,7 @@ export class SessionCommandService<TSession extends CommandSession = CommandSess
     private readonly events: CommandEventPublisher,
     private readonly lifecycle: SessionCommandLifecycle<TSession> = {},
     private readonly naming: SessionCommandNaming = {},
-  ) {}
+  ) { }
 
   async run(sessionId: string, text: string): Promise<ClientCommandResult> {
     const active = await this.getActive(sessionId);
@@ -213,7 +213,7 @@ export class SessionCommandService<TSession extends CommandSession = CommandSess
   }
 
   private isRuntimeCommand(session: TSession, name: string): boolean {
-    return session.extensionRunner.getRegisteredCommands().some((command) => command.invocationName === name)
+    return session.extensionRunner.getRegisteredCommands().some((command) => command.name === name)
       || session.promptTemplates.some((template) => template.name === name)
       || session.resourceLoader.getSkills().skills.some((skill) => `skill:${skill.name}` === name);
   }

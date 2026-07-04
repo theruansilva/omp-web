@@ -14,3 +14,4 @@ dist/
 
 # Local runtime attachment uploads (created by the chat composer "save to folder" mode).
 .pi-web/
+bun.lock

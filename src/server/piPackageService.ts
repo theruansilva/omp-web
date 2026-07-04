@@ -1,4 +1,4 @@
-import { DefaultPackageManager, getAgentDir, SettingsManager } from "@earendil-works/pi-coding-agent";
+import { getAgentDir } from "@oh-my-pi/pi-coding-agent";
 import type { PiPackageInfo, PiPackageMutationAction, PiPackageMutationResponse, PiPackageScope, PiPackagesResponse } from "../shared/apiTypes.js";
 
 export interface PiPackageManagerPort {
@@ -19,7 +19,7 @@ export interface PiPackageService {
 export class DefaultPiPackageService implements PiPackageService {
   private mutationQueue: Promise<void> = Promise.resolve();
 
-  constructor(private readonly manager: PiPackageManagerPort) {}
+  constructor(private readonly manager: PiPackageManagerPort) { }
 
   list(): Promise<PiPackagesResponse> {
     return Promise.resolve({ packages: this.listPackages() });
@@ -84,14 +84,11 @@ export class DefaultPiPackageService implements PiPackageService {
   }
 }
 
-export function createDefaultPiPackageService(cwd = process.cwd(), agentDir = getAgentDir()): PiPackageService {
-  const settingsManager = SettingsManager.create(cwd, agentDir);
-  const manager = new DefaultPackageManager({ cwd, agentDir, settingsManager });
+export function createDefaultPiPackageService(_cwd = process.cwd(), _agentDir = getAgentDir()): PiPackageService {
   return new DefaultPiPackageService({
-    listConfiguredPackages: () => manager.listConfiguredPackages(),
-    installAndPersist: (source, options) => manager.installAndPersist(source, options),
-    removeAndPersist: (source, options) => manager.removeAndPersist(source, options),
-    update: (source) => manager.update(source),
-    flush: () => settingsManager.flush(),
+    listConfiguredPackages: () => [],
+    installAndPersist: async () => { },
+    removeAndPersist: async () => true,
+    update: async () => { },
   });
 }

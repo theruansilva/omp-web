@@ -9,7 +9,7 @@ import { defaultPiWebConfigPath, defaultPiWebDataDir, examplePiWebConfig } from 
 import { packageVersion, printPiWebVersionReport } from "./piWebVersionReport.js";
 import { checkNodePtyDarwinSpawnHelper, formatNodePtyDarwinSpawnHelperCheck } from "./server/diagnostics/nodePtySpawnHelper.js";
 
-const PI_WEB_PACKAGE_NAME = "@jmfederico/pi-web";
+const PI_WEB_PACKAGE_NAME = "@jmfederico/omp-web";
 
 const systemdServiceDir = join(homedir(), ".config", "systemd", "user");
 const launchdServiceDir = join(homedir(), "Library", "LaunchAgents");

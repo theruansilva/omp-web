@@ -27,7 +27,7 @@ await app.register(fastifyWebsocket);
 
 const eventHub = new SessionEventHub();
 const workspaceActivity = new WorkspaceActivityService(eventHub);
-const auth = new AuthService();
+const auth = await AuthService.create();
 const spawnTargets = spawnSessionsEnabled(process.env, config)
   ? new ProjectScopedSpawnTargetResolver({ projects: new ProjectService(new ProjectStore()), workspaces: new WorkspaceService() })
   : undefined;

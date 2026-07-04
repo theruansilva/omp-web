@@ -1,5 +1,5 @@
-import type { ImageContent, TextContent } from "@earendil-works/pi-ai";
-import type { ExtensionContext } from "@earendil-works/pi-coding-agent";
+import type { ImageContent, TextContent } from "@oh-my-pi/pi-ai";
+import type { ExtensionContext } from "@oh-my-pi/pi-coding-agent";
 import { describe, expect, it, vi } from "vitest";
 import { createSubsessionToolDefinitions, type SubsessionToolDeps } from "./spawnSubsessionTool.js";
 
@@ -77,10 +77,12 @@ describe("createSubsessionToolDefinitions", () => {
     const result = await listTool.execute("call-2", {}, undefined, undefined, ctxFor("parent-1", "/sessions/parent-1.jsonl"));
 
     expect(list).toHaveBeenCalledWith("parent-1", "/sessions/parent-1.jsonl");
-    expect(result.details).toEqual({ subsessions: [
-      { sessionId: "child-1", cwd: "/repos/a", status: "working" },
-      { sessionId: "child-2", cwd: "/repos/a", status: "idle" },
-    ] });
+    expect(result.details).toEqual({
+      subsessions: [
+        { sessionId: "child-1", cwd: "/repos/a", status: "working" },
+        { sessionId: "child-2", cwd: "/repos/a", status: "idle" },
+      ]
+    });
     expect(firstText(result.content)).toContain("child-1 [working]");
   });
 

@@ -17,7 +17,7 @@ function activeSession(overrides: Partial<TestCommandSession> = {}): CommandActi
     isCompacting: false,
     pendingMessageCount: 0,
     promptTemplates: [{ name: "template" }],
-    extensionRunner: { getRegisteredCommands: () => [{ invocationName: "ext" }] },
+    extensionRunner: { getRegisteredCommands: () => [{ name: "ext" }] },
     resourceLoader: { getSkills: () => ({ skills: [{ name: "skill-a" }] }) },
     sessionManager: { getLeafId: () => "leaf-1" },
     setSessionName: vi.fn((name: string) => { session.sessionName = name; }),

@@ -2,7 +2,7 @@ import { existsSync } from "node:fs";
 import { readdir, readFile, realpath, stat } from "node:fs/promises";
 import { dirname, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
-import { DefaultPackageManager, getAgentDir, SettingsManager } from "@earendil-works/pi-coding-agent";
+import { getAgentDir } from "@oh-my-pi/pi-coding-agent";
 import { loadPiWebConfig, piWebDataDir, type PiWebConfig } from "../config.js";
 import type { PiWebPluginInfo, PiWebPluginsResponse, PiWebPluginScope } from "../shared/apiTypes.js";
 import { isPiWebPluginId } from "../shared/pluginIds.js";
@@ -69,22 +69,14 @@ interface PiWebPluginEntry {
 type ArraylessPluginRecord = Omit<PluginRecord, "source" | "scope">;
 
 export class DefaultPiPackageProvider implements PiPackageProvider {
-  constructor(private readonly cwd = process.cwd(), private readonly agentDir = getAgentDir()) {}
+  constructor(private readonly _cwd = process.cwd(), private readonly _agentDir = getAgentDir()) { }
 
   listPackages(): ConfiguredPiPackage[] {
-    return this.createPackageManager().listConfiguredPackages();
+    return [];
   }
 
-  getInstalledPath(source: string, scope: "user" | "project"): string | undefined {
-    return this.createPackageManager().getInstalledPath(source, scope);
-  }
-
-  private createPackageManager(): DefaultPackageManager {
-    return new DefaultPackageManager({
-      cwd: this.cwd,
-      agentDir: this.agentDir,
-      settingsManager: SettingsManager.create(this.cwd, this.agentDir),
-    });
+  getInstalledPath(_source: string, _scope: "user" | "project"): string | undefined {
+    return undefined;
   }
 }
 

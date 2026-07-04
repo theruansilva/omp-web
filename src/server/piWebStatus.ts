@@ -5,14 +5,14 @@ import { promisify } from "node:util";
 import { homedir } from "node:os";
 import { dirname, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
-import { DefaultPackageManager, getAgentDir, SettingsManager } from "@earendil-works/pi-coding-agent";
+import { getAgentDir } from "@oh-my-pi/pi-coding-agent";
 import type { PiWebCapability, PiWebComponentStatus, PiWebInstallationInfo, PiWebReleaseStatus, PiWebRuntimeComponent, PiWebRuntimeResponse, PiWebServiceComponent, PiWebStatusMessage, PiWebStatusResponse, PiWebVersionResponse } from "../shared/apiTypes.js";
 import { effectivePiWebCapabilities, WEB_RUNTIME_CAPABILITIES } from "../shared/capabilities.js";
 import { piWebDockerCommand } from "../docker/piWebDockerCommandPlan.js";
 import { parsePiWebComponentStatus, parsePiWebRuntimeComponent } from "../shared/piWebStatusParsing.js";
 import { SessionDaemonClient } from "../sessiond/sessionDaemonClient.js";
 
-const PI_WEB_PACKAGE_NAME = "@jmfederico/pi-web";
+const PI_WEB_PACKAGE_NAME = "@jmfederico/omp-web";
 const PI_WEB_NPM_SOURCE = `npm:${PI_WEB_PACKAGE_NAME}`;
 const DEFAULT_VERSION = "0.0.0-dev";
 const LATEST_RELEASE_CACHE_MS = 6 * 60 * 60 * 1000;
@@ -240,25 +240,7 @@ function isTruthyEnv(key: string): boolean {
   return value !== undefined && value !== "" && value !== "0" && value.toLowerCase() !== "false";
 }
 
-async function detectPiPackageInstallation(realRoot: string, displayPath: string): Promise<PiWebInstallationInfo | undefined> {
-  try {
-    const agentDir = getAgentDir();
-    const packageManager = new DefaultPackageManager({
-      cwd: process.cwd(),
-      agentDir,
-      settingsManager: SettingsManager.create(process.cwd(), agentDir),
-    });
-    for (const configuredPackage of packageManager.listConfiguredPackages()) {
-      const installedPath = configuredPackage.installedPath ?? packageManager.getInstalledPath(configuredPackage.source, configuredPackage.scope);
-      if (installedPath === undefined) continue;
-      const realInstalledPath = await realPathOrSelf(installedPath);
-      if (isSameOrWithin(realInstalledPath, realRoot) || isSameOrWithin(realRoot, realInstalledPath)) {
-        return { kind: "pi-package", path: displayPath, source: configuredPackage.source, scope: configuredPackage.scope };
-      }
-    }
-  } catch {
-    return undefined;
-  }
+async function detectPiPackageInstallation(_realRoot: string, _displayPath: string): Promise<PiWebInstallationInfo | undefined> {
   return undefined;
 }
 
