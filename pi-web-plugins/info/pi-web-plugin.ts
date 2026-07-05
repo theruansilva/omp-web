@@ -1,4 +1,4 @@
-import type { PiWebPlugin } from "@jmfederico/pi-web/plugin-api";
+import type { PiWebPlugin } from "@ProgmRuanSilva/omp-web/plugin-api";
 
 const plugin: PiWebPlugin = {
   apiVersion: 1,

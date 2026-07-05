@@ -5,7 +5,7 @@ import { parsePiWebComponentStatus, parsePiWebInstallationInfo, parsePiWebRuntim
 describe("PI WEB status parsing", () => {
   it("parses known top-level and component capabilities while ignoring unknown strings", () => {
     expect(parsePiWebRuntimeResponse({
-      packageName: "@jmfederico/omp-web",
+      packageName: "@ProgmRuanSilva/omp-web",
       generatedAt: "now",
       components: {
         web: { component: "web", label: "Web/UI", runtimeVersion: "1.0.0", available: true, capabilities: [PI_WEB_CAPABILITIES.piPackagesManage, PI_WEB_CAPABILITIES.selectedMachineSettings, "future.capability"] },
@@ -23,7 +23,7 @@ describe("PI WEB status parsing", () => {
 
   it("rejects runtime responses with malformed component capability arrays", () => {
     expect(parsePiWebRuntimeResponse({
-      packageName: "@jmfederico/omp-web",
+      packageName: "@ProgmRuanSilva/omp-web",
       generatedAt: "now",
       components: {
         web: { component: "web", label: "Web/UI", available: true, capabilities: [PI_WEB_CAPABILITIES.piPackagesManage, 1] },
@@ -59,7 +59,7 @@ describe("PI WEB status parsing", () => {
 
   it("parses version responses that include Docker runtime and development components", () => {
     const parsed = parsePiWebVersionResponse({
-      packageName: "@jmfederico/omp-web",
+      packageName: "@ProgmRuanSilva/omp-web",
       generatedAt: "now",
       components: {
         web: { component: "web", label: "Web/UI", runtimeVersion: "1.0.0", stale: false, available: true, installation: { kind: "docker", path: "/srv/pi-web-docker", dockerMode: "runtime" } },

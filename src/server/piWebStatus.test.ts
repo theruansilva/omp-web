@@ -45,7 +45,7 @@ describe("PI WEB status", () => {
 
     const status = await getPiWebVersionStatus(daemon);
 
-    expect(status.packageName).toBe("@jmfederico/omp-web");
+    expect(status.packageName).toBe("@ProgmRuanSilva/omp-web");
     expect(status.components.web.component).toBe("web");
     expect(status.components.sessiond.runtimeVersion).toBe("1.202605.7");
     expect(status).not.toHaveProperty("release");
@@ -79,14 +79,14 @@ describe("PI WEB status", () => {
       installedVersion: "1.202605.8",
       stale: true,
       available: true,
-      installation: { kind: "pi-package", source: "npm:@jmfederico/pi-web", scope: "user", path: "/tmp/pi-web" },
+      installation: { kind: "pi-package", source: "npm:@ProgmRuanSilva/omp-web", scope: "user", path: "/tmp/pi-web" },
     });
 
     const status = await getPiWebStatus(daemon);
 
     expect(status.release.skipped).toBe(true);
     expect(status.components.sessiond.stale).toBe(true);
-    expect(status.components.sessiond.installation).toMatchObject({ kind: "pi-package", source: "npm:@jmfederico/pi-web", scope: "user" });
+    expect(status.components.sessiond.installation).toMatchObject({ kind: "pi-package", source: "npm:@ProgmRuanSilva/omp-web", scope: "user" });
     expect(status.messages.map((message) => message.id)).toContain("sessiond-stale");
   });
 

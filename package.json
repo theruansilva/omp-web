@@ -1,9 +1,9 @@
 {
-  "name": "@jmfederico/omp-web",
+  "name": "@ProgmRuanSilva/omp-web",
   "version": "1.202606.7",
   "description": "Web UI for persistent Pi Coding Agent sessions in real workspaces.",
   "license": "MIT",
-  "author": "Federico Jaramillo Martinez",
+  "author": "ProgmRuanSilva",
   "type": "module",
   "bin": {
     "pi-web": "dist/cli.js",
@@ -101,10 +101,10 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/jmfederico/omp-web.git"
+    "url": "git+https://github.com/ProgmRuanSilva/omp-web.git"
   },
   "bugs": {
-    "url": "https://github.com/jmfederico/omp-web/issues"
+    "url": "https://github.com/ProgmRuanSilva/omp-web/issues"
   },
   "homepage": "https://omp-web.dev/",
   "packageManager": "npm@11.11.0",
@@ -135,6 +135,6 @@
     "extensions": [
       "./extensions"
     ],
-    "image": "https://raw.githubusercontent.com/jmfederico/omp-web/main/docs/assets/pi-web-banner.png"
+    "image": "https://raw.githubusercontent.com/ProgmRuanSilva/omp-web/main/docs/assets/pi-web-banner.png"
   }
 }

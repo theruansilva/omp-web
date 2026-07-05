@@ -26,7 +26,7 @@ Options:
   --data-dir DIR          Persistent data directory (default: INSTALL_DIR/data)
   --bind-address ADDR     Host bind address (default: 127.0.0.1)
   --port PORT             Host port (default: 8504)
-  --pi-web-version VER    npm @jmfederico/pi-web version pin (default: latest)
+  --pi-web-version VER    npm @ProgmRuanSilva/pi-web version pin (default: latest)
   --pi-version VER        npm @earendil-works/pi-coding-agent version pin
                           (default: latest)
   --opensuse-image IMAGE  openSUSE base image (default: opensuse/tumbleweed)
@@ -300,7 +300,7 @@ install_dir=$(absolute_dir "$install_dir_input") || die "could not create instal
 env_file=$install_dir/.env
 
 asset_ref=$(value_from_env_or_existing_or_default PI_WEB_DOCKER_REF main)
-asset_base=${PI_WEB_DOCKER_ASSET_BASE:-https://raw.githubusercontent.com/jmfederico/pi-web/$asset_ref/docker}
+asset_base=${PI_WEB_DOCKER_ASSET_BASE:-https://raw.githubusercontent.com/ProgmRuanSilva/pi-web/$asset_ref/docker}
 use_local_asset_dir=1
 if [ "${PI_WEB_DOCKER_REFRESH_ASSETS:-0}" = 1 ] || [ "${PI_WEB_DOCKER_REF+x}" = x ] || [ "${PI_WEB_DOCKER_ASSET_BASE+x}" = x ]; then
   use_local_asset_dir=0

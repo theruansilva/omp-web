@@ -195,7 +195,7 @@ After changing plugin enablement, reload the PI WEB browser tab. Already-loaded 
 
 ## Built-in plugins
 
-PI WEB ships core, discoverable plugins in the main `@jmfederico/pi-web` npm package. No separate `pi install` step is required: update PI WEB, reload the browser tab, and the bundled plugins appear in `/pi-web-plugins/manifest.json`.
+PI WEB ships core, discoverable plugins in the main `@ProgmRuanSilva/omp-web` npm package. No separate `pi install` step is required: update PI WEB, reload the browser tab, and the bundled plugins appear in `/pi-web-plugins/manifest.json`.
 
 Built-in plugins can be managed from **Settings → PI WEB plugins** or with the top-level `plugins` config key.
 

@@ -32,7 +32,7 @@ ARG CACHE_BUST=local
 RUN set -eux; \
   echo "PI WEB Docker build cache bust: ${CACHE_BUST}"; \
   npm install -g --omit=dev --no-audit --no-fund \
-    "@jmfederico/pi-web@${PI_WEB_VERSION}" \
+    "@ProgmRuanSilva/pi-web@${PI_WEB_VERSION}" \
     "@earendil-works/pi-coding-agent@${PI_VERSION}"; \
   npm cache clean --force
 

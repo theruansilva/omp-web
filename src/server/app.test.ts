@@ -45,7 +45,7 @@ beforeEach(async () => {
       },
       now: () => new Date("2026-05-25T00:00:00.000Z"),
       localRuntime: () => Promise.resolve({
-        packageName: "@jmfederico/omp-web",
+        packageName: "@ProgmRuanSilva/omp-web",
         generatedAt: "2026-05-25T00:00:00.000Z",
         components: {
           web: { component: "web", label: "PI WEB", available: true, capabilities: [PI_WEB_CAPABILITIES.sessionsDeleteArchived] },
@@ -95,13 +95,13 @@ describe("buildApp", () => {
       statusCode: 200,
       headers: { "content-type": "application/json" },
       body: {
-        packageName: "@jmfederico/omp-web",
+        packageName: "@ProgmRuanSilva/omp-web",
         generatedAt: "2026-05-25T00:00:00.000Z",
         components: {
           web: { component: "web", label: "Remote Web", stale: false, available: true },
           sessiond: { component: "sessiond", label: "Remote Sessiond", stale: false, available: true },
         },
-        release: { packageName: "@jmfederico/omp-web", updateAvailable: false },
+        release: { packageName: "@ProgmRuanSilva/omp-web", updateAvailable: false },
         commands: { update: "", restart: "", restartSystemd: "", restartDev: "" },
         messages: [],
       },
@@ -124,7 +124,7 @@ describe("buildApp", () => {
       statusCode: 200,
       headers: { "content-type": "application/json" },
       body: {
-        packageName: "@jmfederico/omp-web",
+        packageName: "@ProgmRuanSilva/omp-web",
         generatedAt: "2026-05-25T00:00:00.000Z",
         components: {
           web: { component: "web", label: "Remote Web", runtimeVersion: "1.0.0", available: true, capabilities: [PI_WEB_CAPABILITIES.sessionsDeleteArchived, PI_WEB_CAPABILITIES.piPackagesManage, "future.capability"] },
