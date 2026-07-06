@@ -22,6 +22,8 @@ export const BUILTIN_COMMANDS: ClientCommand[] = [
   { name: "resume", description: "Resume a different session", source: "builtin" },
   { name: "reload", description: "Reload Pi runtime resources for this session", source: "builtin" },
   { name: "quit", description: "Quit pi", source: "builtin" },
+  { name: "plan", description: "Toggle plan mode", source: "builtin" },
+  { name: "advisor", description: "Toggle advisor", source: "builtin" },
 ];
 
 export function isBuiltinCommand(name: string): boolean {

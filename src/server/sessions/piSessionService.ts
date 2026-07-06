@@ -256,6 +256,10 @@ export interface PiAgentSession {
   * `Agent`/`AgentSession` surface.
   */
  agent: { streamFn: StreamFn };
+ getPlanModeState(): { enabled: boolean; planFilePath: string } | undefined;
+ setPlanModeState(state: { enabled: boolean; planFilePath: string } | undefined): void;
+ toggleAdvisorEnabled(): boolean;
+ setAdvisorEnabled(enabled: boolean): boolean;
 }
 
 export interface PiSessionRuntime {
@@ -314,6 +318,10 @@ class DefaultPiAgentSession implements PiAgentSession {
    }),
   };
  }
+ getPlanModeState(): { enabled: boolean; planFilePath: string } | undefined { return (this.ompSession as any).getPlanModeState(); }
+ setPlanModeState(state: { enabled: boolean; planFilePath: string } | undefined): void { (this.ompSession as any).setPlanModeState(state); }
+ toggleAdvisorEnabled(): boolean { return (this.ompSession as any).toggleAdvisorEnabled(); }
+ setAdvisorEnabled(enabled: boolean): boolean { return (this.ompSession as any).setAdvisorEnabled(enabled); }
  get agent(): { streamFn: StreamFn } {
   return { streamFn: this.ompSession.agent.streamFn as unknown as StreamFn };
  }

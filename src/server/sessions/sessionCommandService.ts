@@ -28,6 +28,10 @@ export interface CommandSession {
     cost: number;
   };
   getUserMessagesForForking: () => readonly { entryId: string; text: string }[];
+  getPlanModeState: () => { enabled: boolean; planFilePath: string } | undefined;
+  setPlanModeState: (state: { enabled: boolean; planFilePath: string } | undefined) => void;
+  toggleAdvisorEnabled: () => boolean;
+  setAdvisorEnabled: (enabled: boolean) => boolean;
 }
 
 export interface CommandRuntime<TSession extends CommandSession = CommandSession> {
@@ -92,6 +96,10 @@ export class SessionCommandService<TSession extends CommandSession = CommandSess
       }
       return { type: "unsupported", message: `Unknown command: /${name}` };
     }
+
+    if (name === "plan") { session.setPlanModeState(session.getPlanModeState()?.enabled ? undefined : { enabled: true, planFilePath: "PLAN.md" }); return { type: "done", message: "Plan mode toggled." }; }
+
+    if (name === "advisor") { session.toggleAdvisorEnabled(); return { type: "done", message: "Advisor toggled." }; }
 
     if (name === "session") return { type: "done", message: formatSessionStats(session) };
     if (name === "name") return this.nameSession(active, rest);
