@@ -1,4 +1,4 @@
-import { AuthStorage, ModelRegistry } from "@oh-my-pi/pi-coding-agent";
+import { AuthStorage, ModelRegistry, SqliteAuthCredentialStore } from "@oh-my-pi/pi-coding-agent";
 import type { AuthProvidersResponse, AuthType, OAuthFlowState, AuthProviderStatus } from "../../shared/apiTypes.js";
 import { getLoginProviderOptions, getLogoutProviderOptions, type AuthProviderModelRegistry } from "./authProviderOptions.js";
 import { OAuthLoginFlowService } from "./oauthLoginFlowService.js";
@@ -119,6 +119,8 @@ export class AuthService {
 }
 
 async function createDefaultModelRegistry(): Promise<ModelRegistry> {
- const authStorage = await AuthStorage.create(":memory:");
+ const store = await SqliteAuthCredentialStore.open();
+ const authStorage = new AuthStorage(store);
+ await authStorage.reload();
  return new ModelRegistry(authStorage);
 }
