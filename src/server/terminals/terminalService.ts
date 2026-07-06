@@ -1,6 +1,22 @@
 import { EventEmitter } from "node:events";
 import { randomUUID } from "node:crypto";
-import * as pty from "node-pty";
+import type * as pty from "node-pty";
+import { createRequire } from "node:module";
+
+let ptySpawn: typeof pty.spawn;
+try {
+  if (typeof process !== "undefined" && process.versions && process.versions["bun"]) {
+    // dynamic import required because bun-pty crashes Node.js tests synchronously if statically imported
+    const ptyMod = await import("bun-pty");
+    ptySpawn = ptyMod.spawn as typeof pty.spawn;
+  } else {
+    const requireFromHere = createRequire(import.meta.url);
+    const ptyMod = requireFromHere("node-pty");
+    ptySpawn = ptyMod.spawn as typeof pty.spawn;
+  }
+} catch (error) {
+  throw new Error(`Failed to load PTY native module: ${error instanceof Error ? error.message : String(error)}`);
+}
 import type { TerminalCommandRun, TerminalCommandRunFilter, TerminalCommandRunStatus, TerminalUiEvent } from "../../shared/apiTypes.js";
 import type { SessionEventHub } from "../realtime/sessionEventHub.js";
 import type { WorkspaceActivityService } from "../activity/workspaceActivityService.js";
@@ -40,7 +56,7 @@ export class TerminalService {
   private readonly terminals = new Map<string, TerminalRecord>();
   private readonly commandRuns = new Map<string, TerminalCommandRun>();
 
-  constructor(private readonly events?: SessionEventHub, private readonly workspaceActivity?: Pick<WorkspaceActivityService, "updateTerminal" | "removeTerminal">) {}
+  constructor(private readonly events?: SessionEventHub, private readonly workspaceActivity?: Pick<WorkspaceActivityService, "updateTerminal" | "removeTerminal">) { }
 
   list(cwd: string): TerminalInfo[] {
     return [...this.terminals.values()]
@@ -158,7 +174,7 @@ export class TerminalService {
     record.buffer = trimReplayBuffer(record.buffer + marker);
     record.events.emit("output", marker);
     const shell = process.env["SHELL"] ?? "/bin/bash";
-    record.pty = pty.spawn(shell, [], {
+    record.pty = ptySpawn(shell, [], {
       name: "xterm-256color",
       cwd: record.cwd,
       cols: 100,
@@ -191,7 +207,7 @@ export class TerminalService {
     const id = options.id ?? randomUUID();
     const createdAt = new Date().toISOString();
     const shell = process.env["SHELL"] ?? "/bin/bash";
-    const terminal = pty.spawn(shell, options.shellArgs, {
+    const terminal = ptySpawn(shell, options.shellArgs, {
       name: "xterm-256color",
       cwd: options.cwd,
       cols: options.cols ?? 100,
