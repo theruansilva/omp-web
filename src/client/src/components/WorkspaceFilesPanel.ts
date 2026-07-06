@@ -97,6 +97,10 @@ export class WorkspaceFilesPanel extends LitElement {
   private renderFileViewer(context: WorkspacePanelContext): TemplateResult {
     const file = context.selectedFileContent;
     if (context.selectedFilePath === undefined || context.selectedFilePath === "") return html`<p class="muted">Select a file.</p>`;
+    if (context.state.error !== "" && file === undefined) return html`
+      <div class="viewer-header"><strong>${context.selectedFilePath}</strong><small>Error</small></div>
+      <p class="muted dialog-error" style="margin: 16px;">${context.state.error}</p>
+    `;
     if (file === undefined) return html`<p class="muted">Loading ${context.selectedFilePath}…</p>`;
     if (file.mediaType === "image") return this.renderImageViewer(context, file);
     if (file.binary) return html`<p class="muted">Binary file: ${file.path} · ${formatFileSize(file.size)}</p>`;
