@@ -51,6 +51,10 @@ import { createSubsessionToolDefinitions, type SpawnSubsessionInvocation, type S
 import { buildTranscriptView } from "./subsessionTranscript.js";
 import { planSessionCleanup, summarizeSessionCleanupExecution, type NormalizedSessionCleanupRequest, type SessionCleanupPlan } from "./sessionCleanup.js";
 import type { SpawnTargetDecision, SpawnTargetResolver } from "./spawnTargetResolver.js";
+import type { CronScheduler } from "./schedulePrompt/scheduler.js";
+import { SchedulePromptService } from "./schedulePrompt/schedulePromptService.js";
+import type { CronStorage } from "./schedulePrompt/storage.js";
+import { createSchedulePromptToolDefinition } from "./schedulePrompt/tool.js";
 
 /**
  * Minimal structured-logging seam, shaped like Fastify's logger so sessiond can
@@ -485,12 +489,18 @@ function defaultCreateAgentRuntime(createRuntime: PiWebCreateAgentSessionRuntime
 
 type SpawnSessionFn = (input: SpawnSessionInvocation) => Promise<SpawnSessionResult>;
 
-function createDefaultRuntimeFactory(authStorage: AuthStorage, modelRegistry: ModelRegistryInstance, spawn?: SpawnSessionFn, subsessions?: SubsessionToolDeps): PiWebCreateAgentSessionRuntimeFactory {
+function createDefaultRuntimeFactory(authStorage: AuthStorage, modelRegistry: ModelRegistryInstance, schedulePromptService: SchedulePromptService, spawn?: SpawnSessionFn, subsessions?: SubsessionToolDeps): PiWebCreateAgentSessionRuntimeFactory {
  let pendingInitialModel: AgentModel | undefined;
  return async ({ cwd, agentDir, sessionManager, sessionStartEvent, initialModel }) => {
   if (!(sessionManager instanceof SessionManager)) throw new Error("Default runtime creation requires an SDK SessionManager");
   const model = pendingInitialModel ?? initialModel;
+  const sessionId = sessionManager.getSessionId();
+  // Deferred refs — populated after piSession is created. The getters are
+  // only called at tool-execution time, long after these are assigned.
+  let scheduleStorage!: CronStorage;
+  let scheduleScheduler!: CronScheduler;
   const customTools = [
+   createSchedulePromptToolDefinition(sessionId, () => scheduleStorage, () => scheduleScheduler),
    createPiWebEditToolDefinition(cwd),
    ...(spawn === undefined ? [] : [createSpawnSessionToolDefinition(cwd, { spawn })] as unknown as import("@oh-my-pi/pi-coding-agent/extensibility/extensions/types").ToolDefinition[]),
    ...(subsessions === undefined ? [] : createSubsessionToolDefinitions(cwd, subsessions) as unknown as import("@oh-my-pi/pi-coding-agent/extensibility/extensions/types").ToolDefinition[]),
@@ -506,6 +516,13 @@ function createDefaultRuntimeFactory(authStorage: AuthStorage, modelRegistry: Mo
    ...(model === undefined ? {} : { model }),
   });
   const piSession = new DefaultPiAgentSession(result.session, sessionManager);
+  const started = schedulePromptService.startForSession(
+   sessionId,
+   cwd,
+   (text) => piSession.prompt(text, { streamingBehavior: "followUp" }),
+  );
+  scheduleStorage = started.storage;
+  scheduleScheduler = started.scheduler;
   return new DefaultPiSessionRuntime(piSession, cwd, result);
  };
 }
@@ -569,6 +586,7 @@ export class PiSessionService {
  private readonly heartbeat: NodeJS.Timeout;
  private readonly commandService: SessionCommandService<PiAgentSession>;
  private readonly compactionPromptQueues = new Map<string, QueuedPrompt[]>();
+ private readonly schedulePromptService = new SchedulePromptService();
  private readonly compactionDrainTimers = new Map<string, NodeJS.Timeout>();
  private readonly authLossWarnings = new Set<string>();
  /** Tracked subsession id -> the parent session id that spawned it. */
@@ -612,6 +630,7 @@ export class PiSessionService {
     ? createDefaultRuntimeFactory(
      this.modelRegistry.authStorage,
      this.modelRegistry,
+     this.schedulePromptService,
      this.spawnTargets === undefined ? undefined : (input) => this.spawnSession(input),
      !subsessionsActive ? undefined : {
       spawn: (input) => this.spawnSubsession(input),
@@ -695,6 +714,7 @@ export class PiSessionService {
  }
 
  async dispose(): Promise<void> {
+  this.schedulePromptService.dispose();
   clearInterval(this.heartbeat);
   this.clearCompactionDrainTimers();
   const activeSessions = Array.from(new Set(this.active.values()));
@@ -1738,6 +1758,7 @@ export class PiSessionService {
   const active = this.active.get(sessionId);
   if (!active) return;
   this.active.delete(sessionId);
+  this.schedulePromptService.stopForSession(sessionId);
   this.activities.delete(sessionId);
   this.workspaceActivity?.removeSession(sessionId, active.runtime.session.sessionManager.getCwd());
   this.clearAuthLossWarningsForSession(sessionId);

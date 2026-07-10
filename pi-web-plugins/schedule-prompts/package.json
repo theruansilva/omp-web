@@ -1,0 +1,9 @@
+{
+  "name": "@pi-web/schedule-prompts-plugin",
+  "private": true,
+  "piWeb": {
+    "plugins": [
+      { "id": "schedule-prompts", "module": "pi-web-plugin.js" }
+    ]
+  }
+}
