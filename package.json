@@ -73,6 +73,8 @@
     "marked": "^18.0.3",
     "node-pty": "^1.1.0",
     "typebox": "1.1.38",
+    "croner": "^10.0.1",
+    "nanoid": "^5.0.0",
     "ws": "^8.20.1"
   },
   "devDependencies": {
