@@ -142,16 +142,16 @@ function supportsSystemdUserServices(): boolean {
 function manualRunAdvice(): string {
   return [
     "Run PI WEB manually from a checkout:",
-    "  npm run start:sessiond",
-    "  OMP_WEB_PORT=8504 npm start",
+    "  bun run start:sessiond",
+    "  OMP_WEB_PORT=8504 bun run start",
     "",
     "For development in one terminal:",
-    "  npm run dev",
+    "  bun run dev",
     "",
     "For split development, keep sessiond separate and run web/API plus Vite UI separately:",
-    "  npm run dev:sessiond",
-    "  npm run dev:web",
-    "  npm run dev:client",
+    "  bun run dev:sessiond",
+    "  bun run dev:web",
+    "  bun run dev:client",
   ].join("\n");
 }
 
@@ -435,7 +435,7 @@ function devServiceDefinitions(options: InstallOptions, configPath: string, root
     {
       ...serviceRefs.sessiond,
       description: "PI WEB session daemon (dev)",
-      shellCommand: "exec npm run start:sessiond",
+      shellCommand: "exec bun run start:sessiond",
       restart: "never",
       environment,
       workingDirectory: root,
@@ -443,7 +443,7 @@ function devServiceDefinitions(options: InstallOptions, configPath: string, root
     {
       ...serviceRefs.uiDev,
       description: "PI WEB UI dev server",
-      shellCommand: `exec /usr/bin/env bash -c ${serviceShellQuote('trap "kill 0" EXIT; npm run dev:web & npm run dev:client & wait')}`,
+      shellCommand: `exec /usr/bin/env bash -c ${serviceShellQuote('trap "kill 0" EXIT; bun run dev:web & bun run dev:client & wait')}`,
       restart: "never",
       environment,
       after: ["sessiond"],
@@ -762,12 +762,12 @@ function baseShellChecks(backend: ServiceBackend): Check[] {
 function devInstallChecks(backend: ServiceBackend, root: string): Check[] {
   const shell = serviceShellLabel();
   const checks: Check[] = [
-    [`${shell} can find npm`, serviceShellCommand(commandCheck("npm"), root)],
+    [`${shell} can find bun`, serviceShellCommand(commandCheck("bun"), root)],
     [`${shell} can find bash`, serviceShellCommand(commandCheck("bash"), root)],
   ];
   if (backend.kind === "systemd") {
     checks.push(
-      [`systemd user ${shell} can find npm`, systemdUserServiceShellCommand(commandCheck("npm"), root)],
+      [`systemd user ${shell} can find bun`, systemdUserServiceShellCommand(commandCheck("bun"), root)],
       [`systemd user ${shell} can find bash`, systemdUserServiceShellCommand(commandCheck("bash"), root)],
     );
   }
@@ -923,7 +923,7 @@ function doctorChecks(): Check[] {
   if (backend === undefined) {
     return [
       [`${shell} can find node >= 22`, serviceShellCommand(nodeVersionCheck())],
-      [`${shell} can find npm`, serviceShellCommand(commandWithVersionCheck("npm"))],
+      [`${shell} can find bun`, serviceShellCommand(commandWithVersionCheck("bun"))],
       [`${shell} can find pi`, serviceShellCommand(commandWithVersionCheck("pi"))],
     ];
   }
@@ -931,7 +931,7 @@ function doctorChecks(): Check[] {
   const checks: Check[] = [
     ...backendAvailabilityChecks(backend),
     ...baseShellChecks(backend),
-    [`${shell} can find npm`, serviceShellCommand(commandWithVersionCheck("npm"))],
+    [`${shell} can find bun`, serviceShellCommand(commandWithVersionCheck("bun"))],
     [`${shell} can find pi`, serviceShellCommand(commandWithVersionCheck("pi"))],
   ];
   const executables = resolveServiceExecutables(backend);
@@ -1071,7 +1071,7 @@ Usage:
   omp-web version
 
 Recommended install:
-  npm install -g @ProgmRuanSilva/omp-web
+  bun add -g @ProgmRuanSilva/omp-web
   omp-web install
 
 Development service install from a checkout:

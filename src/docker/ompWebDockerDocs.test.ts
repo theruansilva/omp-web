@@ -12,7 +12,7 @@ describe("omp-web-docker documentation", () => {
     const dockerReadme = await readRepoFile("docker/README.md");
 
     expect(dockerReadme).toContain(dockerOneLine);
-    expect(dockerReadme).toContain("does not require Node.js or npm on the host");
+    expect(dockerReadme).toContain("does not require Bun or Node.js on the host");
   });
 
   it("keeps Docker setup documentation scoped to the Docker folder", async () => {

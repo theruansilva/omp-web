@@ -245,6 +245,13 @@ async function detectPiPackageInstallation(_realRoot: string, _displayPath: stri
 }
 
 async function detectNpmGlobalInstallation(realRoot: string, displayPath: string): Promise<OmpWebInstallationInfo | undefined> {
+  const bunInstall = process.env["BUN_INSTALL"] ?? join(process.env["HOME"] ?? "~", ".bun");
+  const bunRoot = join(bunInstall, "lib", "node_modules");
+  const realBunRoot = await realPathOrSelf(bunRoot);
+  if (isSameOrWithin(realBunRoot, realRoot)) {
+    return { kind: "npm-global", path: displayPath, npmRoot: bunRoot };
+  }
+  // Fall back to npm root detection for legacy installs
   const npmRoot = await npmGlobalRoot();
   if (npmRoot === undefined) return undefined;
   const realNpmRoot = await realPathOrSelf(npmRoot);
@@ -458,11 +465,11 @@ async function updateCommandFor(installation: OmpWebInstallationInfo | undefined
     return `pi update ${installation.source ?? OMP_WEB_NPM_SOURCE} && ${restartCommand}`;
   }
   if (installation?.kind === "local" && installation.path !== undefined) {
-    if (!(await hasCommand("npm")) || !(await isGitCheckoutWithUpstream(installation.path))) return undefined;
-    return `cd ${shellQuote(installation.path)} && git pull --ff-only && npm install && npm run build && ${restartCommand}`;
+    if (!(await hasCommand("bun")) || !(await isGitCheckoutWithUpstream(installation.path))) return undefined;
+    return `cd ${shellQuote(installation.path)} && git pull --ff-only && bun install && bun run build && ${restartCommand}`;
   }
-  if (installation?.kind !== "npm-global" || !(await hasCommand("npm"))) return undefined;
-  return `npm install -g ${OMP_WEB_PACKAGE_NAME} && ${restartCommand}`;
+  if (installation?.kind !== "npm-global" || !(await hasCommand("bun"))) return undefined;
+  return `bun add -g ${OMP_WEB_PACKAGE_NAME} && ${restartCommand}`;
 }
 
 async function nativeServiceCommands(): Promise<NativeServiceCommands> {
