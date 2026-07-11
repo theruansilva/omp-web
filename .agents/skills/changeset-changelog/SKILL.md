@@ -27,7 +27,7 @@ Create a changeset for changes that affect users, operators, package consumers, 
 
 A changeset is usually not needed for purely internal refactors, tests, lint-only changes, or build cleanup unless the user wants them recorded.
 
-A changeset is also not needed for changes that are not part of what a omp-web release ships to users. The release is the published npm package, and its contents are an allowlist defined by the `files` field in `package.json` (plus `package.json` itself). Anything outside that allowlist never reaches package consumers, so it cannot be a user-visible release change. This includes repo-only material such as agent skills under `.agents/` and `skills/`, internal docs, CI config, and developer tooling. If you are unsure whether a path ships, check it against `package.json` `files` (or run `npm pack --dry-run`); when a change lives entirely outside the published files, skip the changeset unless the user explicitly wants it recorded.
+A changeset is also not needed for changes that are not part of what a omp-web release ships to users. The release is the published npm package, and its contents are an allowlist defined by the `files` field in `package.json` (plus `package.json` itself). Anything outside that allowlist never reaches package consumers, so it cannot be a user-visible release change. This includes repo-only material such as agent skills under `.agents/` and `skills/`, internal docs, CI config, and developer tooling. If you are unsure whether a path ships, check it against `package.json` `files` (or run `bun run pack:dry`); when a change lives entirely outside the published files, skip the changeset unless the user explicitly wants it recorded.
 
 When in doubt, ask briefly or create a patch changeset with a clear note.
 
@@ -36,7 +36,7 @@ When in doubt, ask briefly or create a patch changeset with a clear note.
 Prefer the CLI when interaction is practical:
 
 ```bash
-npm run changeset
+bun run changeset
 ```
 
 For non-interactive agent work, create a file manually under `.changeset/` with a unique kebab-case name:
@@ -111,7 +111,7 @@ Keep commits and changesets aligned, but remember their audiences differ:
 During release prep, use the `npm-release-via-github-actions` skill. It should run:
 
 ```bash
-npm run release:version
+bun run release:version
 ```
 
 That consumes `.changeset/*.md`, updates `package.json` / lockfile versions, and generates or updates `CHANGELOG.md`. Publishing still happens only through GitHub Actions after a GitHub Release is published.
