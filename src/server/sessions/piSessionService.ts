@@ -542,9 +542,11 @@ function createPiWebEditToolDefinition(cwd: string): ToolDefinition {
   parameters: editTool.parameters,
   async execute(toolCallId: string, params: unknown, signal: AbortSignal | undefined, onUpdate: ((update: { content: unknown[]; details?: unknown }) => void) | undefined, ctx: ExtensionContext) {
    const paramsRec = params as Record<string, unknown>;
-   const preview = await computeEditPreview(paramsRec["path"] as string, paramsRec["edits"] as EditReplacement[], cwd);
-   if (signal?.aborted !== true) {
-    onUpdate?.({ content: [{ type: "text", text: "Edit preview computed." }], details: { preview } });
+   if (paramsRec["path"]) {
+    const preview = await computeEditPreview(paramsRec["path"] as string, paramsRec["edits"] as EditReplacement[], cwd);
+    if (signal?.aborted !== true) {
+     onUpdate?.({ content: [{ type: "text", text: "Edit preview computed." }], details: { preview } });
+    }
    }
    return editTool.execute(toolCallId, paramsRec as unknown as EditToolExecuteParams, signal, onUpdate as unknown as EditToolExecuteOnUpdate, undefined);
   },
