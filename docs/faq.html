@@ -112,7 +112,7 @@
                 a supported per-user service manager when one is available.
               </p>
               <ul>
-                <li><strong>User-service install:</strong> use <code>npm install -g @ProgmRuanSilva/omp-web</code> and <code>omp-web install</code>.</li>
+                <li><strong>User-service install:</strong> use <code>bun add -g @ProgmRuanSilva/omp-web</code> and <code>omp-web install</code>.</li>
                 <li><strong>WSL:</strong> if your distro has systemd enabled, the installer may work; otherwise use the manual run path.</li>
                 <li><strong>Native Windows:</strong> outside WSL is not the recommended path today.</li>
               </ul>
@@ -156,7 +156,7 @@
             <article id="doctor-fails" class="faq-item">
               <h2>What does <code>omp-web doctor</code> check?</h2>
               <p>
-                It checks whether the service shell and native service environment can find Node 22+, npm, Pi, and the Pi
+                It checks whether the service shell and native service environment can find Bun, Pi, and the Pi
                 Web binaries. It also prints installed and running PI WEB versions when available, reports optional ripgrep
                 availability for faster all-file <code>@</code>-mention suggestions, uses a bounded filesystem fallback when
                 ripgrep is unavailable, and reports user service lingering when relevant for server-style installs.

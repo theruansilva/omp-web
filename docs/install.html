@@ -105,9 +105,9 @@
             <section id="requirements">
               <h2>Requirements</h2>
               <ul>
-                <li><strong>Node.js 22 or newer</strong> and npm.</li>
+                <li><strong>Bun 1.1 or newer</strong>.</li>
                 <li><strong>Pi Coding Agent</strong> installed/configured so the <code>pi</code> command works for your user.</li>
-                <li>A shell login environment that exposes Node, npm, Pi, git, and any tools your agents need.</li>
+                <li>A shell login environment that exposes Bun, Pi, git, and any tools your agents need.</li>
                 <li>For the automatic installer: a supported per-user service manager.</li>
               </ul>
               <div class="callout warning">
@@ -129,7 +129,7 @@
                   <strong>User service install</strong>
                   <button class="copy-button" data-copy="#linux-install">Copy</button>
                 </div>
-                <pre id="linux-install"><code><span class="prompt">$</span> npm install -g @ProgmRuanSilva/omp-web
+                <pre id="linux-install"><code><span class="prompt">$</span> bun add -g @ProgmRuanSilva/omp-web
 <span class="prompt">$</span> omp-web install
 <span class="prompt">$</span> omp-web doctor</code></pre>
               </div>
@@ -139,7 +139,7 @@
 
             <section id="one-line">
               <h2>One-line install</h2>
-              <p>If you prefer a curl pipe for the native user-service install, use the repository installer. This path still requires Node.js, npm, and Pi Coding Agent on the host.</p>
+              <p>If you prefer a curl pipe for the native user-service install, use the repository installer. This path still requires Bun and Pi Coding Agent on the host.</p>
               <div class="code-card">
                 <div class="copy-row">
                   <strong>One-liner</strong>
@@ -180,7 +180,7 @@
                   <strong>Manual processes</strong>
                   <button class="copy-button" data-copy="#manual-install">Copy</button>
                 </div>
-                <pre id="manual-install"><code><span class="prompt">$</span> npm install -g @ProgmRuanSilva/omp-web
+                <pre id="manual-install"><code><span class="prompt">$</span> bun add -g @ProgmRuanSilva/omp-web
 
 <span class="comment"># Terminal 1</span>
 <span class="prompt">$</span> omp-web-sessiond
@@ -300,7 +300,7 @@
               <h2>Uninstall</h2>
               <p>
                 <code>omp-web uninstall</code> stops, disables, and removes PI WEB's production and development service files.
-                It does not remove the npm package, config file, or data directory.
+                It does not remove the package, config file, or data directory.
               </p>
               <div class="code-card">
                 <div class="copy-row">
@@ -308,7 +308,7 @@
                   <button class="copy-button" data-copy="#uninstall-commands">Copy</button>
                 </div>
                 <pre id="uninstall-commands"><code><span class="prompt">$</span> omp-web uninstall
-<span class="prompt">$</span> npm uninstall -g @ProgmRuanSilva/omp-web</code></pre>
+<span class="prompt">$</span> bun remove -g @ProgmRuanSilva/omp-web</code></pre>
               </div>
               <p>Optional cleanup, if you also want to delete PI WEB config and state:</p>
               <div class="code-card">

@@ -2,8 +2,8 @@
 
 This project is expected to run locally using split systemd user services:
 
-- `omp-web-sessiond.service` runs `npm run start:sessiond` in non-autoreload, non-auto-restart mode.
-- `omp-web-ui-dev.service` runs the web/API and Vite UI in dev autoreload mode with `npm run dev:web` and `npm run dev:client`.
+- `omp-web-sessiond.service` runs `bun run start:sessiond` in non-autoreload, non-auto-restart mode.
+- `omp-web-ui-dev.service` runs the web/API and Vite UI in dev autoreload mode with `bun run dev:web` and `bun run dev:client`.
 
 When working on this project, assume the session runtime owner is long-lived and separate from the autoreloading UI/API process. Browser disconnects and UI/API restarts should not stop active Pi sessions.
 
