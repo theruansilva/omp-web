@@ -52,7 +52,7 @@ describe("SessionStorageMachineNavigationMemory", () => {
 
   it("ignores malformed stored snapshots", () => {
     const storage = memoryStorage({
-      "pi-web:machine-navigation:v1": JSON.stringify({ version: 1, entries: [["local", { machineId: "local", tool: "bad", surface: { selectedFilePath: "README.md" } }], ["remote", { projectId: "missing-machine", surface: {} }]] }),
+      "omp-web:machine-navigation:v1": JSON.stringify({ version: 1, entries: [["local", { machineId: "local", tool: "bad", surface: { selectedFilePath: "README.md" } }], ["remote", { projectId: "missing-machine", surface: {} }]] }),
     });
 
     const memory = new SessionStorageMachineNavigationMemory(storage);

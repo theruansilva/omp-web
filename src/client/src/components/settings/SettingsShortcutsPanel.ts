@@ -1,7 +1,7 @@
 import { css, html, LitElement, type PropertyValues, type TemplateResult } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import type { AppAction } from "../../actions";
-import type { PiWebConfigResponse, PiWebConfigValues, PiWebShortcutConfig } from "../../api";
+import type { OmpWebConfigResponse, OmpWebConfigValues, OmpWebShortcutConfig } from "../../api";
 import { formatShortcut, isShortcutSequenceStarter, parseShortcutInput, resolveShortcutBindings, shortcutSequenceTimeoutMs, shortcutTokenFromEvent, type ShortcutBindingResolution } from "../../keyboardShortcuts";
 import { readPromptEnterPreference, writePromptEnterPreference, type PromptEnterPreference } from "../../promptEnterBehavior";
 import "./SettingsPanelFrame";
@@ -34,13 +34,13 @@ function renderShortcutsDescription(): TemplateResult {
 @customElement("settings-shortcuts-panel")
 export class SettingsShortcutsPanel extends LitElement {
   @property({ attribute: false }) actions: AppAction[] = [];
-  @property({ attribute: false }) configResponse: PiWebConfigResponse | undefined;
+  @property({ attribute: false }) configResponse: OmpWebConfigResponse | undefined;
   @property({ type: Boolean }) loading = false;
   @property({ type: Boolean }) saving = false;
   @property() error = "";
   @property() savedMessage = "";
   @property({ attribute: false }) onReload?: () => void | Promise<void>;
-  @property({ attribute: false }) onSave?: (config: PiWebConfigValues) => void | Promise<void>;
+  @property({ attribute: false }) onSave?: (config: OmpWebConfigValues) => void | Promise<void>;
   @state() private drafts: Record<string, string> = {};
   @state() private localError = "";
   @state() private promptEnterPreference: PromptEnterPreference = readPromptEnterPreference();
@@ -260,7 +260,7 @@ export class SettingsShortcutsPanel extends LitElement {
   }
 
   private async saveShortcutPreference(actionId: string, shortcut: string | null | undefined): Promise<void> {
-    const config: PiWebConfigValues = { ...(this.configResponse?.config ?? {}) };
+    const config: OmpWebConfigValues = { ...(this.configResponse?.config ?? {}) };
     const currentShortcuts = config.shortcuts ?? {};
     const shortcuts = shortcut === undefined ? withoutShortcutPreference(currentShortcuts, actionId) : { ...currentShortcuts, [actionId]: shortcut };
     if (Object.keys(shortcuts).length === 0) {
@@ -275,7 +275,7 @@ export class SettingsShortcutsPanel extends LitElement {
     return new Map(resolveShortcutBindings(this.actions, this.previewShortcutConfig(), { enabledOnly: true }).map((resolution) => [resolution.action.id, resolution]));
   }
 
-  private previewShortcutConfig(): PiWebShortcutConfig | undefined {
+  private previewShortcutConfig(): OmpWebShortcutConfig | undefined {
     const shortcuts = { ...(this.configResponse?.config.shortcuts ?? {}) };
     for (const [actionId, draft] of Object.entries(this.drafts)) {
       const trimmedDraft = draft.trim();
@@ -440,22 +440,22 @@ function compareActions(left: AppAction, right: AppAction): number {
   return (left.group ?? "Other").localeCompare(right.group ?? "Other") || left.title.localeCompare(right.title);
 }
 
-function shortcutPreference(actionId: string, shortcuts: PiWebShortcutConfig | undefined): string | null | undefined {
+function shortcutPreference(actionId: string, shortcuts: OmpWebShortcutConfig | undefined): string | null | undefined {
   if (shortcuts === undefined || !Object.hasOwn(shortcuts, actionId)) return undefined;
   return shortcuts[actionId];
 }
 
-function withoutShortcutPreference(shortcuts: PiWebShortcutConfig, actionId: string): PiWebShortcutConfig {
+function withoutShortcutPreference(shortcuts: OmpWebShortcutConfig, actionId: string): OmpWebShortcutConfig {
   return Object.fromEntries(Object.entries(shortcuts).filter(([shortcutActionId]) => shortcutActionId !== actionId));
 }
 
-function effectiveShortcut(action: AppAction, shortcuts: PiWebShortcutConfig | undefined): string | undefined {
+function effectiveShortcut(action: AppAction, shortcuts: OmpWebShortcutConfig | undefined): string | undefined {
   const configured = shortcutPreference(action.id, shortcuts);
   if (configured === null) return undefined;
   return configured ?? action.shortcut;
 }
 
-function shortcutState(action: AppAction, shortcuts: PiWebShortcutConfig | undefined): ShortcutState {
+function shortcutState(action: AppAction, shortcuts: OmpWebShortcutConfig | undefined): ShortcutState {
   const configured = shortcutPreference(action.id, shortcuts);
   if (configured === null) return "disabled";
   if (configured !== undefined) return "custom";

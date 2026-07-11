@@ -1,34 +1,34 @@
 import { describe, expect, it } from "vitest";
-import { PI_WEB_CAPABILITIES } from "../../../shared/capabilities";
-import { parseCommandResult, parseFileContentResponse, parseFileSuggestion, parseGitStatusResponse, parseMessagePage, parsePiPackageMutationResponse, parsePiPackagesResponse, parsePiWebConfigResponse, parsePiWebPluginsResponse, parsePiWebRuntimeResponse, parsePiWebStatusResponse, parseSessionBulkArchiveResponse, parseSessionBulkDeleteArchivedResponse, parseSessionCleanupExecuteResponse, parseSessionCleanupPreviewResponse, parseSessionInfo, parseSessionStatus, parseSlashCommand, parseTerminalCommandRun, parseTerminalInfo, parseWorkspace, parseWorkspaceActivityResponse } from "./parsers";
+import { OMP_WEB_CAPABILITIES } from "../../../shared/capabilities";
+import { parseCommandResult, parseFileContentResponse, parseFileSuggestion, parseGitStatusResponse, parseMessagePage, parsePiPackageMutationResponse, parsePiPackagesResponse, parseOmpWebConfigResponse, parseOmpWebPluginsResponse, parseOmpWebRuntimeResponse, parseOmpWebStatusResponse, parseSessionBulkArchiveResponse, parseSessionBulkDeleteArchivedResponse, parseSessionCleanupExecuteResponse, parseSessionCleanupPreviewResponse, parseSessionInfo, parseSessionStatus, parseSlashCommand, parseTerminalCommandRun, parseTerminalInfo, parseWorkspace, parseWorkspaceActivityResponse } from "./parsers";
 
 describe("API parsers", () => {
   it("parses PI WEB config responses", () => {
-    expect(parsePiWebConfigResponse({
+    expect(parseOmpWebConfigResponse({
       path: "/tmp/config.json",
       exists: true,
       config: { host: "0.0.0.0", port: 8504, allowedHosts: ["example.local"], shortcuts: { "core:view.chat": "mod+1", "core:session.stop": null }, plugins: { info: { enabled: false, settings: { compact: true } } }, pathAccess: { allowedPaths: ["/tmp"] }, uploads: { defaultFolder: "manual/uploads" }, maxUploadBytes: 1234 },
-      effectiveConfig: { host: "127.0.0.1", port: 8504, allowedHosts: true, pathAccess: { allowedPaths: ["/tmp"] }, uploads: { defaultFolder: ".pi-web/uploads" } },
+      effectiveConfig: { host: "127.0.0.1", port: 8504, allowedHosts: true, pathAccess: { allowedPaths: ["/tmp"] }, uploads: { defaultFolder: ".omp-web/uploads" } },
       envOverrides: { host: true, port: false, allowedHosts: false, spawnSessions: false, subsessions: false },
     })).toEqual({
       path: "/tmp/config.json",
       exists: true,
       config: { host: "0.0.0.0", port: 8504, allowedHosts: ["example.local"], shortcuts: { "core:view.chat": "mod+1", "core:session.stop": null }, plugins: { info: { enabled: false, settings: { compact: true } } }, pathAccess: { allowedPaths: ["/tmp"] }, uploads: { defaultFolder: "manual/uploads" }, maxUploadBytes: 1234 },
-      effectiveConfig: { host: "127.0.0.1", port: 8504, allowedHosts: true, pathAccess: { allowedPaths: ["/tmp"] }, uploads: { defaultFolder: ".pi-web/uploads" } },
+      effectiveConfig: { host: "127.0.0.1", port: 8504, allowedHosts: true, pathAccess: { allowedPaths: ["/tmp"] }, uploads: { defaultFolder: ".omp-web/uploads" } },
       envOverrides: { host: true, port: false, allowedHosts: false, spawnSessions: false, subsessions: false },
     });
   });
 
   it("parses PI WEB runtime responses", () => {
-    expect(parsePiWebRuntimeResponse({
+    expect(parseOmpWebRuntimeResponse({
       packageName: "@ProgmRuanSilva/omp-web",
       generatedAt: "now",
       components: {
-        web: { component: "web", label: "Web/UI", runtimeVersion: "1.0.0", available: true, capabilities: [PI_WEB_CAPABILITIES.sessionsDeleteArchived, PI_WEB_CAPABILITIES.piPackagesManage, "future.capability"] },
-        sessiond: { component: "sessiond", label: "Session daemon", runtimeVersion: "1.0.0", available: true, capabilities: [PI_WEB_CAPABILITIES.sessionsDeleteArchived] },
+        web: { component: "web", label: "Web/UI", runtimeVersion: "1.0.0", available: true, capabilities: [OMP_WEB_CAPABILITIES.sessionsDeleteArchived, OMP_WEB_CAPABILITIES.piPackagesManage, "future.capability"] },
+        sessiond: { component: "sessiond", label: "Session daemon", runtimeVersion: "1.0.0", available: true, capabilities: [OMP_WEB_CAPABILITIES.sessionsDeleteArchived] },
       },
-      capabilities: [PI_WEB_CAPABILITIES.sessionsDeleteArchived, PI_WEB_CAPABILITIES.piPackagesManage, "future.capability"],
-    })).toMatchObject({ capabilities: [PI_WEB_CAPABILITIES.sessionsDeleteArchived, PI_WEB_CAPABILITIES.piPackagesManage] });
+      capabilities: [OMP_WEB_CAPABILITIES.sessionsDeleteArchived, OMP_WEB_CAPABILITIES.piPackagesManage, "future.capability"],
+    })).toMatchObject({ capabilities: [OMP_WEB_CAPABILITIES.sessionsDeleteArchived, OMP_WEB_CAPABILITIES.piPackagesManage] });
   });
 
   it("parses Pi package list and mutation responses", () => {
@@ -58,20 +58,20 @@ describe("API parsers", () => {
       packageName: "@ProgmRuanSilva/omp-web",
       generatedAt: "now",
       components: {
-        web: { component: "web", label: "Web/UI", runtimeVersion: "1.0.0", available: true, stale: false, installation: { kind: "docker", path: "/srv/pi-web-docker", dockerMode: "runtime" } },
+        web: { component: "web", label: "Web/UI", runtimeVersion: "1.0.0", available: true, stale: false, installation: { kind: "docker", path: "/srv/omp-web-docker", dockerMode: "runtime" } },
         sessiond: { component: "sessiond", label: "Session daemon", runtimeVersion: "1.0.0", available: true, stale: false, installation: { kind: "docker", dockerMode: "dev" } },
       },
       release: { packageName: "@ProgmRuanSilva/omp-web", updateAvailable: false },
-      commands: { restart: "pi-web-docker restart", status: "pi-web-docker status" },
+      commands: { restart: "omp-web-docker restart", status: "omp-web-docker status" },
       messages: [],
     };
 
-    const parsed = parsePiWebStatusResponse(response);
+    const parsed = parseOmpWebStatusResponse(response);
 
-    expect(parsed.components.web.installation).toEqual({ kind: "docker", path: "/srv/pi-web-docker", dockerMode: "runtime" });
+    expect(parsed.components.web.installation).toEqual({ kind: "docker", path: "/srv/omp-web-docker", dockerMode: "runtime" });
     expect(parsed.components.sessiond.installation).toEqual({ kind: "docker", dockerMode: "dev" });
-    expect(parsed.commands).toEqual({ restart: "pi-web-docker restart", status: "pi-web-docker status" });
-    expect(() => parsePiWebStatusResponse({
+    expect(parsed.commands).toEqual({ restart: "omp-web-docker restart", status: "omp-web-docker status" });
+    expect(() => parseOmpWebStatusResponse({
       ...response,
       components: {
         ...response.components,
@@ -81,10 +81,10 @@ describe("API parsers", () => {
   });
 
   it("parses PI WEB plugin status responses", () => {
-    expect(parsePiWebPluginsResponse({
-      plugins: [{ id: "info", module: "/pi-web-plugins/info/pi-web-plugin.js?v=1", source: "bundled", scope: "bundled", machineSpecific: true, enabled: false }],
+    expect(parseOmpWebPluginsResponse({
+      plugins: [{ id: "info", module: "/omp-web-plugins/info/omp-web-plugin.js?v=1", source: "bundled", scope: "bundled", machineSpecific: true, enabled: false }],
     })).toEqual({
-      plugins: [{ id: "info", module: "/pi-web-plugins/info/pi-web-plugin.js?v=1", source: "bundled", scope: "bundled", machineSpecific: true, enabled: false }],
+      plugins: [{ id: "info", module: "/omp-web-plugins/info/omp-web-plugin.js?v=1", source: "bundled", scope: "bundled", machineSpecific: true, enabled: false }],
     });
   });
 

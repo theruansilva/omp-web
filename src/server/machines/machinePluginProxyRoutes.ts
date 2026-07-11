@@ -1,6 +1,6 @@
 import type { FastifyInstance, FastifyReply } from "fastify";
 import { machineScopedPluginId, parseMachineScopedPluginId, type MachineScopedPluginIdParts } from "../../shared/machinePluginIds.js";
-import { isPiWebPluginId } from "../../shared/pluginIds.js";
+import { isOmpWebPluginId } from "../../shared/pluginIds.js";
 import { RemoteMachineRequestError, type MachineClient } from "./machineClient.js";
 import { MachineService } from "./machineService.js";
 
@@ -33,14 +33,14 @@ const SAFE_RESPONSE_HEADERS = new Set([
 ]);
 
 export function registerMachinePluginProxyRoutes(app: FastifyInstance, machines: MachinePluginProxyMachines = new MachineService()): void {
-  app.get<{ Params: { machineId: string } }>("/api/machines/:machineId/pi-web-plugins/manifest.json", async (request, reply) => {
+  app.get<{ Params: { machineId: string } }>("/api/machines/:machineId/omp-web-plugins/manifest.json", async (request, reply) => {
     if (request.params.machineId === "local") return { plugins: [] };
 
     const client = await machines.remoteClient(request.params.machineId);
     if (client === undefined) return reply.code(404).send({ error: "Machine not found" });
 
     try {
-      const response = await client.requestJson("GET", "/pi-web-plugins/manifest.json", undefined, { timeoutMs: MACHINE_PLUGIN_MANIFEST_TIMEOUT_MS });
+      const response = await client.requestJson("GET", "/omp-web-plugins/manifest.json", undefined, { timeoutMs: MACHINE_PLUGIN_MANIFEST_TIMEOUT_MS });
       if (response.statusCode === 404) return { plugins: [] };
       if (response.statusCode < 200 || response.statusCode >= 300) return await reply.code(response.statusCode).send(response.body);
       return rewriteRemotePluginManifest(request.params.machineId, parseRemoteManifest(response.body));
@@ -86,16 +86,16 @@ function rewriteRemotePluginManifest(machineId: string, manifest: RemotePluginMa
       if (modulePath === undefined) return [];
       return [{
         ...plugin,
-        module: `/pi-web-plugins/${encodeURIComponent(machineScopedPluginId(machineId, plugin.id))}/${modulePath.path}${modulePath.query}`,
+        module: `/omp-web-plugins/${encodeURIComponent(machineScopedPluginId(machineId, plugin.id))}/${modulePath.path}${modulePath.query}`,
       }];
     }),
   };
 }
 
 function remotePluginModulePath(pluginId: string, module: string): { path: string; query: string } | undefined {
-  if (!isPiWebPluginId(pluginId)) return undefined;
-  const prefix = `/pi-web-plugins/${encodeURIComponent(pluginId)}/`;
-  const base = new URL(prefix, "http://pi-web.local");
+  if (!isOmpWebPluginId(pluginId)) return undefined;
+  const prefix = `/omp-web-plugins/${encodeURIComponent(pluginId)}/`;
+  const base = new URL(prefix, "http://omp-web.local");
   try {
     const url = new URL(module, base);
     if (url.origin !== base.origin || !url.pathname.startsWith(prefix)) return undefined;
@@ -110,7 +110,7 @@ function remotePluginAssetRequestPath(remotePlugin: MachineScopedPluginIdParts, 
   const path = safeRemotePluginAssetPath(assetPath);
   if (path === undefined) return undefined;
   const query = requestUrl.includes("?") ? requestUrl.slice(requestUrl.indexOf("?")) : "";
-  return `/pi-web-plugins/${encodeURIComponent(remotePlugin.pluginId)}/${path}${query}`;
+  return `/omp-web-plugins/${encodeURIComponent(remotePlugin.pluginId)}/${path}${query}`;
 }
 
 function safeRemotePluginAssetPath(path: string): string | undefined {
@@ -151,7 +151,7 @@ function parseRemoteManifest(value: unknown): RemotePluginManifest {
   if (!isRecord(value) || !Array.isArray(value["plugins"])) throw new Error("Invalid remote PI WEB plugin manifest");
   return {
     plugins: value["plugins"].map((entry) => {
-      if (!isRecord(entry) || typeof entry["id"] !== "string" || !isPiWebPluginId(entry["id"]) || typeof entry["module"] !== "string" || entry["module"] === "") {
+      if (!isRecord(entry) || typeof entry["id"] !== "string" || !isOmpWebPluginId(entry["id"]) || typeof entry["module"] !== "string" || entry["module"] === "") {
         throw new Error("Invalid remote PI WEB plugin manifest entry");
       }
       return {

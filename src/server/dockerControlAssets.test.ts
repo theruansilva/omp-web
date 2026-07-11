@@ -7,7 +7,7 @@ import { fileURLToPath } from "node:url";
 import { beforeEach, afterEach, describe, expect, it } from "vitest";
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..");
-const dockerEntrypoint = join(repoRoot, "docker", "pi-web-docker");
+const dockerEntrypoint = join(repoRoot, "docker", "omp-web-docker");
 
 let tempDir = "";
 
@@ -22,7 +22,7 @@ interface FakeDocker {
 }
 
 beforeEach(async () => {
-  tempDir = await mkdtemp(join(tmpdir(), "pi-web-docker-test-"));
+  tempDir = await mkdtemp(join(tmpdir(), "omp-web-docker-test-"));
 });
 
 afterEach(async () => {
@@ -54,32 +54,32 @@ describe("Docker command assets", () => {
       readRepoFile("docker/.dockerignore"),
     ]);
 
-    expect(dockerfile).toContain("COPY pi-web-docker /usr/local/bin/pi-web-docker");
+    expect(dockerfile).toContain("COPY omp-web-docker /usr/local/bin/omp-web-docker");
     expect(dockerfile).toContain("COPY internal/bin/hostexec /usr/local/bin/hostexec");
-    expect(dockerfile).toContain("COPY internal/image/install-opensuse-base /usr/local/sbin/install-pi-web-opensuse-base");
-    expect(devDockerfile).toContain("COPY docker/pi-web-docker /usr/local/bin/pi-web-docker");
+    expect(dockerfile).toContain("COPY internal/image/install-opensuse-base /usr/local/sbin/install-omp-web-opensuse-base");
+    expect(devDockerfile).toContain("COPY docker/omp-web-docker /usr/local/bin/omp-web-docker");
     expect(devDockerfile).toContain("COPY docker/internal/bin/hostexec /usr/local/bin/hostexec");
-    expect(dockerignore).toContain("!pi-web-docker");
+    expect(dockerignore).toContain("!omp-web-docker");
     expect(dockerignore).toContain("!internal/bin/hostexec");
-    expect(installer).toContain("write_asset pi-web-docker 0755");
+    expect(installer).toContain("write_asset omp-web-docker 0755");
     expect(installer).toContain("write_asset internal/host-profile.sh 0644");
     expect(installer).toContain("compose_cmd --project-name \"$compose_project_name\"");
-    expect(installer).toContain("PI_WEB_DOCKER_INSTALL_DIR=$install_dir");
-    expect(installer).toContain("PI_WEB_DOCKER_REF=$asset_ref");
+    expect(installer).toContain("OMP_WEB_DOCKER_INSTALL_DIR=$install_dir");
+    expect(installer).toContain("OMP_WEB_DOCKER_REF=$asset_ref");
     expect(installer).toContain("COMPOSE_PROJECT_NAME=$compose_project_name");
     expect(devWrapper).toContain("$repo_root/docker/internal/host-profile.sh");
     expect(devWrapper).toContain("--project-name \"$compose_project_name\"");
-    expect(devWrapper).toContain("PI_WEB_DOCKER_DEV_REPO_ROOT=$repo_root");
+    expect(devWrapper).toContain("OMP_WEB_DOCKER_DEV_REPO_ROOT=$repo_root");
     expect(devWrapper).toContain("COMPOSE_PROJECT_NAME=$compose_project_name");
-    expect(runtimeCompose).toContain("PI_WEB_DOCKER_RUNTIME: \"1\"");
-    expect(runtimeCompose).toContain("PI_WEB_DOCKER_MODE: runtime");
-    expect(runtimeCompose).toContain("PI_WEB_DOCKER_INSTALL_DIR: ${PI_WEB_DOCKER_INSTALL_DIR:?set by docker/install.sh}");
-    expect(runtimeCompose).toContain("PI_WEB_DOCKER_HELPER_IMAGE: ${PI_WEB_IMAGE:-pi-web:local}");
-    expect(runtimeCompose).toContain("COMPOSE_PROJECT_NAME: ${COMPOSE_PROJECT_NAME:-pi-web}");
-    expect(devCompose).toContain("PI_WEB_DOCKER_MODE: dev");
-    expect(devCompose).toContain("PI_WEB_DOCKER_DEV_REPO_ROOT: ${PI_WEB_DOCKER_DEV_REPO_ROOT:?set by docker/pi-web-docker --dev}");
-    expect(devCompose).toContain("PI_WEB_DOCKER_HELPER_IMAGE: ${PI_WEB_DEV_IMAGE:-pi-web:dev}");
-    expect(devCompose).toContain("COMPOSE_PROJECT_NAME: ${COMPOSE_PROJECT_NAME:-pi-web-dev}");
+    expect(runtimeCompose).toContain("OMP_WEB_DOCKER_RUNTIME: \"1\"");
+    expect(runtimeCompose).toContain("OMP_WEB_DOCKER_MODE: runtime");
+    expect(runtimeCompose).toContain("OMP_WEB_DOCKER_INSTALL_DIR: ${OMP_WEB_DOCKER_INSTALL_DIR:?set by docker/install.sh}");
+    expect(runtimeCompose).toContain("OMP_WEB_DOCKER_HELPER_IMAGE: ${OMP_WEB_IMAGE:-omp-web:local}");
+    expect(runtimeCompose).toContain("COMPOSE_PROJECT_NAME: ${COMPOSE_PROJECT_NAME:-omp-web}");
+    expect(devCompose).toContain("OMP_WEB_DOCKER_MODE: dev");
+    expect(devCompose).toContain("OMP_WEB_DOCKER_DEV_REPO_ROOT: ${OMP_WEB_DOCKER_DEV_REPO_ROOT:?set by docker/omp-web-docker --dev}");
+    expect(devCompose).toContain("OMP_WEB_DOCKER_HELPER_IMAGE: ${OMP_WEB_DEV_IMAGE:-omp-web:dev}");
+    expect(devCompose).toContain("COMPOSE_PROJECT_NAME: ${COMPOSE_PROJECT_NAME:-omp-web-dev}");
   });
 
   dockerCommandIt("runs status through Docker Compose in the foreground", async () => {
@@ -88,10 +88,10 @@ describe("Docker command assets", () => {
 
     const result = await runDockerCommand(["status"], runtimeEnv(fakeDocker, installDir));
 
-    expect(result.stdout).toContain("fake docker compose --project-name pi-web-test --env-file .env -f compose.yml -f compose.override.yml ps");
+    expect(result.stdout).toContain("fake docker compose --project-name omp-web-test --env-file .env -f compose.yml -f compose.override.yml ps");
     const log = await readFile(fakeDocker.logPath, "utf8");
     expect(log).toContain("compose version");
-    expect(log).toContain("compose --project-name pi-web-test --env-file .env -f compose.yml -f compose.override.yml ps");
+    expect(log).toContain("compose --project-name omp-web-test --env-file .env -f compose.yml -f compose.override.yml ps");
     expect(log).not.toContain("run -d");
   });
 
@@ -108,12 +108,12 @@ describe("Docker command assets", () => {
     await runDockerCommand(["cli", "config", "show"], env);
 
     const log = await readFile(fakeDocker.logPath, "utf8");
-    expect(log).toContain("compose --project-name pi-web-test --env-file .env -f compose.yml -f compose.override.yml up -d");
-    expect(log).toContain("compose --project-name pi-web-test --env-file .env -f compose.yml -f compose.override.yml down");
-    expect(log).toContain("compose --project-name pi-web-test --env-file .env -f compose.yml -f compose.override.yml restart sessiond");
-    expect(log).toContain("compose --project-name pi-web-test --env-file .env -f compose.yml -f compose.override.yml logs -f web");
-    expect(log).toContain("compose --project-name pi-web-test --env-file .env -f compose.yml -f compose.override.yml exec sessiond bash");
-    expect(log).toContain("compose --project-name pi-web-test --env-file .env -f compose.yml -f compose.override.yml exec web pi-web config show");
+    expect(log).toContain("compose --project-name omp-web-test --env-file .env -f compose.yml -f compose.override.yml up -d");
+    expect(log).toContain("compose --project-name omp-web-test --env-file .env -f compose.yml -f compose.override.yml down");
+    expect(log).toContain("compose --project-name omp-web-test --env-file .env -f compose.yml -f compose.override.yml restart sessiond");
+    expect(log).toContain("compose --project-name omp-web-test --env-file .env -f compose.yml -f compose.override.yml logs -f web");
+    expect(log).toContain("compose --project-name omp-web-test --env-file .env -f compose.yml -f compose.override.yml exec sessiond bash");
+    expect(log).toContain("compose --project-name omp-web-test --env-file .env -f compose.yml -f compose.override.yml exec web omp-web config show");
     expect(log).not.toContain("run -d");
   });
 
@@ -127,7 +127,7 @@ describe("Docker command assets", () => {
     });
 
     const log = await readFile(fakeDocker.logPath, "utf8");
-    expect(log).toContain("compose --project-name pi-web-test --env-file .env -f compose.yml -f compose.override.yml ps");
+    expect(log).toContain("compose --project-name omp-web-test --env-file .env -f compose.yml -f compose.override.yml ps");
     expect(log).not.toContain("--project-name ambient-project");
   });
 
@@ -141,48 +141,48 @@ describe("Docker command assets", () => {
     const runtimeEnvFile = join(tempDir, "runtime.env");
     const socketPath = join(home, ".docker", "run", "docker.sock");
     await writeFile(runtimeEnvFile, [
-      "PI_WEB_UID=0",
-      "PI_WEB_GID=0",
-      `PI_WEB_DOCKER_DATA_DIR=${runtimeDataDir}`,
-      "PI_WEB_BIND_ADDR=0.0.0.0",
+      "OMP_WEB_UID=0",
+      "OMP_WEB_GID=0",
+      `OMP_WEB_DOCKER_DATA_DIR=${runtimeDataDir}`,
+      "OMP_WEB_BIND_ADDR=0.0.0.0",
       "COMPOSE_PROJECT_NAME=runtime-project",
       "",
     ].join("\n"));
 
     await withUnixSocket(socketPath, async () => {
-      await runDockerCommand(["--dev", "status"], devHostEnv(fakeDocker, devRoot, home, { PI_WEB_DOCKER_RUNTIME_ENV_FILE: runtimeEnvFile }));
+      await runDockerCommand(["--dev", "status"], devHostEnv(fakeDocker, devRoot, home, { OMP_WEB_DOCKER_RUNTIME_ENV_FILE: runtimeEnvFile }));
     });
 
-    const generatedEnvPath = join(devRoot, ".pi-web", "docker-compose-dev.generated.env");
+    const generatedEnvPath = join(devRoot, ".omp-web", "docker-compose-dev.generated.env");
     const generatedEnv = await readFile(generatedEnvPath, "utf8");
-    expect(generatedEnv).toContain("PI_WEB_UID=1234\n");
-    expect(generatedEnv).toContain("PI_WEB_GID=2345\n");
+    expect(generatedEnv).toContain("OMP_WEB_UID=1234\n");
+    expect(generatedEnv).toContain("OMP_WEB_GID=2345\n");
     expect(generatedEnv).toContain("DOCKER_GID=0\n");
-    expect(generatedEnv).toContain(`PI_WEB_DOCKER_DATA_DIR=${runtimeDataDir}\n`);
-    expect(generatedEnv).toContain(`PI_WEB_DOCKER_DEV_REPO_ROOT=${devRoot}\n`);
-    expect(generatedEnv).toContain("COMPOSE_PROJECT_NAME=pi-web-dev\n");
-    expect(generatedEnv).toContain("PI_WEB_DEV_API_BIND_ADDR=0.0.0.0\n");
+    expect(generatedEnv).toContain(`OMP_WEB_DOCKER_DATA_DIR=${runtimeDataDir}\n`);
+    expect(generatedEnv).toContain(`OMP_WEB_DOCKER_DEV_REPO_ROOT=${devRoot}\n`);
+    expect(generatedEnv).toContain("COMPOSE_PROJECT_NAME=omp-web-dev\n");
+    expect(generatedEnv).toContain("OMP_WEB_DEV_API_BIND_ADDR=0.0.0.0\n");
     expect(generatedEnv).not.toContain("COMPOSE_PROJECT_NAME=runtime-project");
 
     await withUnixSocket(socketPath, async () => {
       await runDockerCommand(["--dev", "status"], devHostEnv(fakeDocker, devRoot, home, {
         COMPOSE_PROJECT_NAME: "ambient-dev-project",
-        PI_WEB_DOCKER_RUNTIME_ENV_FILE: runtimeEnvFile,
+        OMP_WEB_DOCKER_RUNTIME_ENV_FILE: runtimeEnvFile,
       }));
     });
     const regeneratedEnv = await readFile(generatedEnvPath, "utf8");
-    expect(regeneratedEnv).toContain("COMPOSE_PROJECT_NAME=pi-web-dev\n");
-    expect(regeneratedEnv).toContain(`PI_WEB_DOCKER_DATA_DIR=${runtimeDataDir}\n`);
+    expect(regeneratedEnv).toContain("COMPOSE_PROJECT_NAME=omp-web-dev\n");
+    expect(regeneratedEnv).toContain(`OMP_WEB_DOCKER_DATA_DIR=${runtimeDataDir}\n`);
     expect(regeneratedEnv).not.toContain("COMPOSE_PROJECT_NAME=ambient-dev-project");
 
-    const localConfig = await readFile(join(devRoot, ".pi-web", "docker-compose-dev.local.env"), "utf8");
-    expect(localConfig).toContain("docker/pi-web-docker --dev creates this file once");
-    expect(localConfig).toContain("PI_WEB_UID and PI_WEB_GID default to the current host user");
-    const override = await readFile(join(devRoot, ".pi-web", "docker-compose-dev.host.generated.yml"), "utf8");
+    const localConfig = await readFile(join(devRoot, ".omp-web", "docker-compose-dev.local.env"), "utf8");
+    expect(localConfig).toContain("docker/omp-web-docker --dev creates this file once");
+    expect(localConfig).toContain("OMP_WEB_UID and OMP_WEB_GID default to the current host user");
+    const override = await readFile(join(devRoot, ".omp-web", "docker-compose-dev.host.generated.yml"), "utf8");
     expect(override).toContain(socketPath);
     expect(override).toContain(devRoot);
     const log = await readFile(fakeDocker.logPath, "utf8");
-    expect(log).toContain(`compose --project-name pi-web-dev --env-file ${generatedEnvPath} -f ${devRoot}/docker/compose.dev.yml -f ${devRoot}/.pi-web/docker-compose-dev.host.generated.yml ps`);
+    expect(log).toContain(`compose --project-name omp-web-dev --env-file ${generatedEnvPath} -f ${devRoot}/docker/compose.dev.yml -f ${devRoot}/.omp-web/docker-compose-dev.host.generated.yml ps`);
   });
 
   dockerCommandIt("rejects development commands as root unless explicitly allowed", async () => {
@@ -207,7 +207,7 @@ describe("Docker command assets", () => {
     await runDockerCommand(["--dev", "--allow-root", "status"], {
       ...cleanProcessEnv(),
       PATH: `${fakeDocker.binDir}:${process.env["PATH"] ?? ""}`,
-      PI_WEB_DOCKER_DEV_REPO_ROOT: devRoot,
+      OMP_WEB_DOCKER_DEV_REPO_ROOT: devRoot,
     });
 
     expect(await readFile(helperLog, "utf8")).toBe("allow=1 args=ps\n");
@@ -221,24 +221,24 @@ describe("Docker command assets", () => {
     await runDockerCommand(["--dev", "restart-sessiond"], devRuntimeEnv(fakeDocker, devRoot));
 
     const log = await readFile(fakeDocker.logPath, "utf8");
-    expect(log).toContain(`--env-file ${devRoot}/.pi-web/docker-compose-dev.generated.env`);
+    expect(log).toContain(`--env-file ${devRoot}/.omp-web/docker-compose-dev.generated.env`);
     expect(log).toContain("--group-add 3456");
     expect(log).toContain("--user 1234:2345");
-    expect(log).toContain("PI_WEB_DOCKER_MODE=dev");
-    expect(log).toContain("PI_WEB_DOCKER_ALLOW_ROOT=0");
-    expect(log).toContain("PI_WEB_DOCKER_HELPER_IMAGE=pi-web:test");
-    expect(log).toContain(`PI_WEB_DOCKER_DEV_REPO_ROOT=${devRoot}`);
-    expect(log).toContain("COMPOSE_PROJECT_NAME=pi-web-dev-test");
-    expect(log).toContain("pi-web.docker-helper.mode=dev");
-    expect(log).toContain("pi-web:test pi-web-docker --dev __run-detached restart-sessiond");
+    expect(log).toContain("OMP_WEB_DOCKER_MODE=dev");
+    expect(log).toContain("OMP_WEB_DOCKER_ALLOW_ROOT=0");
+    expect(log).toContain("OMP_WEB_DOCKER_HELPER_IMAGE=omp-web:test");
+    expect(log).toContain(`OMP_WEB_DOCKER_DEV_REPO_ROOT=${devRoot}`);
+    expect(log).toContain("COMPOSE_PROJECT_NAME=omp-web-dev-test");
+    expect(log).toContain("omp-web.docker-helper.mode=dev");
+    expect(log).toContain("omp-web:test omp-web-docker --dev __run-detached restart-sessiond");
     expect(log).not.toContain("--user 0:0");
   });
 
   dockerCommandIt("rejects inside-container commands whose explicit mode does not match the container mode", async () => {
     const result = await runDockerCommandAllowFailure(["restart-sessiond"], {
       ...cleanProcessEnv(),
-      PI_WEB_DOCKER_RUNTIME: "1",
-      PI_WEB_DOCKER_MODE: "dev",
+      OMP_WEB_DOCKER_RUNTIME: "1",
+      OMP_WEB_DOCKER_MODE: "dev",
     });
 
     expect(result.exitCode).not.toBe(0);
@@ -257,15 +257,15 @@ describe("Docker command assets", () => {
     const result = await runDockerCommandAllowFailure(["start"], {
       ...cleanProcessEnv(),
       PATH: `${fakeDocker.binDir}:${process.env["PATH"] ?? ""}`,
-      HOME: "/home/pi-web-test",
+      HOME: "/home/omp-web-test",
     });
 
     expect(result.exitCode).not.toBe(0);
     expect(result.stderr).toContain("runtime install assets were not found");
     expect(result.stderr).toContain("running this checkout's Docker command in runtime mode");
-    expect(result.stderr).toContain("./docker/pi-web-docker --dev start");
-    expect(result.stderr).toContain("/home/pi-web-test/.local/share/pi-web-docker/pi-web-docker start");
-    expect(result.stderr).toContain("PI_WEB_DOCKER_INSTALL_DIR");
+    expect(result.stderr).toContain("./docker/omp-web-docker --dev start");
+    expect(result.stderr).toContain("/home/omp-web-test/.local/share/omp-web-docker/omp-web-docker start");
+    expect(result.stderr).toContain("OMP_WEB_DOCKER_INSTALL_DIR");
   });
 
   dockerCommandIt("starts restart-sessiond in a detached Docker helper", async () => {
@@ -275,7 +275,7 @@ describe("Docker command assets", () => {
     const result = await runDockerCommand(["restart-sessiond"], runtimeEnv(fakeDocker, installDir));
 
     expect(result.stdout).toContain("Started detached PI WEB Docker helper");
-    expect(result.stdout).toContain("Follow progress with: docker logs -f pi-web-docker-restart-sessiond-");
+    expect(result.stdout).toContain("Follow progress with: docker logs -f omp-web-docker-restart-sessiond-");
     const log = await readFile(fakeDocker.logPath, "utf8");
     expect(log).toContain("container inspect");
     expect(log).toContain("run -d");
@@ -284,18 +284,18 @@ describe("Docker command assets", () => {
     expect(log).toContain("--volumes-from");
     expect(log).toContain("--group-add 3456");
     expect(log).toContain("--user 1234:2345");
-    expect(log).toContain(`PI_WEB_DOCKER_INSTALL_DIR=${installDir}`);
-    expect(log).toContain(`PI_WEB_DOCKER_DATA_DIR=${join(installDir, "data")}`);
-    expect(log).toContain("PI_WEB_PORT=12345");
-    expect(log).toContain("PI_WEB_DOCKER_EXTRA_HOST_PATHS=/srv/pi-web-extra /opt/pi-web-extra");
-    expect(log).toContain("PI_WEB_EXTRA_ZYPPER_PACKAGES=git-lfs jq");
-    expect(log).not.toContain('PI_WEB_EXTRA_ZYPPER_PACKAGES="git-lfs jq"');
-    expect(log).toContain("PI_WEB_DOCKER_HELPER_IMAGE=pi-web:test");
-    expect(log).toContain("COMPOSE_PROJECT_NAME=pi-web-test");
-    expect(log).toContain("pi-web.docker-helper.mode=runtime");
-    expect(log).toContain("pi-web.docker-helper.root=");
-    expect(log).toContain("pi-web.docker-helper.project=pi-web-test");
-    expect(log).toContain("pi-web:test pi-web-docker __run-detached restart-sessiond");
+    expect(log).toContain(`OMP_WEB_DOCKER_INSTALL_DIR=${installDir}`);
+    expect(log).toContain(`OMP_WEB_DOCKER_DATA_DIR=${join(installDir, "data")}`);
+    expect(log).toContain("OMP_WEB_PORT=12345");
+    expect(log).toContain("OMP_WEB_DOCKER_EXTRA_HOST_PATHS=/srv/omp-web-extra /opt/omp-web-extra");
+    expect(log).toContain("OMP_WEB_EXTRA_ZYPPER_PACKAGES=git-lfs jq");
+    expect(log).not.toContain('OMP_WEB_EXTRA_ZYPPER_PACKAGES="git-lfs jq"');
+    expect(log).toContain("OMP_WEB_DOCKER_HELPER_IMAGE=omp-web:test");
+    expect(log).toContain("COMPOSE_PROJECT_NAME=omp-web-test");
+    expect(log).toContain("omp-web.docker-helper.mode=runtime");
+    expect(log).toContain("omp-web.docker-helper.root=");
+    expect(log).toContain("omp-web.docker-helper.project=omp-web-test");
+    expect(log).toContain("omp-web:test omp-web-docker __run-detached restart-sessiond");
     expect(log).not.toContain("--user 0:0");
     expect(log).not.toContain("compose -f compose.yml -f compose.override.yml restart sessiond");
   });
@@ -307,7 +307,7 @@ describe("Docker command assets", () => {
     await runDockerCommand(["__run-detached", "restart-sessiond"], runtimeEnv(fakeDocker, installDir));
 
     const log = await readFile(fakeDocker.logPath, "utf8");
-    expect(log).toContain("compose --project-name pi-web-test --env-file .env -f compose.yml -f compose.override.yml restart sessiond");
+    expect(log).toContain("compose --project-name omp-web-test --env-file .env -f compose.yml -f compose.override.yml restart sessiond");
     expect(log).not.toContain("run -d");
   });
 
@@ -318,8 +318,8 @@ describe("Docker command assets", () => {
     await runDockerCommand(["__run-detached", "update"], runtimeEnv(fakeDocker, installDir));
 
     const log = await readFile(fakeDocker.logPath, "utf8");
-    expect(log).toContain("compose --project-name pi-web-test --env-file .env -f compose.yml -f compose.override.yml build --pull --no-cache");
-    expect(log).toContain("compose --project-name pi-web-test --env-file .env -f compose.yml -f compose.override.yml up -d --force-recreate --remove-orphans");
+    expect(log).toContain("compose --project-name omp-web-test --env-file .env -f compose.yml -f compose.override.yml build --pull --no-cache");
+    expect(log).toContain("compose --project-name omp-web-test --env-file .env -f compose.yml -f compose.override.yml up -d --force-recreate --remove-orphans");
     expect(log).not.toContain("run -d");
   });
 });
@@ -361,20 +361,20 @@ async function createRuntimeInstall(): Promise<string> {
   const installDir = join(tempDir, "runtime");
   await mkdir(installDir, { recursive: true });
   await writeFile(join(installDir, ".env"), [
-    "PI_WEB_UID=1234",
-    "PI_WEB_GID=2345",
+    "OMP_WEB_UID=1234",
+    "OMP_WEB_GID=2345",
     "DOCKER_GID=3456",
-    `PI_WEB_DOCKER_DATA_DIR=${join(installDir, "data")}`,
-    `PI_WEB_DOCKER_INSTALL_DIR=${installDir}`,
-    "PI_WEB_DOCKER_EXTRA_HOST_PATHS=\"/srv/pi-web-extra /opt/pi-web-extra\"",
-    "PI_WEB_BIND_ADDR=127.0.0.1",
-    "PI_WEB_PORT=12345",
-    "PI_WEB_EXTRA_ZYPPER_PACKAGES=\"git-lfs jq\"",
-    "PI_WEB_IMAGE=pi-web:test",
-    "COMPOSE_PROJECT_NAME=pi-web-test",
+    `OMP_WEB_DOCKER_DATA_DIR=${join(installDir, "data")}`,
+    `OMP_WEB_DOCKER_INSTALL_DIR=${installDir}`,
+    "OMP_WEB_DOCKER_EXTRA_HOST_PATHS=\"/srv/omp-web-extra /opt/omp-web-extra\"",
+    "OMP_WEB_BIND_ADDR=127.0.0.1",
+    "OMP_WEB_PORT=12345",
+    "OMP_WEB_EXTRA_ZYPPER_PACKAGES=\"git-lfs jq\"",
+    "OMP_WEB_IMAGE=omp-web:test",
+    "COMPOSE_PROJECT_NAME=omp-web-test",
     "",
   ].join("\n"), "utf8");
-  await writeFile(join(installDir, "compose.yml"), "name: pi-web\nservices: {}\n", "utf8");
+  await writeFile(join(installDir, "compose.yml"), "name: omp-web\nservices: {}\n", "utf8");
   await writeFile(join(installDir, "compose.override.yml"), "services: {}\n", "utf8");
   return installDir;
 }
@@ -385,7 +385,7 @@ async function createDevRepoFixture(): Promise<string> {
   await copyFile(join(repoRoot, "docker", "internal", "dev", "compose"), join(devRoot, "docker", "internal", "dev", "compose"));
   await chmod(join(devRoot, "docker", "internal", "dev", "compose"), 0o755);
   await copyFile(join(repoRoot, "docker", "internal", "host-profile.sh"), join(devRoot, "docker", "internal", "host-profile.sh"));
-  await writeFile(join(devRoot, "docker", "compose.dev.yml"), "name: pi-web-dev\nservices: {}\n", "utf8");
+  await writeFile(join(devRoot, "docker", "compose.dev.yml"), "name: omp-web-dev\nservices: {}\n", "utf8");
   return devRoot;
 }
 
@@ -395,7 +395,7 @@ async function createDevRepoFixtureWithFakeHelper(logPath: string): Promise<stri
   await mkdir(dirname(helperPath), { recursive: true });
   await writeFile(helperPath, `#!/usr/bin/env sh
 set -eu
-printf 'allow=%s args=%s\n' "\${PI_WEB_DOCKER_ALLOW_ROOT:-}" "$*" >${shellSingleQuote(logPath)}
+printf 'allow=%s args=%s\n' "\${OMP_WEB_DOCKER_ALLOW_ROOT:-}" "$*" >${shellSingleQuote(logPath)}
 `, "utf8");
   await chmod(helperPath, 0o755);
   return devRoot;
@@ -403,19 +403,19 @@ printf 'allow=%s args=%s\n' "\${PI_WEB_DOCKER_ALLOW_ROOT:-}" "$*" >${shellSingle
 
 async function createDevGeneratedEnv(ids: { uid: number; gid: number; dockerGid: number }): Promise<string> {
   const devRoot = join(tempDir, "dev-runtime");
-  await mkdir(join(devRoot, ".pi-web"), { recursive: true });
-  await writeFile(join(devRoot, ".pi-web", "docker-compose-dev.generated.env"), [
-    `PI_WEB_UID=${String(ids.uid)}`,
-    `PI_WEB_GID=${String(ids.gid)}`,
+  await mkdir(join(devRoot, ".omp-web"), { recursive: true });
+  await writeFile(join(devRoot, ".omp-web", "docker-compose-dev.generated.env"), [
+    `OMP_WEB_UID=${String(ids.uid)}`,
+    `OMP_WEB_GID=${String(ids.gid)}`,
     `DOCKER_GID=${String(ids.dockerGid)}`,
-    `PI_WEB_DOCKER_DATA_DIR=${join(tempDir, "dev-data")}`,
-    `PI_WEB_DOCKER_DEV_REPO_ROOT=${devRoot}`,
-    "PI_WEB_DEV_API_BIND_ADDR=127.0.0.1",
-    "PI_WEB_DEV_BIND_ADDR=127.0.0.1",
-    "PI_WEB_DEV_API_PORT=8504",
-    "PI_WEB_DEV_PORT=8505",
-    "PI_WEB_DEV_IMAGE=pi-web:test",
-    "COMPOSE_PROJECT_NAME=pi-web-dev-test",
+    `OMP_WEB_DOCKER_DATA_DIR=${join(tempDir, "dev-data")}`,
+    `OMP_WEB_DOCKER_DEV_REPO_ROOT=${devRoot}`,
+    "OMP_WEB_DEV_API_BIND_ADDR=127.0.0.1",
+    "OMP_WEB_DEV_BIND_ADDR=127.0.0.1",
+    "OMP_WEB_DEV_API_PORT=8504",
+    "OMP_WEB_DEV_PORT=8505",
+    "OMP_WEB_DEV_IMAGE=omp-web:test",
+    "COMPOSE_PROJECT_NAME=omp-web-dev-test",
     "",
   ].join("\n"), "utf8");
   return devRoot;
@@ -469,7 +469,7 @@ case "\${1:-}" in
     if [ "\${2:-}" = inspect ]; then
       for arg in "$@"; do
         if [ "$arg" = --format ]; then
-          printf 'pi-web:test\n'
+          printf 'omp-web:test\n'
           exit 0
         fi
       done
@@ -536,7 +536,7 @@ async function withUnixSocket<T>(socketPath: string, callback: () => Promise<T>)
 function cleanProcessEnv(): NodeJS.ProcessEnv {
   const env = { ...process.env };
   for (const key of Object.keys(env)) {
-    if (key === "COMPOSE_PROJECT_NAME" || key === "DOCKER_GID" || key === "HOSTEXEC_IMAGE" || key === "XDG_DATA_HOME" || key.startsWith("PI_WEB_")) {
+    if (key === "COMPOSE_PROJECT_NAME" || key === "DOCKER_GID" || key === "HOSTEXEC_IMAGE" || key === "XDG_DATA_HOME" || key.startsWith("OMP_WEB_")) {
       Reflect.deleteProperty(env, key);
     }
   }
@@ -546,7 +546,7 @@ function cleanProcessEnv(): NodeJS.ProcessEnv {
 function runtimeEnv(fakeDocker: FakeDocker, installDir: string): NodeJS.ProcessEnv {
   return {
     ...runtimeHostEnv(fakeDocker, installDir),
-    PI_WEB_DOCKER_RUNTIME: "1",
+    OMP_WEB_DOCKER_RUNTIME: "1",
   };
 }
 
@@ -555,9 +555,9 @@ function runtimeHostEnv(fakeDocker: FakeDocker, installDir: string): NodeJS.Proc
     ...cleanProcessEnv(),
     PATH: `${fakeDocker.binDir}:${process.env["PATH"] ?? ""}`,
     FAKE_DOCKER_LOG: fakeDocker.logPath,
-    PI_WEB_DOCKER_RUNTIME: "0",
-    PI_WEB_DOCKER_MODE: "runtime",
-    PI_WEB_DOCKER_INSTALL_DIR: installDir,
+    OMP_WEB_DOCKER_RUNTIME: "0",
+    OMP_WEB_DOCKER_MODE: "runtime",
+    OMP_WEB_DOCKER_INSTALL_DIR: installDir,
   };
 }
 
@@ -569,9 +569,9 @@ function devHostEnv(fakeDocker: FakeDocker, devRoot: string, home: string, extra
     HOME: home,
     DOCKER_HOST: "",
     FAKE_DOCKER_LOG: fakeDocker.logPath,
-    PI_WEB_DOCKER_RUNTIME: "0",
-    PI_WEB_DOCKER_MODE: "dev",
-    PI_WEB_DOCKER_DEV_REPO_ROOT: devRoot,
+    OMP_WEB_DOCKER_RUNTIME: "0",
+    OMP_WEB_DOCKER_MODE: "dev",
+    OMP_WEB_DOCKER_DEV_REPO_ROOT: devRoot,
   };
 }
 
@@ -580,10 +580,10 @@ function devRuntimeEnv(fakeDocker: FakeDocker, devRoot: string): NodeJS.ProcessE
     ...cleanProcessEnv(),
     PATH: `${fakeDocker.binDir}:${process.env["PATH"] ?? ""}`,
     FAKE_DOCKER_LOG: fakeDocker.logPath,
-    PI_WEB_DOCKER_RUNTIME: "1",
-    PI_WEB_DOCKER_MODE: "dev",
-    PI_WEB_DOCKER_DEV_REPO_ROOT: devRoot,
-    PI_WEB_DOCKER_CONTAINER_ID: "current-container",
+    OMP_WEB_DOCKER_RUNTIME: "1",
+    OMP_WEB_DOCKER_MODE: "dev",
+    OMP_WEB_DOCKER_DEV_REPO_ROOT: devRoot,
+    OMP_WEB_DOCKER_CONTAINER_ID: "current-container",
   };
 }
 

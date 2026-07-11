@@ -14,7 +14,7 @@ import {
 
 describe("workspace upload helpers", () => {
   it("resolves effective upload defaults and workspace-relative paths", () => {
-    expect(effectiveWorkspaceUploadFolder(undefined)).toBe(".pi-web/uploads");
+    expect(effectiveWorkspaceUploadFolder(undefined)).toBe(".omp-web/uploads");
     expect(effectiveWorkspaceUploadFolder({ uploads: { defaultFolder: "manual/uploads" } })).toBe("manual/uploads");
     expect(workspaceEffectiveUploadFolder({ uploads: { defaultFolder: "project/uploads" } }, "global/uploads")).toBe("project/uploads");
     expect(workspaceEffectiveUploadFolder(undefined, "global/uploads")).toBe("global/uploads");

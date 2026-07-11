@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { PiWebConfigResponse, PiWebConfigValues } from "../../api";
+import type { OmpWebConfigResponse, OmpWebConfigValues } from "../../api";
 import { mergeSelectedMachinePluginConfig, pluginEnabledConfigPatch } from "./settingsPluginConfig";
 
 describe("plugin settings config helpers", () => {
@@ -58,9 +58,9 @@ describe("plugin settings config helpers", () => {
   });
 });
 
-function configResponse(config: PiWebConfigValues): PiWebConfigResponse {
+function configResponse(config: OmpWebConfigValues): OmpWebConfigResponse {
   return {
-    path: "/tmp/pi-web/config.json",
+    path: "/tmp/omp-web/config.json",
     exists: true,
     config,
     effectiveConfig: config,

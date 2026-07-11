@@ -30,7 +30,7 @@ export class InMemoryTerminalSelectionMemory implements TerminalSelectionMemory 
   }
 }
 
-const terminalSelectionStorageKey = "pi-web:terminal-selection:v1";
+const terminalSelectionStorageKey = "omp-web:terminal-selection:v1";
 
 export class SessionStorageTerminalSelectionMemory implements TerminalSelectionMemory {
   private readonly terminalIdsByCwd: PersistentValueMap<string>;

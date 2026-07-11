@@ -10,7 +10,7 @@ let storePath: string;
 let service: MachineService;
 
 beforeEach(async () => {
-  tempDir = await mkdtemp(join(tmpdir(), "pi-web-machines-test-"));
+  tempDir = await mkdtemp(join(tmpdir(), "omp-web-machines-test-"));
   storePath = join(tempDir, "machines.json");
   service = new MachineService(new MachineStore(storePath));
 });
@@ -102,9 +102,9 @@ describe("MachineService", () => {
     await expect(service.remove("local")).rejects.toThrow("Local machine cannot be deleted");
   });
 
-  it("supports PI_WEB_MACHINES_FILE path overrides", () => {
-    const env: NodeJS.ProcessEnv = { PI_WEB_MACHINES_FILE: "data/machines.json" };
-    expect(machineStorePath(env, "/tmp/pi-web")).toBe(resolve("/tmp/pi-web", "data/machines.json"));
+  it("supports OMP_WEB_MACHINES_FILE path overrides", () => {
+    const env: NodeJS.ProcessEnv = { OMP_WEB_MACHINES_FILE: "data/machines.json" };
+    expect(machineStorePath(env, "/tmp/omp-web")).toBe(resolve("/tmp/omp-web", "data/machines.json"));
   });
 });
 

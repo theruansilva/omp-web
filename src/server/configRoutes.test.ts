@@ -1,17 +1,17 @@
 import Fastify, { type FastifyInstance } from "fastify";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { registerConfigRoutes, registerLocalMachineConfigRoutes, type PiWebConfigService } from "./configRoutes.js";
-import type { PiWebConfigResponse, PiWebConfigValues } from "../shared/apiTypes.js";
+import { registerConfigRoutes, registerLocalMachineConfigRoutes, type OmpWebConfigService } from "./configRoutes.js";
+import type { OmpWebConfigResponse, OmpWebConfigValues } from "../shared/apiTypes.js";
 
 let app: FastifyInstance;
-let savedConfig: PiWebConfigValues;
-let service: PiWebConfigService;
+let savedConfig: OmpWebConfigValues;
+let service: OmpWebConfigService;
 
 beforeEach(async () => {
   savedConfig = { host: "127.0.0.1", port: 8504, allowedHosts: [] };
   service = {
     read: vi.fn(() => responseFor(savedConfig, true)),
-    write: vi.fn((config: PiWebConfigValues) => {
+    write: vi.fn((config: OmpWebConfigValues) => {
       savedConfig = config;
       return responseFor(savedConfig, true);
     }),
@@ -31,11 +31,11 @@ describe("config routes", () => {
     const response = await app.inject({ method: "GET", url: "/api/config" });
 
     expect(response.statusCode).toBe(200);
-    expect(response.json<PiWebConfigResponse>()).toEqual(responseFor(savedConfig, true));
+    expect(response.json<OmpWebConfigResponse>()).toEqual(responseFor(savedConfig, true));
   });
 
   it("updates config through the service", async () => {
-    const requestedConfig: PiWebConfigValues = {
+    const requestedConfig: OmpWebConfigValues = {
       host: "0.0.0.0",
       port: 9000,
       allowedHosts: true,
@@ -47,7 +47,7 @@ describe("config routes", () => {
       uploads: { defaultFolder: "uploads\\manual" },
       maxUploadBytes: 1234,
     };
-    const expectedConfig: PiWebConfigValues = {
+    const expectedConfig: OmpWebConfigValues = {
       ...requestedConfig,
       uploads: { defaultFolder: "uploads/manual" },
     };
@@ -60,7 +60,7 @@ describe("config routes", () => {
 
     expect(response.statusCode).toBe(200);
     expect(savedConfig).toEqual(expectedConfig);
-    expect(response.json<PiWebConfigResponse>().config).toEqual(expectedConfig);
+    expect(response.json<OmpWebConfigResponse>().config).toEqual(expectedConfig);
   });
 
   it("rejects invalid config payloads before writing", async () => {
@@ -117,7 +117,7 @@ describe("config routes", () => {
     const response = await app.inject({ method: "GET", url: "/api/machines/local/config" });
 
     expect(response.statusCode).toBe(200);
-    expect(response.json<PiWebConfigResponse>()).toEqual({
+    expect(response.json<OmpWebConfigResponse>()).toEqual({
       ...responseFor(savedConfig, true),
       config: selectedMachineConfig(),
       effectiveConfig: selectedMachineConfig(),
@@ -126,7 +126,7 @@ describe("config routes", () => {
 
   it("merges local selected-machine config updates without dropping gateway-only keys", async () => {
     savedConfig = fullConfig();
-    const selectedMachinePatch: PiWebConfigValues = {
+    const selectedMachinePatch: OmpWebConfigValues = {
       plugins: { info: { enabled: false } },
       uploads: { defaultFolder: "uploads\\manual" },
       spawnSessions: true,
@@ -138,7 +138,7 @@ describe("config routes", () => {
       payload: { config: selectedMachinePatch },
     });
 
-    const expectedConfig: PiWebConfigValues = {
+    const expectedConfig: OmpWebConfigValues = {
       ...fullConfig(),
       plugins: { info: { enabled: false } },
       uploads: { defaultFolder: "uploads/manual" },
@@ -147,7 +147,7 @@ describe("config routes", () => {
     expect(response.statusCode).toBe(200);
     expect(savedConfig).toEqual(expectedConfig);
     expect(service.write).toHaveBeenCalledWith(expectedConfig);
-    expect(response.json<PiWebConfigResponse>().config).toEqual({
+    expect(response.json<OmpWebConfigResponse>().config).toEqual({
       plugins: { info: { enabled: false } },
       pathAccess: { allowedPaths: ["/srv/repos"] },
       uploads: { defaultFolder: "uploads/manual" },
@@ -185,7 +185,7 @@ describe("config routes", () => {
   });
 });
 
-function fullConfig(): PiWebConfigValues {
+function fullConfig(): OmpWebConfigValues {
   return {
     host: "127.0.0.1",
     port: 8504,
@@ -200,7 +200,7 @@ function fullConfig(): PiWebConfigValues {
   };
 }
 
-function selectedMachineConfig(): PiWebConfigValues {
+function selectedMachineConfig(): OmpWebConfigValues {
   return {
     plugins: { info: { enabled: true, settings: { note: "visible" } } },
     pathAccess: { allowedPaths: ["/srv/repos"] },
@@ -211,9 +211,9 @@ function selectedMachineConfig(): PiWebConfigValues {
   };
 }
 
-function responseFor(config: PiWebConfigValues, exists: boolean): PiWebConfigResponse {
+function responseFor(config: OmpWebConfigValues, exists: boolean): OmpWebConfigResponse {
   return {
-    path: "/tmp/pi-web/config.json",
+    path: "/tmp/omp-web/config.json",
     exists,
     config,
     effectiveConfig: config,

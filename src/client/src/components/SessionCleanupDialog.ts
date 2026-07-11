@@ -6,7 +6,7 @@ import { canRunSessionCleanup, confirmSessionCleanup, DEFAULT_SESSION_CLEANUP_DR
 @customElement("session-cleanup-dialog")
 export class SessionCleanupDialog extends LitElement {
   @property({ type: Boolean }) canCleanup = true;
-  @property({ type: String }) unavailableMessage = "Update and restart Pi-Web on this machine to clean up sessions.";
+  @property({ type: String }) unavailableMessage = "Update and restart Omp-Web on this machine to clean up sessions.";
   @property({ attribute: false }) preview?: SessionCleanupPreviewResponse;
   @property({ attribute: false }) previewRequest?: SessionCleanupRequest;
   @property({ attribute: false }) result?: SessionCleanupExecuteResponse;

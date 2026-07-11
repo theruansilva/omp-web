@@ -13,11 +13,11 @@ import { MachineStore } from "./machines/machineStore.js";
 import { WorkspaceService } from "./workspaces/workspaceService.js";
 import type { PiPackageService } from "./piPackageService.js";
 import type { SessionProxyDaemon } from "./sessiond/sessionProxyRoutes.js";
-import { PI_WEB_CAPABILITIES } from "../shared/capabilities.js";
+import { OMP_WEB_CAPABILITIES } from "../shared/capabilities.js";
 import { PI_PACKAGE_MUTATION_PROXY_TIMEOUT_MS } from "../shared/federatedRoutes.js";
 import { machineScopedPluginId } from "../shared/machinePluginIds.js";
 import { MAX_IMAGE_PREVIEW_BYTES } from "../shared/workspaceFiles.js";
-import type { PiPackageInfo, PiWebConfigResponse, PiWebConfigValues } from "../shared/apiTypes.js";
+import type { PiPackageInfo, OmpWebConfigResponse, OmpWebConfigValues } from "../shared/apiTypes.js";
 import type { Project, Workspace } from "./types.js";
 
 let app: FastifyInstance;
@@ -26,15 +26,15 @@ let projectDir: string;
 let remoteClient: MachineClient | undefined;
 let sessionDaemonRequests: CapturedSessionDaemonRequest[];
 let piPackageRequests: CapturedPiPackageRequest[];
-let piWebConfig: PiWebConfigValues;
+let ompWebConfig: OmpWebConfigValues;
 
 beforeEach(async () => {
-  tempDir = await realpath(await mkdtemp(join(tmpdir(), "pi-web-app-test-")));
+  tempDir = await realpath(await mkdtemp(join(tmpdir(), "omp-web-app-test-")));
   projectDir = join(tempDir, "project");
   remoteClient = undefined;
   sessionDaemonRequests = [];
   piPackageRequests = [];
-  piWebConfig = {};
+  ompWebConfig = {};
   app = await buildApp({
     projects: new ProjectService(new ProjectStore(join(tempDir, "projects.json"))),
     workspaces: new WorkspaceService(),
@@ -48,18 +48,18 @@ beforeEach(async () => {
         packageName: "@ProgmRuanSilva/omp-web",
         generatedAt: "2026-05-25T00:00:00.000Z",
         components: {
-          web: { component: "web", label: "PI WEB", available: true, capabilities: [PI_WEB_CAPABILITIES.sessionsDeleteArchived] },
-          sessiond: { component: "sessiond", label: "PI WEB Session Daemon", available: true, capabilities: [PI_WEB_CAPABILITIES.sessionsDeleteArchived] },
+          web: { component: "web", label: "PI WEB", available: true, capabilities: [OMP_WEB_CAPABILITIES.sessionsDeleteArchived] },
+          sessiond: { component: "sessiond", label: "PI WEB Session Daemon", available: true, capabilities: [OMP_WEB_CAPABILITIES.sessionsDeleteArchived] },
         },
-        capabilities: [PI_WEB_CAPABILITIES.sessionsDeleteArchived],
+        capabilities: [OMP_WEB_CAPABILITIES.sessionsDeleteArchived],
       }),
     }),
     sessionDaemon: fakeSessionDaemon(),
     config: fakeConfigService(),
     piPackages: fakePiPackageService(),
-    piWebPlugins: {
-      manifest: () => Promise.resolve({ plugins: [{ id: "fake", module: "/pi-web-plugins/fake/plugin.js?v=1", source: "test", scope: "local", machineSpecific: false }] }),
-      plugins: () => Promise.resolve({ plugins: [{ id: "fake", module: "/pi-web-plugins/fake/plugin.js?v=1", source: "test", scope: "local", machineSpecific: false, enabled: true }] }),
+    ompWebPlugins: {
+      manifest: () => Promise.resolve({ plugins: [{ id: "fake", module: "/omp-web-plugins/fake/plugin.js?v=1", source: "test", scope: "local", machineSpecific: false }] }),
+      plugins: () => Promise.resolve({ plugins: [{ id: "fake", module: "/omp-web-plugins/fake/plugin.js?v=1", source: "test", scope: "local", machineSpecific: false, enabled: true }] }),
       readAsset: (pluginId, assetPath) => Promise.resolve(pluginId === "fake" && assetPath === "plugin.js" ? { content: Buffer.from("export default {};"), contentType: "application/javascript; charset=utf-8" } : undefined),
     },
     clientDist: false,
@@ -127,10 +127,10 @@ describe("buildApp", () => {
         packageName: "@ProgmRuanSilva/omp-web",
         generatedAt: "2026-05-25T00:00:00.000Z",
         components: {
-          web: { component: "web", label: "Remote Web", runtimeVersion: "1.0.0", available: true, capabilities: [PI_WEB_CAPABILITIES.sessionsDeleteArchived, PI_WEB_CAPABILITIES.piPackagesManage, "future.capability"] },
-          sessiond: { component: "sessiond", label: "Remote Sessiond", runtimeVersion: "1.0.0", available: true, capabilities: [PI_WEB_CAPABILITIES.sessionsDeleteArchived] },
+          web: { component: "web", label: "Remote Web", runtimeVersion: "1.0.0", available: true, capabilities: [OMP_WEB_CAPABILITIES.sessionsDeleteArchived, OMP_WEB_CAPABILITIES.piPackagesManage, "future.capability"] },
+          sessiond: { component: "sessiond", label: "Remote Sessiond", runtimeVersion: "1.0.0", available: true, capabilities: [OMP_WEB_CAPABILITIES.sessionsDeleteArchived] },
         },
-        capabilities: [PI_WEB_CAPABILITIES.sessionsDeleteArchived, PI_WEB_CAPABILITIES.piPackagesManage, "future.capability"],
+        capabilities: [OMP_WEB_CAPABILITIES.sessionsDeleteArchived, OMP_WEB_CAPABILITIES.piPackagesManage, "future.capability"],
       },
     }));
     remoteClient = fakeRemoteClient({ requestJson });
@@ -138,8 +138,8 @@ describe("buildApp", () => {
     const runtime = await app.inject({ method: "GET", url: `/api/machines/${remote.id}/runtime` });
 
     expect(runtime.statusCode).toBe(200);
-    expect(runtime.json()).toMatchObject({ machineId: remote.id, ok: true, capabilities: [PI_WEB_CAPABILITIES.sessionsDeleteArchived, PI_WEB_CAPABILITIES.piPackagesManage] });
-    expect(requestJson).toHaveBeenCalledWith("GET", "/api/pi-web/runtime", undefined, { timeoutMs: 3000 });
+    expect(runtime.json()).toMatchObject({ machineId: remote.id, ok: true, capabilities: [OMP_WEB_CAPABILITIES.sessionsDeleteArchived, OMP_WEB_CAPABILITIES.piPackagesManage] });
+    expect(requestJson).toHaveBeenCalledWith("GET", "/api/omp-web/runtime", undefined, { timeoutMs: 3000 });
   });
 
   it("proxies allowlisted remote HTTP routes through the selected machine", async () => {
@@ -166,7 +166,7 @@ describe("buildApp", () => {
     const requestJson = vi.fn<MachineClient["requestJson"]>(() => Promise.resolve({
       statusCode: 200,
       headers: { "content-type": "application/json", "set-cookie": "secret=1" },
-      body: piWebConfigResponse(fullPiWebConfig()),
+      body: ompWebConfigResponse(fullOmpWebConfig()),
     }));
     remoteClient = fakeRemoteClient({ requestJson });
 
@@ -174,10 +174,10 @@ describe("buildApp", () => {
 
     expect(response.statusCode).toBe(200);
     expect(response.headers["set-cookie"]).toBeUndefined();
-    expect(response.json<PiWebConfigResponse>()).toEqual({
-      ...piWebConfigResponse(fullPiWebConfig()),
-      config: selectedMachinePiWebConfig(),
-      effectiveConfig: selectedMachinePiWebConfig(),
+    expect(response.json<OmpWebConfigResponse>()).toEqual({
+      ...ompWebConfigResponse(fullOmpWebConfig()),
+      config: selectedMachineOmpWebConfig(),
+      effectiveConfig: selectedMachineOmpWebConfig(),
     });
     expect(requestJson).toHaveBeenCalledWith("GET", "/api/config");
   });
@@ -186,8 +186,8 @@ describe("buildApp", () => {
     const addResponse = await app.inject({ method: "POST", url: "/api/machines", payload: { name: "Remote", baseUrl: "https://remote.example.test/" } });
     const remote = addResponse.json<{ id: string }>();
     const requestJson = vi.fn<MachineClient["requestJson"]>((method, _path, body) => {
-      if (method === "GET") return Promise.resolve({ statusCode: 200, headers: { "content-type": "application/json" }, body: piWebConfigResponse(fullPiWebConfig()) });
-      return Promise.resolve({ statusCode: 200, headers: { "content-type": "application/json" }, body: piWebConfigResponse(configFromMachineConfigWriteBody(body)) });
+      if (method === "GET") return Promise.resolve({ statusCode: 200, headers: { "content-type": "application/json" }, body: ompWebConfigResponse(fullOmpWebConfig()) });
+      return Promise.resolve({ statusCode: 200, headers: { "content-type": "application/json" }, body: ompWebConfigResponse(configFromMachineConfigWriteBody(body)) });
     });
     remoteClient = fakeRemoteClient({ requestJson });
 
@@ -197,8 +197,8 @@ describe("buildApp", () => {
       payload: { config: { plugins: { info: { enabled: false } }, pathAccess: { allowedPaths: ["/srv/remote"] }, uploads: { defaultFolder: "remote\\uploads" }, maxUploadBytes: 4096, spawnSessions: true } },
     });
 
-    const expectedMerged: PiWebConfigValues = {
-      ...fullPiWebConfig(),
+    const expectedMerged: OmpWebConfigValues = {
+      ...fullOmpWebConfig(),
       plugins: { info: { enabled: false } },
       pathAccess: { allowedPaths: ["/srv/remote"] },
       uploads: { defaultFolder: "remote/uploads" },
@@ -208,7 +208,7 @@ describe("buildApp", () => {
     expect(response.statusCode).toBe(200);
     expect(requestJson).toHaveBeenNthCalledWith(1, "GET", "/api/config");
     expect(requestJson).toHaveBeenNthCalledWith(2, "PUT", "/api/config", { config: expectedMerged });
-    expect(response.json<PiWebConfigResponse>().config).toEqual({
+    expect(response.json<OmpWebConfigResponse>().config).toEqual({
       plugins: { info: { enabled: false } },
       pathAccess: { allowedPaths: ["/srv/remote"] },
       uploads: { defaultFolder: "remote/uploads" },
@@ -511,24 +511,24 @@ describe("buildApp", () => {
   });
 
   it("serves the PI WEB plugin manifest and plugin assets", async () => {
-    const manifestResponse = await app.inject({ method: "GET", url: "/pi-web-plugins/manifest.json" });
+    const manifestResponse = await app.inject({ method: "GET", url: "/omp-web-plugins/manifest.json" });
     expect(manifestResponse.statusCode).toBe(200);
-    expect(manifestResponse.json()).toEqual({ plugins: [{ id: "fake", module: "/pi-web-plugins/fake/plugin.js?v=1", source: "test", scope: "local", machineSpecific: false }] });
+    expect(manifestResponse.json()).toEqual({ plugins: [{ id: "fake", module: "/omp-web-plugins/fake/plugin.js?v=1", source: "test", scope: "local", machineSpecific: false }] });
 
     const pluginsResponse = await app.inject({ method: "GET", url: "/api/plugins" });
     expect(pluginsResponse.statusCode).toBe(200);
-    expect(pluginsResponse.json()).toEqual({ plugins: [{ id: "fake", module: "/pi-web-plugins/fake/plugin.js?v=1", source: "test", scope: "local", machineSpecific: false, enabled: true }] });
+    expect(pluginsResponse.json()).toEqual({ plugins: [{ id: "fake", module: "/omp-web-plugins/fake/plugin.js?v=1", source: "test", scope: "local", machineSpecific: false, enabled: true }] });
 
     const localMachinePluginsResponse = await app.inject({ method: "GET", url: "/api/machines/local/plugins" });
     expect(localMachinePluginsResponse.statusCode).toBe(200);
-    expect(localMachinePluginsResponse.json()).toEqual({ plugins: [{ id: "fake", module: "/pi-web-plugins/fake/plugin.js?v=1", source: "test", scope: "local", machineSpecific: false, enabled: true }] });
+    expect(localMachinePluginsResponse.json()).toEqual({ plugins: [{ id: "fake", module: "/omp-web-plugins/fake/plugin.js?v=1", source: "test", scope: "local", machineSpecific: false, enabled: true }] });
 
-    const assetResponse = await app.inject({ method: "GET", url: "/pi-web-plugins/fake/plugin.js?v=1" });
+    const assetResponse = await app.inject({ method: "GET", url: "/omp-web-plugins/fake/plugin.js?v=1" });
     expect(assetResponse.statusCode).toBe(200);
     expect(assetResponse.headers["content-type"]).toContain("application/javascript");
     expect(assetResponse.body).toBe("export default {};");
 
-    const missingResponse = await app.inject({ method: "GET", url: "/pi-web-plugins/fake/missing.js" });
+    const missingResponse = await app.inject({ method: "GET", url: "/omp-web-plugins/fake/missing.js" });
     expect(missingResponse.statusCode).toBe(404);
   });
 
@@ -538,7 +538,7 @@ describe("buildApp", () => {
     const request = vi.fn(() => Promise.resolve({
       statusCode: 200,
       headers: { "content-type": "application/json", "set-cookie": "secret=1" },
-      body: Readable.from([JSON.stringify({ plugins: [{ id: "remote-tools", module: "/pi-web-plugins/remote-tools/plugin.js", source: "local", scope: "local", machineSpecific: false, enabled: false }] })]),
+      body: Readable.from([JSON.stringify({ plugins: [{ id: "remote-tools", module: "/omp-web-plugins/remote-tools/plugin.js", source: "local", scope: "local", machineSpecific: false, enabled: false }] })]),
     }));
     remoteClient = fakeRemoteClient({ request });
 
@@ -546,7 +546,7 @@ describe("buildApp", () => {
 
     expect(response.statusCode).toBe(200);
     expect(response.headers["set-cookie"]).toBeUndefined();
-    expect(response.json()).toEqual({ plugins: [{ id: "remote-tools", module: "/pi-web-plugins/remote-tools/plugin.js", source: "local", scope: "local", machineSpecific: false, enabled: false }] });
+    expect(response.json()).toEqual({ plugins: [{ id: "remote-tools", module: "/omp-web-plugins/remote-tools/plugin.js", source: "local", scope: "local", machineSpecific: false, enabled: false }] });
     expect(request).toHaveBeenCalledWith("GET", "/api/plugins", undefined);
   });
 
@@ -556,7 +556,7 @@ describe("buildApp", () => {
     const requestJson = vi.fn(() => Promise.resolve({
       statusCode: 200,
       headers: { "content-type": "application/json" },
-      body: { plugins: [{ id: "remote-tools", module: "/pi-web-plugins/remote-tools/pi-web-plugin.js?v=123", source: "local", scope: "local", machineSpecific: true }] },
+      body: { plugins: [{ id: "remote-tools", module: "/omp-web-plugins/remote-tools/omp-web-plugin.js?v=123", source: "local", scope: "local", machineSpecific: true }] },
     }));
     const request = vi.fn(() => Promise.resolve({
       statusCode: 200,
@@ -565,20 +565,20 @@ describe("buildApp", () => {
     }));
     remoteClient = fakeRemoteClient({ requestJson, request });
 
-    const manifestResponse = await app.inject({ method: "GET", url: `/api/machines/${remote.id}/pi-web-plugins/manifest.json` });
+    const manifestResponse = await app.inject({ method: "GET", url: `/api/machines/${remote.id}/omp-web-plugins/manifest.json` });
     const scopedPluginId = machineScopedPluginId(remote.id, "remote-tools");
     expect(manifestResponse.statusCode).toBe(200);
     expect(manifestResponse.json()).toEqual({
-      plugins: [{ id: "remote-tools", module: `/pi-web-plugins/${scopedPluginId}/pi-web-plugin.js?v=123`, source: "local", scope: "local", machineSpecific: true }],
+      plugins: [{ id: "remote-tools", module: `/omp-web-plugins/${scopedPluginId}/omp-web-plugin.js?v=123`, source: "local", scope: "local", machineSpecific: true }],
     });
-    expect(requestJson).toHaveBeenCalledWith("GET", "/pi-web-plugins/manifest.json", undefined, { timeoutMs: 10000 });
+    expect(requestJson).toHaveBeenCalledWith("GET", "/omp-web-plugins/manifest.json", undefined, { timeoutMs: 10000 });
 
-    const assetResponse = await app.inject({ method: "GET", url: `/pi-web-plugins/${scopedPluginId}/pi-web-plugin.js?v=123` });
+    const assetResponse = await app.inject({ method: "GET", url: `/omp-web-plugins/${scopedPluginId}/omp-web-plugin.js?v=123` });
     expect(assetResponse.statusCode).toBe(200);
     expect(assetResponse.headers["content-type"]).toContain("application/javascript");
     expect(assetResponse.headers["set-cookie"]).toBeUndefined();
     expect(assetResponse.body).toBe("export default {};");
-    expect(request).toHaveBeenCalledWith("GET", "/pi-web-plugins/remote-tools/pi-web-plugin.js?v=123");
+    expect(request).toHaveBeenCalledWith("GET", "/omp-web-plugins/remote-tools/omp-web-plugin.js?v=123");
   });
 
   it("drops unsafe remote machine plugin manifest modules", async () => {
@@ -590,19 +590,19 @@ describe("buildApp", () => {
         headers: { "content-type": "application/json" },
         body: {
           plugins: [
-            { id: "safe-tools", module: "nested/pi-web-plugin.js?v=1", source: "local", scope: "local" },
+            { id: "safe-tools", module: "nested/omp-web-plugin.js?v=1", source: "local", scope: "local" },
             { id: "traversal-tools", module: "..%2F..%2Fapi%2Fconfig", source: "local", scope: "local" },
-            { id: "wrong-root", module: "/pi-web-plugins/other/pi-web-plugin.js", source: "local", scope: "local" },
+            { id: "wrong-root", module: "/omp-web-plugins/other/omp-web-plugin.js", source: "local", scope: "local" },
           ],
         },
       })),
     });
 
-    const manifestResponse = await app.inject({ method: "GET", url: `/api/machines/${remote.id}/pi-web-plugins/manifest.json` });
+    const manifestResponse = await app.inject({ method: "GET", url: `/api/machines/${remote.id}/omp-web-plugins/manifest.json` });
 
     expect(manifestResponse.statusCode).toBe(200);
     expect(manifestResponse.json()).toEqual({
-      plugins: [{ id: "safe-tools", module: `/pi-web-plugins/${machineScopedPluginId(remote.id, "safe-tools")}/nested/pi-web-plugin.js?v=1`, source: "local", scope: "local" }],
+      plugins: [{ id: "safe-tools", module: `/omp-web-plugins/${machineScopedPluginId(remote.id, "safe-tools")}/nested/omp-web-plugin.js?v=1`, source: "local", scope: "local" }],
     });
   });
 
@@ -613,7 +613,7 @@ describe("buildApp", () => {
     remoteClient = fakeRemoteClient({ request });
     const scopedPluginId = machineScopedPluginId(remote.id, "remote-tools");
 
-    const response = await app.inject({ method: "GET", url: `/pi-web-plugins/${scopedPluginId}/..%2F..%2Fapi%2Fconfig` });
+    const response = await app.inject({ method: "GET", url: `/omp-web-plugins/${scopedPluginId}/..%2F..%2Fapi%2Fconfig` });
 
     expect(response.statusCode).toBe(400);
     expect(response.json()).toEqual({ error: "Invalid remote PI WEB plugin asset path" });
@@ -672,21 +672,21 @@ describe("buildApp", () => {
     expect(workspacesResponse.json<Workspace[]>()).toEqual([
       expect.objectContaining({
         projectId: project.id,
-        effectiveConfig: { uploads: { defaultFolder: ".pi-web/uploads" } },
+        effectiveConfig: { uploads: { defaultFolder: ".omp-web/uploads" } },
       }),
     ]);
   });
 
   it("lets project-local upload config override global upload config on workspace responses", async () => {
-    piWebConfig = { uploads: { defaultFolder: "global-uploads" } };
+    ompWebConfig = { uploads: { defaultFolder: "global-uploads" } };
     const addResponse = await app.inject({
       method: "POST",
       url: "/api/projects",
       payload: { name: "Project Upload Defaults", path: projectDir, create: true },
     });
     const project = addResponse.json<Project>();
-    await mkdir(join(projectDir, ".pi-web"), { recursive: true });
-    await writeFile(join(projectDir, ".pi-web", "config.json"), `${JSON.stringify({ version: 1, uploads: { defaultFolder: "project-uploads" } }, null, 2)}\n`);
+    await mkdir(join(projectDir, ".omp-web"), { recursive: true });
+    await writeFile(join(projectDir, ".omp-web", "config.json"), `${JSON.stringify({ version: 1, uploads: { defaultFolder: "project-uploads" } }, null, 2)}\n`);
 
     const workspacesResponse = await app.inject({ method: "GET", url: `/api/projects/${project.id}/workspaces` });
 
@@ -742,8 +742,8 @@ describe("buildApp", () => {
     });
     expect(addResponse.statusCode).toBe(200);
     await writeFile(join(projectDir, "sdk.md"), "local sdk\n");
-    await mkdir(join(projectDir, ".pi-web"), { recursive: true });
-    await writeFile(join(projectDir, ".pi-web", "config.json"), `${JSON.stringify({ version: 1, pathAccess: { allowedPaths: [""] } }, null, 2)}\n`);
+    await mkdir(join(projectDir, ".omp-web"), { recursive: true });
+    await writeFile(join(projectDir, ".omp-web", "config.json"), `${JSON.stringify({ version: 1, pathAccess: { allowedPaths: [""] } }, null, 2)}\n`);
 
     const response = await app.inject({ method: "GET", url: `/api/files?cwd=${encodeURIComponent(projectDir)}&q=sdk&scope=all` });
 
@@ -763,8 +763,8 @@ describe("buildApp", () => {
     await mkdir(externalDir);
     await writeFile(join(externalDir, "sdk.md"), "external sdk\n");
     await writeFile(deniedFile, "secret\n");
-    await mkdir(join(projectDir, ".pi-web"), { recursive: true });
-    await writeFile(join(projectDir, ".pi-web", "config.json"), `${JSON.stringify({ version: 1, pathAccess: { allowedPaths: [externalDir] } }, null, 2)}\n`);
+    await mkdir(join(projectDir, ".omp-web"), { recursive: true });
+    await writeFile(join(projectDir, ".omp-web", "config.json"), `${JSON.stringify({ version: 1, pathAccess: { allowedPaths: [externalDir] } }, null, 2)}\n`);
 
     const workspacesResponse = await app.inject({ method: "GET", url: `/api/projects/${project.id}/workspaces` });
     const workspace = workspacesResponse.json<Workspace[]>()[0];
@@ -1036,15 +1036,15 @@ interface CapturedPiPackageRequest {
 
 function fakeConfigService() {
   return {
-    read: () => piWebConfigResponse(piWebConfig),
-    write: (config: PiWebConfigValues) => {
-      piWebConfig = config;
-      return piWebConfigResponse(config);
+    read: () => ompWebConfigResponse(ompWebConfig),
+    write: (config: OmpWebConfigValues) => {
+      ompWebConfig = config;
+      return ompWebConfigResponse(config);
     },
   };
 }
 
-function fullPiWebConfig(): PiWebConfigValues {
+function fullOmpWebConfig(): OmpWebConfigValues {
   return {
     host: "127.0.0.1",
     port: 8504,
@@ -1059,7 +1059,7 @@ function fullPiWebConfig(): PiWebConfigValues {
   };
 }
 
-function selectedMachinePiWebConfig(): PiWebConfigValues {
+function selectedMachineOmpWebConfig(): OmpWebConfigValues {
   return {
     plugins: { info: { enabled: true, settings: { note: "remote" } } },
     pathAccess: { allowedPaths: ["/srv/repos"] },
@@ -1070,7 +1070,7 @@ function selectedMachinePiWebConfig(): PiWebConfigValues {
   };
 }
 
-function piWebConfigResponse(config: PiWebConfigValues): PiWebConfigResponse {
+function ompWebConfigResponse(config: OmpWebConfigValues): OmpWebConfigResponse {
   return {
     path: join(tempDir, "config.json"),
     exists: false,
@@ -1081,10 +1081,10 @@ function piWebConfigResponse(config: PiWebConfigValues): PiWebConfigResponse {
 }
 
 interface MachineConfigWriteBody {
-  config: PiWebConfigValues;
+  config: OmpWebConfigValues;
 }
 
-function configFromMachineConfigWriteBody(body: unknown): PiWebConfigValues {
+function configFromMachineConfigWriteBody(body: unknown): OmpWebConfigValues {
   if (!isMachineConfigWriteBody(body)) throw new Error("Expected machine config write body");
   return body.config;
 }

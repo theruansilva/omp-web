@@ -1,6 +1,6 @@
 import { css, html, LitElement, type PropertyValues, type TemplateResult } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
-import { DEFAULT_WORKSPACE_UPLOADS_FOLDER, type PiWebConfigEnvOverrides, type PiWebConfigResponse, type PiWebConfigValues } from "../../api";
+import { DEFAULT_WORKSPACE_UPLOADS_FOLDER, type OmpWebConfigEnvOverrides, type OmpWebConfigResponse, type OmpWebConfigValues } from "../../api";
 import "./SettingsPanelFrame";
 import type { SettingsNotice } from "./SettingsPanelFrame";
 import {
@@ -20,8 +20,8 @@ function generalDescription(targetLabel: string): TemplateResult {
 
 @customElement("settings-general-panel")
 export class SettingsGeneralPanel extends LitElement {
-  @property({ attribute: false }) configResponse: PiWebConfigResponse | undefined;
-  @property({ attribute: false }) machineConfigResponse: PiWebConfigResponse | undefined;
+  @property({ attribute: false }) configResponse: OmpWebConfigResponse | undefined;
+  @property({ attribute: false }) machineConfigResponse: OmpWebConfigResponse | undefined;
   @property({ type: Boolean }) loading = false;
   @property({ type: Boolean }) machineLoading = false;
   @property({ type: Boolean }) saving = false;
@@ -31,8 +31,8 @@ export class SettingsGeneralPanel extends LitElement {
   @property() targetLabel = "selected machine";
   @property({ attribute: false }) onReload?: () => void | Promise<void>;
   @property({ attribute: false }) onReloadMachine?: () => void | Promise<void>;
-  @property({ attribute: false }) onSave?: (config: PiWebConfigValues) => void | Promise<void>;
-  @property({ attribute: false }) onSaveMachineConfig?: (config: PiWebConfigValues) => void | Promise<void>;
+  @property({ attribute: false }) onSave?: (config: OmpWebConfigValues) => void | Promise<void>;
+  @property({ attribute: false }) onSaveMachineConfig?: (config: OmpWebConfigValues) => void | Promise<void>;
   @state() private gatewayDraft: GatewayServerConfigDraft = emptyGatewayServerConfigDraft();
   @state() private machineDraft: MachineAccessConfigDraft = emptyMachineAccessConfigDraft();
   @state() private gatewayLocalError = "";
@@ -181,7 +181,7 @@ export class SettingsGeneralPanel extends LitElement {
     return html`<div class="message error-message">${error}</div>`;
   }
 
-  private renderOverrideBadge(key: keyof PiWebConfigEnvOverrides): TemplateResult | null {
+  private renderOverrideBadge(key: keyof OmpWebConfigEnvOverrides): TemplateResult | null {
     if (this.configResponse?.envOverrides[key] !== true) return null;
     return html`<span class="override-badge">environment override</span>`;
   }
@@ -290,7 +290,7 @@ export class SettingsGeneralPanel extends LitElement {
   `;
 }
 
-function formatAllowedHosts(value: PiWebConfigValues["allowedHosts"]): string | TemplateResult {
+function formatAllowedHosts(value: OmpWebConfigValues["allowedHosts"]): string | TemplateResult {
   if (value === true) return "Any host";
   if (Array.isArray(value)) return value.length === 0 ? html`<span class="muted">None listed</span>` : value.join(", ");
   return html`<span class="muted">Unset</span>`;

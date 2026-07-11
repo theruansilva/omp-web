@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { TemplateResult } from "lit";
-import { PI_WEB_CAPABILITIES } from "../../../shared/capabilities";
-import { configApi, pluginsApi, type Machine, type MachineRuntime, type PiWebConfigResponse, type PiWebConfigValues, type PiWebPluginInfo, type PiWebPluginsResponse } from "../api";
+import { OMP_WEB_CAPABILITIES } from "../../../shared/capabilities";
+import { configApi, pluginsApi, type Machine, type MachineRuntime, type OmpWebConfigResponse, type OmpWebConfigValues, type OmpWebPluginInfo, type OmpWebPluginsResponse } from "../api";
 import { SettingsDialog } from "./SettingsDialog";
 
 afterEach(() => {
@@ -12,7 +12,7 @@ afterEach(() => {
 describe("settings-dialog session daemon machine targeting", () => {
   it("keeps gateway settings loads on the gateway config/plugin endpoints", async () => {
     const config = configResponse({ host: "127.0.0.1" });
-    const plugins: PiWebPluginsResponse = { plugins: [] };
+    const plugins: OmpWebPluginsResponse = { plugins: [] };
     const configSpy = vi.spyOn(configApi, "config").mockResolvedValue(config);
     const pluginsSpy = vi.spyOn(pluginsApi, "plugins").mockResolvedValue(plugins);
     const dialog = new SettingsDialog();
@@ -59,7 +59,7 @@ describe("settings-dialog session daemon machine targeting", () => {
   });
 
   it("ignores stale session-daemon load responses after the selected machine changes", async () => {
-    const load = deferred<PiWebConfigResponse>();
+    const load = deferred<OmpWebConfigResponse>();
     vi.spyOn(configApi, "config").mockReturnValue(load.promise);
     const dialog = new SettingsDialog();
     dialog.machine = remoteMachine;
@@ -79,7 +79,7 @@ describe("settings-dialog session daemon machine targeting", () => {
 
   it("ignores stale session-daemon save responses after the selected machine changes", async () => {
     stubWindowTimers();
-    const save = deferred<PiWebConfigResponse>();
+    const save = deferred<OmpWebConfigResponse>();
     vi.spyOn(configApi, "saveConfig").mockReturnValue(save.promise);
     const dialog = new SettingsDialog();
     dialog.machine = remoteMachine;
@@ -270,7 +270,7 @@ describe("settings-dialog general settings machine targeting", () => {
   });
 
   it("ignores stale file access load responses after the selected machine changes", async () => {
-    const load = deferred<PiWebConfigResponse>();
+    const load = deferred<OmpWebConfigResponse>();
     vi.spyOn(configApi, "config").mockReturnValue(load.promise);
     const dialog = new SettingsDialog();
     dialog.machine = remoteMachine;
@@ -289,7 +289,7 @@ describe("settings-dialog general settings machine targeting", () => {
   });
 
   it("ignores stale file access save responses after the selected machine changes", async () => {
-    const save = deferred<PiWebConfigResponse>();
+    const save = deferred<OmpWebConfigResponse>();
     vi.spyOn(configApi, "saveConfig").mockReturnValue(save.promise);
     const dialog = new SettingsDialog();
     dialog.machine = remoteMachine;
@@ -438,8 +438,8 @@ describe("settings-dialog plugin settings machine targeting", () => {
   });
 
   it("ignores stale plugin load responses after the selected machine changes", async () => {
-    const configLoad = deferred<PiWebConfigResponse>();
-    const pluginsLoad = deferred<PiWebPluginsResponse>();
+    const configLoad = deferred<OmpWebConfigResponse>();
+    const pluginsLoad = deferred<OmpWebPluginsResponse>();
     vi.spyOn(configApi, "config").mockReturnValue(configLoad.promise);
     vi.spyOn(pluginsApi, "plugins").mockReturnValue(pluginsLoad.promise);
     const dialog = new SettingsDialog();
@@ -461,7 +461,7 @@ describe("settings-dialog plugin settings machine targeting", () => {
   });
 
   it("ignores stale plugin save responses after the selected machine changes", async () => {
-    const save = deferred<PiWebConfigResponse>();
+    const save = deferred<OmpWebConfigResponse>();
     const pluginsSpy = vi.spyOn(pluginsApi, "plugins").mockResolvedValue(pluginsResponse([pluginInfo("info", false)]));
     vi.spyOn(configApi, "saveConfig").mockReturnValue(save.promise);
     const dialog = new SettingsDialog();
@@ -506,7 +506,7 @@ const runtimeWithoutSelectedMachineSettings: MachineRuntime = {
   machineId: "remote-a",
   ok: true,
   checkedAt: "2026-07-01T00:00:00.000Z",
-  capabilities: [PI_WEB_CAPABILITIES.piPackagesManage],
+  capabilities: [OMP_WEB_CAPABILITIES.piPackagesManage],
 };
 
 function getDialogProperty(dialog: SettingsDialog, property: string): unknown {
@@ -575,9 +575,9 @@ function isStringArray(value: unknown): value is string[] {
   return Array.isArray(value) && value.every((item: unknown) => typeof item === "string");
 }
 
-function configResponse(config: PiWebConfigValues): PiWebConfigResponse {
+function configResponse(config: OmpWebConfigValues): OmpWebConfigResponse {
   return {
-    path: "/tmp/pi-web/config.json",
+    path: "/tmp/omp-web/config.json",
     exists: true,
     config,
     effectiveConfig: config,
@@ -585,14 +585,14 @@ function configResponse(config: PiWebConfigValues): PiWebConfigResponse {
   };
 }
 
-function pluginsResponse(plugins: PiWebPluginInfo[]): PiWebPluginsResponse {
+function pluginsResponse(plugins: OmpWebPluginInfo[]): OmpWebPluginsResponse {
   return { plugins };
 }
 
-function pluginInfo(id: string, enabled: boolean): PiWebPluginInfo {
+function pluginInfo(id: string, enabled: boolean): OmpWebPluginInfo {
   return {
     id,
-    module: `/pi-web-plugins/${id}/plugin.js`,
+    module: `/omp-web-plugins/${id}/plugin.js`,
     source: "test",
     scope: "local",
     machineSpecific: false,

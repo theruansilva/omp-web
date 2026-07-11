@@ -1,10 +1,10 @@
 import { join } from "node:path";
-import { piWebDataDir } from "../config.js";
+import { ompWebDataDir } from "../config.js";
 
 export function sessiondSocketPath(): string {
-  return process.env["PI_WEB_SESSIOND_SOCKET"] ?? join(piWebDataDir(), "sessiond.sock");
+  return process.env["OMP_WEB_SESSIOND_SOCKET"] ?? join(ompWebDataDir(), "sessiond.sock");
 }
 
 export function sessiondHttpUrl(): string | undefined {
-  return process.env["PI_WEB_SESSIOND_URL"];
+  return process.env["OMP_WEB_SESSIOND_URL"];
 }

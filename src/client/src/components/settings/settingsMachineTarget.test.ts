@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Machine, MachineRuntime } from "../../api";
-import { PI_WEB_CAPABILITIES } from "../../../../shared/capabilities";
+import { OMP_WEB_CAPABILITIES } from "../../../../shared/capabilities";
 import { friendlySelectedMachineSettingsErrorMessage, isSelectedMachineSettingsUnsupported, selectedMachineSettingsSupport, selectedMachineSettingsSupportKey, selectedMachineSettingsUnavailableMessage, settingsMachineTarget, settingsMachineTargetLabel } from "./settingsMachineTarget";
 
 const remoteMachine: Machine = {
@@ -25,8 +25,8 @@ describe("selected-machine settings target helpers", () => {
 
   it("gates remote selected-machine settings on advertised runtime support", () => {
     const target = settingsMachineTarget(remoteMachine);
-    const supportedRuntime: MachineRuntime = { machineId: "remote-a", ok: true, checkedAt: "now", capabilities: [PI_WEB_CAPABILITIES.selectedMachineSettings] };
-    const unsupportedRuntime: MachineRuntime = { machineId: "remote-a", ok: true, checkedAt: "now", capabilities: [PI_WEB_CAPABILITIES.piPackagesManage] };
+    const supportedRuntime: MachineRuntime = { machineId: "remote-a", ok: true, checkedAt: "now", capabilities: [OMP_WEB_CAPABILITIES.selectedMachineSettings] };
+    const unsupportedRuntime: MachineRuntime = { machineId: "remote-a", ok: true, checkedAt: "now", capabilities: [OMP_WEB_CAPABILITIES.piPackagesManage] };
 
     expect(selectedMachineSettingsSupport({ id: "local", name: "local", kind: "local" }, undefined)).toEqual({ state: "supported" });
     expect(selectedMachineSettingsSupport(target, undefined)).toEqual({ state: "unknown" });

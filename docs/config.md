@@ -2,20 +2,20 @@
 
 PI WEB configuration covers the machine-local and project-local settings you usually need: the web/API bind address, trusted development-host settings, UI preferences, plugin enablement, file-explorer path access, manual upload defaults, upload limits, and session-daemon tools.
 
-This file is the markdown reference for agents and package consumers. The website page is <https://pi-web.dev/config>.
+This file is the markdown reference for agents and package consumers. The website page is <https://omp-web.dev/config>.
 
 ## Config files
 
 PI WEB uses two config files:
 
-- **Global PI WEB config:** `$PI_WEB_CONFIG`, or `$XDG_CONFIG_HOME/pi-web/config.json`, or `~/.config/pi-web/config.json`.
-- **Project-local PI WEB config:** `<project>/.pi-web/config.json` for commit-able project settings.
+- **Global PI WEB config:** `$OMP_WEB_CONFIG`, or `$XDG_CONFIG_HOME/omp-web/config.json`, or `~/.config/omp-web/config.json`.
+- **Project-local PI WEB config:** `<project>/.omp-web/config.json` for commit-able project settings.
 
 Each PI WEB machine has its own config. When using Fleet/machine federation, Settings uses the selected machine for config that affects work running there: session daemon tools, PI WEB plugin enablement, external path access, and upload defaults. Gateway/browser-only settings stay local to the gateway: keyboard shortcuts, remote machine registry/tokens, and gateway host/port/allowed-hosts. Remote servers that do not advertise selected-machine settings support report those settings as unavailable instead of silently falling back to the gateway.
 
 Pi package settings are separate from PI WEB config. They live in Pi's package-manager settings on the target machine and are managed by Pi (`pi install`, `pi remove`, `pi update`) or **Settings → Pi packages**. In a federated setup, **Settings → Pi packages** targets the currently selected machine. The PI WEB `plugins` config key only enables or disables discovered PI WEB browser plugins on the machine whose config you are editing; it does not install, remove, or update Pi packages.
 
-If you installed services with a custom config path, rerun `pi-web install --config /path/to/config.json` after changing that path or after upgrading from a version that only applied the custom path to the web service. This regenerates service files so the web/API and session daemon use the same `PI_WEB_CONFIG`.
+If you installed services with a custom config path, rerun `omp-web install --config /path/to/config.json` after changing that path or after upgrading from a version that only applied the custom path to the web service. This regenerates service files so the web/API and session daemon use the same `OMP_WEB_CONFIG`.
 
 ## Precedence and reloads
 
@@ -25,9 +25,9 @@ Machine-global runtime values are resolved as:
 defaults → global config file → environment overrides
 ```
 
-Supported project-local settings are then applied for that project's workspaces. For upload defaults, `<project>/.pi-web/config.json` overrides the global value.
+Supported project-local settings are then applied for that project's workspaces. For upload defaults, `<project>/.omp-web/config.json` overrides the global value.
 
-Environment overrides include `PI_WEB_HOST`, `PI_WEB_PORT` / `PORT`, `PI_WEB_ALLOWED_HOSTS`, `PI_WEB_MAX_UPLOAD_BYTES`, `PI_WEB_SPAWN_SESSIONS`, and `PI_WEB_SUBSESSIONS`.
+Environment overrides include `OMP_WEB_HOST`, `OMP_WEB_PORT` / `PORT`, `OMP_WEB_ALLOWED_HOSTS`, `OMP_WEB_MAX_UPLOAD_BYTES`, `OMP_WEB_SPAWN_SESSIONS`, and `OMP_WEB_SUBSESSIONS`.
 
 Process restarts depend on the key:
 
@@ -50,7 +50,7 @@ Process restarts depend on the key:
     "allowedPaths": ["~/SDKs", "/opt/reference"]
   },
   "uploads": {
-    "defaultFolder": ".pi-web/uploads"
+    "defaultFolder": ".omp-web/uploads"
   },
   "maxUploadBytes": 67108864,
   "spawnSessions": true,
@@ -69,7 +69,7 @@ Process restarts depend on the key:
 
 ## Project-local config
 
-Project-local config lives at `<project>/.pi-web/config.json`. Use it for settings that should follow a repository.
+Project-local config lives at `<project>/.omp-web/config.json`. Use it for settings that should follow a repository.
 
 ```json
 {
@@ -87,7 +87,7 @@ Project-local `pathAccess.allowedPaths` entries are merged after the global list
 
 Project-local `uploads.defaultFolder` overrides the global upload destination for workspaces in that project. Current PI WEB servers include this workspace-effective value on the existing workspace responses used locally and through machine federation. Older remote servers may omit the optional field; the browser falls back to the global/default upload folder.
 
-Plugins may own separate project files, such as `.pi-web/tasks.json` for the built-in Workspace Tasks plugin.
+Plugins may own separate project files, such as `.omp-web/tasks.json` for the built-in Workspace Tasks plugin.
 
 ## Configuration matrix
 
@@ -96,29 +96,29 @@ Rows with JSON key `—` are runtime-only environment variables, not config-file
 | Config | JSON key | Env var | Scope | Project-local behavior | Applies / restart |
 | --- | --- | --- | --- | --- | --- |
 | **Config-file keys** |  |  |  |  |  |
-| Web/API bind host | `host` | `PI_WEB_HOST` | Global | Not supported locally | Restart web/API |
-| Web/API port | `port` | `PI_WEB_PORT`, `PORT` | Global | Not supported locally | Restart web/API |
-| Dev-server allowed hosts | `allowedHosts` | `PI_WEB_ALLOWED_HOSTS` | Global | Not supported locally | Restart dev web/UI |
+| Web/API bind host | `host` | `OMP_WEB_HOST` | Global | Not supported locally | Restart web/API |
+| Web/API port | `port` | `OMP_WEB_PORT`, `PORT` | Global | Not supported locally | Restart web/API |
+| Dev-server allowed hosts | `allowedHosts` | `OMP_WEB_ALLOWED_HOSTS` | Global | Not supported locally | Restart dev web/UI |
 | External filesystem roots | `pathAccess.allowedPaths` | — | Global + project | **Merges**: global roots first, then project roots; duplicates removed | Next file request; refresh existing views if needed |
 | Manual file upload default folder | `uploads.defaultFolder` | — | Global + project | **Overrides**: project value wins for workspaces in that project; otherwise global/default applies | New Upload dialogs and direct drag/drop batches after config/workspace refresh |
-| Upload/body limit | `maxUploadBytes` | `PI_WEB_MAX_UPLOAD_BYTES` | Global | Not supported locally | Restart web/API and session daemon on that machine |
-| Agent can spawn sessions | `spawnSessions` | `PI_WEB_SPAWN_SESSIONS` | Global/session daemon | Not supported locally | Restart session daemon on that machine |
-| Tracked subsessions (beta) | `subsessions` | `PI_WEB_SUBSESSIONS` | Global/session daemon | Not supported locally; also requires `spawnSessions` | Restart session daemon on that machine |
+| Upload/body limit | `maxUploadBytes` | `OMP_WEB_MAX_UPLOAD_BYTES` | Global | Not supported locally | Restart web/API and session daemon on that machine |
+| Agent can spawn sessions | `spawnSessions` | `OMP_WEB_SPAWN_SESSIONS` | Global/session daemon | Not supported locally | Restart session daemon on that machine |
+| Tracked subsessions (beta) | `subsessions` | `OMP_WEB_SUBSESSIONS` | Global/session daemon | Not supported locally; also requires `spawnSessions` | Restart session daemon on that machine |
 | Plugin enablement/settings | `plugins.<id>.enabled`, `plugins.<id>.settings` | — | Global | Not core local config; plugins may read their own project files | Reload browser tab |
 | Keyboard shortcuts | `shortcuts.<actionId>` | — | Global | Not supported locally | Applies after settings save/config refresh |
 | Project config version | `version` | — | Project | Project-local only; must be `1` when present | Next project-config read |
 | **Runtime-only environment variables** |  |  |  |  |  |
-| Global config file path | — | `PI_WEB_CONFIG` (`XDG_CONFIG_HOME` affects the default path) | Process/env | Selects the global config file; not a project config | Restart services/processes after changing env |
-| Managed data directory | — | `PI_WEB_DATA_DIR` | Process/env | Not supported locally | Restart services before changing; moves managed state location |
-| Session daemon socket | — | `PI_WEB_SESSIOND_SOCKET` | Web/API + session daemon env | Not supported locally | Restart daemon and web/API; both must match |
-| Session daemon TCP port | — | `PI_WEB_SESSIOND_PORT` | Session daemon env | Not supported locally | Restart session daemon; set `PI_WEB_SESSIOND_URL` for web/API too |
-| Session daemon TCP host | — | `PI_WEB_SESSIOND_HOST` | Session daemon env | Not supported locally | Restart session daemon |
-| Web-to-daemon URL | — | `PI_WEB_SESSIOND_URL` | Web/API env | Not supported locally | Restart web/API |
-| Projects storage file | — | `PI_WEB_PROJECTS_FILE` | Web/API + session daemon env | Not supported locally | Restart services; advanced state override |
-| Remote machines storage file | — | `PI_WEB_MACHINES_FILE` | Web/API env | Not supported locally | Restart web/API; advanced state override |
+| Global config file path | — | `OMP_WEB_CONFIG` (`XDG_CONFIG_HOME` affects the default path) | Process/env | Selects the global config file; not a project config | Restart services/processes after changing env |
+| Managed data directory | — | `OMP_WEB_DATA_DIR` | Process/env | Not supported locally | Restart services before changing; moves managed state location |
+| Session daemon socket | — | `OMP_WEB_SESSIOND_SOCKET` | Web/API + session daemon env | Not supported locally | Restart daemon and web/API; both must match |
+| Session daemon TCP port | — | `OMP_WEB_SESSIOND_PORT` | Session daemon env | Not supported locally | Restart session daemon; set `OMP_WEB_SESSIOND_URL` for web/API too |
+| Session daemon TCP host | — | `OMP_WEB_SESSIOND_HOST` | Session daemon env | Not supported locally | Restart session daemon |
+| Web-to-daemon URL | — | `OMP_WEB_SESSIOND_URL` | Web/API env | Not supported locally | Restart web/API |
+| Projects storage file | — | `OMP_WEB_PROJECTS_FILE` | Web/API + session daemon env | Not supported locally | Restart services; advanced state override |
+| Remote machines storage file | — | `OMP_WEB_MACHINES_FILE` | Web/API env | Not supported locally | Restart web/API; advanced state override |
 | Pi session storage directory | — | `PI_CODING_AGENT_SESSION_DIR` | Pi/session daemon env | Not supported locally | Restart session daemon; follows Pi session priority |
 | Pi agent config directory | — | `PI_CODING_AGENT_DIR` | Pi/Web/API/session daemon env | Not supported locally | Restart services |
-| Skip update checks | — | `PI_WEB_SKIP_VERSION_CHECK`, `PI_WEB_OFFLINE`, `PI_SKIP_VERSION_CHECK`, `PI_OFFLINE` | Web/API env | Not supported locally | Restart web/API after env changes |
+| Skip update checks | — | `OMP_WEB_SKIP_VERSION_CHECK`, `OMP_WEB_OFFLINE`, `PI_SKIP_VERSION_CHECK`, `PI_OFFLINE` | Web/API env | Not supported locally | Restart web/API after env changes |
 
 ## Key details
 
@@ -147,7 +147,7 @@ The Files panel can upload one or more files in two ways:
 - Drop files onto the Files panel to upload immediately to the workspace-effective default folder.
 - Use the toolbar **Upload** button to open the review dialog, edit the destination, and opt into upload options.
 
-`uploads.defaultFolder` sets the workspace-effective default destination. The built-in default is `.pi-web/uploads`; a global config value applies to every project unless `<project>/.pi-web/config.json` sets a project-local override.
+`uploads.defaultFolder` sets the workspace-effective default destination. The built-in default is `.omp-web/uploads`; a global config value applies to every project unless `<project>/.omp-web/config.json` sets a project-local override.
 
 ```json
 {
@@ -163,7 +163,7 @@ Manual uploads use the workspace file-write path: paths stay workspace-relative,
 
 For machine federation, Settings saves the global upload default on the selected machine. Current remote PI WEB servers also return `workspace.effectiveConfig.uploads.defaultFolder` on the existing workspace-list response. Older remote servers can omit that optional field without breaking clients; the Files panel falls back to the global/default upload folder.
 
-The per-request size limit is still controlled by `maxUploadBytes` / `PI_WEB_MAX_UPLOAD_BYTES` on the machine serving the upload.
+The per-request size limit is still controlled by `maxUploadBytes` / `OMP_WEB_MAX_UPLOAD_BYTES` on the machine serving the upload.
 
 ### Session daemon tools
 
@@ -179,7 +179,7 @@ In **Settings → Session daemon**, these keys are saved on the selected machine
 
 The `plugins` key is only for PI WEB browser plugin enablement/settings on the machine whose config you are editing. It does not install, remove, or update Pi packages; use **Settings → Pi packages** or Pi's package manager for package operations. In a federated setup, **Settings → PI WEB plugins** and **Settings → Pi packages** both target the currently selected machine, and each panel labels where changes will be saved or run.
 
-Plugins are enabled by default. Set `plugins.<id>.enabled` to `false` to remove a plugin from that machine's `/pi-web-plugins/manifest.json` before the browser imports it. Settings lists discovered plugins from the selected machine, including disabled entries exposed by that machine.
+Plugins are enabled by default. Set `plugins.<id>.enabled` to `false` to remove a plugin from that machine's `/omp-web-plugins/manifest.json` before the browser imports it. Settings lists discovered plugins from the selected machine, including disabled entries exposed by that machine.
 
 ```json
 {

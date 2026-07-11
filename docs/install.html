@@ -8,7 +8,7 @@
       name="description"
       content="Install PI WEB, the web UI for Pi Coding Agent, on Linux, macOS, or Windows WSL with persistent user services."
     />
-    <link rel="canonical" href="https://pi-web.dev/install" />
+    <link rel="canonical" href="https://omp-web.dev/install" />
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="PI WEB" />
     <meta property="og:title" content="Install PI WEB — web UI for Pi Coding Agent" />
@@ -16,8 +16,8 @@
       property="og:description"
       content="Install PI WEB with npm, Pi, or manual service commands and keep Pi Coding Agent sessions running."
     />
-    <meta property="og:url" content="https://pi-web.dev/install" />
-    <meta property="og:image" content="https://pi-web.dev/assets/pi-web-banner.png" />
+    <meta property="og:url" content="https://omp-web.dev/install" />
+    <meta property="og:image" content="https://omp-web.dev/assets/omp-web-banner.png" />
     <meta property="og:image:alt" content="PI WEB browser UI for persistent Pi Coding Agent sessions" />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="Install PI WEB — web UI for Pi Coding Agent" />
@@ -25,11 +25,11 @@
       name="twitter:description"
       content="Install PI WEB with npm, Pi, or manual service commands and keep Pi Coding Agent sessions running."
     />
-    <meta name="twitter:image" content="https://pi-web.dev/assets/pi-web-banner.png" />
+    <meta name="twitter:image" content="https://omp-web.dev/assets/omp-web-banner.png" />
     <link rel="icon" type="image/svg+xml" href="assets/favicon.svg" />
     <script>
       (() => {
-        const theme = window.localStorage.getItem("pi-web-theme");
+        const theme = window.localStorage.getItem("omp-web-theme");
         if (theme === "light" || theme === "dark") document.documentElement.dataset.theme = theme;
       })();
     </script>
@@ -55,7 +55,7 @@
             <a href="faq">FAQ</a>
           </div>
           <div class="nav-actions">
-            <a class="github-link" href="https://github.com/ProgmRuanSilva/pi-web" aria-label="PI WEB on GitHub">
+            <a class="github-link" href="https://github.com/ProgmRuanSilva/omp-web" aria-label="PI WEB on GitHub">
               <svg class="github-icon" viewBox="0 0 16 16" aria-hidden="true">
                 <path
                   fill="currentColor"
@@ -113,7 +113,7 @@
               <div class="callout warning">
                 <strong>Important PATH detail:</strong>
                 PI WEB services run through your login shell with <code>-lc</code>. Setup that only lives in interactive shell
-                files or prompt hooks may not be visible to services. Run <code>pi-web doctor</code> after installing.
+                files or prompt hooks may not be visible to services. Run <code>omp-web doctor</code> after installing.
               </div>
             </section>
 
@@ -129,9 +129,9 @@
                   <strong>User service install</strong>
                   <button class="copy-button" data-copy="#linux-install">Copy</button>
                 </div>
-                <pre id="linux-install"><code><span class="prompt">$</span> npm install -g @ProgmRuanSilva/pi-web
-<span class="prompt">$</span> pi-web install
-<span class="prompt">$</span> pi-web doctor</code></pre>
+                <pre id="linux-install"><code><span class="prompt">$</span> npm install -g @ProgmRuanSilva/omp-web
+<span class="prompt">$</span> omp-web install
+<span class="prompt">$</span> omp-web doctor</code></pre>
               </div>
               <p>Then open <a href="http://127.0.0.1:8504">http://127.0.0.1:8504</a>.</p>
               <p>On Linux servers, also consider <code>sudo loginctl enable-linger "$USER"</code> so user services survive logout/reboot.</p>
@@ -145,27 +145,27 @@
                   <strong>One-liner</strong>
                   <button class="copy-button" data-copy="#one-line-install">Copy</button>
                 </div>
-                <pre id="one-line-install"><code><span class="prompt">$</span> curl -fsSL https://raw.githubusercontent.com/ProgmRuanSilva/pi-web/main/install.sh | sh</code></pre>
+                <pre id="one-line-install"><code><span class="prompt">$</span> curl -fsSL https://raw.githubusercontent.com/ProgmRuanSilva/omp-web/main/install.sh | sh</code></pre>
               </div>
             </section>
 
             <section id="pi-package">
               <h2>Install through Pi</h2>
-              <p>PI WEB is also published as a Pi package. This exposes a <code>/pi-web</code> command inside Pi.</p>
-              <p>When installed this way, <code>/pi-web install</code> can use PI WEB's package-local service entrypoints, so <code>pi-web-server</code> and <code>pi-web-sessiond</code> do not need to be on your shell <code>PATH</code>.</p>
+              <p>PI WEB is also published as a Pi package. This exposes a <code>/omp-web</code> command inside Pi.</p>
+              <p>When installed this way, <code>/omp-web install</code> can use PI WEB's package-local service entrypoints, so <code>omp-web-server</code> and <code>omp-web-sessiond</code> do not need to be on your shell <code>PATH</code>.</p>
               <div class="code-card">
                 <div class="copy-row">
                   <strong>Pi package path</strong>
                   <button class="copy-button" data-copy="#pi-package-install">Copy</button>
                 </div>
-                <pre id="pi-package-install"><code><span class="prompt">$</span> pi install npm:@ProgmRuanSilva/pi-web
+                <pre id="pi-package-install"><code><span class="prompt">$</span> pi install npm:@ProgmRuanSilva/omp-web
 
 <span class="comment"># Then inside Pi:</span>
-/pi-web install
-/pi-web status
-/pi-web logs
-/pi-web doctor
-/pi-web version</code></pre>
+/omp-web install
+/omp-web status
+/omp-web logs
+/omp-web doctor
+/omp-web version</code></pre>
               </div>
             </section>
 
@@ -180,21 +180,21 @@
                   <strong>Manual processes</strong>
                   <button class="copy-button" data-copy="#manual-install">Copy</button>
                 </div>
-                <pre id="manual-install"><code><span class="prompt">$</span> npm install -g @ProgmRuanSilva/pi-web
+                <pre id="manual-install"><code><span class="prompt">$</span> npm install -g @ProgmRuanSilva/omp-web
 
 <span class="comment"># Terminal 1</span>
-<span class="prompt">$</span> pi-web-sessiond
+<span class="prompt">$</span> omp-web-sessiond
 
 <span class="comment"># Terminal 2</span>
-<span class="prompt">$</span> PI_WEB_PORT=8504 pi-web-server</code></pre>
+<span class="prompt">$</span> OMP_WEB_PORT=8504 omp-web-server</code></pre>
               </div>
               <p>
                 On modern WSL distributions with systemd enabled, the installer can work. Without systemd, use the
                 manual run approach above.
               </p>
               <p>
-                From a PI WEB checkout, <code>pi-web install --dev</code> installs the split development services on supported user-service platforms.
-                <code>pi-web uninstall</code> removes both production and development service files; no uninstall flags are needed.
+                From a PI WEB checkout, <code>omp-web install --dev</code> installs the split development services on supported user-service platforms.
+                <code>omp-web uninstall</code> removes both production and development service files; no uninstall flags are needed.
               </p>
             </section>
 
@@ -239,30 +239,30 @@
 
             <section id="manage-services">
               <h2>Manage services</h2>
-              <p><code>pi-web version</code> compares the installed package version with the versions reported by the running Web/UI and session daemon services.</p>
+              <p><code>omp-web version</code> compares the installed package version with the versions reported by the running Web/UI and session daemon services.</p>
               <div class="code-card">
                 <div class="copy-row">
                   <strong>Useful commands</strong>
                   <button class="copy-button" data-copy="#manage-commands">Copy</button>
                 </div>
-                <pre id="manage-commands"><code><span class="prompt">$</span> pi-web status
-<span class="prompt">$</span> pi-web logs
-<span class="prompt">$</span> pi-web restart
-<span class="prompt">$</span> pi-web doctor
-<span class="prompt">$</span> pi-web version
+                <pre id="manage-commands"><code><span class="prompt">$</span> omp-web status
+<span class="prompt">$</span> omp-web logs
+<span class="prompt">$</span> omp-web restart
+<span class="prompt">$</span> omp-web doctor
+<span class="prompt">$</span> omp-web version
 
 <span class="comment"># From a checkout, install the split development services:</span>
-<span class="prompt">$</span> pi-web install --dev</code></pre>
+<span class="prompt">$</span> omp-web install --dev</code></pre>
               </div>
             </section>
 
             <section id="configure">
               <h2>Configure</h2>
               <p>
-                The installer writes a config file to <code>~/.config/pi-web/config.json</code>, or to
-                <code>$XDG_CONFIG_HOME/pi-web/config.json</code> when <code>XDG_CONFIG_HOME</code> is set. You can choose a
-                different config file during install with <code>pi-web install --config /path/to/config.json</code>, or at
-                runtime with <code>PI_WEB_CONFIG=/path/to/config.json</code>.
+                The installer writes a config file to <code>~/.config/omp-web/config.json</code>, or to
+                <code>$XDG_CONFIG_HOME/omp-web/config.json</code> when <code>XDG_CONFIG_HOME</code> is set. You can choose a
+                different config file during install with <code>omp-web install --config /path/to/config.json</code>, or at
+                runtime with <code>OMP_WEB_CONFIG=/path/to/config.json</code>.
               </p>
               <div class="code-card">
                 <div class="copy-row">
@@ -286,12 +286,12 @@
                 for shortcut overrides.
               </p>
               <div class="callout">
-                Need the full schema, restart rules, project-local <code>.pi-web/config.json</code>, path access details, and
+                Need the full schema, restart rules, project-local <code>.omp-web/config.json</code>, path access details, and
                 environment variable reference? Read the <a href="config">configuration reference</a>.
               </div>
               <p>
                 The web server defaults to <code>127.0.0.1:8504</code>, and PI WEB-managed state defaults to
-                <code>~/.pi-web</code>. External filesystem paths are denied by default unless listed in
+                <code>~/.omp-web</code>. External filesystem paths are denied by default unless listed in
                 <code>pathAccess.allowedPaths</code>.
               </p>
             </section>
@@ -299,7 +299,7 @@
             <section id="uninstall">
               <h2>Uninstall</h2>
               <p>
-                <code>pi-web uninstall</code> stops, disables, and removes PI WEB's production and development service files.
+                <code>omp-web uninstall</code> stops, disables, and removes PI WEB's production and development service files.
                 It does not remove the npm package, config file, or data directory.
               </p>
               <div class="code-card">
@@ -307,8 +307,8 @@
                   <strong>Uninstall services and package</strong>
                   <button class="copy-button" data-copy="#uninstall-commands">Copy</button>
                 </div>
-                <pre id="uninstall-commands"><code><span class="prompt">$</span> pi-web uninstall
-<span class="prompt">$</span> npm uninstall -g @ProgmRuanSilva/pi-web</code></pre>
+                <pre id="uninstall-commands"><code><span class="prompt">$</span> omp-web uninstall
+<span class="prompt">$</span> npm uninstall -g @ProgmRuanSilva/omp-web</code></pre>
               </div>
               <p>Optional cleanup, if you also want to delete PI WEB config and state:</p>
               <div class="code-card">
@@ -316,17 +316,17 @@
                   <strong>Delete config and data</strong>
                   <button class="copy-button" data-copy="#delete-data-commands">Copy</button>
                 </div>
-                <pre id="delete-data-commands"><code><span class="prompt">$</span> CONFIG_FILE="${PI_WEB_CONFIG:-${XDG_CONFIG_HOME:-$HOME/.config}/pi-web/config.json}"
-<span class="prompt">$</span> DATA_DIR="${PI_WEB_DATA_DIR:-$HOME/.pi-web}"
+                <pre id="delete-data-commands"><code><span class="prompt">$</span> CONFIG_FILE="${OMP_WEB_CONFIG:-${XDG_CONFIG_HOME:-$HOME/.config}/omp-web/config.json}"
+<span class="prompt">$</span> DATA_DIR="${OMP_WEB_DATA_DIR:-$HOME/.omp-web}"
 <span class="prompt">$</span> rm -f "$CONFIG_FILE"
 <span class="prompt">$</span> rmdir "$(dirname "$CONFIG_FILE")" 2&gt;/dev/null || true
 <span class="prompt">$</span> rm -rf "$DATA_DIR"
 
-<span class="comment"># If you configured a socket outside PI_WEB_DATA_DIR, remove it too:</span>
-<span class="prompt">$</span> [ -z "${PI_WEB_SESSIOND_SOCKET:-}" ] || rm -f "$PI_WEB_SESSIOND_SOCKET"</code></pre>
+<span class="comment"># If you configured a socket outside OMP_WEB_DATA_DIR, remove it too:</span>
+<span class="prompt">$</span> [ -z "${OMP_WEB_SESSIOND_SOCKET:-}" ] || rm -f "$OMP_WEB_SESSIOND_SOCKET"</code></pre>
               </div>
               <p>
-                If you installed with <code>pi-web install --config /custom/path.json</code>, delete that custom file instead
+                If you installed with <code>omp-web install --config /custom/path.json</code>, delete that custom file instead
                 of the default config path.
               </p>
             </section>
@@ -345,7 +345,7 @@
           <a href="config">Config</a>
           <a href="plugins">Plugins</a>
           <a href="faq">FAQ</a>
-          <a href="https://github.com/ProgmRuanSilva/pi-web">GitHub</a>
+          <a href="https://github.com/ProgmRuanSilva/omp-web">GitHub</a>
         </div>
       </div>
     </footer>

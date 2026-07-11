@@ -18,7 +18,7 @@ export class SchedulePromptService {
   * session/cwd, loads jobs from disk, and starts the timer chain.
   *
   * @param sessionId  The session's unique id (used to scope session-bound jobs)
-  * @param cwd        The session's working directory (determines the .pi-web path)
+  * @param cwd        The session's working directory (determines the .omp-web path)
   * @param dispatchPrompt  Function to inject a prompt into the session's chat
   */
  startForSession(

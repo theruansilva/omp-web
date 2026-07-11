@@ -1,7 +1,7 @@
 import type { FastifyInstance, FastifyReply } from "fastify";
 import type { WebSocket } from "ws";
 import { FEDERATED_HTTP_ROUTES, FEDERATED_WEBSOCKET_ROUTES, type FederatedHttpRouteSpec } from "../../shared/federatedRoutes.js";
-import { mergeSelectedMachineConfig, parsePiWebConfigResponseBody, parseSelectedMachineConfigRequest, selectedMachineConfigResponse } from "../configRoutes.js";
+import { mergeSelectedMachineConfig, parseOmpWebConfigResponseBody, parseSelectedMachineConfigRequest, selectedMachineConfigResponse } from "../configRoutes.js";
 import { bridgeSockets } from "../webSocketBridge.js";
 import { RemoteMachineRequestError, type MachineClient, type MachineJsonResponse, type MachineRequestOptions } from "./machineClient.js";
 import { MachineService } from "./machineService.js";
@@ -73,7 +73,7 @@ async function proxySelectedMachineConfigRequest(client: MachineClient, machineI
     const currentResponse = await client.requestJson("GET", remotePath);
     if (!isSuccessfulStatus(currentResponse.statusCode)) return sendUpstreamJsonResponse(reply, currentResponse, machineId);
 
-    const current = parsePiWebConfigResponseBody(currentResponse.body, "Remote machine config response");
+    const current = parseOmpWebConfigResponseBody(currentResponse.body, "Remote machine config response");
     const merged = mergeSelectedMachineConfig(current.config, patch);
     return sendSelectedMachineConfigResponse(reply, await client.requestJson("PUT", remotePath, { config: merged }), machineId);
   }
@@ -89,7 +89,7 @@ function sendSelectedMachineConfigResponse(reply: FastifyReply, upstream: Machin
   if (!isSuccessfulStatus(upstream.statusCode)) return sendUpstreamJsonResponse(reply, upstream, machineId);
   reply.code(upstream.statusCode);
   applySafeHeaders(reply, upstream.headers);
-  return reply.send(selectedMachineConfigResponse(parsePiWebConfigResponseBody(upstream.body, "Remote machine config response")));
+  return reply.send(selectedMachineConfigResponse(parseOmpWebConfigResponseBody(upstream.body, "Remote machine config response")));
 }
 
 function sendUpstreamJsonResponse(reply: FastifyReply, upstream: MachineJsonResponse, machineId: string): FastifyReply {

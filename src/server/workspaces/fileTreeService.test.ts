@@ -7,7 +7,7 @@ import { listWorkspaceTree } from "./fileTreeService.js";
 const roots: string[] = [];
 
 async function tempWorkspace(): Promise<string> {
-  const root = await mkdtemp(join(tmpdir(), "pi-web-file-tree-"));
+  const root = await mkdtemp(join(tmpdir(), "omp-web-file-tree-"));
   roots.push(root);
   return root;
 }

@@ -1,13 +1,13 @@
 import { css, html, LitElement, type TemplateResult } from "lit";
 import { customElement, property } from "lit/decorators.js";
-import type { PiWebConfigResponse, PiWebPluginInfo, PiWebPluginsResponse } from "../../api";
+import type { OmpWebConfigResponse, OmpWebPluginInfo, OmpWebPluginsResponse } from "../../api";
 import "./SettingsPanelFrame";
 import type { SettingsNotice } from "./SettingsPanelFrame";
 
 @customElement("settings-plugins-panel")
 export class SettingsPluginsPanel extends LitElement {
-  @property({ attribute: false }) pluginsResponse: PiWebPluginsResponse | undefined;
-  @property({ attribute: false }) configResponse: PiWebConfigResponse | undefined;
+  @property({ attribute: false }) pluginsResponse: OmpWebPluginsResponse | undefined;
+  @property({ attribute: false }) configResponse: OmpWebConfigResponse | undefined;
   @property({ type: Boolean }) loading = false;
   @property({ type: Boolean }) saving = false;
   @property() error = "";
@@ -54,7 +54,7 @@ export class SettingsPluginsPanel extends LitElement {
     return hasLoadedPlugins && this.configResponse === undefined && !this.loading && this.error === "";
   }
 
-  private renderPanelContent(plugins: PiWebPluginInfo[], hasPluginResponse: boolean): TemplateResult {
+  private renderPanelContent(plugins: OmpWebPluginInfo[], hasPluginResponse: boolean): TemplateResult {
     if (!hasPluginResponse) {
       return html`<div class="loading-card">${this.loading ? "Loading PI WEB plugins…" : `PI WEB plugin list unavailable for ${this.targetLabel}. Use Reload to try again.`}</div>`;
     }
@@ -69,7 +69,7 @@ export class SettingsPluginsPanel extends LitElement {
     `;
   }
 
-  private renderPlugin(plugin: PiWebPluginInfo): TemplateResult {
+  private renderPlugin(plugin: OmpWebPluginInfo): TemplateResult {
     const configured = this.configResponse?.config.plugins?.[plugin.id];
     const configuredState = configured?.enabled === false ? "Config disabled" : configured?.enabled === true ? "Config enabled" : "Default enabled";
     return html`
@@ -87,7 +87,7 @@ export class SettingsPluginsPanel extends LitElement {
     `;
   }
 
-  private async togglePlugin(plugin: PiWebPluginInfo, event: Event): Promise<void> {
+  private async togglePlugin(plugin: OmpWebPluginInfo, event: Event): Promise<void> {
     const enabled = event.target instanceof HTMLInputElement ? event.target.checked : plugin.enabled;
     await this.onTogglePlugin?.(plugin.id, enabled);
   }

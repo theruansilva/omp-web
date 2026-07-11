@@ -8,7 +8,7 @@
       name="description"
       content="Connect trusted PI WEB runtimes through machine federation so one web UI can supervise local and remote projects, sessions, files, git state, terminals, Pi packages, and plugins."
     />
-    <link rel="canonical" href="https://pi-web.dev/machines" />
+    <link rel="canonical" href="https://omp-web.dev/machines" />
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="PI WEB" />
     <meta property="og:title" content="PI WEB fleet — remote Pi web UI machines" />
@@ -16,8 +16,8 @@
       property="og:description"
       content="Use one PI WEB instance to reach trusted local and remote Pi Coding Agent machines."
     />
-    <meta property="og:url" content="https://pi-web.dev/machines" />
-    <meta property="og:image" content="https://pi-web.dev/assets/pi-web-banner.png" />
+    <meta property="og:url" content="https://omp-web.dev/machines" />
+    <meta property="og:image" content="https://omp-web.dev/assets/omp-web-banner.png" />
     <meta property="og:image:alt" content="PI WEB browser UI for persistent Pi Coding Agent sessions" />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="PI WEB fleet — remote Pi web UI machines" />
@@ -25,11 +25,11 @@
       name="twitter:description"
       content="Use one PI WEB instance to reach trusted local and remote Pi Coding Agent machines."
     />
-    <meta name="twitter:image" content="https://pi-web.dev/assets/pi-web-banner.png" />
+    <meta name="twitter:image" content="https://omp-web.dev/assets/omp-web-banner.png" />
     <link rel="icon" type="image/svg+xml" href="assets/favicon.svg" />
     <script>
       (() => {
-        const theme = window.localStorage.getItem("pi-web-theme");
+        const theme = window.localStorage.getItem("omp-web-theme");
         if (theme === "light" || theme === "dark") document.documentElement.dataset.theme = theme;
       })();
     </script>
@@ -55,7 +55,7 @@
             <a href="faq">FAQ</a>
           </div>
           <div class="nav-actions">
-            <a class="github-link" href="https://github.com/ProgmRuanSilva/pi-web" aria-label="PI WEB on GitHub">
+            <a class="github-link" href="https://github.com/ProgmRuanSilva/omp-web" aria-label="PI WEB on GitHub">
               <svg class="github-icon" viewBox="0 0 16 16" aria-hidden="true">
                 <path
                   fill="currentColor"
@@ -167,14 +167,14 @@ PI WEB gateway you opened
                   <strong>Install on each target</strong>
                   <button class="copy-button" data-copy="#target-install">Copy</button>
                 </div>
-                <pre id="target-install"><code><span class="prompt">$</span> npm install -g @ProgmRuanSilva/pi-web
-<span class="prompt">$</span> pi-web install
-<span class="prompt">$</span> pi-web doctor</code></pre>
+                <pre id="target-install"><code><span class="prompt">$</span> npm install -g @ProgmRuanSilva/omp-web
+<span class="prompt">$</span> omp-web install
+<span class="prompt">$</span> omp-web doctor</code></pre>
               </div>
               <p>
                 Prefer a private path such as NetBird, Tailscale, WireGuard, private LAN, SSH tunnel, or an authenticated reverse
                 proxy. If the remote is behind a path prefix, include that prefix in the machine URL, for example
-                <code>https://devbox.example.test/pi-web</code>.
+                <code>https://devbox.example.test/omp-web</code>.
               </p>
               <div class="callout danger">
                 Do not expose PI WEB directly to the public internet. Register machines only over trusted network paths
@@ -266,14 +266,14 @@ PI WEB gateway you opened
             <section id="storage-troubleshooting">
               <h2>Troubleshooting</h2>
               <p>
-                Remote machine records are stored on the gateway in <code>~/.pi-web/machines.json</code>. If
-                <code>PI_WEB_DATA_DIR</code> is set, they live under <code>$PI_WEB_DATA_DIR/machines.json</code>.
+                Remote machine records are stored on the gateway in <code>~/.omp-web/machines.json</code>. If
+                <code>OMP_WEB_DATA_DIR</code> is set, they live under <code>$OMP_WEB_DATA_DIR/machines.json</code>.
               </p>
               <ul>
                 <li>Use <strong>Actions → Refresh Selected Machine</strong> to re-check health.</li>
                 <li>Make sure the remote URL is reachable from the gateway server.</li>
                 <li>Open the remote PI WEB directly to verify it is running and to complete provider login flows.</li>
-                <li>Check gateway logs with <code>pi-web logs</code> for proxy timeouts or upstream errors.</li>
+                <li>Check gateway logs with <code>omp-web logs</code> for proxy timeouts or upstream errors.</li>
               </ul>
               <div class="doc-actions">
                 <a class="button primary" href="install#remote-access">Review remote access setup</a>
@@ -295,7 +295,7 @@ PI WEB gateway you opened
           <a href="config">Config</a>
           <a href="plugins">Plugins</a>
           <a href="faq">FAQ</a>
-          <a href="https://github.com/ProgmRuanSilva/pi-web">GitHub</a>
+          <a href="https://github.com/ProgmRuanSilva/omp-web">GitHub</a>
         </div>
       </div>
     </footer>

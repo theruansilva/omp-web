@@ -1,6 +1,6 @@
-import type { Machine, MachineHealth, MachineRuntime, PiWebComponentStatus, PiWebRuntimeComponent, PiWebRuntimeResponse, PiWebStatusResponse } from "../../shared/apiTypes.js";
-import { parsePiWebRuntimeResponse } from "../../shared/piWebStatusParsing.js";
-import { getPiWebRuntime } from "../piWebStatus.js";
+import type { Machine, MachineHealth, MachineRuntime, OmpWebComponentStatus, OmpWebRuntimeComponent, OmpWebRuntimeResponse, OmpWebStatusResponse } from "../../shared/apiTypes.js";
+import { parseOmpWebRuntimeResponse } from "../../shared/ompWebStatusParsing.js";
+import { getOmpWebRuntime } from "../ompWebStatus.js";
 import { DEFAULT_REMOTE_HEALTH_TIMEOUT_MS, RemoteMachineClient, type MachineClient, validateConfiguredMachineHeaders } from "./machineClient.js";
 import { MachineStore, type StoredMachine } from "./machineStore.js";
 
@@ -14,7 +14,7 @@ export interface CreateMachineInput {
 export type UpdateMachineInput = Partial<CreateMachineInput>;
 
 export interface MachineServiceDependencies {
-  localRuntime?: () => Promise<PiWebRuntimeResponse>;
+  localRuntime?: () => Promise<OmpWebRuntimeResponse>;
   remoteClientFactory?: (machine: StoredMachine) => MachineClient;
   now?: () => Date;
   healthCacheTtlMs?: number;
@@ -107,7 +107,7 @@ export class MachineService {
   private async localHealth(): Promise<MachineHealth> {
     const checkedAt = this.now().toISOString();
     try {
-      const runtime = await (this.deps.localRuntime ?? getPiWebRuntime)();
+      const runtime = await (this.deps.localRuntime ?? getOmpWebRuntime)();
       return {
         machineId: "local",
         ok: true,
@@ -126,8 +126,8 @@ export class MachineService {
     if (machine === undefined) return undefined;
     const checkedAt = this.now().toISOString();
     try {
-      const response = await this.clientFor(machine).requestJson("GET", "/api/pi-web/status", undefined, { timeoutMs: DEFAULT_REMOTE_HEALTH_TIMEOUT_MS });
-      if (response.statusCode >= 200 && response.statusCode < 300 && isPiWebStatusResponse(response.body)) {
+      const response = await this.clientFor(machine).requestJson("GET", "/api/omp-web/status", undefined, { timeoutMs: DEFAULT_REMOTE_HEALTH_TIMEOUT_MS });
+      if (response.statusCode >= 200 && response.statusCode < 300 && isOmpWebStatusResponse(response.body)) {
         return { machineId: id, ok: true, checkedAt, status: "online", web: response.body.components.web, sessiond: response.body.components.sessiond };
       }
       return { machineId: id, ok: false, checkedAt, status: "error", error: `Remote health returned HTTP ${String(response.statusCode)}` };
@@ -139,7 +139,7 @@ export class MachineService {
   private async localRuntime(): Promise<MachineRuntime> {
     const checkedAt = this.now().toISOString();
     try {
-      return machineRuntime("local", checkedAt, await (this.deps.localRuntime ?? getPiWebRuntime)());
+      return machineRuntime("local", checkedAt, await (this.deps.localRuntime ?? getOmpWebRuntime)());
     } catch (error) {
       return { machineId: "local", ok: false, checkedAt, error: errorMessage(error) };
     }
@@ -150,8 +150,8 @@ export class MachineService {
     if (machine === undefined) return undefined;
     const checkedAt = this.now().toISOString();
     try {
-      const response = await this.clientFor(machine).requestJson("GET", "/api/pi-web/runtime", undefined, { timeoutMs: DEFAULT_REMOTE_HEALTH_TIMEOUT_MS });
-      const runtime = parsePiWebRuntimeResponse(response.body);
+      const response = await this.clientFor(machine).requestJson("GET", "/api/omp-web/runtime", undefined, { timeoutMs: DEFAULT_REMOTE_HEALTH_TIMEOUT_MS });
+      const runtime = parseOmpWebRuntimeResponse(response.body);
       if (response.statusCode >= 200 && response.statusCode < 300 && runtime !== undefined) return machineRuntime(id, checkedAt, runtime);
       return { machineId: id, ok: false, checkedAt, error: `Remote runtime returned HTTP ${String(response.statusCode)}` };
     } catch (error) {
@@ -212,7 +212,7 @@ function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
 }
 
-function componentStatusFromRuntime(runtime: PiWebRuntimeComponent): PiWebComponentStatus {
+function componentStatusFromRuntime(runtime: OmpWebRuntimeComponent): OmpWebComponentStatus {
   return {
     component: runtime.component,
     label: runtime.label,
@@ -223,7 +223,7 @@ function componentStatusFromRuntime(runtime: PiWebRuntimeComponent): PiWebCompon
   };
 }
 
-function machineRuntime(machineId: string, checkedAt: string, runtime: PiWebRuntimeResponse): MachineRuntime {
+function machineRuntime(machineId: string, checkedAt: string, runtime: OmpWebRuntimeResponse): MachineRuntime {
   return {
     machineId,
     ok: true,
@@ -235,14 +235,14 @@ function machineRuntime(machineId: string, checkedAt: string, runtime: PiWebRunt
   };
 }
 
-function isPiWebStatusResponse(value: unknown): value is PiWebStatusResponse {
+function isOmpWebStatusResponse(value: unknown): value is OmpWebStatusResponse {
   if (!isRecord(value)) return false;
   const components = value["components"];
   if (!isRecord(components)) return false;
-  return isPiWebComponentStatus(components["web"]) && isPiWebComponentStatus(components["sessiond"]);
+  return isOmpWebComponentStatus(components["web"]) && isOmpWebComponentStatus(components["sessiond"]);
 }
 
-function isPiWebComponentStatus(value: unknown): value is PiWebComponentStatus {
+function isOmpWebComponentStatus(value: unknown): value is OmpWebComponentStatus {
   if (!isRecord(value)) return false;
   const component = value["component"];
   return (component === "web" || component === "sessiond")

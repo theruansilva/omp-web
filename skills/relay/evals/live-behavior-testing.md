@@ -23,8 +23,8 @@ A useful small live suite covers these behaviors:
 Put throwaway relay files outside the repo or under a clearly temporary path, for example:
 
 ```text
-/tmp/pi-web-relay-live-evals/iteration-1/<eval-name>/
-  sandbox/.pi-web/relays/<relay-name>/
+/tmp/omp-web-relay-live-evals/iteration-1/<eval-name>/
+  sandbox/.omp-web/relays/<relay-name>/
     charter.md
     status.md
     log.md
@@ -80,8 +80,8 @@ Relay "sandbox" leg 2 begins now.
 You are the next runner in this Relay method chain.
 
 Read:
-- /tmp/pi-web-relay-live-evals/.../sandbox/.pi-web/relays/sandbox/charter.md
-- /tmp/pi-web-relay-live-evals/.../sandbox/.pi-web/relays/sandbox/status.md
+- /tmp/omp-web-relay-live-evals/.../sandbox/.omp-web/relays/sandbox/charter.md
+- /tmp/omp-web-relay-live-evals/.../sandbox/.omp-web/relays/sandbox/status.md
 ```
 
 This matters for the "spawn exactly once" assertion: a failed first `spawn_session` call still counts as an attempted handoff. Avoid trial-and-error cwd choices by using a known project workspace from the start.
@@ -102,8 +102,8 @@ After each subsession finishes, review both transcript and files:
 Record a short result summary in the eval workspace, for example:
 
 ```text
-/tmp/pi-web-relay-live-evals/iteration-1/live-results.md
-/tmp/pi-web-relay-live-evals/iteration-1/live-results.json
+/tmp/omp-web-relay-live-evals/iteration-1/live-results.md
+/tmp/omp-web-relay-live-evals/iteration-1/live-results.json
 ```
 
 ## Interpreting negative tests

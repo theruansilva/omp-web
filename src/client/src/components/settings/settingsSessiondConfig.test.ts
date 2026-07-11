@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { PiWebConfigResponse, PiWebConfigValues } from "../../api";
+import type { OmpWebConfigResponse, OmpWebConfigValues } from "../../api";
 import { mergeSelectedMachineSessiondConfig, spawnSessionsConfigPatch, subsessionsConfigPatch } from "./settingsSessiondConfig";
 
 describe("session daemon settings config helpers", () => {
@@ -51,9 +51,9 @@ describe("session daemon settings config helpers", () => {
   });
 });
 
-function configResponse(config: PiWebConfigValues, overrides: Partial<PiWebConfigResponse["envOverrides"]> = {}): PiWebConfigResponse {
+function configResponse(config: OmpWebConfigValues, overrides: Partial<OmpWebConfigResponse["envOverrides"]> = {}): OmpWebConfigResponse {
   return {
-    path: "/tmp/pi-web/config.json",
+    path: "/tmp/omp-web/config.json",
     exists: true,
     config,
     effectiveConfig: config,

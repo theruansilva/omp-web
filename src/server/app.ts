@@ -9,7 +9,7 @@ import { ProjectService } from "./projects/projectService.js";
 import { WorkspaceService } from "./workspaces/workspaceService.js";
 import { isAbsoluteishFileSuggestionQuery, listFileSuggestions, listPathSuggestions } from "./workspaces/fileSuggestions.js";
 import { pathAccessForCwd } from "./workspaces/effectivePathAccess.js";
-import { loadEffectiveProjectUploadsConfig } from "./workspaces/projectPiWebConfig.js";
+import { loadEffectiveProjectUploadsConfig } from "./workspaces/projectOmpWebConfig.js";
 import { normalizeRequestCwd } from "./workingDirectory.js";
 import { listDirectorySuggestions } from "./projects/directorySuggestions.js";
 import { SessionDaemonClient } from "../sessiond/sessionDaemonClient.js";
@@ -18,12 +18,12 @@ import { registerWorkspaceExplorerRoutes } from "./workspaceExplorerRoutes.js";
 import { registerGitRoutes } from "./gitRoutes.js";
 import { registerTerminalProxyRoutes } from "./terminalProxyRoutes.js";
 import { registerWorkspaceDeletionRoutes } from "./workspaces/workspaceDeletionRoutes.js";
-import { createFilePiWebConfigService, registerConfigRoutes, registerLocalMachineConfigRoutes, type PiWebConfigService } from "./configRoutes.js";
-import { PiWebPluginService } from "./piWebPluginService.js";
+import { createFileOmpWebConfigService, registerConfigRoutes, registerLocalMachineConfigRoutes, type OmpWebConfigService } from "./configRoutes.js";
+import { OmpWebPluginService } from "./ompWebPluginService.js";
 import { createDefaultPiPackageService, type PiPackageService } from "./piPackageService.js";
 import { registerPiPackageRoutes } from "./piPackageRoutes.js";
-import { createPiWebStatusCache } from "./piWebStatusCache.js";
-import { getPiWebRuntime, getPiWebStatus, getPiWebVersionStatus } from "./piWebStatus.js";
+import { createOmpWebStatusCache } from "./ompWebStatusCache.js";
+import { getOmpWebRuntime, getOmpWebStatus, getOmpWebVersionStatus } from "./ompWebStatus.js";
 import { MachineService } from "./machines/machineService.js";
 import { registerMachineRoutes } from "./machines/machineRoutes.js";
 import { registerMachineProxyRoutes } from "./machines/machineProxyRoutes.js";
@@ -35,9 +35,9 @@ export interface AppDependencies {
   workspaces?: WorkspaceService;
   machines?: MachineService;
   sessionDaemon?: SessionProxyDaemon;
-  piWebPlugins?: Pick<PiWebPluginService, "manifest" | "plugins" | "readAsset">;
+  ompWebPlugins?: Pick<OmpWebPluginService, "manifest" | "plugins" | "readAsset">;
   piPackages?: PiPackageService;
-  config?: PiWebConfigService;
+  config?: OmpWebConfigService;
   clientDist?: string | false;
   logger?: FastifyServerOptions["logger"];
   /** Maximum accepted HTTP request body size in bytes. */
@@ -45,7 +45,7 @@ export interface AppDependencies {
 }
 
 interface LocalProjectRouteOptions {
-  config?: Pick<PiWebConfigService, "read">;
+  config?: Pick<OmpWebConfigService, "read">;
 }
 
 function registerLocalProjectRoutes(app: FastifyInstance, projects: ProjectService, workspaces: WorkspaceService, prefix: string, options: LocalProjectRouteOptions = {}): void {
@@ -86,7 +86,7 @@ function registerLocalProjectRoutes(app: FastifyInstance, projects: ProjectServi
   });
 }
 
-async function listWorkspacesWithEffectiveConfig(project: Project, workspaces: WorkspaceService, config?: Pick<PiWebConfigService, "read">): Promise<Workspace[]> {
+async function listWorkspacesWithEffectiveConfig(project: Project, workspaces: WorkspaceService, config?: Pick<OmpWebConfigService, "read">): Promise<Workspace[]> {
   const [workspaceList, effectiveConfig] = await Promise.all([
     workspaces.list(project),
     workspaceEffectiveConfig(project.path, config),
@@ -94,13 +94,13 @@ async function listWorkspacesWithEffectiveConfig(project: Project, workspaces: W
   return workspaceList.map((workspace) => ({ ...workspace, effectiveConfig }));
 }
 
-async function workspaceEffectiveConfig(projectPath: string, config?: Pick<PiWebConfigService, "read">): Promise<NonNullable<Workspace["effectiveConfig"]>> {
+async function workspaceEffectiveConfig(projectPath: string, config?: Pick<OmpWebConfigService, "read">): Promise<NonNullable<Workspace["effectiveConfig"]>> {
   const globalConfig = config === undefined ? {} : (await config.read()).effectiveConfig;
   return { uploads: await loadEffectiveProjectUploadsConfig(projectPath, globalConfig) };
 }
 
 interface LocalFileSuggestionRouteOptions {
-  config?: Pick<PiWebConfigService, "read">;
+  config?: Pick<OmpWebConfigService, "read">;
 }
 
 function registerLocalFileSuggestionRoutes(app: FastifyInstance, projects: ProjectService, workspaces: WorkspaceService, prefix: string, options: LocalFileSuggestionRouteOptions = {}): void {
@@ -124,32 +124,32 @@ export async function buildApp(deps: AppDependencies = {}): Promise<FastifyInsta
 
   const projects = deps.projects ?? new ProjectService(new ProjectStore());
   const workspaces = deps.workspaces ?? new WorkspaceService();
-  const piWebPlugins = deps.piWebPlugins ?? new PiWebPluginService();
+  const ompWebPlugins = deps.ompWebPlugins ?? new OmpWebPluginService();
   const piPackages = deps.piPackages ?? createDefaultPiPackageService();
-  const configService = deps.config ?? createFilePiWebConfigService();
+  const configService = deps.config ?? createFileOmpWebConfigService();
   const sessionDaemon = deps.sessionDaemon ?? new SessionDaemonClient();
-  const piWebStatusCache = createPiWebStatusCache(() => getPiWebStatus(sessionDaemon), {
+  const ompWebStatusCache = createOmpWebStatusCache(() => getOmpWebStatus(sessionDaemon), {
     onError: (error) => { app.log.warn({ err: error }, "failed to refresh PI WEB status cache"); },
   });
   const machines = deps.machines ?? new MachineService(undefined, {
-    localRuntime: () => getPiWebRuntime(sessionDaemon),
+    localRuntime: () => getOmpWebRuntime(sessionDaemon),
   });
 
-  app.get("/pi-web-plugins/manifest.json", async () => piWebPlugins.manifest());
+  app.get("/omp-web-plugins/manifest.json", async () => ompWebPlugins.manifest());
 
-  app.get<{ Params: { pluginId: string; "*": string } }>("/pi-web-plugins/:pluginId/*", async (request, reply) => {
+  app.get<{ Params: { pluginId: string; "*": string } }>("/omp-web-plugins/:pluginId/*", async (request, reply) => {
     if (await proxyMachinePluginAsset(machines, request.params.pluginId, request.params["*"], request.url, reply)) return;
 
-    const asset = await piWebPlugins.readAsset(request.params.pluginId, request.params["*"]);
+    const asset = await ompWebPlugins.readAsset(request.params.pluginId, request.params["*"]);
     if (asset === undefined) return reply.code(404).send({ error: "Plugin asset not found" });
     return reply.type(asset.contentType).send(asset.content);
   });
 
-  app.get("/api/pi-web/status", async () => piWebStatusCache.get());
-  app.get("/api/pi-web/version", async () => getPiWebVersionStatus(sessionDaemon));
-  app.get("/api/pi-web/runtime", async () => getPiWebRuntime(sessionDaemon));
-  app.get("/api/plugins", async () => piWebPlugins.plugins());
-  app.get("/api/machines/local/plugins", async () => piWebPlugins.plugins());
+  app.get("/api/omp-web/status", async () => ompWebStatusCache.get());
+  app.get("/api/omp-web/version", async () => getOmpWebVersionStatus(sessionDaemon));
+  app.get("/api/omp-web/runtime", async () => getOmpWebRuntime(sessionDaemon));
+  app.get("/api/plugins", async () => ompWebPlugins.plugins());
+  app.get("/api/machines/local/plugins", async () => ompWebPlugins.plugins());
   registerPiPackageRoutes(app, piPackages);
   registerPiPackageRoutes(app, piPackages, "/api/machines/local");
   registerConfigRoutes(app, configService);

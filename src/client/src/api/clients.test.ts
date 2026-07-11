@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { PI_WEB_CAPABILITIES } from "../../../shared/capabilities";
-import type { PiWebConfigValues, TerminalCommandRun, Workspace } from "../../../shared/apiTypes";
-import { configApi, filesApi, machinesApi, piPackagesApi, piWebApi, pluginsApi, sessionsApi, terminalsApi, workspacesApi } from "./clients";
+import { OMP_WEB_CAPABILITIES } from "../../../shared/capabilities";
+import type { OmpWebConfigValues, TerminalCommandRun, Workspace } from "../../../shared/apiTypes";
+import { configApi, filesApi, machinesApi, piPackagesApi, ompWebApi, pluginsApi, sessionsApi, terminalsApi, workspacesApi } from "./clients";
 
 const workspace: Workspace = {
   id: "w/1",
@@ -44,14 +44,14 @@ describe("machine-scoped runtime API", () => {
       messages: [],
     });
 
-    await piWebApi.piWebStatus("remote a");
+    await ompWebApi.ompWebStatus("remote a");
 
     expect(fetchMock).toHaveBeenCalledOnce();
-    expect(fetchCall(fetchMock, 0)[0]).toBe("/api/machines/remote%20a/pi-web/status");
+    expect(fetchCall(fetchMock, 0)[0]).toBe("/api/machines/remote%20a/omp-web/status");
   });
 
   it("reads machine runtime through the gateway route", async () => {
-    const fetchMock = stubJsonFetch({ machineId: "remote a", ok: true, checkedAt: "now", capabilities: [PI_WEB_CAPABILITIES.sessionsDeleteArchived] });
+    const fetchMock = stubJsonFetch({ machineId: "remote a", ok: true, checkedAt: "now", capabilities: [OMP_WEB_CAPABILITIES.sessionsDeleteArchived] });
 
     await machinesApi.runtime("remote a");
 
@@ -63,14 +63,14 @@ describe("machine-scoped runtime API", () => {
 describe("settings config and plugin APIs", () => {
   it("preserves gateway config and plugin routes by default", async () => {
     const fetchMock = stubSequenceFetch([
-      jsonResponse(piWebConfigResponse({ host: "127.0.0.1" })),
-      jsonResponse(piWebConfigResponse({ spawnSessions: true })),
-      jsonResponse(piWebPluginsResponse()),
+      jsonResponse(ompWebConfigResponse({ host: "127.0.0.1" })),
+      jsonResponse(ompWebConfigResponse({ spawnSessions: true })),
+      jsonResponse(ompWebPluginsResponse()),
     ]);
 
     await expect(configApi.config()).resolves.toMatchObject({ config: { host: "127.0.0.1" } });
     await expect(configApi.saveConfig({ spawnSessions: true })).resolves.toMatchObject({ config: { spawnSessions: true } });
-    await expect(pluginsApi.plugins()).resolves.toEqual(piWebPluginsResponse());
+    await expect(pluginsApi.plugins()).resolves.toEqual(ompWebPluginsResponse());
 
     expect(fetchMock.mock.calls.map((call) => call[0])).toEqual([
       "/api/config",
@@ -83,14 +83,14 @@ describe("settings config and plugin APIs", () => {
 
   it("uses machine-scoped config and plugin routes when a machine id is provided", async () => {
     const fetchMock = stubSequenceFetch([
-      jsonResponse(piWebConfigResponse({ spawnSessions: false })),
-      jsonResponse(piWebConfigResponse({ spawnSessions: true })),
-      jsonResponse(piWebPluginsResponse()),
+      jsonResponse(ompWebConfigResponse({ spawnSessions: false })),
+      jsonResponse(ompWebConfigResponse({ spawnSessions: true })),
+      jsonResponse(ompWebPluginsResponse()),
     ]);
 
     await expect(configApi.config("remote a")).resolves.toMatchObject({ config: { spawnSessions: false } });
     await expect(configApi.saveConfig({ spawnSessions: true }, "remote a")).resolves.toMatchObject({ config: { spawnSessions: true } });
-    await expect(pluginsApi.plugins("remote a")).resolves.toEqual(piWebPluginsResponse());
+    await expect(pluginsApi.plugins("remote a")).resolves.toEqual(ompWebPluginsResponse());
 
     expect(fetchMock.mock.calls.map((call) => call[0])).toEqual([
       "/api/machines/remote%20a/config",
@@ -400,9 +400,9 @@ function requestBody(init: RequestInit | undefined): string {
   return init.body;
 }
 
-function piWebConfigResponse(config: PiWebConfigValues) {
+function ompWebConfigResponse(config: OmpWebConfigValues) {
   return {
-    path: "/tmp/pi-web/config.json",
+    path: "/tmp/omp-web/config.json",
     exists: true,
     config,
     effectiveConfig: config,
@@ -410,8 +410,8 @@ function piWebConfigResponse(config: PiWebConfigValues) {
   };
 }
 
-function piWebPluginsResponse() {
-  return { plugins: [{ id: "info", module: "/pi-web-plugins/info/plugin.js", source: "test", scope: "local", machineSpecific: false, enabled: true }] };
+function ompWebPluginsResponse() {
+  return { plugins: [{ id: "info", module: "/omp-web-plugins/info/plugin.js", source: "test", scope: "local", machineSpecific: false, enabled: true }] };
 }
 
 function jsonResponse(value: unknown): Response {

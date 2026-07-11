@@ -23,7 +23,7 @@ export class InMemorySessionSelectionMemory implements SessionSelectionMemory {
   }
 }
 
-const sessionSelectionStorageKey = "pi-web:session-selection:v1";
+const sessionSelectionStorageKey = "omp-web:session-selection:v1";
 
 export class SessionStorageSessionSelectionMemory implements SessionSelectionMemory {
   private readonly sessionIdsByCwd: PersistentValueMap<string>;

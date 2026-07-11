@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { PI_WEB_CAPABILITIES } from "../../../../shared/capabilities";
+import { OMP_WEB_CAPABILITIES } from "../../../../shared/capabilities";
 import type { MachineRuntime, PiPackageInfo } from "../../api";
 import { canUpdateAllPiPackages, friendlyPiPackageErrorMessage, isPiPackageManagementUnsupported, isPiPackageOperationPending, normalizePiPackageSource, piPackageFilteredLabel, piPackageManagementSupport, piPackageMutationFollowUpMessage, piPackageScopeLabel, piPackageSourceValidationMessage, piPackageTargetContext, piPackageTargetLabel, piPackageUpdateDisabledReason, shouldRefreshGatewayPluginsAfterPiPackageMutation, updateAllPiPackagesDisabledReason, type PiPackageTargetContext } from "./piPackageSettings";
 
@@ -7,8 +7,8 @@ const userPackage: PiPackageInfo = { source: "npm:@acme/tools", scope: "user", f
 const projectPackage: PiPackageInfo = { source: "../project-tools", scope: "project", filtered: true };
 const localTarget: PiPackageTargetContext = { id: "local", name: "local", kind: "local" };
 const remoteTarget: PiPackageTargetContext = { id: "remote-a", name: "Lab Mac", kind: "remote" };
-const runtimeWithPackageManagement: MachineRuntime = { machineId: "remote-a", ok: true, checkedAt: "now", capabilities: [PI_WEB_CAPABILITIES.piPackagesManage] };
-const runtimeWithoutPackageManagement: MachineRuntime = { machineId: "remote-a", ok: true, checkedAt: "now", capabilities: [PI_WEB_CAPABILITIES.sessionsReload] };
+const runtimeWithPackageManagement: MachineRuntime = { machineId: "remote-a", ok: true, checkedAt: "now", capabilities: [OMP_WEB_CAPABILITIES.piPackagesManage] };
+const runtimeWithoutPackageManagement: MachineRuntime = { machineId: "remote-a", ok: true, checkedAt: "now", capabilities: [OMP_WEB_CAPABILITIES.sessionsReload] };
 const unavailableRuntime: MachineRuntime = { machineId: "remote-a", ok: false, checkedAt: "now", error: "Remote runtime returned HTTP 404" };
 
 describe("Pi package settings helpers", () => {
@@ -54,7 +54,7 @@ describe("Pi package settings helpers", () => {
 
     const unsupported = piPackageManagementSupport(remoteTarget, runtimeWithoutPackageManagement);
     expect(isPiPackageManagementUnsupported(unsupported)).toBe(true);
-    expect(unsupported.message).toContain("Update and restart Pi-Web on that machine");
+    expect(unsupported.message).toContain("Update and restart Omp-Web on that machine");
 
     expect(piPackageManagementSupport(remoteTarget, undefined)).toEqual({ state: "unknown" });
     expect(piPackageManagementSupport(remoteTarget, unavailableRuntime)).toEqual({ state: "unknown" });
@@ -79,7 +79,7 @@ describe("Pi package settings helpers", () => {
   });
 
   it("turns older remote route failures into package-management compatibility guidance", () => {
-    expect(friendlyPiPackageErrorMessage("Not Found", remoteTarget)).toBe("Pi package management is not available on Lab Mac. Update and restart Pi-Web on that machine, then try again.");
+    expect(friendlyPiPackageErrorMessage("Not Found", remoteTarget)).toBe("Pi package management is not available on Lab Mac. Update and restart Omp-Web on that machine, then try again.");
     expect(friendlyPiPackageErrorMessage("Remote machine unavailable", remoteTarget)).toBe("Could not reach Lab Mac for Pi package management. Check the machine connection and try again.");
     expect(friendlyPiPackageErrorMessage("Remote machine timeout", remoteTarget)).toContain("may still be running remotely");
     expect(friendlyPiPackageErrorMessage("Not Found", localTarget)).toBe("Not Found");

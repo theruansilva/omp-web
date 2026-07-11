@@ -1,5 +1,5 @@
 import type { TemplateResult } from "lit";
-import type { FileContentResponse, MachineKind, PiWebStatusResponse, TerminalCommandRunHandle, WriteWorkspaceFileOptions, WriteWorkspaceFileResponse, DeleteWorkspaceFileResponse, MoveWorkspaceFileOptions, MoveWorkspaceFileResponse } from "./shared/apiTypes.js";
+import type { FileContentResponse, MachineKind, OmpWebStatusResponse, TerminalCommandRunHandle, WriteWorkspaceFileOptions, WriteWorkspaceFileResponse, DeleteWorkspaceFileResponse, MoveWorkspaceFileOptions, MoveWorkspaceFileResponse } from "./shared/apiTypes.js";
 
 export type {
   FileContentMediaType,
@@ -7,16 +7,16 @@ export type {
   FileTreeEntry,
   FileTreeResponse,
   MachineKind,
-  PiWebComponentStatus,
-  PiWebDockerMode,
-  PiWebInstallationInfo,
-  PiWebInstallationKind,
-  PiWebReleaseStatus,
-  PiWebServiceComponent,
-  PiWebStatusMessage,
-  PiWebStatusResponse,
-  PiWebStatusSeverity,
-  PiWebVersionResponse,
+  OmpWebComponentStatus,
+  OmpWebDockerMode,
+  OmpWebInstallationInfo,
+  OmpWebInstallationKind,
+  OmpWebReleaseStatus,
+  OmpWebServiceComponent,
+  OmpWebStatusMessage,
+  OmpWebStatusResponse,
+  OmpWebStatusSeverity,
+  OmpWebVersionResponse,
   TerminalCommandRun,
   TerminalCommandRunFilter,
   TerminalCommandRunHandle,
@@ -34,7 +34,7 @@ export type QualifiedContributionId = string;
 export type HtmlTemplateTag = (strings: TemplateStringsArray, ...values: unknown[]) => TemplateResult;
 export type SvgTemplateTag = (strings: TemplateStringsArray, ...values: unknown[]) => TemplateResult;
 
-export interface PiWebPlugin {
+export interface OmpWebPlugin {
   apiVersion: 1;
   name: string;
   activate: (context: PluginActivationContext) => PluginActivationResult;
@@ -70,7 +70,7 @@ export interface PluginRuntimeState {
   selectedSession?: unknown;
   workspaceTool?: string;
   mainView?: string;
-  piWebStatus?: PiWebStatusResponse;
+  ompWebStatus?: OmpWebStatusResponse;
 }
 
 export interface PluginPromptEditor {

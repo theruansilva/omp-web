@@ -1,4 +1,4 @@
-import type { DeleteWorkspaceFileResponse, FileSuggestion, MoveWorkspaceFileOptions, PiPackageInstallRequest, PiPackageRemoveRequest, PiPackageScope, PiPackageUpdateRequest, PiWebConfigValues, PromptAttachment, RunTerminalCommandInput, SessionBulkMutationRef, SessionCleanupRequest, SessionRef, TerminalCommandRun, TerminalCommandRunFilter, WriteWorkspaceFileOptions } from "../../../shared/apiTypes";
+import type { DeleteWorkspaceFileResponse, FileSuggestion, MoveWorkspaceFileOptions, PiPackageInstallRequest, PiPackageRemoveRequest, PiPackageScope, PiPackageUpdateRequest, OmpWebConfigValues, PromptAttachment, RunTerminalCommandInput, SessionBulkMutationRef, SessionCleanupRequest, SessionRef, TerminalCommandRun, TerminalCommandRunFilter, WriteWorkspaceFileOptions } from "../../../shared/apiTypes";
 import { request } from "./http";
 import {
   arrayOf,
@@ -26,10 +26,10 @@ import {
   parseOAuthFlowState,
   parsePiPackageMutationResponse,
   parsePiPackagesResponse,
-  parsePiWebConfigResponse,
-  parsePiWebPluginsResponse,
-  parsePiWebRuntimeResponse,
-  parsePiWebStatusResponse,
+  parseOmpWebConfigResponse,
+  parseOmpWebPluginsResponse,
+  parseOmpWebRuntimeResponse,
+  parseOmpWebStatusResponse,
   parseProject,
   parseReloaded,
   parseRestored,
@@ -99,9 +99,9 @@ function sessionBulkMutationRef(session: SessionLookup): SessionBulkMutationRef 
   return cwd === undefined || cwd === "" ? { id } : { id, cwd };
 }
 
-export const piWebApi = {
-  piWebStatus: (machineId = "local") => request(machineId === "local" ? "/api/pi-web/status" : `${machinePrefix(machineId)}/pi-web/status`, parsePiWebStatusResponse),
-  piWebRuntime: () => request("/api/pi-web/runtime", parsePiWebRuntimeResponse),
+export const ompWebApi = {
+  ompWebStatus: (machineId = "local") => request(machineId === "local" ? "/api/omp-web/status" : `${machinePrefix(machineId)}/omp-web/status`, parseOmpWebStatusResponse),
+  ompWebRuntime: () => request("/api/omp-web/runtime", parseOmpWebRuntimeResponse),
 };
 
 export const machinesApi = {
@@ -121,12 +121,12 @@ function pluginsUrl(machineId?: string): string {
 }
 
 export const configApi = {
-  config: (machineId?: string) => request(configUrl(machineId), parsePiWebConfigResponse),
-  saveConfig: (config: PiWebConfigValues, machineId?: string) => request(configUrl(machineId), parsePiWebConfigResponse, { method: "PUT", body: JSON.stringify({ config }) }),
+  config: (machineId?: string) => request(configUrl(machineId), parseOmpWebConfigResponse),
+  saveConfig: (config: OmpWebConfigValues, machineId?: string) => request(configUrl(machineId), parseOmpWebConfigResponse, { method: "PUT", body: JSON.stringify({ config }) }),
 };
 
 export const pluginsApi = {
-  plugins: (machineId?: string) => request(pluginsUrl(machineId), parsePiWebPluginsResponse),
+  plugins: (machineId?: string) => request(pluginsUrl(machineId), parseOmpWebPluginsResponse),
 };
 
 function piPackageUrl(endpoint = "", machineId?: string): string {
@@ -312,7 +312,7 @@ export const gitApi = {
 };
 
 export const api = {
-  ...piWebApi,
+  ...ompWebApi,
   ...machinesApi,
   ...configApi,
   ...pluginsApi,

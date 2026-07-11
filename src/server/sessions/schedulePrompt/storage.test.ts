@@ -39,8 +39,8 @@ describe("CronStorage", () => {
   });
 
   describe("data file path", () => {
-    it("uses .pi-web/schedule-prompts.json relative to dataDir", () => {
-      const filePath = join(tempDir, ".pi-web", "schedule-prompts.json");
+    it("uses .omp-web/schedule-prompts.json relative to dataDir", () => {
+      const filePath = join(tempDir, ".omp-web", "schedule-prompts.json");
       expect(existsSync(filePath)).toBe(false);
       storage.addJob(makeJob({ id: "test1" }));
       expect(existsSync(filePath)).toBe(true);
@@ -160,8 +160,8 @@ describe("CronStorage", () => {
     });
 
     it("recovers from corrupt JSON by resetting", () => {
-      const filePath = join(tempDir, ".pi-web", "schedule-prompts.json");
-      mkdirSync(join(tempDir, ".pi-web"), { recursive: true });
+      const filePath = join(tempDir, ".omp-web", "schedule-prompts.json");
+      mkdirSync(join(tempDir, ".omp-web"), { recursive: true });
       writeFileSync(filePath, "this is not json");
 
       const crashStorage = new CronStorage(tempDir);

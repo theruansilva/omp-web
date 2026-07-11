@@ -4,14 +4,14 @@
     "src/cli.ts",
     "src/plugin-api.ts",
     "src/plugin-api/unstable.ts",
-    "extensions/pi-web.ts",
-    "pi-web-plugins/**/pi-web-plugin.ts",
+    "extensions/omp-web.ts",
+    "omp-web-plugins/**/omp-web-plugin.ts",
     "scripts/*.mjs"
   ],
   "project": [
     "src/**/*.ts",
     "extensions/**/*.ts",
-    "pi-web-plugins/**/*.ts"
+    "omp-web-plugins/**/*.ts"
   ],
   "ignoreExportsUsedInFile": true
 }

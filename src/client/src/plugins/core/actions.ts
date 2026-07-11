@@ -1,5 +1,5 @@
 import { isSessionActive } from "../../../../shared/activity";
-import { PI_WEB_CAPABILITIES, supportsPiWebCapability, type PiWebCapability } from "../../../../shared/capabilities";
+import { OMP_WEB_CAPABILITIES, supportsOmpWebCapability, type OmpWebCapability } from "../../../../shared/capabilities";
 import type { AppState } from "../../appState";
 import { selectedMachineId } from "../../controllers/types";
 import { isArchivableSessionInfo, isTransientNewSessionInfo } from "../../sessionPersistence";
@@ -87,7 +87,7 @@ export function createCoreActions(): PluginAction[] {
       description: "Manage PI WEB configuration and keyboard shortcuts",
       shortcut: "mod+,",
       group: "Preferences",
-      run: (context) => { context.piWebUnstable?.openSettings?.(); },
+      run: (context) => { context.ompWebUnstable?.openSettings?.(); },
     },
     {
       id: "app.reload-page",
@@ -233,11 +233,11 @@ function hasReloadableSession(context: { state: AppState }): boolean {
 function reloadSessionDisabledReason(context: { state: AppState }): string | undefined {
   if (!isArchivableSessionInfo(context.state.selectedSession, context.state.status)) return undefined;
   if (isSessionActive(context.state.status, context.state.activity)) return undefined;
-  return missingCapabilityReason(context.state, PI_WEB_CAPABILITIES.sessionsReload, "reload sessions from disk");
+  return missingCapabilityReason(context.state, OMP_WEB_CAPABILITIES.sessionsReload, "reload sessions from disk");
 }
 
-function missingCapabilityReason(state: AppState, capability: PiWebCapability, action: string): string | undefined {
+function missingCapabilityReason(state: AppState, capability: OmpWebCapability, action: string): string | undefined {
   const runtime = state.machineRuntimes[selectedMachineId(state)];
-  if (runtime?.ok === true && supportsPiWebCapability(runtime, capability)) return undefined;
-  return `Update and restart Pi-Web on ${state.selectedMachine?.name ?? "this machine"} to ${action}.`;
+  if (runtime?.ok === true && supportsOmpWebCapability(runtime, capability)) return undefined;
+  return `Update and restart Omp-Web on ${state.selectedMachine?.name ?? "this machine"} to ${action}.`;
 }

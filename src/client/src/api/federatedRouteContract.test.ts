@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { Workspace } from "../../../shared/apiTypes";
 import { FEDERATED_HTTP_ROUTES, FEDERATED_WEBSOCKET_ROUTES, type FederatedHttpRouteSpec } from "../../../shared/federatedRoutes";
-import { activityApi, configApi, filesApi, gitApi, piPackagesApi, piWebApi, pluginsApi, projectsApi, sessionsApi, terminalsApi, workspacesApi } from "./clients";
+import { activityApi, configApi, filesApi, gitApi, piPackagesApi, ompWebApi, pluginsApi, projectsApi, sessionsApi, terminalsApi, workspacesApi } from "./clients";
 import { globalSessionEvents, realtimeEvents, sessionEvents, terminalSocket } from "./sockets";
 import { workspaceImagePreviewUrl } from "./urls";
 
@@ -27,7 +27,7 @@ describe("federated route contract", () => {
     vi.stubGlobal("fetch", fetchMock);
 
     await Promise.all([
-      ignoreParseFailure(piWebApi.piWebStatus(machineId)),
+      ignoreParseFailure(ompWebApi.ompWebStatus(machineId)),
       ignoreParseFailure(configApi.config(machineId)),
       ignoreParseFailure(configApi.saveConfig({ spawnSessions: true }, machineId)),
       ignoreParseFailure(pluginsApi.plugins(machineId)),

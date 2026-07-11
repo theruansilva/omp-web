@@ -7,7 +7,7 @@ import { listFileSuggestions, listPathSuggestions, type FileSuggestionDependenci
 const temporaryRoots: string[] = [];
 
 async function tempWorkspace(): Promise<string> {
-  const root = await mkdtemp(join(tmpdir(), "pi-web-files-"));
+  const root = await mkdtemp(join(tmpdir(), "omp-web-files-"));
   temporaryRoots.push(root);
   return root;
 }
@@ -265,7 +265,7 @@ describe("file suggestions", () => {
 
   it("keeps tilde-prefixed allowed-root suggestions matchable by fzf", async () => {
     const workspace = await tempWorkspace();
-    const homeEntry = await mkdtemp(join(homedir(), ".pi-web-files-"));
+    const homeEntry = await mkdtemp(join(homedir(), ".omp-web-files-"));
     temporaryRoots.push(homeEntry);
     const expectedPath = `~/${basename(homeEntry)}/`;
     const deps: FileSuggestionDependencies = {

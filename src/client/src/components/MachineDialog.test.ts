@@ -4,7 +4,7 @@ import { machineBaseUrlValidationMessage, suggestedMachineNameFromUrl } from "./
 describe("suggestedMachineNameFromUrl", () => {
   it("suggests the host without protocol or port", () => {
     expect(suggestedMachineNameFromUrl("http://127.0.0.1:8504")).toBe("127.0.0.1");
-    expect(suggestedMachineNameFromUrl("https://devbox.example.test:8504/pi-web")).toBe("devbox.example.test");
+    expect(suggestedMachineNameFromUrl("https://devbox.example.test:8504/omp-web")).toBe("devbox.example.test");
   });
 
   it("also suggests a host while the URL protocol is being typed", () => {
@@ -15,7 +15,7 @@ describe("suggestedMachineNameFromUrl", () => {
 describe("machineBaseUrlValidationMessage", () => {
   it("accepts http and https base URLs", () => {
     expect(machineBaseUrlValidationMessage("http://127.0.0.1:8504")).toBeUndefined();
-    expect(machineBaseUrlValidationMessage("https://devbox.example.test/pi-web")).toBeUndefined();
+    expect(machineBaseUrlValidationMessage("https://devbox.example.test/omp-web")).toBeUndefined();
   });
 
   it("explains invalid machine URLs", () => {

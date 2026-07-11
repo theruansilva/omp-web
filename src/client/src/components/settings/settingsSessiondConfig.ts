@@ -1,14 +1,14 @@
-import type { PiWebConfigResponse, PiWebConfigValues } from "../../api";
+import type { OmpWebConfigResponse, OmpWebConfigValues } from "../../api";
 
-export function spawnSessionsConfigPatch(enabled: boolean): PiWebConfigValues {
+export function spawnSessionsConfigPatch(enabled: boolean): OmpWebConfigValues {
   return { spawnSessions: enabled };
 }
 
-export function subsessionsConfigPatch(enabled: boolean): PiWebConfigValues {
+export function subsessionsConfigPatch(enabled: boolean): OmpWebConfigValues {
   return { subsessions: enabled };
 }
 
-export function mergeSelectedMachineSessiondConfig(base: PiWebConfigResponse, selectedMachine: PiWebConfigResponse): PiWebConfigResponse {
+export function mergeSelectedMachineSessiondConfig(base: OmpWebConfigResponse, selectedMachine: OmpWebConfigResponse): OmpWebConfigResponse {
   return {
     ...base,
     config: { ...base.config, ...selectedMachine.config },

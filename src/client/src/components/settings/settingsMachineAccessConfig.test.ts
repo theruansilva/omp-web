@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { PiWebConfigResponse, PiWebConfigValues } from "../../api";
+import type { OmpWebConfigResponse, OmpWebConfigValues } from "../../api";
 import { mergeSelectedMachineAccessConfig } from "./settingsMachineAccessConfig";
 
 describe("selected-machine access config helpers", () => {
@@ -75,9 +75,9 @@ describe("selected-machine access config helpers", () => {
   });
 });
 
-function configResponse(config: PiWebConfigValues): PiWebConfigResponse {
+function configResponse(config: OmpWebConfigValues): OmpWebConfigResponse {
   return {
-    path: "/tmp/pi-web/config.json",
+    path: "/tmp/omp-web/config.json",
     exists: true,
     config,
     effectiveConfig: config,

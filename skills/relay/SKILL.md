@@ -22,7 +22,7 @@ Two consequences follow, and they govern the whole method:
 
 ## The relay packet
 
-A relay is carried by a small packet of documents. By default they live in `.pi-web/relays/<name>/` unless the user or the dispatching prompt says otherwise — always follow an explicit location if given.
+A relay is carried by a small packet of documents. By default they live in `.omp-web/relays/<name>/` unless the user or the dispatching prompt says otherwise — always follow an explicit location if given.
 
 Every relay has these three core files:
 
@@ -42,7 +42,7 @@ The charter *can* be edited, but it should rarely *need* to be. If it is changin
 
 - **Current position.** Where the relay is now.
 - **Current or next task.** The next leg if known; otherwise enough information to apply the charter's task selection policy.
-- **Leg tracking.** The last completed leg and the next leg to run. Keep this explicit so runners do not have to infer whether “current leg” means the leg just finished or the leg being handed off, and so new PI-WEB sessions can distinguish relay legs from the first line of their prompt without naming instructions.
+- **Leg tracking.** The last completed leg and the next leg to run. Keep this explicit so runners do not have to infer whether “current leg” means the leg just finished or the leg being handed off, and so new OMP-WEB sessions can distinguish relay legs from the first line of their prompt without naming instructions.
 - **Relevant context.** Only the files, sections, commands, artifacts, or specific log entries needed for the next leg.
 - **Progress documentation.** Where this runner must write progress: update `status.md`, append `log.md`, update artifacts, commit, etc.
 - **Blockers / intervention state.** Current risks, open decisions, or active reasons to stop.
@@ -71,7 +71,7 @@ If `status.md` is insufficient, fix the baton rather than compensating by readin
 
 This is the loop you run when you are dispatched into a relay.
 
-1. **Orient from the packet.** Read `charter.md` and `status.md`. Confirm the relay name/root, goal, sizing, handoff protocol, last completed leg, next leg to run, intervention signal, and current/next task. If you are not sure you are in a relay, the prompt or `.pi-web/relays/` is your clue — and reading this skill means you are.
+1. **Orient from the packet.** Read `charter.md` and `status.md`. Confirm the relay name/root, goal, sizing, handoff protocol, last completed leg, next leg to run, intervention signal, and current/next task. If you are not sure you are in a relay, the prompt or `.omp-web/relays/` is your clue — and reading this skill means you are.
 2. **Choose the leg.** Prefer the explicit current/next task in `status.md`. If none is named, apply the charter's task selection policy. If that still requires context, inspect only the referenced plan/backlog/artifact sections. If the next task is still ambiguous or would materially change direction, stop and involve the human.
 3. **Re-anchor to the goal.** Does the goal still make sense given the status and what you now see? If reality has diverged from the charter, that is often an intervention moment — don't quietly redefine the task.
 4. **Run one leg.** Do exactly one well-sized slice, per the charter's sizing. Resist doing "just a bit more" — extra scope bloats context and breaks the containment that makes Relay work.
@@ -80,7 +80,7 @@ This is the loop you run when you are dispatched into a relay.
    - **Hand off** if there is a clear next leg and you are on track. Use `spawn_session` once, with a prompt whose first line is a natural task header containing the relay name and next leg number (for example, `Relay "<name>" leg <N> begins now.`), followed by the Relay method and pointers to `charter.md` and `status.md` (so this skill loads and they can orient cheaply). Then you are done. Handoff is deliberately fire-and-forget: `spawn_session` starts an independent session you will not see and cannot steer — do not reach for a tracked subsession to keep an eye on it. Letting go is the point. The next runner is trusted to run their own leg, and the relay packet is the only thread between you; if you feel the need to watch downstream work, that usually means the leg wasn't sized or handed off cleanly, or an intervention signal should have fired.
    - **Stop — do not spawn —** if the goal is reached, or you are blocked, or the charter's intervention signal fires. Update `status.md`, append a clear note in `log.md`, and raise the intervention signal so the watching human sees exactly what happened and what they need to decide. A stalled relay that stopped cleanly with a clear blocker is a success; a relay that spawned a confused next runner is a failure.
 
-A good handoff prompt is short and explicit. Put the relay identity and leg number at the very beginning so PI-WEB's session title generator sees useful distinguishing context without any naming instruction:
+A good handoff prompt is short and explicit. Put the relay identity and leg number at the very beginning so OMP-WEB's session title generator sees useful distinguishing context without any naming instruction:
 
 ```text
 Relay "<name>" leg <N> begins now.
@@ -88,8 +88,8 @@ Relay "<name>" leg <N> begins now.
 You are the next runner in this Relay method chain.
 
 Read:
-- .pi-web/relays/<name>/charter.md
-- .pi-web/relays/<name>/status.md
+- .omp-web/relays/<name>/charter.md
+- .omp-web/relays/<name>/status.md
 
 Do not read log.md end-to-end. Use it only for targeted lookup if status.md or charter.md points you there.
 

@@ -5,7 +5,7 @@ import { isCachedNewSessionInfo, loadCachedNewSessions, markCachedNewSessionInfo
 import { initialAppState, type AppState } from "../appState";
 import { ChatTranscriptStore } from "../chatTranscriptStore";
 import { machineSessionKey } from "../machineKeys";
-import { PI_WEB_CAPABILITIES } from "../../../shared/capabilities";
+import { OMP_WEB_CAPABILITIES } from "../../../shared/capabilities";
 import { loadDraft, saveDraft } from "../promptDraftStorage";
 import { SessionController, type SessionEventSocket } from "./sessionController";
 import { InMemorySessionSelectionMemory } from "./sessionSelection";
@@ -675,7 +675,7 @@ describe("SessionController", () => {
     const attachments: PromptAttachment[] = [{ kind: "image", mimeType: "image/png", data: "QUJD", name: "shot.png" }];
     const api: typeof defaultApi = {
       ...defaultApi,
-      saveAttachments: (_session, sent) => { savedCalledWith = sent; return Promise.resolve([{ path: ".pi-web/attachments/shot.png", mimeType: "image/png", size: 3 }]); },
+      saveAttachments: (_session, sent) => { savedCalledWith = sent; return Promise.resolve([{ path: ".omp-web/attachments/shot.png", mimeType: "image/png", size: 3 }]); },
       prompt: (_session, text, _behavior, _machineId, sentAttachments) => { promptText = text; promptAttachments = sentAttachments; return Promise.resolve({ accepted: true }); },
     };
     const controller = new SessionController(
@@ -689,7 +689,7 @@ describe("SessionController", () => {
     await controller.send("check this", undefined, attachments, "folder");
 
     expect(savedCalledWith).toEqual(attachments);
-    expect(promptText).toBe("check this\n\n@.pi-web/attachments/shot.png");
+    expect(promptText).toBe("check this\n\n@.omp-web/attachments/shot.png");
     expect(promptAttachments).toBeUndefined();
     expect(state.sendingPrompts).toEqual({});
   });
@@ -816,7 +816,7 @@ describe("SessionController", () => {
       },
       saveAttachments: (session, sentAttachments) => {
         calls.push(`save:${sessionLookupId(session)}:${sentAttachments[0]?.name ?? ""}`);
-        return Promise.resolve([{ path: ".pi-web/attachments/shot.png", mimeType: "image/png", size: 3 }]);
+        return Promise.resolve([{ path: ".omp-web/attachments/shot.png", mimeType: "image/png", size: 3 }]);
       },
       prompt: (session, text, _behavior, _machineId, sentAttachments) => {
         calls.push(`prompt:${sessionLookupId(session)}:${text}`);
@@ -857,11 +857,11 @@ describe("SessionController", () => {
       `shell:${started.id}:!pwd`,
       `prompt:${started.id}:look`,
       `save:${started.id}:shot.png`,
-      `prompt:${started.id}:save\n\n@.pi-web/attachments/shot.png`,
+      `prompt:${started.id}:save\n\n@.omp-web/attachments/shot.png`,
     ]);
     expect(promptCalls).toEqual([
       { text: "look", attachments },
-      { text: "save\n\n@.pi-web/attachments/shot.png" },
+      { text: "save\n\n@.omp-web/attachments/shot.png" },
     ]);
     expect(state.clientQueuedSessionMessages[started.id]).toBeUndefined();
   });
@@ -1191,7 +1191,7 @@ describe("SessionController", () => {
       ...initialAppState(),
       selectedWorkspace: workspace,
       sessions: [persistedSession, failedSession],
-      machineRuntimes: { local: { machineId: "local", ok: true, checkedAt: "now", capabilities: [PI_WEB_CAPABILITIES.sessionsBulkMutations] } },
+      machineRuntimes: { local: { machineId: "local", ok: true, checkedAt: "now", capabilities: [OMP_WEB_CAPABILITIES.sessionsBulkMutations] } },
     };
     const api: typeof defaultApi = {
       ...defaultApi,
@@ -1277,7 +1277,7 @@ describe("SessionController", () => {
       selectedWorkspace: workspace,
       selectedSession: archivedSession,
       sessions: [archivedSession, nextSession],
-      machineRuntimes: { local: { machineId: "local", ok: true, checkedAt: "now", capabilities: [PI_WEB_CAPABILITIES.sessionsDeleteArchived] } },
+      machineRuntimes: { local: { machineId: "local", ok: true, checkedAt: "now", capabilities: [OMP_WEB_CAPABILITIES.sessionsDeleteArchived] } },
     };
     const api: typeof defaultApi = {
       ...defaultApi,
@@ -1312,7 +1312,7 @@ describe("SessionController", () => {
       selectedWorkspace: workspace,
       selectedSession: deletedSession,
       sessions: [deletedSession, failedSession],
-      machineRuntimes: { local: { machineId: "local", ok: true, checkedAt: "now", capabilities: [PI_WEB_CAPABILITIES.sessionsDeleteArchived, PI_WEB_CAPABILITIES.sessionsBulkMutations] } },
+      machineRuntimes: { local: { machineId: "local", ok: true, checkedAt: "now", capabilities: [OMP_WEB_CAPABILITIES.sessionsDeleteArchived, OMP_WEB_CAPABILITIES.sessionsBulkMutations] } },
     };
     const api: typeof defaultApi = {
       ...defaultApi,
@@ -1411,7 +1411,7 @@ describe("SessionController", () => {
 
     expect(deletedIds).toEqual([]);
     expect(state.sessions).toEqual([archivedSession]);
-    expect(state.error).toContain("requires an updated Pi-Web runtime");
+    expect(state.error).toContain("requires an updated Omp-Web runtime");
   });
 
   it("reloads the selected session from disk, discards the cached transcript, and re-fetches history", async () => {
@@ -1426,7 +1426,7 @@ describe("SessionController", () => {
       selectedWorkspace: workspace,
       selectedSession: persistedSession,
       sessions: [persistedSession],
-      machineRuntimes: { local: { machineId: "local", ok: true, checkedAt: "now", capabilities: [PI_WEB_CAPABILITIES.sessionsReload] } },
+      machineRuntimes: { local: { machineId: "local", ok: true, checkedAt: "now", capabilities: [OMP_WEB_CAPABILITIES.sessionsReload] } },
     };
     const api: typeof defaultApi = {
       ...defaultApi,
@@ -1493,7 +1493,7 @@ describe("SessionController", () => {
     await controller.reloadSession(persistedSession);
 
     expect(reloadCalls).toEqual([]);
-    expect(state.error).toContain("Reloading sessions from disk requires an updated Pi-Web runtime");
+    expect(state.error).toContain("Reloading sessions from disk requires an updated Omp-Web runtime");
   });
 
   it("does not reload sessions from disk without a persisted server signal", async () => {
@@ -1503,7 +1503,7 @@ describe("SessionController", () => {
       selectedWorkspace: workspace,
       selectedSession: oldSession,
       sessions: [oldSession],
-      machineRuntimes: { local: { machineId: "local", ok: true, checkedAt: "now", capabilities: [PI_WEB_CAPABILITIES.sessionsReload] } },
+      machineRuntimes: { local: { machineId: "local", ok: true, checkedAt: "now", capabilities: [OMP_WEB_CAPABILITIES.sessionsReload] } },
     };
     const api: typeof defaultApi = {
       ...defaultApi,

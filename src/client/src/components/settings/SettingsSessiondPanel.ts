@@ -1,20 +1,20 @@
 import { css, html, LitElement, type TemplateResult } from "lit";
 import { customElement, property } from "lit/decorators.js";
-import type { PiWebConfigResponse, PiWebConfigValues } from "../../api";
+import type { OmpWebConfigResponse, OmpWebConfigValues } from "../../api";
 import "./SettingsPanelFrame";
 import type { SettingsNotice } from "./SettingsPanelFrame";
 import { spawnSessionsConfigPatch, subsessionsConfigPatch } from "./settingsSessiondConfig";
 
 @customElement("settings-sessiond-panel")
 export class SettingsSessiondPanel extends LitElement {
-  @property({ attribute: false }) configResponse: PiWebConfigResponse | undefined;
+  @property({ attribute: false }) configResponse: OmpWebConfigResponse | undefined;
   @property({ type: Boolean }) loading = false;
   @property({ type: Boolean }) saving = false;
   @property() error = "";
   @property() savedMessage = "";
   @property() targetLabel = "local (local gateway)";
   @property({ attribute: false }) onReload?: () => void | Promise<void>;
-  @property({ attribute: false }) onSave?: (config: PiWebConfigValues) => void | Promise<void>;
+  @property({ attribute: false }) onSave?: (config: OmpWebConfigValues) => void | Promise<void>;
 
   override render(): TemplateResult {
     const config = this.configResponse;
@@ -84,7 +84,7 @@ export class SettingsSessiondPanel extends LitElement {
     `;
   }
 
-  private panelNotices(config: PiWebConfigResponse | undefined): readonly SettingsNotice[] {
+  private panelNotices(config: OmpWebConfigResponse | undefined): readonly SettingsNotice[] {
     const notices: SettingsNotice[] = [];
     if (this.error !== "") notices.push({ type: "error", content: this.error });
     if (this.savedMessage !== "") notices.push({ type: "success", content: this.savedMessage });
@@ -92,7 +92,7 @@ export class SettingsSessiondPanel extends LitElement {
       notices.push({
         type: "warning",
         title: `Restart required on ${this.targetLabel}`,
-        content: html`run <code>pi-web restart</code> on that machine (or restart its session daemon service) after changing these settings.`,
+        content: html`run <code>omp-web restart</code> on that machine (or restart its session daemon service) after changing these settings.`,
       });
     }
     return notices;

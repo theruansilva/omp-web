@@ -41,31 +41,31 @@ const tokens = {
 } satisfies ThemeTokens;
 
 const themes = [
-  theme("pi-web-dark", "PI WEB Dark", "dark"),
-  theme("pi-web-light", "PI WEB Light", "light"),
+  theme("omp-web-dark", "PI WEB Dark", "dark"),
+  theme("omp-web-light", "PI WEB Light", "light"),
   theme("classic", "PI WEB Classic", "dark"),
 ];
 
 const themePairs: QualifiedThemePairContribution[] = [
   {
-    id: "themes:pi-web",
+    id: "themes:omp-web",
     pluginId: "themes",
-    localId: "pi-web",
+    localId: "omp-web",
     name: "PI WEB",
-    light: "themes:pi-web-light",
-    dark: "themes:pi-web-dark",
+    light: "themes:omp-web-light",
+    dark: "themes:omp-web-dark",
   },
 ];
 
 describe("resolveThemePreference", () => {
   it("resolves the default auto preference to the dark member when the system is dark", () => {
     expect(resolveThemePreference({ themes, themePairs, preference: DEFAULT_THEME_PREFERENCE, prefersLight: false }).activeTheme?.id)
-      .toBe("themes:pi-web-dark");
+      .toBe("themes:omp-web-dark");
   });
 
   it("resolves the default auto preference to the light member when the system is light", () => {
     expect(resolveThemePreference({ themes, themePairs, preference: DEFAULT_THEME_PREFERENCE, prefersLight: true }).activeTheme?.id)
-      .toBe("themes:pi-web-light");
+      .toBe("themes:omp-web-light");
   });
 
   it("keeps an unpaired theme selected when auto is enabled", () => {
@@ -111,8 +111,8 @@ describe("resolveThemePreference", () => {
   });
 
   it("can look up a pair from either member theme", () => {
-    expect(findThemePairForTheme(themePairs, "themes:pi-web-light")?.id).toBe("themes:pi-web");
-    expect(findThemePairForTheme(themePairs, "themes:pi-web-dark")?.id).toBe("themes:pi-web");
+    expect(findThemePairForTheme(themePairs, "themes:omp-web-light")?.id).toBe("themes:omp-web");
+    expect(findThemePairForTheme(themePairs, "themes:omp-web-dark")?.id).toBe("themes:omp-web");
   });
 });
 

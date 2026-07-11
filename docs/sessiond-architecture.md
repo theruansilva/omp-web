@@ -3,14 +3,14 @@
 ## 1. Ponto de Entrada (Entry Point) e Modelo de Processo
 O daemon de sessões é uma aplicação isolada baseada no framework `Fastify` com suporte a WebSockets (`@fastify/websocket`). 
 - **Entry Point:** O arquivo principal é o `src/server/sessiond.ts`.
-- **Como inicia:** Ele é invocado pelo Bun no terminal via script do `package.json` (`bun src/server/sessiond.ts`). Na máquina do usuário local, o serviço é comumente encapsulado em um serviço systemd de usuário chamado `pi-web-sessiond.service`.
-- **Motivo do Isolamento:** Manter os processos do `sessiond` isolados do servidor web/API e Vite UI (`pi-web-ui-dev.service`). Isso garante que os reloads automáticos da UI (hot-reload) durante o desenvolvimento e quedas de conexão não afetem as sessões do Pi que estejam rodando em background.
+- **Como inicia:** Ele é invocado pelo Bun no terminal via script do `package.json` (`bun src/server/sessiond.ts`). Na máquina do usuário local, o serviço é comumente encapsulado em um serviço systemd de usuário chamado `omp-web-sessiond.service`.
+- **Motivo do Isolamento:** Manter os processos do `sessiond` isolados do servidor web/API e Vite UI (`omp-web-ui-dev.service`). Isso garante que os reloads automáticos da UI (hot-reload) durante o desenvolvimento e quedas de conexão não afetem as sessões do Pi que estejam rodando em background.
 
 ## 2. Mecanismo de Comunicação IPC (Inter-process Communication)
 Como a interface UI/Web roda em um processo diferente do `sessiond`, há uma camada de proxy para conectá-los:
 - O processo Web/API intercepta requisições nos caminhos `/api/activity`, `/api/auth`, `/api/sessions` (e seus eventos WebSocket) via roteador em `src/server/sessiond/sessionProxyRoutes.ts`.
 - O repasse ocorre usando um cliente HTTP/WS (`SessionDaemonClient` em `src/sessiond/sessionDaemonClient.ts`).
-- A comunicação de rede local é feita através de um **Unix Domain Socket** (o padrão é `~/.pi-web/sessiond.sock`) ou usando uma porta HTTP TCP normal, caso seja definida pela variável de ambiente `PI_WEB_SESSIOND_PORT`.
+- A comunicação de rede local é feita através de um **Unix Domain Socket** (o padrão é `~/.omp-web/sessiond.sock`) ou usando uma porta HTTP TCP normal, caso seja definida pela variável de ambiente `OMP_WEB_SESSIOND_PORT`.
 
 ## 3. Hooks de Ciclo de Vida (Lifecycle)
 Em `src/server/sessiond.ts`, o daemon escuta pelos sinais do sistema `SIGINT` e `SIGTERM`. Quando chamados, invocam a função assíncrona `shutdown(signal)`, que se encarrega de realizar o _dispose_ gradativo e limpo nos serviços internos: terminais (`terminals.dispose()`), autenticação (`auth.dispose()`), das sessões ativas (`sessions.dispose()`), e encerra ordenadamente o servidor HTTP Fastify.

@@ -9,15 +9,15 @@ export type { LocalContributionId, PluginId, QualifiedContributionId } from "./i
 export type HtmlTemplateTag = (strings: TemplateStringsArray, ...values: unknown[]) => TemplateResult;
 export type SvgTemplateTag = (strings: TemplateStringsArray, ...values: unknown[]) => TemplateResult;
 
-export interface PiWebPluginRegistration {
+export interface OmpWebPluginRegistration {
  id: PluginId;
- plugin: PiWebPlugin;
+ plugin: OmpWebPlugin;
  machineId?: string;
  sourcePluginId?: PluginId;
  machineSpecific?: boolean;
 }
 
-export interface PiWebPlugin {
+export interface OmpWebPlugin {
  apiVersion: 1;
  name: string;
  activate: (context: PluginActivationContext) => PluginActivationResult;
@@ -74,7 +74,7 @@ export interface WorkspacePanelTerminal {
  runCommand(input: WorkspaceTerminalCommandInput): Promise<TerminalCommandRunHandle>;
 }
 
-export interface PiWebUnstableRuntimeContext {
+export interface OmpWebUnstableRuntimeContext {
  terminalCommandRuns: TerminalCommandRunsInternalRuntime;
  openSettings?: (section?: SettingsSection) => void;
 }
@@ -95,7 +95,7 @@ export interface PluginPromptEditor {
 export interface PluginRuntimeContext {
  state: AppState;
  prompt: PluginPromptEditor;
- piWebUnstable?: PiWebUnstableRuntimeContext;
+ ompWebUnstable?: OmpWebUnstableRuntimeContext;
  openActionPalette: () => void;
  focusPrompt: () => void;
  addProject: () => void | Promise<void>;
@@ -147,7 +147,7 @@ export interface WorkspacePanelContext extends WorkspaceContext {
   * This is intentionally not part of the public `@ProgmRuanSilva/omp-web/plugin-api` declarations.
   */
  openTerminal?: (options?: { terminalId?: string | undefined }) => void;
- piWebUnstable?: Pick<PiWebUnstableRuntimeContext, "terminalCommandRuns">;
+ ompWebUnstable?: Pick<OmpWebUnstableRuntimeContext, "terminalCommandRuns">;
  fileTree: FileTreeEntry[];
  expandedDirs: Record<string, FileTreeEntry[]>;
  selectedFilePath: string | undefined;

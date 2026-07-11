@@ -54,12 +54,12 @@ Copy-paste prompt for creating a plugin:
 Build a PI WEB plugin for this project.
 Goal: <describe the UI behavior>.
 Before coding, read the PI WEB plugin docs:
-https://pi-web.dev/plugins
+https://omp-web.dev/plugins
 Full API reference:
-https://pi-web.dev/plugins.md
-Create it as a local plugin under ~/.pi-web/plugins/<plugin-id>.
+https://omp-web.dev/plugins.md
+Create it as a local plugin under ~/.omp-web/plugins/<plugin-id>.
 Use the appropriate extension points from the docs.
-Validate by checking /pi-web-plugins/manifest.json and explain how to reload/debug it.
+Validate by checking /omp-web-plugins/manifest.json and explain how to reload/debug it.
 Do not modify PI WEB itself.
 ```
 
@@ -68,9 +68,9 @@ Copy-paste prompt for modifying a plugin:
 ```text
 Improve the PI WEB plugin at <path>.
 Before coding, read the PI WEB plugin docs:
-https://pi-web.dev/plugins
+https://omp-web.dev/plugins
 Full API reference:
-https://pi-web.dev/plugins.md
+https://omp-web.dev/plugins.md
 Keep the plugin compatible with the documented v1 API.
 After editing, check the manifest endpoint and browser-console failure cases.
 ```
@@ -79,30 +79,30 @@ After editing, check the manifest endpoint and browser-console failure cases.
 
 PI WEB ships a real bundled `info` plugin. Use it as the reference example because it is intentionally small while still exercising all core contribution types: an action, a workspace label, and a workspace panel.
 
-Bundled PI WEB plugins are developed as TypeScript in the repository, but their `package.json` metadata still points at built JavaScript because plugins are loaded by the browser as JS ES modules. `npm run dev:web` watches and rebuilds bundled plugin TS into `dist/pi-web-plugins/` during development, and `npm run build` emits the JS before packaging a release.
+Bundled PI WEB plugins are developed as TypeScript in the repository, but their `package.json` metadata still points at built JavaScript because plugins are loaded by the browser as JS ES modules. `npm run dev:web` watches and rebuilds bundled plugin TS into `dist/omp-web-plugins/` during development, and `npm run build` emits the JS before packaging a release.
 
 Source files:
 
 ```text
-pi-web-plugins/info/package.json
-pi-web-plugins/info/pi-web-plugin.ts
+omp-web-plugins/info/package.json
+omp-web-plugins/info/omp-web-plugin.ts
 ```
 
 Built module:
 
 ```text
-dist/pi-web-plugins/info/pi-web-plugin.js
+dist/omp-web-plugins/info/omp-web-plugin.js
 ```
 
 Package metadata:
 
 ```json
 {
-  "name": "@pi-web/info-plugin",
+  "name": "@omp-web/info-plugin",
   "private": true,
-  "piWeb": {
+  "ompWeb": {
     "plugins": [
-      { "id": "info", "module": "pi-web-plugin.js" }
+      { "id": "info", "module": "omp-web-plugin.js" }
     ]
   }
 }
@@ -130,20 +130,20 @@ PI WEB also ships an `updates` plugin that demonstrates dynamic `visible` and `b
 
 ## Local plugin usage
 
-This works with the production native-service install. PI WEB discovers plugins from `~/.pi-web/plugins/<plugin-package>/` on the web/API side; no PI WEB rebuild or session-daemon restart is required. If `PI_WEB_DATA_DIR` is set, use `$PI_WEB_DATA_DIR/plugins` instead.
+This works with the production native-service install. PI WEB discovers plugins from `~/.omp-web/plugins/<plugin-package>/` on the web/API side; no PI WEB rebuild or session-daemon restart is required. If `OMP_WEB_DATA_DIR` is set, use `$OMP_WEB_DATA_DIR/plugins` instead.
 
 Symlink a plugin folder into PI WEB's local plugin directory:
 
 ```bash
-mkdir -p ~/.pi-web/plugins
-ln -s /path/to/plugin-folder ~/.pi-web/plugins/plugin-id
+mkdir -p ~/.omp-web/plugins
+ln -s /path/to/plugin-folder ~/.omp-web/plugins/plugin-id
 ```
 
 Reload the PI WEB browser tab. PI WEB serves plugin modules with an mtime-based `?v=` cache buster. After editing a plugin, hard reload the browser if you do not see changes.
 
 ## Remote machine plugins
 
-When [machine federation](https://pi-web.dev/machines) is enabled, PI WEB also loads discovered plugins from the selected remote machine. Remote plugins are trusted browser-side code like local plugins, but their contributions are machine-scoped:
+When [machine federation](https://omp-web.dev/machines) is enabled, PI WEB also loads discovered plugins from the selected remote machine. Remote plugins are trusted browser-side code like local plugins, but their contributions are machine-scoped:
 
 - actions, workspace panels, and workspace labels only appear while that machine is selected;
 - plugin file and terminal helpers run against that machine;
@@ -165,7 +165,7 @@ For portable plugin assets, prefer URLs relative to the plugin module, for examp
 const url = new URL("./asset.json", import.meta.url);
 ```
 
-If a remote plugin constructs absolute asset URLs, it should use the `pluginId` from `activate()` because PI WEB gives remote plugins a gateway-scoped runtime id. Hard-coded `/pi-web-plugins/<original-id>/...` URLs may point at the gateway instead of the remote machine.
+If a remote plugin constructs absolute asset URLs, it should use the `pluginId` from `activate()` because PI WEB gives remote plugins a gateway-scoped runtime id. Hard-coded `/omp-web-plugins/<original-id>/...` URLs may point at the gateway instead of the remote machine.
 
 ## Manage PI WEB plugins
 
@@ -189,13 +189,13 @@ Plugin preferences are stored under the top-level `plugins` config key in the PI
 }
 ```
 
-Plugins are enabled by default. Set `enabled` to `false` to remove a plugin from `/pi-web-plugins/manifest.json` so the browser will not import or activate it on the next page load. The optional `settings` object is reserved for plugin-specific settings.
+Plugins are enabled by default. Set `enabled` to `false` to remove a plugin from `/omp-web-plugins/manifest.json` so the browser will not import or activate it on the next page load. The optional `settings` object is reserved for plugin-specific settings.
 
 After changing plugin enablement, reload the PI WEB browser tab. Already-loaded plugin JavaScript is not unloaded from the current page.
 
 ## Built-in plugins
 
-PI WEB ships core, discoverable plugins in the main `@ProgmRuanSilva/omp-web` npm package. No separate `pi install` step is required: update PI WEB, reload the browser tab, and the bundled plugins appear in `/pi-web-plugins/manifest.json`.
+PI WEB ships core, discoverable plugins in the main `@ProgmRuanSilva/omp-web` npm package. No separate `pi install` step is required: update PI WEB, reload the browser tab, and the bundled plugins appear in `/omp-web-plugins/manifest.json`.
 
 Built-in plugins can be managed from **Settings → PI WEB plugins** or with the top-level `plugins` config key.
 
@@ -217,7 +217,7 @@ Updates is enabled by default. It declares `machineSpecific: true` so the gatewa
 ### Workspace Tasks
 
 **Plugin id:** `workspace-tasks`
-**Config file:** `.pi-web/tasks.json`
+**Config file:** `.omp-web/tasks.json`
 **What it does:** adds a **Tasks** workspace tab for running configured shell commands in dedicated PI WEB terminals.
 
 Workspace Tasks is enabled by default. To hide it, disable `workspace-tasks` in **Settings → PI WEB plugins** or set:
@@ -230,7 +230,7 @@ Workspace Tasks is enabled by default. To hide it, disable `workspace-tasks` in 
 }
 ```
 
-Configure workspace tasks in `.pi-web/tasks.json`:
+Configure workspace tasks in `.omp-web/tasks.json`:
 
 ```json
 {
@@ -271,25 +271,25 @@ Review task configs before running them, especially in shared projects. Workspac
 
 ## Discovery and packaging
 
-PI WEB builds the gateway `/pi-web-plugins/manifest.json` from these sources:
+PI WEB builds the gateway `/omp-web-plugins/manifest.json` from these sources:
 
 1. Bundled plugins in the PI WEB package:
 
    ```text
-   pi-web-plugins/<plugin-package>/
+   omp-web-plugins/<plugin-package>/
    ```
 
 2. User-local plugins:
 
    ```text
-   ~/.pi-web/plugins/<plugin-package>/
+   ~/.omp-web/plugins/<plugin-package>/
    ```
 
    Entries may be real directories or symlinks. This is the recommended development workflow.
 
 3. Installed Pi packages that expose PI WEB plugin metadata. Pi packages may be user or project scoped. Installing/removing/updating Pi packages is done from **Settings → Pi packages** (or Pi's package manager), not from the PI WEB plugin enable/disable list.
 
-Remote machines expose their own manifests through the gateway at `/api/machines/<machine-id>/pi-web-plugins/manifest.json`. Those plugin modules are rewritten to gateway-scoped asset URLs and registered under machine-scoped runtime ids so duplicate plugin ids on different machines do not collide.
+Remote machines expose their own manifests through the gateway at `/api/machines/<machine-id>/omp-web-plugins/manifest.json`. Those plugin modules are rewritten to gateway-scoped asset URLs and registered under machine-scoped runtime ids so duplicate plugin ids on different machines do not collide.
 
 Plugin package directory names and plugin ids must be valid identifiers:
 
@@ -302,7 +302,7 @@ A package can expose one or more PI WEB plugin modules. There is exactly one sup
 ```json
 {
   "private": true,
-  "piWeb": {
+  "ompWeb": {
     "plugins": [
       { "id": "review", "module": "dist/review.js" },
       { "id": "dashboard", "module": "dist/dashboard.js", "machineSpecific": true }
@@ -313,13 +313,13 @@ A package can expose one or more PI WEB plugin modules. There is exactly one sup
 
 Rules:
 
-- `piWeb.plugins` must be an array of objects.
+- `ompWeb.plugins` must be an array of objects.
 - Each entry must have an explicit `id` and `module`.
 - `id` must match `^[a-z][a-z0-9.-]*$`.
 - `module` must be a safe relative path inside the plugin package root.
 - `machineSpecific` is optional and must be a boolean; omit it for the default portable gateway behavior.
 - Duplicate plugin ids are not auto-renamed; later duplicates are skipped.
-- Legacy shortcuts such as `piWeb.plugin`, string entries in `piWeb.plugins`, `piWeb.id` fallback ids, and no-`package.json` fallbacks are not supported.
+- Legacy shortcuts such as `ompWeb.plugin`, string entries in `ompWeb.plugins`, `ompWeb.id` fallback ids, and no-`package.json` fallbacks are not supported.
 
 ### Manifest and assets
 
@@ -330,7 +330,7 @@ The manifest contains each discovered plugin module:
   "plugins": [
     {
       "id": "my-plugin",
-      "module": "/pi-web-plugins/my-plugin/pi-web-plugin.js?v=1234567890",
+      "module": "/omp-web-plugins/my-plugin/omp-web-plugin.js?v=1234567890",
       "source": "local",
       "scope": "local",
       "machineSpecific": false
@@ -344,7 +344,7 @@ The manifest contains each discovered plugin module:
 A plugin can fetch its own static assets with URLs under:
 
 ```text
-/pi-web-plugins/<plugin-id>/<path-inside-plugin-root>
+/omp-web-plugins/<plugin-id>/<path-inside-plugin-root>
 ```
 
 PI WEB prevents asset path traversal outside the plugin root. JavaScript, JSON, CSS, and HTML get appropriate content types; other files are served as octet-stream.
@@ -354,7 +354,7 @@ PI WEB prevents asset path traversal outside the plugin root. JavaScript, JSON, 
 The entry module must default-export a plugin object:
 
 ```ts
-interface PiWebPlugin {
+interface OmpWebPlugin {
   apiVersion: 1;
   name: string;
   activate: (context: PluginActivationContext) => PluginActivationResult;
@@ -454,7 +454,7 @@ interface PluginRuntimeContext {
   state: {
     selectedWorkspace?: Workspace;
     selectedSession?: unknown;
-    piWebStatus?: PiWebStatusResponse;
+    ompWebStatus?: OmpWebStatusResponse;
   };
   prompt: PluginPromptEditor;
   openActionPalette: () => void;
@@ -475,7 +475,7 @@ interface PluginRuntimeContext {
 Notes:
 
 - `state` is a snapshot of current UI state when actions are built.
-- The stable state fields are `state.selectedWorkspace`, `state.selectedSession`, and `state.piWebStatus`. `state.piWebStatus` describes the currently selected machine's PI WEB runtime, or the gateway/local runtime when the local machine is selected.
+- The stable state fields are `state.selectedWorkspace`, `state.selectedSession`, and `state.ompWebStatus`. `state.ompWebStatus` describes the currently selected machine's PI WEB runtime, or the gateway/local runtime when the local machine is selected.
 - Other `state` fields may exist at runtime, but they are private PI WEB internals that may graduate into stable helpers, change shape, or disappear.
 - `enabled` is evaluated when the action palette asks for actions.
 - `selectWorkspaceTool()` expects a qualified panel id such as `my-plugin:workspace.info`.
@@ -928,8 +928,8 @@ PI WEB does not provide a plugin cache/invalidation framework. Keep host callbac
 
 If you are an AI agent building or editing a PI WEB plugin, follow this checklist:
 
-1. Create or update a plugin folder with `package.json` and a JavaScript module such as `pi-web-plugin.js`.
-2. Use the single supported package metadata shape: `piWeb.plugins` array with `{ id, module, machineSpecific? }` entries.
+1. Create or update a plugin folder with `package.json` and a JavaScript module such as `omp-web-plugin.js`.
+2. Use the single supported package metadata shape: `ompWeb.plugins` array with `{ id, module, machineSpecific? }` entries.
 3. Default-export `{ apiVersion: 1, name, activate }` from the module.
 4. Return `{ contributions: { actions, workspacePanels, workspaceLabels } }` from `activate()`.
 5. Use ids matching `^[a-z][a-z0-9.-]*$`.
@@ -939,7 +939,7 @@ If you are an AI agent building or editing a PI WEB plugin, follow this checklis
 9. Add workspace panels for larger workspace UI.
 10. Add workspace labels for compact inline metadata.
 11. Return arrays from workspace label `items()`; return an empty array to render nothing.
-12. Use documented context helpers first: `files`, `terminal`, `host.requestRender`, `workspace`, `machine`, `state.selectedWorkspace`, `state.selectedSession`, `state.piWebStatus`, and `prompt`.
+12. Use documented context helpers first: `files`, `terminal`, `host.requestRender`, `workspace`, `machine`, `state.selectedWorkspace`, `state.selectedSession`, `state.ompWebStatus`, and `prompt`.
 13. Do not fetch PI WEB `/api/...` endpoints directly unless you intentionally accept private API churn; prefer documented helpers.
 14. Treat plugins as trusted code and avoid reading or displaying secrets unless intentional.
 15. After local edits, tell the user to hard reload the browser and check the console for plugin errors.
@@ -949,13 +949,13 @@ If you are an AI agent building or editing a PI WEB plugin, follow this checklis
 Check discovery:
 
 ```bash
-curl http://127.0.0.1:8504/pi-web-plugins/manifest.json
+curl http://127.0.0.1:8504/omp-web-plugins/manifest.json
 ```
 
 Check a plugin module:
 
 ```bash
-curl http://127.0.0.1:8504/pi-web-plugins/my-plugin/pi-web-plugin.js
+curl http://127.0.0.1:8504/omp-web-plugins/my-plugin/omp-web-plugin.js
 ```
 
 Common issues:
@@ -963,10 +963,10 @@ Common issues:
 - invalid plugin id or contribution id;
 - missing default export;
 - missing `apiVersion: 1`, `name`, or `activate` function;
-- missing `package.json` or incorrect `piWeb.plugins` metadata;
-- legacy shortcuts such as `piWeb.plugin`, string plugin entries, or no-`package.json` fallback;
+- missing `package.json` or incorrect `ompWeb.plugins` metadata;
+- legacy shortcuts such as `ompWeb.plugin`, string plugin entries, or no-`package.json` fallback;
 - duplicate plugin ids; later duplicates are skipped rather than renamed;
 - entry module path points outside the plugin root or file does not exist;
 - browser cache not refreshed after editing;
-- plugin directory is not under `~/.pi-web/plugins` or symlinked there;
+- plugin directory is not under `~/.omp-web/plugins` or symlinked there;
 - plugin throws during module import, `activate()`, `visible()`, `enabled()`, `items()`, or `render()`; check the browser console.

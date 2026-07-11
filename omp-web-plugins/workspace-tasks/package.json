@@ -1,0 +1,9 @@
+{
+  "name": "@omp-web/workspace-tasks-plugin",
+  "private": true,
+  "ompWeb": {
+    "plugins": [
+      { "id": "workspace-tasks", "module": "omp-web-plugin.js" }
+    ]
+  }
+}

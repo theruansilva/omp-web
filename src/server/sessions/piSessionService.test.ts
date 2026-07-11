@@ -208,7 +208,7 @@ describe("PiSessionService", () => {
   });
 
   it("reports persistence from actual session-file existence for fresh active sessions", async () => {
-    const dir = await mkdtemp(join(tmpdir(), "pi-web-persisted-"));
+    const dir = await mkdtemp(join(tmpdir(), "omp-web-persisted-"));
     const sessionFile = join(dir, "new-session.jsonl");
     const hub = new CapturingSessionEventHub();
     const fake = fakeRuntime("new-session", { sessionFile });
@@ -1395,13 +1395,13 @@ describe("PiSessionService", () => {
 
       expect(parentPersisted).toEqual([
         {
-          customType: "pi-web.subsession.link",
+          customType: "omp-web.subsession.link",
           data: { version: 1, spawnedBySessionId: "parent-1", spawnedSessionId: "child-1", spawnedSessionFile: "/tmp/child-1.jsonl", cwd: "/workspace-feature" },
         },
       ]);
       expect(childPersisted).toEqual([
         {
-          customType: "pi-web.subsession.spawned",
+          customType: "omp-web.subsession.spawned",
           data: { version: 1, spawnedBySessionId: "parent-1", spawnedSessionId: "child-1" },
         },
       ]);
@@ -1409,7 +1409,7 @@ describe("PiSessionService", () => {
     });
 
     it("hydrates persisted child links after a service restart so the parent can inspect them", async () => {
-      const tempDir = await mkdtemp(join(tmpdir(), "pi-web-subsession-"));
+      const tempDir = await mkdtemp(join(tmpdir(), "omp-web-subsession-"));
       const parentFile = join(tempDir, "parent.jsonl");
       const childFile = join(tempDir, "child.jsonl");
       await writeFile(parentFile, `${JSON.stringify({ type: "session", version: 3, id: "parent-1", timestamp: "2026-01-01T00:00:00.000Z", cwd: "/workspace" })}\n`, "utf8");
@@ -1422,7 +1422,7 @@ describe("PiSessionService", () => {
         const parent = fakeRuntime("parent-1", {
           sessionFile: parentFile,
           sessionManager: fakeSessionManager("/workspace", {
-            getEntries: () => [{ type: "custom", customType: "pi-web.subsession.link", data: { version: 1, spawnedBySessionId: "parent-1", spawnedSessionId: "child-1", spawnedSessionFile: childFile, cwd: "/workspace-feature" } }],
+            getEntries: () => [{ type: "custom", customType: "omp-web.subsession.link", data: { version: 1, spawnedBySessionId: "parent-1", spawnedSessionId: "child-1", spawnedSessionFile: childFile, cwd: "/workspace-feature" } }],
           }),
         });
         const child = fakeRuntime("child-1", { sessionFile: childFile, sessionManager: childManager });
@@ -1457,7 +1457,7 @@ describe("PiSessionService", () => {
     });
 
     it("ignores stale persisted child links when the child no longer records the parent", async () => {
-      const tempDir = await mkdtemp(join(tmpdir(), "pi-web-subsession-stale-"));
+      const tempDir = await mkdtemp(join(tmpdir(), "omp-web-subsession-stale-"));
       const parentFile = join(tempDir, "parent.jsonl");
       const childFile = join(tempDir, "child.jsonl");
       await writeFile(parentFile, `${JSON.stringify({ type: "session", version: 3, id: "parent-1", timestamp: "2026-01-01T00:00:00.000Z", cwd: "/workspace" })}\n`, "utf8");
@@ -1467,7 +1467,7 @@ describe("PiSessionService", () => {
         const parent = fakeRuntime("parent-1", {
           sessionFile: parentFile,
           sessionManager: fakeSessionManager("/workspace", {
-            getEntries: () => [{ type: "custom", customType: "pi-web.subsession.link", data: { version: 1, spawnedBySessionId: "parent-1", spawnedSessionId: "child-1", spawnedSessionFile: childFile, cwd: "/workspace-feature" } }],
+            getEntries: () => [{ type: "custom", customType: "omp-web.subsession.link", data: { version: 1, spawnedBySessionId: "parent-1", spawnedSessionId: "child-1", spawnedSessionFile: childFile, cwd: "/workspace-feature" } }],
           }),
         });
         const service = new PiSessionService(new CapturingSessionEventHub(), {
@@ -1491,7 +1491,7 @@ describe("PiSessionService", () => {
       const parent = fakeRuntime("parent-1", {
         sessionFile: parentFile,
         sessionManager: fakeSessionManager("/workspace", {
-          getEntries: () => [{ type: "custom", customType: "pi-web.subsession.link", data: { version: 1, spawnedBySessionId: "parent-1", spawnedSessionId: "child-1", spawnedSessionFile: "/sessions/child-1.jsonl", cwd: "/workspace-feature" } }],
+          getEntries: () => [{ type: "custom", customType: "omp-web.subsession.link", data: { version: 1, spawnedBySessionId: "parent-1", spawnedSessionId: "child-1", spawnedSessionFile: "/sessions/child-1.jsonl", cwd: "/workspace-feature" } }],
         }),
       });
       const service = new PiSessionService(new CapturingSessionEventHub(), {
@@ -1512,7 +1512,7 @@ describe("PiSessionService", () => {
       const parent = fakeRuntime("parent-1", {
         sessionFile: parentFile,
         sessionManager: fakeSessionManager("/workspace", {
-          getEntries: () => [{ type: "custom", customType: "pi-web.subsession.link", data: { version: 1, spawnedBySessionId: "parent-1", spawnedSessionId: "child", cwd: "/workspace-feature" } }],
+          getEntries: () => [{ type: "custom", customType: "omp-web.subsession.link", data: { version: 1, spawnedBySessionId: "parent-1", spawnedSessionId: "child", cwd: "/workspace-feature" } }],
         }),
       });
       const service = new PiSessionService(new CapturingSessionEventHub(), {
@@ -1552,7 +1552,7 @@ describe("PiSessionService", () => {
       const forkedParent = fakeRuntime("parent-fork-1", {
         sessionFile: "/sessions/parent-fork-1.jsonl",
         sessionManager: fakeSessionManager("/workspace", {
-          getEntries: () => [{ type: "custom", customType: "pi-web.subsession.link", data: { version: 1, spawnedBySessionId: "parent-1", spawnedSessionId: "child-1", spawnedSessionFile: "/sessions/child-1.jsonl", cwd: "/workspace-feature" } }],
+          getEntries: () => [{ type: "custom", customType: "omp-web.subsession.link", data: { version: 1, spawnedBySessionId: "parent-1", spawnedSessionId: "child-1", spawnedSessionFile: "/sessions/child-1.jsonl", cwd: "/workspace-feature" } }],
         }),
       });
       const service = new PiSessionService(new CapturingSessionEventHub(), {
@@ -1569,7 +1569,7 @@ describe("PiSessionService", () => {
     });
 
     it("relinks a spawned child when the child session is opened after restart", async () => {
-      const tempDir = await mkdtemp(join(tmpdir(), "pi-web-subsession-open-child-"));
+      const tempDir = await mkdtemp(join(tmpdir(), "omp-web-subsession-open-child-"));
       const parentFile = join(tempDir, "parent.jsonl");
       const childFile = join(tempDir, "child.jsonl");
       await writeFile(parentFile, `${JSON.stringify({ type: "session", version: 3, id: "parent-1", timestamp: "2026-01-01T00:00:00.000Z", cwd: "/workspace" })}\n`, "utf8");
@@ -1578,10 +1578,10 @@ describe("PiSessionService", () => {
       try {
         const childManager = fakeSessionManager("/workspace-feature", {
           getHeader: () => ({ parentSession: parentFile }),
-          getEntries: () => [{ type: "custom", customType: "pi-web.subsession.spawned", data: { version: 1, spawnedBySessionId: "parent-1", spawnedSessionId: "child-1" } }],
+          getEntries: () => [{ type: "custom", customType: "omp-web.subsession.spawned", data: { version: 1, spawnedBySessionId: "parent-1", spawnedSessionId: "child-1" } }],
         });
         const parentManager = fakeSessionManager("/workspace", {
-          getEntries: () => [{ type: "custom", customType: "pi-web.subsession.link", data: { version: 1, spawnedBySessionId: "parent-1", spawnedSessionId: "child-1", spawnedSessionFile: childFile, cwd: "/workspace-feature" } }],
+          getEntries: () => [{ type: "custom", customType: "omp-web.subsession.link", data: { version: 1, spawnedBySessionId: "parent-1", spawnedSessionId: "child-1", spawnedSessionFile: childFile, cwd: "/workspace-feature" } }],
         });
         const child = fakeRuntime("child-1", { sessionFile: childFile, sessionManager: childManager });
         const parent = fakeRuntime("parent-1", { sessionFile: parentFile, sessionManager: parentManager });
@@ -1621,7 +1621,7 @@ describe("PiSessionService", () => {
     });
 
     it("notifies the validated parent file instead of an active prefix-matched parent id", async () => {
-      const tempDir = await mkdtemp(join(tmpdir(), "pi-web-subsession-prefix-parent-"));
+      const tempDir = await mkdtemp(join(tmpdir(), "omp-web-subsession-prefix-parent-"));
       const parentFile = join(tempDir, "parent.jsonl");
       const forkParentFile = join(tempDir, "parent-fork.jsonl");
       const childFile = join(tempDir, "child.jsonl");
@@ -1632,10 +1632,10 @@ describe("PiSessionService", () => {
       try {
         const childManager = fakeSessionManager("/workspace-feature", {
           getHeader: () => ({ parentSession: parentFile }),
-          getEntries: () => [{ type: "custom", customType: "pi-web.subsession.spawned", data: { version: 1, spawnedBySessionId: "parent-1", spawnedSessionId: "child-1" } }],
+          getEntries: () => [{ type: "custom", customType: "omp-web.subsession.spawned", data: { version: 1, spawnedBySessionId: "parent-1", spawnedSessionId: "child-1" } }],
         });
         const parentManager = fakeSessionManager("/workspace", {
-          getEntries: () => [{ type: "custom", customType: "pi-web.subsession.link", data: { version: 1, spawnedBySessionId: "parent-1", spawnedSessionId: "child-1", spawnedSessionFile: childFile, cwd: "/workspace-feature" } }],
+          getEntries: () => [{ type: "custom", customType: "omp-web.subsession.link", data: { version: 1, spawnedBySessionId: "parent-1", spawnedSessionId: "child-1", spawnedSessionFile: childFile, cwd: "/workspace-feature" } }],
         });
         const forkManager = fakeSessionManager("/workspace");
         const fork = fakeRuntime("parent-1-fork", { sessionFile: forkParentFile, sessionManager: forkManager });
@@ -1684,7 +1684,7 @@ describe("PiSessionService", () => {
     });
 
     it("does not relink a copied child with the original session id unless the parent link names the current child file", async () => {
-      const tempDir = await mkdtemp(join(tmpdir(), "pi-web-subsession-copied-child-"));
+      const tempDir = await mkdtemp(join(tmpdir(), "omp-web-subsession-copied-child-"));
       const parentFile = join(tempDir, "parent.jsonl");
       const originalChildFile = join(tempDir, "original-child.jsonl");
       const copiedChildFile = join(tempDir, "copied-child.jsonl");
@@ -1695,10 +1695,10 @@ describe("PiSessionService", () => {
       try {
         const childManager = fakeSessionManager("/workspace-feature", {
           getHeader: () => ({ parentSession: parentFile }),
-          getEntries: () => [{ type: "custom", customType: "pi-web.subsession.spawned", data: { version: 1, spawnedBySessionId: "parent-1", spawnedSessionId: "child-1" } }],
+          getEntries: () => [{ type: "custom", customType: "omp-web.subsession.spawned", data: { version: 1, spawnedBySessionId: "parent-1", spawnedSessionId: "child-1" } }],
         });
         const parentManager = fakeSessionManager("/workspace", {
-          getEntries: () => [{ type: "custom", customType: "pi-web.subsession.link", data: { version: 1, spawnedBySessionId: "parent-1", spawnedSessionId: "child-1", spawnedSessionFile: originalChildFile, cwd: "/workspace-feature" } }],
+          getEntries: () => [{ type: "custom", customType: "omp-web.subsession.link", data: { version: 1, spawnedBySessionId: "parent-1", spawnedSessionId: "child-1", spawnedSessionFile: originalChildFile, cwd: "/workspace-feature" } }],
         });
         const child = fakeRuntime("child-1", { sessionFile: copiedChildFile, sessionManager: childManager });
         const parent = fakeRuntime("parent-1", { sessionFile: parentFile, sessionManager: parentManager });
@@ -1736,7 +1736,7 @@ describe("PiSessionService", () => {
     });
 
     it("uses the verified child file instead of an active copied child with the same id", async () => {
-      const tempDir = await mkdtemp(join(tmpdir(), "pi-web-subsession-active-copy-child-"));
+      const tempDir = await mkdtemp(join(tmpdir(), "omp-web-subsession-active-copy-child-"));
       const parentFile = join(tempDir, "parent.jsonl");
       const originalChildFile = join(tempDir, "original-child.jsonl");
       const copiedChildFile = join(tempDir, "copied-child.jsonl");
@@ -1752,7 +1752,7 @@ describe("PiSessionService", () => {
           getBranch: () => [{ type: "message", message: { role: "assistant", content: "original child result" } }],
         });
         const parentManager = fakeSessionManager("/workspace", {
-          getEntries: () => [{ type: "custom", customType: "pi-web.subsession.link", data: { version: 1, spawnedBySessionId: "parent-1", spawnedSessionId: "child-1", spawnedSessionFile: originalChildFile, cwd: "/workspace-feature" } }],
+          getEntries: () => [{ type: "custom", customType: "omp-web.subsession.link", data: { version: 1, spawnedBySessionId: "parent-1", spawnedSessionId: "child-1", spawnedSessionFile: originalChildFile, cwd: "/workspace-feature" } }],
         });
         const copiedChild = fakeRuntime("child-1", { sessionFile: copiedChildFile, sessionManager: copiedManager, isStreaming: true });
         const originalChild = fakeRuntime("child-1", { sessionFile: originalChildFile, sessionManager: originalManager });
@@ -1812,7 +1812,7 @@ describe("PiSessionService", () => {
     });
 
     it("uses the verified parent file instead of an active copied parent with the same id", async () => {
-      const tempDir = await mkdtemp(join(tmpdir(), "pi-web-subsession-active-copy-parent-"));
+      const tempDir = await mkdtemp(join(tmpdir(), "omp-web-subsession-active-copy-parent-"));
       const parentFile = join(tempDir, "parent.jsonl");
       const copiedParentFile = join(tempDir, "copied-parent.jsonl");
       const childFile = join(tempDir, "child.jsonl");
@@ -1822,11 +1822,11 @@ describe("PiSessionService", () => {
 
       try {
         const childManager = fakeSessionManager("/workspace-feature", {
-          getEntries: () => [{ type: "custom", customType: "pi-web.subsession.spawned", data: { version: 1, spawnedBySessionId: "parent-1", spawnedSessionId: "child-1" } }],
+          getEntries: () => [{ type: "custom", customType: "omp-web.subsession.spawned", data: { version: 1, spawnedBySessionId: "parent-1", spawnedSessionId: "child-1" } }],
           getBranch: () => [{ type: "message", message: { role: "assistant", content: "child result" } }],
         });
         const parentManager = fakeSessionManager("/workspace", {
-          getEntries: () => [{ type: "custom", customType: "pi-web.subsession.link", data: { version: 1, spawnedBySessionId: "parent-1", spawnedSessionId: "child-1", spawnedSessionFile: childFile, cwd: "/workspace-feature" } }],
+          getEntries: () => [{ type: "custom", customType: "omp-web.subsession.link", data: { version: 1, spawnedBySessionId: "parent-1", spawnedSessionId: "child-1", spawnedSessionFile: childFile, cwd: "/workspace-feature" } }],
         });
         const copiedParentManager = fakeSessionManager("/workspace", { getEntries: () => [] });
         const child = fakeRuntime("child-1", { sessionFile: childFile, sessionManager: childManager });
@@ -1882,7 +1882,7 @@ describe("PiSessionService", () => {
     });
 
     it("does not relink a child marker when the current child file header no longer records the parent", async () => {
-      const tempDir = await mkdtemp(join(tmpdir(), "pi-web-subsession-stale-child-header-"));
+      const tempDir = await mkdtemp(join(tmpdir(), "omp-web-subsession-stale-child-header-"));
       const parentFile = join(tempDir, "parent.jsonl");
       const childFile = join(tempDir, "child.jsonl");
       await writeFile(parentFile, `${JSON.stringify({ type: "session", version: 3, id: "parent-1", timestamp: "2026-01-01T00:00:00.000Z", cwd: "/workspace" })}\n`, "utf8");
@@ -1891,10 +1891,10 @@ describe("PiSessionService", () => {
       try {
         const childManager = fakeSessionManager("/workspace-feature", {
           getHeader: () => ({ parentSession: parentFile }),
-          getEntries: () => [{ type: "custom", customType: "pi-web.subsession.spawned", data: { version: 1, spawnedBySessionId: "parent-1", spawnedSessionId: "child-1" } }],
+          getEntries: () => [{ type: "custom", customType: "omp-web.subsession.spawned", data: { version: 1, spawnedBySessionId: "parent-1", spawnedSessionId: "child-1" } }],
         });
         const parentManager = fakeSessionManager("/workspace", {
-          getEntries: () => [{ type: "custom", customType: "pi-web.subsession.link", data: { version: 1, spawnedBySessionId: "parent-1", spawnedSessionId: "child-1", spawnedSessionFile: childFile, cwd: "/workspace-feature" } }],
+          getEntries: () => [{ type: "custom", customType: "omp-web.subsession.link", data: { version: 1, spawnedBySessionId: "parent-1", spawnedSessionId: "child-1", spawnedSessionFile: childFile, cwd: "/workspace-feature" } }],
         });
         const child = fakeRuntime("child-1", { sessionFile: childFile, sessionManager: childManager });
         const parent = fakeRuntime("parent-1", { sessionFile: parentFile, sessionManager: parentManager });
@@ -1936,7 +1936,7 @@ describe("PiSessionService", () => {
     });
 
     it("does not relink a child marker when the child header points at a different parent id", async () => {
-      const tempDir = await mkdtemp(join(tmpdir(), "pi-web-subsession-wrong-parent-"));
+      const tempDir = await mkdtemp(join(tmpdir(), "omp-web-subsession-wrong-parent-"));
       const mismatchedParentFile = join(tempDir, "other-parent.jsonl");
       const actualParentFile = join(tempDir, "parent.jsonl");
       const childFile = join(tempDir, "child.jsonl");
@@ -1946,7 +1946,7 @@ describe("PiSessionService", () => {
       try {
         const childManager = fakeSessionManager("/workspace-feature", {
           getHeader: () => ({ parentSession: mismatchedParentFile }),
-          getEntries: () => [{ type: "custom", customType: "pi-web.subsession.spawned", data: { version: 1, spawnedBySessionId: "parent-1", spawnedSessionId: "child-1" } }],
+          getEntries: () => [{ type: "custom", customType: "omp-web.subsession.spawned", data: { version: 1, spawnedBySessionId: "parent-1", spawnedSessionId: "child-1" } }],
         });
         const parent = fakeRuntime("parent-1", { sessionFile: actualParentFile, sessionManager: fakeSessionManager("/workspace") });
         const child = fakeRuntime("child-1", { sessionFile: childFile, sessionManager: childManager });
@@ -1989,7 +1989,7 @@ describe("PiSessionService", () => {
       const childFile = "/sessions/child-fork-1.jsonl";
       const childManager = fakeSessionManager("/workspace-feature", {
         getHeader: () => ({ parentSession: parentFile }),
-        getEntries: () => [{ type: "custom", customType: "pi-web.subsession.spawned", data: { version: 1, spawnedBySessionId: "parent-1", spawnedSessionId: "child-1" } }],
+        getEntries: () => [{ type: "custom", customType: "omp-web.subsession.spawned", data: { version: 1, spawnedBySessionId: "parent-1", spawnedSessionId: "child-1" } }],
       });
       const child = fakeRuntime("child-fork-1", { sessionFile: childFile, sessionManager: childManager });
       const open = vi.fn(() => Promise.resolve(childManager));

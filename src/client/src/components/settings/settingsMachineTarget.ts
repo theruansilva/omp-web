@@ -1,5 +1,5 @@
 import type { Machine, MachineKind, MachineRuntime } from "../../api";
-import { PI_WEB_CAPABILITIES, supportsPiWebCapability } from "../../../../shared/capabilities";
+import { OMP_WEB_CAPABILITIES, supportsOmpWebCapability } from "../../../../shared/capabilities";
 
 export interface SettingsMachineTarget {
   id: string;
@@ -26,7 +26,7 @@ export function settingsMachineTargetLabel(target: SettingsMachineTarget): strin
 export function selectedMachineSettingsSupport(target: SettingsMachineTarget, runtime: Pick<MachineRuntime, "ok" | "capabilities"> | undefined): SelectedMachineSettingsSupport {
   if (target.kind === "local") return { state: "supported" };
   if (runtime?.ok !== true) return { state: "unknown" };
-  if (supportsPiWebCapability(runtime, PI_WEB_CAPABILITIES.selectedMachineSettings)) return { state: "supported" };
+  if (supportsOmpWebCapability(runtime, OMP_WEB_CAPABILITIES.selectedMachineSettings)) return { state: "supported" };
   return { state: "unsupported", message: selectedMachineSettingsUnavailableMessage(target) };
 }
 

@@ -1,7 +1,7 @@
 import { css, html, LitElement, type PropertyValues, type TemplateResult } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import type { AppAction } from "../actions";
-import { configApi, piPackagesApi, pluginsApi, type Machine, type MachineRuntime, type PiPackageMutationResponse, type PiPackageScope, type PiPackagesResponse, type PiWebConfigResponse, type PiWebConfigValues, type PiWebPluginsResponse } from "../api";
+import { configApi, piPackagesApi, pluginsApi, type Machine, type MachineRuntime, type PiPackageMutationResponse, type PiPackageScope, type PiPackagesResponse, type OmpWebConfigResponse, type OmpWebConfigValues, type OmpWebPluginsResponse } from "../api";
 import type { SettingsSection } from "../settingsRoute";
 import "./settings/SettingsGeneralPanel";
 import "./settings/SettingsSessiondPanel";
@@ -23,13 +23,13 @@ export class SettingsDialog extends LitElement {
   @property({ attribute: false }) machineRuntime: MachineRuntime | undefined;
   @property({ attribute: false }) onNavigate?: (section: SettingsSection) => void;
   @property({ attribute: false }) onClose?: () => void;
-  @property({ attribute: false }) onConfigSaved?: (config: PiWebConfigValues) => void;
-  @state() private configResponse: PiWebConfigResponse | undefined;
-  @state() private accessConfigResponse: PiWebConfigResponse | undefined;
-  @state() private sessiondConfigResponse: PiWebConfigResponse | undefined;
-  @state() private pluginsResponse: PiWebPluginsResponse | undefined;
-  @state() private selectedPluginConfigResponse: PiWebConfigResponse | undefined;
-  @state() private selectedPluginsResponse: PiWebPluginsResponse | undefined;
+  @property({ attribute: false }) onConfigSaved?: (config: OmpWebConfigValues) => void;
+  @state() private configResponse: OmpWebConfigResponse | undefined;
+  @state() private accessConfigResponse: OmpWebConfigResponse | undefined;
+  @state() private sessiondConfigResponse: OmpWebConfigResponse | undefined;
+  @state() private pluginsResponse: OmpWebPluginsResponse | undefined;
+  @state() private selectedPluginConfigResponse: OmpWebConfigResponse | undefined;
+  @state() private selectedPluginsResponse: OmpWebPluginsResponse | undefined;
   @state() private packagesResponse: PiPackagesResponse | undefined;
   @state() private loading = true;
   @state() private accessLoading = true;
@@ -138,7 +138,7 @@ export class SettingsDialog extends LitElement {
           .savedMessage=${this.savedMessage}
           .targetLabel=${settingsMachineTargetLabel(this.settingsTarget())}
           .onReload=${() => this.loadSessiondConfigForTarget()}
-          .onSave=${(config: PiWebConfigValues) => this.saveSessiondConfig(config)}
+          .onSave=${(config: OmpWebConfigValues) => this.saveSessiondConfig(config)}
         ></settings-sessiond-panel>
       `;
     }
@@ -152,7 +152,7 @@ export class SettingsDialog extends LitElement {
           .error=${this.error}
           .savedMessage=${this.savedMessage}
           .onReload=${() => this.loadConfig()}
-          .onSave=${(config: PiWebConfigValues) => this.saveConfig(config)}
+          .onSave=${(config: OmpWebConfigValues) => this.saveConfig(config)}
         ></settings-shortcuts-panel>
       `;
     }
@@ -201,8 +201,8 @@ export class SettingsDialog extends LitElement {
         .targetLabel=${settingsMachineTargetLabel(this.settingsTarget())}
         .onReload=${() => this.loadConfig()}
         .onReloadMachine=${() => this.loadAccessConfigForTarget()}
-        .onSave=${(config: PiWebConfigValues) => this.saveConfig(config)}
-        .onSaveMachineConfig=${(config: PiWebConfigValues) => this.saveMachineAccessConfig(config)}
+        .onSave=${(config: OmpWebConfigValues) => this.saveConfig(config)}
+        .onSaveMachineConfig=${(config: OmpWebConfigValues) => this.saveMachineAccessConfig(config)}
       ></settings-general-panel>
     `;
   }
@@ -370,7 +370,7 @@ export class SettingsDialog extends LitElement {
     }
   }
 
-  private async saveConfig(config: PiWebConfigValues): Promise<void> {
+  private async saveConfig(config: OmpWebConfigValues): Promise<void> {
     if (this.saving) return;
     this.saving = true;
     this.error = "";
@@ -387,7 +387,7 @@ export class SettingsDialog extends LitElement {
     }
   }
 
-  private async saveMachineAccessConfig(config: PiWebConfigValues): Promise<void> {
+  private async saveMachineAccessConfig(config: OmpWebConfigValues): Promise<void> {
     if (this.saving) return;
     const target = this.settingsTarget();
     const support = this.selectedMachineSettingsSupport(target);
@@ -416,7 +416,7 @@ export class SettingsDialog extends LitElement {
     }
   }
 
-  private async saveSessiondConfig(config: PiWebConfigValues): Promise<void> {
+  private async saveSessiondConfig(config: OmpWebConfigValues): Promise<void> {
     if (this.saving) return;
     const target = this.settingsTarget();
     const support = this.selectedMachineSettingsSupport(target);

@@ -1,5 +1,5 @@
 import { machineScopedPluginId } from "../../../shared/machinePluginIds";
-import type { PiWebPlugin, PiWebPluginRegistration } from "./types";
+import type { OmpWebPlugin, OmpWebPluginRegistration } from "./types";
 
 export interface PluginManifestEntry {
   id: string;
@@ -16,11 +16,11 @@ export interface LoadExternalPluginsOptions {
   shouldLoadPlugin?: (entry: PluginManifestEntry) => boolean;
 }
 
-export async function loadExternalPlugins(manifestUrl = "/pi-web-plugins/manifest.json", options: LoadExternalPluginsOptions = {}): Promise<PiWebPluginRegistration[]> {
+export async function loadExternalPlugins(manifestUrl = "/omp-web-plugins/manifest.json", options: LoadExternalPluginsOptions = {}): Promise<OmpWebPluginRegistration[]> {
   const manifest = await fetchPluginManifest(manifestUrl);
   if (manifest === undefined) return [];
 
-  const registrations: PiWebPluginRegistration[] = [];
+  const registrations: OmpWebPluginRegistration[] = [];
   for (const entry of manifest.plugins) {
     if (options.shouldLoadPlugin?.(entry) === false) continue;
     try {
@@ -63,14 +63,14 @@ function parseMachineSpecific(value: unknown): boolean {
   return value;
 }
 
-function parsePluginModule(module: unknown, moduleUrl: string): PiWebPlugin {
+function parsePluginModule(module: unknown, moduleUrl: string): OmpWebPlugin {
   if (!isRecord(module)) throw new Error(`Plugin module ${moduleUrl} did not export an object`);
   const plugin = module["default"];
-  if (!isPiWebPlugin(plugin)) throw new Error(`Plugin module ${moduleUrl} default export is not a PiWebPlugin`);
+  if (!isOmpWebPlugin(plugin)) throw new Error(`Plugin module ${moduleUrl} default export is not a OmpWebPlugin`);
   return plugin;
 }
 
-function isPiWebPlugin(value: unknown): value is PiWebPlugin {
+function isOmpWebPlugin(value: unknown): value is OmpWebPlugin {
   return isRecord(value) && value["apiVersion"] === 1 && typeof value["name"] === "string" && typeof value["activate"] === "function";
 }
 

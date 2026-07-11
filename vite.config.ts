@@ -4,9 +4,9 @@ import type { IncomingMessage, ServerResponse } from "node:http";
 import { extname, join, resolve, sep } from "node:path";
 import type { Plugin } from "vite";
 import { defineConfig } from "vite";
-import { effectivePiWebConfig } from "./src/config";
+import { effectiveOmpWebConfig } from "./src/config";
 
-const { config } = effectivePiWebConfig();
+const { config } = effectiveOmpWebConfig();
 const apiPort = config.port ?? 8504;
 const docsRoot = resolve("docs");
 const docsPrefix = "/site";
@@ -80,7 +80,7 @@ async function serveDevDocs(request: IncomingMessage, response: ServerResponse, 
 
 function devDocsPlugin(): Plugin {
   return {
-    name: "pi-web-dev-docs",
+    name: "omp-web-dev-docs",
     apply: "serve",
     configureServer(server) {
       server.middlewares.use((request, response, next) => {
@@ -116,7 +116,7 @@ export default defineConfig({
     ...(config.allowedHosts === undefined ? {} : { allowedHosts: config.allowedHosts }),
     proxy: {
       "/api": { target: `http://localhost:${String(apiPort)}`, ws: true },
-      "/pi-web-plugins": { target: `http://localhost:${String(apiPort)}` },
+      "/omp-web-plugins": { target: `http://localhost:${String(apiPort)}` },
     },
   },
 });

@@ -7,7 +7,7 @@ log() {
 }
 
 die() {
-  log "pi-web Docker installer: $*"
+  log "omp-web Docker installer: $*"
   exit 1
 }
 
@@ -21,12 +21,12 @@ rebuilds the image without using cache, and recreates the split sessiond/web
 services without deleting persistent data.
 
 Options:
-  --install-dir DIR       Install directory (default: $XDG_DATA_HOME/pi-web-docker
-                          or ~/.local/share/pi-web-docker)
+  --install-dir DIR       Install directory (default: $XDG_DATA_HOME/omp-web-docker
+                          or ~/.local/share/omp-web-docker)
   --data-dir DIR          Persistent data directory (default: INSTALL_DIR/data)
   --bind-address ADDR     Host bind address (default: 127.0.0.1)
   --port PORT             Host port (default: 8504)
-  --pi-web-version VER    npm @ProgmRuanSilva/pi-web version pin (default: latest)
+  --omp-web-version VER    npm @ProgmRuanSilva/omp-web version pin (default: latest)
   --pi-version VER        npm @earendil-works/pi-coding-agent version pin
                           (default: latest)
   --opensuse-image IMAGE  openSUSE base image (default: opensuse/tumbleweed)
@@ -43,13 +43,13 @@ Options:
 Progressive host setup:
   The installer supports native Linux Docker Engine and Docker Desktop for Mac.
   Unknown Docker hosts fail closed before services are recreated. Set
-  PI_WEB_DOCKER_EXTRA_HOST_PATHS to a whitespace-separated list of additional
+  OMP_WEB_DOCKER_EXTRA_HOST_PATHS to a whitespace-separated list of additional
   existing absolute directories to bind-mount at the same path in the containers.
 
 Environment variables with the same names used in .env may also be set before
 running the installer, for example:
 
-  PI_WEB_VERSION=1.202606.4 PI_VERSION=0.79.1 docker/install.sh
+  OMP_WEB_VERSION=1.202606.4 PI_VERSION=0.79.1 docker/install.sh
 EOF
 }
 
@@ -57,27 +57,27 @@ while [ "$#" -gt 0 ]; do
   case "$1" in
     --install-dir)
       [ "$#" -ge 2 ] || die "--install-dir requires a value"
-      PI_WEB_DOCKER_HOME=$2
+      OMP_WEB_DOCKER_HOME=$2
       shift 2
       ;;
     --data-dir)
       [ "$#" -ge 2 ] || die "--data-dir requires a value"
-      PI_WEB_DOCKER_DATA_DIR=$2
+      OMP_WEB_DOCKER_DATA_DIR=$2
       shift 2
       ;;
     --bind-address)
       [ "$#" -ge 2 ] || die "--bind-address requires a value"
-      PI_WEB_BIND_ADDR=$2
+      OMP_WEB_BIND_ADDR=$2
       shift 2
       ;;
     --port)
       [ "$#" -ge 2 ] || die "--port requires a value"
-      PI_WEB_PORT=$2
+      OMP_WEB_PORT=$2
       shift 2
       ;;
-    --pi-web-version)
-      [ "$#" -ge 2 ] || die "--pi-web-version requires a value"
-      PI_WEB_VERSION=$2
+    --omp-web-version)
+      [ "$#" -ge 2 ] || die "--omp-web-version requires a value"
+      OMP_WEB_VERSION=$2
       shift 2
       ;;
     --pi-version)
@@ -87,36 +87,36 @@ while [ "$#" -gt 0 ]; do
       ;;
     --opensuse-image)
       [ "$#" -ge 2 ] || die "--opensuse-image requires a value"
-      PI_WEB_OPENSUSE_IMAGE=$2
+      OMP_WEB_OPENSUSE_IMAGE=$2
       shift 2
       ;;
     --nodejs-major)
       [ "$#" -ge 2 ] || die "--nodejs-major requires a value"
-      PI_WEB_NODEJS_MAJOR=$2
+      OMP_WEB_NODEJS_MAJOR=$2
       shift 2
       ;;
     --nodejs-repo)
       [ "$#" -ge 2 ] || die "--nodejs-repo requires a value"
-      PI_WEB_NODEJS_REPO=$2
+      OMP_WEB_NODEJS_REPO=$2
       shift 2
       ;;
     --extra-zypper-packages)
       [ "$#" -ge 2 ] || die "--extra-zypper-packages requires a value"
-      PI_WEB_EXTRA_ZYPPER_PACKAGES=$2
+      OMP_WEB_EXTRA_ZYPPER_PACKAGES=$2
       shift 2
       ;;
     --asset-dir)
       [ "$#" -ge 2 ] || die "--asset-dir requires a value"
-      PI_WEB_DOCKER_ASSET_DIR=$2
+      OMP_WEB_DOCKER_ASSET_DIR=$2
       shift 2
       ;;
     --asset-ref)
       [ "$#" -ge 2 ] || die "--asset-ref requires a value"
-      PI_WEB_DOCKER_REF=$2
+      OMP_WEB_DOCKER_REF=$2
       shift 2
       ;;
     --skip-compose)
-      PI_WEB_DOCKER_SKIP_COMPOSE=1
+      OMP_WEB_DOCKER_SKIP_COMPOSE=1
       shift
       ;;
     -h|--help)
@@ -275,7 +275,7 @@ write_asset() {
 }
 
 compose_cmd() {
-  pi_web_docker_compose "$@"
+  omp_web_docker_compose "$@"
 }
 
 run_runtime_compose() {
@@ -292,22 +292,22 @@ fi
 
 default_install_dir=
 if [ -n "$default_data_home" ]; then
-  default_install_dir=$default_data_home/pi-web-docker
+  default_install_dir=$default_data_home/omp-web-docker
 fi
-install_dir_input=${PI_WEB_DOCKER_HOME:-$default_install_dir}
-[ -n "$install_dir_input" ] || die "HOME, XDG_DATA_HOME, or PI_WEB_DOCKER_HOME must be set"
+install_dir_input=${OMP_WEB_DOCKER_HOME:-$default_install_dir}
+[ -n "$install_dir_input" ] || die "HOME, XDG_DATA_HOME, or OMP_WEB_DOCKER_HOME must be set"
 install_dir=$(absolute_dir "$install_dir_input") || die "could not create install directory"
 env_file=$install_dir/.env
 
-asset_ref=$(value_from_env_or_existing_or_default PI_WEB_DOCKER_REF main)
-asset_base=${PI_WEB_DOCKER_ASSET_BASE:-https://raw.githubusercontent.com/ProgmRuanSilva/pi-web/$asset_ref/docker}
+asset_ref=$(value_from_env_or_existing_or_default OMP_WEB_DOCKER_REF main)
+asset_base=${OMP_WEB_DOCKER_ASSET_BASE:-https://raw.githubusercontent.com/ProgmRuanSilva/omp-web/$asset_ref/docker}
 use_local_asset_dir=1
-if [ "${PI_WEB_DOCKER_REFRESH_ASSETS:-0}" = 1 ] || [ "${PI_WEB_DOCKER_REF+x}" = x ] || [ "${PI_WEB_DOCKER_ASSET_BASE+x}" = x ]; then
+if [ "${OMP_WEB_DOCKER_REFRESH_ASSETS:-0}" = 1 ] || [ "${OMP_WEB_DOCKER_REF+x}" = x ] || [ "${OMP_WEB_DOCKER_ASSET_BASE+x}" = x ]; then
   use_local_asset_dir=0
 fi
 
-if [ "${PI_WEB_DOCKER_ASSET_DIR+x}" = x ]; then
-  asset_dir=$(absolute_existing_dir "$PI_WEB_DOCKER_ASSET_DIR") || die "asset directory does not exist: $PI_WEB_DOCKER_ASSET_DIR"
+if [ "${OMP_WEB_DOCKER_ASSET_DIR+x}" = x ]; then
+  asset_dir=$(absolute_existing_dir "$OMP_WEB_DOCKER_ASSET_DIR") || die "asset directory does not exist: $OMP_WEB_DOCKER_ASSET_DIR"
   asset_base=
   log "Using Docker assets from $asset_dir"
 elif [ "$use_local_asset_dir" = 1 ] && local_asset_dir=$(find_local_asset_dir 2>/dev/null) && [ "$local_asset_dir" != "$install_dir" ]; then
@@ -329,7 +329,7 @@ if [ -n "$asset_dir" ]; then
   profile_helper=$asset_dir/internal/host-profile.sh
   [ -f "$profile_helper" ] || die "missing Docker asset: $profile_helper"
 else
-  profile_helper_temp=${TMPDIR:-/tmp}/pi-web-host-profile.$$
+  profile_helper_temp=${TMPDIR:-/tmp}/omp-web-host-profile.$$
   fetch_url "$asset_base/internal/host-profile.sh" "$profile_helper_temp"
   profile_helper=$profile_helper_temp
 fi
@@ -338,8 +338,8 @@ fi
 # shellcheck disable=SC1091
 . "$profile_helper"
 
-if ! pi_web_docker_host_detect_profile; then
-  pi_web_docker_host_print_detection_failure
+if ! omp_web_docker_host_detect_profile; then
+  omp_web_docker_host_print_detection_failure
   die "refusing to install on an unsupported or unknown Docker host setup"
 fi
 
@@ -347,7 +347,7 @@ write_asset Dockerfile 0644
 write_asset compose.yml 0644
 write_asset .dockerignore 0644
 write_asset install.sh 0755
-write_asset pi-web-docker 0755
+write_asset omp-web-docker 0755
 write_asset internal/bin/hostexec 0755
 write_asset internal/image/install-opensuse-base 0755
 write_asset internal/host-profile.sh 0644
@@ -358,53 +358,53 @@ if [ ! -e "$custom_image_hooks_dir/.gitkeep" ]; then
   : >"$custom_image_hooks_dir/.gitkeep" || die "could not initialize custom image hooks directory: $custom_image_hooks_dir"
 fi
 
-pi_web_uid=$(value_from_env_or_default PI_WEB_UID "$(id -u)")
-pi_web_gid=$(value_from_env_or_default PI_WEB_GID "$(id -g)")
-docker_gid=$(value_from_env_or_default DOCKER_GID "$(pi_web_docker_host_detect_docker_gid)")
-pi_web_host_profile=$PI_WEB_DETECTED_DOCKER_HOST_PROFILE
-hostexec_mode=$PI_WEB_DETECTED_HOSTEXEC_MODE
+omp_web_uid=$(value_from_env_or_default OMP_WEB_UID "$(id -u)")
+omp_web_gid=$(value_from_env_or_default OMP_WEB_GID "$(id -g)")
+docker_gid=$(value_from_env_or_default DOCKER_GID "$(omp_web_docker_host_detect_docker_gid)")
+omp_web_host_profile=$OMP_WEB_DETECTED_DOCKER_HOST_PROFILE
+hostexec_mode=$OMP_WEB_DETECTED_HOSTEXEC_MODE
 
-raw_data_dir=$(value_from_env_or_existing_or_default PI_WEB_DOCKER_DATA_DIR "$install_dir/data")
+raw_data_dir=$(value_from_env_or_existing_or_default OMP_WEB_DOCKER_DATA_DIR "$install_dir/data")
 data_dir=$(absolute_dir "$(path_from_base "$install_dir" "$raw_data_dir")") || die "could not create data directory"
 
-pi_web_bind_addr=$(value_from_env_or_existing_or_default PI_WEB_BIND_ADDR 127.0.0.1)
-pi_web_port=$(value_from_env_or_existing_or_default PI_WEB_PORT 8504)
-pi_web_version=$(value_from_env_or_existing_or_default PI_WEB_VERSION latest)
+omp_web_bind_addr=$(value_from_env_or_existing_or_default OMP_WEB_BIND_ADDR 127.0.0.1)
+omp_web_port=$(value_from_env_or_existing_or_default OMP_WEB_PORT 8504)
+omp_web_version=$(value_from_env_or_existing_or_default OMP_WEB_VERSION latest)
 pi_version=$(value_from_env_or_existing_or_default PI_VERSION latest)
-pi_web_opensuse_image=$(value_from_env_or_existing_or_default PI_WEB_OPENSUSE_IMAGE opensuse/tumbleweed)
-pi_web_nodejs_major=$(value_from_env_or_existing_or_default PI_WEB_NODEJS_MAJOR 22)
-pi_web_nodejs_repo=$(value_from_env_or_existing_or_default PI_WEB_NODEJS_REPO auto)
-pi_web_extra_zypper_packages=$(value_from_env_or_existing_or_default PI_WEB_EXTRA_ZYPPER_PACKAGES "")
-pi_web_image=$(value_from_env_or_existing_or_default PI_WEB_IMAGE pi-web:local)
-compose_project_name=$(value_from_env_or_existing_or_default COMPOSE_PROJECT_NAME pi-web)
+omp_web_opensuse_image=$(value_from_env_or_existing_or_default OMP_WEB_OPENSUSE_IMAGE opensuse/tumbleweed)
+omp_web_nodejs_major=$(value_from_env_or_existing_or_default OMP_WEB_NODEJS_MAJOR 22)
+omp_web_nodejs_repo=$(value_from_env_or_existing_or_default OMP_WEB_NODEJS_REPO auto)
+omp_web_extra_zypper_packages=$(value_from_env_or_existing_or_default OMP_WEB_EXTRA_ZYPPER_PACKAGES "")
+omp_web_image=$(value_from_env_or_existing_or_default OMP_WEB_IMAGE omp-web:local)
+compose_project_name=$(value_from_env_or_existing_or_default COMPOSE_PROJECT_NAME omp-web)
 hostexec_image=$(value_from_env_or_existing_or_default HOSTEXEC_IMAGE alpine:3.22)
-pi_web_max_upload_bytes=$(value_from_env_or_existing_or_default PI_WEB_MAX_UPLOAD_BYTES 67108864)
-pi_web_extra_host_paths=$(value_from_env_or_existing_or_default PI_WEB_DOCKER_EXTRA_HOST_PATHS "")
+omp_web_max_upload_bytes=$(value_from_env_or_existing_or_default OMP_WEB_MAX_UPLOAD_BYTES 67108864)
+omp_web_extra_host_paths=$(value_from_env_or_existing_or_default OMP_WEB_DOCKER_EXTRA_HOST_PATHS "")
 
-require_non_empty PI_WEB_UID "$pi_web_uid"
-require_non_empty PI_WEB_GID "$pi_web_gid"
+require_non_empty OMP_WEB_UID "$omp_web_uid"
+require_non_empty OMP_WEB_GID "$omp_web_gid"
 require_non_empty DOCKER_GID "$docker_gid"
-require_non_empty PI_WEB_DOCKER_HOST_PROFILE "$pi_web_host_profile"
+require_non_empty OMP_WEB_DOCKER_HOST_PROFILE "$omp_web_host_profile"
 require_non_empty HOSTEXEC_MODE "$hostexec_mode"
-require_non_empty PI_WEB_DOCKER_DATA_DIR "$data_dir"
-require_non_empty PI_WEB_DOCKER_INSTALL_DIR "$install_dir"
-require_non_empty PI_WEB_DOCKER_REF "$asset_ref"
-require_non_empty PI_WEB_BIND_ADDR "$pi_web_bind_addr"
-require_non_empty PI_WEB_PORT "$pi_web_port"
-require_non_empty PI_WEB_VERSION "$pi_web_version"
+require_non_empty OMP_WEB_DOCKER_DATA_DIR "$data_dir"
+require_non_empty OMP_WEB_DOCKER_INSTALL_DIR "$install_dir"
+require_non_empty OMP_WEB_DOCKER_REF "$asset_ref"
+require_non_empty OMP_WEB_BIND_ADDR "$omp_web_bind_addr"
+require_non_empty OMP_WEB_PORT "$omp_web_port"
+require_non_empty OMP_WEB_VERSION "$omp_web_version"
 require_non_empty PI_VERSION "$pi_version"
-require_non_empty PI_WEB_OPENSUSE_IMAGE "$pi_web_opensuse_image"
-require_non_empty PI_WEB_NODEJS_MAJOR "$pi_web_nodejs_major"
-require_non_empty PI_WEB_NODEJS_REPO "$pi_web_nodejs_repo"
-require_non_empty PI_WEB_IMAGE "$pi_web_image"
+require_non_empty OMP_WEB_OPENSUSE_IMAGE "$omp_web_opensuse_image"
+require_non_empty OMP_WEB_NODEJS_MAJOR "$omp_web_nodejs_major"
+require_non_empty OMP_WEB_NODEJS_REPO "$omp_web_nodejs_repo"
+require_non_empty OMP_WEB_IMAGE "$omp_web_image"
 require_non_empty COMPOSE_PROJECT_NAME "$compose_project_name"
 require_non_empty HOSTEXEC_IMAGE "$hostexec_image"
-require_non_empty PI_WEB_MAX_UPLOAD_BYTES "$pi_web_max_upload_bytes"
+require_non_empty OMP_WEB_MAX_UPLOAD_BYTES "$omp_web_max_upload_bytes"
 
-pi_web_extra_zypper_packages_env=$(dotenv_quote "$pi_web_extra_zypper_packages")
-pi_web_extra_host_paths_env=$(dotenv_quote "$pi_web_extra_host_paths")
+omp_web_extra_zypper_packages_env=$(dotenv_quote "$omp_web_extra_zypper_packages")
+omp_web_extra_host_paths_env=$(dotenv_quote "$omp_web_extra_host_paths")
 compose_override_file=$install_dir/compose.override.yml
-if ! pi_web_docker_host_write_compose_override "$compose_override_file" "$pi_web_host_profile" "$pi_web_extra_host_paths" "$install_dir"; then
+if ! omp_web_docker_host_write_compose_override "$compose_override_file" "$omp_web_host_profile" "$omp_web_extra_host_paths" "$install_dir"; then
   die "could not write host-specific Compose override"
 fi
 
@@ -413,48 +413,48 @@ temp_env=$env_file.$$
 cat >"$temp_env" <<EOF
 # Generated by the PI WEB Docker installer.
 # Re-run install.sh to refresh Docker assets and update the local image.
-# Persistent data lives in PI_WEB_DOCKER_DATA_DIR and is not deleted by updates.
+# Persistent data lives in OMP_WEB_DOCKER_DATA_DIR and is not deleted by updates.
 
 # Host identity used for the runtime containers and image user account.
-PI_WEB_UID=$pi_web_uid
-PI_WEB_GID=$pi_web_gid
+OMP_WEB_UID=$omp_web_uid
+OMP_WEB_GID=$omp_web_gid
 DOCKER_GID=$docker_gid
 
 # Detected Docker host profile and host capability toggles.
-PI_WEB_DOCKER_HOST_PROFILE=$pi_web_host_profile
+OMP_WEB_DOCKER_HOST_PROFILE=$omp_web_host_profile
 HOSTEXEC_MODE=$hostexec_mode
-PI_WEB_DOCKER_EXTRA_HOST_PATHS=$pi_web_extra_host_paths_env
+OMP_WEB_DOCKER_EXTRA_HOST_PATHS=$omp_web_extra_host_paths_env
 
 # Persistent data, Docker control root, and localhost-only default exposure.
-PI_WEB_DOCKER_DATA_DIR=$data_dir
-PI_WEB_DOCKER_INSTALL_DIR=$install_dir
-PI_WEB_DOCKER_REF=$asset_ref
-PI_WEB_BIND_ADDR=$pi_web_bind_addr
-PI_WEB_PORT=$pi_web_port
+OMP_WEB_DOCKER_DATA_DIR=$data_dir
+OMP_WEB_DOCKER_INSTALL_DIR=$install_dir
+OMP_WEB_DOCKER_REF=$asset_ref
+OMP_WEB_BIND_ADDR=$omp_web_bind_addr
+OMP_WEB_PORT=$omp_web_port
 
 # npm version pins. Use latest for quick updates, or set concrete versions.
-PI_WEB_VERSION=$pi_web_version
+OMP_WEB_VERSION=$omp_web_version
 PI_VERSION=$pi_version
 
 # openSUSE/Node.js image build inputs.
-PI_WEB_OPENSUSE_IMAGE=$pi_web_opensuse_image
-PI_WEB_NODEJS_MAJOR=$pi_web_nodejs_major
-PI_WEB_NODEJS_REPO=$pi_web_nodejs_repo
-PI_WEB_EXTRA_ZYPPER_PACKAGES=$pi_web_extra_zypper_packages_env
+OMP_WEB_OPENSUSE_IMAGE=$omp_web_opensuse_image
+OMP_WEB_NODEJS_MAJOR=$omp_web_nodejs_major
+OMP_WEB_NODEJS_REPO=$omp_web_nodejs_repo
+OMP_WEB_EXTRA_ZYPPER_PACKAGES=$omp_web_extra_zypper_packages_env
 
 # Runtime image names, Compose project, and limits.
-PI_WEB_IMAGE=$pi_web_image
+OMP_WEB_IMAGE=$omp_web_image
 COMPOSE_PROJECT_NAME=$compose_project_name
 HOSTEXEC_IMAGE=$hostexec_image
-PI_WEB_MAX_UPLOAD_BYTES=$pi_web_max_upload_bytes
+OMP_WEB_MAX_UPLOAD_BYTES=$omp_web_max_upload_bytes
 EOF
 mv "$temp_env" "$env_file"
 
 log "Wrote Docker assets to $install_dir"
 log "Wrote runtime environment to $env_file"
 log "Wrote host Compose override to $compose_override_file"
-log "Selected PI WEB Docker host profile: $pi_web_host_profile"
-case "$pi_web_host_profile" in
+log "Selected PI WEB Docker host profile: $omp_web_host_profile"
+case "$omp_web_host_profile" in
   linux-native-docker)
     log "Enabled Linux host mounts and hostexec namespace bridge."
     ;;
@@ -465,8 +465,8 @@ esac
 log "Persistent PI WEB Docker data: $data_dir"
 log "Custom image hooks: $custom_image_hooks_dir"
 
-if [ "${PI_WEB_DOCKER_SKIP_COMPOSE:-0}" = 1 ]; then
-  log "Skipping Docker build/recreate because PI_WEB_DOCKER_SKIP_COMPOSE=1"
+if [ "${OMP_WEB_DOCKER_SKIP_COMPOSE:-0}" = 1 ]; then
+  log "Skipping Docker build/recreate because OMP_WEB_DOCKER_SKIP_COMPOSE=1"
   exit 0
 fi
 
@@ -485,7 +485,7 @@ log "WARNING: updating recreates the PI WEB Docker session daemon."
 log "Active Pi agent runtimes inside this Docker install can stop; update while sessions are idle."
 log "Persistent data under $data_dir is kept. The installer does not run 'docker compose down -v'."
 log ""
-log "Building $pi_web_image with --pull --no-cache (CACHE_BUST=$cache_bust) ..."
+log "Building $omp_web_image with --pull --no-cache (CACHE_BUST=$cache_bust) ..."
 (
   cd "$install_dir"
   CACHE_BUST=$cache_bust run_runtime_compose build --pull --no-cache
@@ -498,9 +498,9 @@ log "Recreating split PI WEB Docker services ..."
 )
 
 log ""
-log "PI WEB Docker runtime is ready: http://$pi_web_bind_addr:$pi_web_port"
+log "PI WEB Docker runtime is ready: http://$omp_web_bind_addr:$omp_web_port"
 log "Install directory: $install_dir"
-log "To update later, run: $install_dir/pi-web-docker update"
+log "To update later, run: $install_dir/omp-web-docker update"
 (
   cd "$install_dir"
   run_runtime_compose ps

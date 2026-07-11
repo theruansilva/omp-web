@@ -42,7 +42,7 @@ export class InMemoryMachineNavigationMemory implements MachineNavigationMemory 
   }
 }
 
-const machineNavigationStorageKey = "pi-web:machine-navigation:v1";
+const machineNavigationStorageKey = "omp-web:machine-navigation:v1";
 
 export class SessionStorageMachineNavigationMemory implements MachineNavigationMemory {
   private readonly snapshotsByMachine: PersistentValueMap<MachineNavigationSnapshot>;

@@ -1,4 +1,4 @@
-# Arquitetura da Camada Web/API e Frontend (`pi-web`)
+# Arquitetura da Camada Web/API e Frontend (`omp-web`)
 
 ## 1. Ponto de Entrada Principal (Server Entry Point)
 A porta de entrada do servidor web está localizada em `src/server/index.ts`. Ele atua apenas como um inicializador, invocando a função principal `buildApp()` (localizada em `src/server/app.ts`), que constrói a instância do servidor e injeta o limite de upload definido nas configurações.
@@ -33,8 +33,8 @@ O padrão de CRUD é muito claro no arquivo `src/server/app.ts`, dentro da funç
 - *Nota:* Erros são padronizados capturando a exception e devolvendo `HTTP 400` ou `404` com um objeto de formato `{ error: string }`.
 
 ## 5. Padrões de Interface (UI) do Cliente
-A análise de `src/client/src/components/PiWebApp.ts` (e o `package.json` anterior) revela que a interface **não** usa React, Vue ou Svelte.
+A análise de `src/client/src/components/OmpWebApp.ts` (e o `package.json` anterior) revela que a interface **não** usa React, Vue ou Svelte.
 
 - **Framework Frontend:** A biblioteca escolhida é o **Lit** (Web Components).
-- **Sintaxe e Estado:** Os arquivos usam a API padrão do Lit com decoradores como `@customElement("pi-web-app")`, `@state()`, `@query()`, e montam o DOM utilizando *Template Literals* etiquetados com `html`.
+- **Sintaxe e Estado:** Os arquivos usam a API padrão do Lit com decoradores como `@customElement("omp-web-app")`, `@state()`, `@query()`, e montam o DOM utilizando *Template Literals* etiquetados com `html`.
 - **Organização de Estado:** O estado global da aplicação é controlado por uma árvore de "Controllers" injetados na classe principal (como `SessionController`, `WorkspaceController`, `MachineController`), que emitem atualizações de re-renderização quando mudam (`this.setState(patch)`).

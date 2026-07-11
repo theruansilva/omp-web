@@ -3,14 +3,14 @@ import * as path from "node:path";
 import type { CronJob, CronJobUpdate, CronStore } from "./types.js";
 
 /**
- * Handles persistence of scheduled prompts to .pi-web/schedule-prompts.json
+ * Handles persistence of scheduled prompts to .omp-web/schedule-prompts.json
  */
 export class CronStorage {
  private readonly storePath: string;
  private readonly storeDir: string;
 
  constructor(workspaceCwd: string) {
-  this.storeDir = path.join(workspaceCwd, ".pi-web");
+  this.storeDir = path.join(workspaceCwd, ".omp-web");
   this.storePath = path.join(this.storeDir, "schedule-prompts.json");
  }
 

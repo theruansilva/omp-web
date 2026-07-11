@@ -4,8 +4,8 @@ import { copyFile, mkdir, readdir, readFile, rm, writeFile } from "node:fs/promi
 import { dirname, relative, resolve } from "node:path";
 import ts from "typescript";
 
-const rootDir = resolve("pi-web-plugins");
-const outDir = resolve("dist/pi-web-plugins");
+const rootDir = resolve("omp-web-plugins");
+const outDir = resolve("dist/omp-web-plugins");
 const watchMode = process.argv.includes("--watch");
 const cwd = process.cwd();
 

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { TemplateResult } from "lit";
-import type { PiWebConfigResponse, PiWebConfigValues } from "../../api";
+import type { OmpWebConfigResponse, OmpWebConfigValues } from "../../api";
 import { SettingsSessiondPanel } from "./SettingsSessiondPanel";
 import type { SettingsNotice } from "./SettingsPanelFrame";
 
@@ -17,7 +17,7 @@ describe("settings-sessiond-panel layout", () => {
       "These settings affect the long-lived session runtime on Lab Mac (remote machine).",
       "Reload",
       "Restart required on Lab Mac (remote machine)",
-      "run <code>pi-web restart</code> on that machine",
+      "run <code>omp-web restart</code> on that machine",
       "Config file",
       "Allow agents to start sessions",
     ]);
@@ -132,9 +132,9 @@ function isStringArray(value: unknown): value is string[] {
   return Array.isArray(value) && value.every((item: unknown) => typeof item === "string");
 }
 
-function configResponse(config: PiWebConfigValues): PiWebConfigResponse {
+function configResponse(config: OmpWebConfigValues): OmpWebConfigResponse {
   return {
-    path: "/tmp/pi-web/config.json",
+    path: "/tmp/omp-web/config.json",
     exists: true,
     config,
     effectiveConfig: config,

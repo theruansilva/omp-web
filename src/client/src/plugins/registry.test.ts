@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 import type { DeleteWorkspaceFileResponse, FileContentResponse, MoveWorkspaceFileResponse, SessionInfo, SessionStatus, WriteWorkspaceFileResponse, Workspace } from "../api";
 import { initialAppState, type AppState } from "../appState";
 import { markCachedNewSessionInfo } from "../cachedNewSessions";
-import { PI_WEB_CAPABILITIES } from "../../../shared/capabilities";
+import { OMP_WEB_CAPABILITIES } from "../../../shared/capabilities";
 import { machineScopedPluginId } from "../../../shared/machinePluginIds";
 import { corePlugin } from "./core";
 import { PluginRegistry } from "./registry";
@@ -19,7 +19,7 @@ function createContext(statePatch: Partial<AppState> = {}) {
       getText: vi.fn(() => ""),
       getSelection: vi.fn(() => null),
     },
-    piWebUnstable: {
+    ompWebUnstable: {
       terminalCommandRuns: {
         runCommand: vi.fn(),
         listCommandRuns: vi.fn(),
@@ -214,7 +214,7 @@ describe("PluginRegistry", () => {
   it("enables session disk reload only for a writable session on a capable, idle runtime", () => {
     const registry = new PluginRegistry();
     registry.register({ id: "core", plugin: corePlugin });
-    const reloadRuntime = { local: { machineId: "local", ok: true as const, checkedAt: "now", capabilities: [PI_WEB_CAPABILITIES.sessionsReload] } };
+    const reloadRuntime = { local: { machineId: "local", ok: true as const, checkedAt: "now", capabilities: [OMP_WEB_CAPABILITIES.sessionsReload] } };
 
     const reloadable = registry.getActions(createContext({ selectedSession: testSession({ persisted: true }), machineRuntimes: reloadRuntime }).context);
     const reloadableAction = reloadable.find((action) => action.id === "core:session.reload");
@@ -225,7 +225,7 @@ describe("PluginRegistry", () => {
     const noCapability = registry.getActions(createContext({ selectedSession: testSession({ persisted: true }) }).context);
     const noCapabilityReload = noCapability.find((action) => action.id === "core:session.reload");
     expect(noCapabilityReload?.enabled).toBe(false);
-    expect(noCapabilityReload?.disabledReason).toBe("Update and restart Pi-Web on this machine to reload sessions from disk.");
+    expect(noCapabilityReload?.disabledReason).toBe("Update and restart Omp-Web on this machine to reload sessions from disk.");
 
     const unknown = registry.getActions(createContext({ selectedSession: testSession(), machineRuntimes: reloadRuntime }).context);
     expect(unknown.find((action) => action.id === "core:session.reload")?.enabled).toBe(false);
@@ -243,7 +243,7 @@ describe("PluginRegistry", () => {
   it("routes session reload through the runtime context", () => {
     const registry = new PluginRegistry();
     registry.register({ id: "core", plugin: corePlugin });
-    const { context, calls } = createContext({ selectedSession: testSession({ persisted: true }), machineRuntimes: { local: { machineId: "local", ok: true, checkedAt: "now", capabilities: [PI_WEB_CAPABILITIES.sessionsReload] } } });
+    const { context, calls } = createContext({ selectedSession: testSession({ persisted: true }), machineRuntimes: { local: { machineId: "local", ok: true, checkedAt: "now", capabilities: [OMP_WEB_CAPABILITIES.sessionsReload] } } });
     const action = registry.getActions(context).find((candidate) => candidate.id === "core:session.reload");
 
     if (action !== undefined) void action.run();
@@ -330,12 +330,12 @@ describe("PluginRegistry", () => {
     registry.register({ id: "themes", plugin: themePackPlugin });
 
     expect(registry.getThemes().map((theme) => ({ id: theme.id, colorScheme: theme.colorScheme }))).toEqual([
-      { id: "themes:pi-web-dark", colorScheme: "dark" },
-      { id: "themes:pi-web-light", colorScheme: "light" },
+      { id: "themes:omp-web-dark", colorScheme: "dark" },
+      { id: "themes:omp-web-light", colorScheme: "light" },
       { id: "themes:classic", colorScheme: "dark" },
     ]);
     expect(registry.getThemePairs().map((pair) => ({ id: pair.id, light: pair.light, dark: pair.dark }))).toEqual([
-      { id: "themes:pi-web", light: "themes:pi-web-light", dark: "themes:pi-web-dark" },
+      { id: "themes:omp-web", light: "themes:omp-web-light", dark: "themes:omp-web-dark" },
     ]);
   });
 
@@ -650,7 +650,7 @@ function createWorkspacePanelContext(machineId: string, prompt: WorkspacePanelCo
     activeTerminalCount: 0,
     selectedTerminalId: undefined,
     terminalAutoStart: false,
-    workspaceUploadDefaultFolder: ".pi-web/uploads",
+    workspaceUploadDefaultFolder: ".omp-web/uploads",
     onRefreshFiles: vi.fn(),
     onExpandDir: vi.fn(),
     onSelectFile: vi.fn(),

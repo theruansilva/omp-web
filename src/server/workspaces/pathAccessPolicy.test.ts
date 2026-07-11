@@ -6,7 +6,7 @@ import { createPathAccessPolicy, isAbsoluteishPath, resolvePathAccessTarget, res
 
 const roots: string[] = [];
 
-async function tempRoot(prefix = "pi-web-path-access-"): Promise<string> {
+async function tempRoot(prefix = "omp-web-path-access-"): Promise<string> {
   const root = await mkdtemp(join(tmpdir(), prefix));
   roots.push(root);
   return root;

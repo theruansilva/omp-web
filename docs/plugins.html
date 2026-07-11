@@ -8,7 +8,7 @@
       name="description"
       content="Use built-in PI WEB plugins and develop trusted local UI plugins for the Pi Coding Agent web UI."
     />
-    <link rel="canonical" href="https://pi-web.dev/plugins" />
+    <link rel="canonical" href="https://omp-web.dev/plugins" />
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="PI WEB" />
     <meta property="og:title" content="PI WEB plugins — extend the Pi web UI" />
@@ -16,8 +16,8 @@
       property="og:description"
       content="Customize PI WEB with trusted browser-side plugins for actions, workspace panels, labels, terminals, and files."
     />
-    <meta property="og:url" content="https://pi-web.dev/plugins" />
-    <meta property="og:image" content="https://pi-web.dev/assets/pi-web-banner.png" />
+    <meta property="og:url" content="https://omp-web.dev/plugins" />
+    <meta property="og:image" content="https://omp-web.dev/assets/omp-web-banner.png" />
     <meta property="og:image:alt" content="PI WEB browser UI for persistent Pi Coding Agent sessions" />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="PI WEB plugins — extend the Pi web UI" />
@@ -25,11 +25,11 @@
       name="twitter:description"
       content="Customize PI WEB with trusted browser-side plugins for actions, workspace panels, labels, terminals, and files."
     />
-    <meta name="twitter:image" content="https://pi-web.dev/assets/pi-web-banner.png" />
+    <meta name="twitter:image" content="https://omp-web.dev/assets/omp-web-banner.png" />
     <link rel="icon" type="image/svg+xml" href="assets/favicon.svg" />
     <script>
       (() => {
-        const theme = window.localStorage.getItem("pi-web-theme");
+        const theme = window.localStorage.getItem("omp-web-theme");
         if (theme === "light" || theme === "dark") document.documentElement.dataset.theme = theme;
       })();
     </script>
@@ -55,7 +55,7 @@
             <a href="faq">FAQ</a>
           </div>
           <div class="nav-actions">
-            <a class="github-link" href="https://github.com/ProgmRuanSilva/pi-web" aria-label="PI WEB on GitHub">
+            <a class="github-link" href="https://github.com/ProgmRuanSilva/omp-web" aria-label="PI WEB on GitHub">
               <svg class="github-icon" viewBox="0 0 16 16" aria-hidden="true">
                 <path
                   fill="currentColor"
@@ -122,7 +122,7 @@
               <div class="callout">
                 The plugin API is intentionally limited and actively developed. Feedback is appreciated: if an extension
                 point is missing, unclear, or awkward, please
-                <a href="https://github.com/ProgmRuanSilva/pi-web/issues">open a GitHub issue</a>.
+                <a href="https://github.com/ProgmRuanSilva/omp-web/issues">open a GitHub issue</a>.
               </div>
             </section>
 
@@ -184,12 +184,12 @@
                 <pre id="plugin-create-prompt"><code>Build a PI WEB plugin for this project.
 Goal: &lt;describe the UI behavior&gt;.
 Before coding, read the PI WEB plugin docs:
-https://pi-web.dev/plugins
+https://omp-web.dev/plugins
 Full API reference:
-https://pi-web.dev/plugins.md
-Create it as a local plugin under ~/.pi-web/plugins/&lt;plugin-id&gt;.
+https://omp-web.dev/plugins.md
+Create it as a local plugin under ~/.omp-web/plugins/&lt;plugin-id&gt;.
 Use the appropriate extension points from the docs.
-Validate by checking /pi-web-plugins/manifest.json and explain how to reload/debug it.
+Validate by checking /omp-web-plugins/manifest.json and explain how to reload/debug it.
 Do not modify PI WEB itself.</code></pre>
               </div>
               <div class="code-card">
@@ -199,9 +199,9 @@ Do not modify PI WEB itself.</code></pre>
                 </div>
                 <pre id="plugin-improve-prompt"><code>Improve the PI WEB plugin at &lt;path&gt;.
 Before coding, read the PI WEB plugin docs:
-https://pi-web.dev/plugins
+https://omp-web.dev/plugins
 Full API reference:
-https://pi-web.dev/plugins.md
+https://omp-web.dev/plugins.md
 Keep the plugin compatible with the documented v1 API.
 After editing, check the manifest endpoint and browser-console failure cases.</code></pre>
               </div>
@@ -216,17 +216,17 @@ After editing, check the manifest endpoint and browser-console failure cases.</c
               <p>
                 Bundled PI WEB plugins are developed as TypeScript in the repository, while their package metadata
                 points at the built JavaScript ES modules that the browser loads. <code>npm run dev:web</code> watches and
-                rebuilds bundled plugin TS into <code>dist/pi-web-plugins/</code> during development, and <code>npm run build</code>
+                rebuilds bundled plugin TS into <code>dist/omp-web-plugins/</code> during development, and <code>npm run build</code>
                 emits JS before release packaging.
               </p>
               <ul>
-                <li><code>pi-web-plugins/info/package.json</code> shows the required metadata shape.</li>
-                <li><code>pi-web-plugins/info/pi-web-plugin.ts</code> shows the TypeScript source shape.</li>
-                <li><code>dist/pi-web-plugins/info/pi-web-plugin.js</code> is the built browser module in a checkout.</li>
+                <li><code>omp-web-plugins/info/package.json</code> shows the required metadata shape.</li>
+                <li><code>omp-web-plugins/info/omp-web-plugin.ts</code> shows the TypeScript source shape.</li>
+                <li><code>dist/omp-web-plugins/info/omp-web-plugin.js</code> is the built browser module in a checkout.</li>
               </ul>
               <p>
                 Read it on GitHub:
-                <a href="https://github.com/ProgmRuanSilva/pi-web/tree/main/pi-web-plugins/info">pi-web-plugins/info</a>.
+                <a href="https://github.com/ProgmRuanSilva/omp-web/tree/main/omp-web-plugins/info">omp-web-plugins/info</a>.
                 If you copy it, choose a new plugin id so it does not conflict with the bundled <code>info</code> plugin.
               </p>
               <p>
@@ -238,9 +238,9 @@ After editing, check the manifest endpoint and browser-console failure cases.</c
             <section id="built-in-plugins">
               <h2>Built-in plugins</h2>
               <p>
-                PI WEB ships core, discoverable plugins in the main <code>@ProgmRuanSilva/pi-web</code> npm package. No
+                PI WEB ships core, discoverable plugins in the main <code>@ProgmRuanSilva/omp-web</code> npm package. No
                 separate <code>pi install</code> step is required: update PI WEB, reload the browser tab, and the bundled
-                plugins appear in <code>/pi-web-plugins/manifest.json</code>.
+                plugins appear in <code>/omp-web-plugins/manifest.json</code>.
               </p>
               <p>
                 Built-in plugins can be managed from <strong>Settings → PI WEB plugins</strong> or with the top-level
@@ -275,7 +275,7 @@ After editing, check the manifest endpoint and browser-console failure cases.</c
               </p>
               <ul>
                 <li>Plugin id: <code>workspace-tasks</code></li>
-                <li>Config file: <code>.pi-web/tasks.json</code></li>
+                <li>Config file: <code>.omp-web/tasks.json</code></li>
               </ul>
               <div class="code-card">
                 <div class="copy-row">
@@ -290,7 +290,7 @@ After editing, check the manifest endpoint and browser-console failure cases.</c
               </div>
               <div class="code-card">
                 <div class="copy-row">
-                  <strong>Example .pi-web/tasks.json</strong>
+                  <strong>Example .omp-web/tasks.json</strong>
                   <button class="copy-button" data-copy="#workspace-tasks-config">Copy</button>
                 </div>
                 <pre id="workspace-tasks-config"><code>{
@@ -358,7 +358,7 @@ After editing, check the manifest endpoint and browser-console failure cases.</c
               </div>
               <p>
                 Plugins are enabled by default. Set <code>enabled</code> to <code>false</code> to remove a plugin from
-                <code>/pi-web-plugins/manifest.json</code> so it is not imported or activated on the next page load.
+                <code>/omp-web-plugins/manifest.json</code> so it is not imported or activated on the next page load.
                 The optional <code>settings</code> object is reserved for plugin-specific settings.
               </p>
               <p>
@@ -395,7 +395,7 @@ After editing, check the manifest endpoint and browser-console failure cases.</c
                 For portable plugin assets, prefer URLs relative to the plugin module, such as
                 <code>new URL("./asset.json", import.meta.url)</code>. If a remote plugin constructs absolute asset URLs,
                 it should use the <code>pluginId</code> from <code>activate()</code>; hard-coded
-                <code>/pi-web-plugins/&lt;original-id&gt;/...</code> URLs may point at the gateway instead of the remote machine.
+                <code>/omp-web-plugins/&lt;original-id&gt;/...</code> URLs may point at the gateway instead of the remote machine.
               </p>
             </section>
 
@@ -403,20 +403,20 @@ After editing, check the manifest endpoint and browser-console failure cases.</c
               <h2>Production usage</h2>
               <p>
                 Local plugins work with the production native-service install. Put each plugin under
-                <code>~/.pi-web/plugins/&lt;plugin-id&gt;/</code>, or symlink it there while developing. No PI WEB rebuild or
+                <code>~/.omp-web/plugins/&lt;plugin-id&gt;/</code>, or symlink it there while developing. No PI WEB rebuild or
                 session-daemon restart is required.
               </p>
               <div class="callout warning">
-                If <code>PI_WEB_DATA_DIR</code> is set, use <code>$PI_WEB_DATA_DIR/plugins</code> instead of
-                <code>~/.pi-web/plugins</code>.
+                If <code>OMP_WEB_DATA_DIR</code> is set, use <code>$OMP_WEB_DATA_DIR/plugins</code> instead of
+                <code>~/.omp-web/plugins</code>.
               </div>
               <div class="code-card">
                 <div class="copy-row">
                   <strong>Install a local plugin folder</strong>
                   <button class="copy-button" data-copy="#plugin-symlink">Copy</button>
                 </div>
-                <pre id="plugin-symlink"><code><span class="prompt">$</span> mkdir -p ~/.pi-web/plugins
-<span class="prompt">$</span> ln -s /path/to/plugin-folder ~/.pi-web/plugins/plugin-id</code></pre>
+                <pre id="plugin-symlink"><code><span class="prompt">$</span> mkdir -p ~/.omp-web/plugins
+<span class="prompt">$</span> ln -s /path/to/plugin-folder ~/.omp-web/plugins/plugin-id</code></pre>
               </div>
             </section>
 
@@ -436,7 +436,7 @@ After editing, check the manifest endpoint and browser-console failure cases.</c
             <section id="develop">
               <h2>Develop and debug</h2>
               <ul>
-                <li>Keep the source folder outside <code>~/.pi-web/plugins</code> and symlink it in.</li>
+                <li>Keep the source folder outside <code>~/.omp-web/plugins</code> and symlink it in.</li>
                 <li>After edits, reload or hard-reload the browser tab.</li>
                 <li>Check discovery with the manifest endpoint.</li>
                 <li>Check the browser console if a plugin fails to import or activate.</li>
@@ -446,7 +446,7 @@ After editing, check the manifest endpoint and browser-console failure cases.</c
                   <strong>Check discovered plugins</strong>
                   <button class="copy-button" data-copy="#plugin-manifest">Copy</button>
                 </div>
-                <pre id="plugin-manifest"><code><span class="prompt">$</span> curl http://127.0.0.1:8504/pi-web-plugins/manifest.json</code></pre>
+                <pre id="plugin-manifest"><code><span class="prompt">$</span> curl http://127.0.0.1:8504/omp-web-plugins/manifest.json</code></pre>
               </div>
               <p>
                 For all contribution types and package metadata, read the
@@ -481,7 +481,7 @@ After editing, check the manifest endpoint and browser-console failure cases.</c
           <a href="install">Install</a>
           <a href="config">Config</a>
           <a href="faq">FAQ</a>
-          <a href="https://github.com/ProgmRuanSilva/pi-web">GitHub</a>
+          <a href="https://github.com/ProgmRuanSilva/omp-web">GitHub</a>
         </div>
       </div>
     </footer>

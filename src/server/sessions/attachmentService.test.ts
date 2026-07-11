@@ -8,7 +8,7 @@ let workspace: string;
 let externalDirectories: string[] = [];
 
 beforeEach(async () => {
-  workspace = await mkdtemp(join(tmpdir(), "pi-web-attachments-"));
+  workspace = await mkdtemp(join(tmpdir(), "omp-web-attachments-"));
   externalDirectories = [];
 });
 
@@ -40,7 +40,7 @@ describe("saveAttachmentsToWorkspace", () => {
     expect(saved[1]?.path.endsWith(".webp")).toBe(true);
     expect(saved[0]?.size).toBe(pngBytes.byteLength);
 
-    const folderEntries = await readdir(join(workspace, ".pi-web", "attachments"));
+    const folderEntries = await readdir(join(workspace, ".omp-web", "attachments"));
     expect(folderEntries).toHaveLength(2);
 
     const firstPath = saved[0]?.path ?? "";
@@ -111,10 +111,10 @@ describe("saveAttachmentsToWorkspace", () => {
   });
 
   it("rejects attachment folders that resolve outside the workspace", async () => {
-    const outside = await mkdtemp(join(tmpdir(), "pi-web-attachments-outside-"));
+    const outside = await mkdtemp(join(tmpdir(), "omp-web-attachments-outside-"));
     externalDirectories.push(outside);
-    await mkdir(join(workspace, ".pi-web"));
-    await symlink(outside, join(workspace, ".pi-web", "attachments"), "dir");
+    await mkdir(join(workspace, ".omp-web"));
+    await symlink(outside, join(workspace, ".omp-web", "attachments"), "dir");
 
     await expect(saveAttachmentsToWorkspace(
       workspace,

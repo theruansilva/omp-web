@@ -1,4 +1,4 @@
-# @ProgmRuanSilva/pi-web
+# @ProgmRuanSilva/omp-web
 
 ## 1.202606.7
 
@@ -6,7 +6,7 @@
 
 - b17faeb: Improve chat, prompt, and session text rendering for RTL and mixed-direction content.
 - 7e812aa: Allow chat composer attachments to save and mention general files while preserving native inline image delivery for supported image-only batches.
-- 47c9b66: Fix `pi-web doctor` "can find npm/pi" checks on fish. The `--version` check
+- 47c9b66: Fix `omp-web doctor` "can find npm/pi" checks on fish. The `--version` check
   wrapped the version command in a POSIX subshell `(cmd --version 2>&1 || true)`,
   which fish parses as a command substitution in command position and rejects
   (`command substitutions not allowed in command position`), producing a false
@@ -29,7 +29,7 @@
 
 ### Patch Changes
 
-- c2e2a29: Add a dedicated PI WEB configuration reference covering config-file precedence, project-local config, external path access allowlists, session daemon tools, plugins, shortcuts, upload limits, and environment variables. Custom `pi-web install --config` paths are now passed to the session daemon service as well as the web service, and the session daemon now honors config-file `maxUploadBytes` values.
+- c2e2a29: Add a dedicated PI WEB configuration reference covering config-file precedence, project-local config, external path access allowlists, session daemon tools, plugins, shortcuts, upload limits, and environment variables. Custom `omp-web install --config` paths are now passed to the session daemon service as well as the web service, and the session daemon now honors config-file `maxUploadBytes` values.
 - 4f4c6fa: Fix remote session reloads so they proxy through the web/API instead of returning the app shell as JSON.
 - 62c2234: Prevent live skill-loading cards from duplicating when the finalized transcript groups multiple skill reads.
 - 27bc924: Persist the Settings → Session daemon tracked subsessions toggle so it remains enabled after restart.
@@ -39,7 +39,7 @@
 - 9cc20d6: Allow configured external filesystem roots to be listed, read, configured from the global settings UI, and completed from absolute `@` path suggestions while keeping absolute paths denied by default, advertise workspace-scoped file suggestion support as a remote-machine capability, and use `fzf` when available to improve file/path completion filtering.
 - 355ebe8: Add tracked subsessions (beta, off by default): agents can spawn child sessions they stay attached to. The new `spawn_subsession` tool starts a child session linked to its parent (recorded in the session tree), notifies the parent when the child stops working, and lets the parent inspect children via `list_subsessions`, `check_subsession` (a quick glance at a child's status and latest output), and `read_subsession` (read through a child's transcript with role/content filters, full-content substring search, optional per-value `maxChars` truncation that flags clipped parts, and pagination). The completion notice is delivered as a system-authored message (not attributed to the human), and still wakes an idle parent while queueing behind any in-flight work. Unlike the fire-and-forget `spawn_session`, subsessions are observable by their spawner.
 
-  The capability is gated behind a beta flag so it can ship without being exposed in releases: enable it with the `PI_WEB_SUBSESSIONS` env var, the `subsessions` config key, or the "Allow agents to start tracked subsessions" toggle in Settings → Session daemon. It also requires `spawnSessions` to be enabled. Requires a manual session daemon restart to take effect.
+  The capability is gated behind a beta flag so it can ship without being exposed in releases: enable it with the `OMP_WEB_SUBSESSIONS` env var, the `subsessions` config key, or the "Allow agents to start tracked subsessions" toggle in Settings → Session daemon. It also requires `spawnSessions` to be enabled. Requires a manual session daemon restart to take effect.
 
 ## 1.202606.4
 
@@ -50,20 +50,20 @@
 - dd23b3e: Fix a duplicate session appearing in the list when starting a new session. The `session.created` broadcast (added with the spawn_session tool) could race ahead of the start request's HTTP response in the same tab, leaving two badges with the same id — one with archive/reload actions and one with delete. The optimistic insert now replaces any entry the broadcast added, so the locally cached session (with its delete action and draft support) always wins.
 - 3930505: Fix the "Catching up…" badge sometimes staying visible after a session goes idle. The stream catch-up mode was tracked by two fields that could drift — a private guard and the public badge flag — and the socket reconnect path updated one without the other, so the terminating idle status no longer cleared the badge. Both facets now route through a single source of truth, and any idle status for the selected session reliably dismisses the badge.
 - 411e61a: Declutter the chat composer bar with icon-based actions. The Send, Queue, Steer, and Stop buttons are now compact icons, the Attach button moved into the message box, and the thinking level is shown as a small gauge whose bars reflect the levels available for the current model. This leaves more room on narrow/mobile layouts while keeping the model selector readable. All controls retain accessible labels and tooltips. Thinking levels are now sourced from pi directly, so an unfamiliar level from a newer pi version is still selectable and displayed gracefully instead of causing an error.
-- d17050e: Add image attachments to the chat composer. You can now paste (Ctrl/Cmd+V), drag-and-drop, or use the new Attach button to add PNG, JPEG, GIF, and WebP images to a message, with thumbnail previews and multi-image support. Attachments are delivered to the session using pi's native image format (images are auto-resized to pi's inline limits for full compatibility), and image content now renders inline in the transcript. A per-message delivery toggle also lets you instead save attachments into the workspace `.pi-web/attachments` folder and reference them so the agent reads them with its own tools. The accepted HTTP upload size is now configurable via `PI_WEB_MAX_UPLOAD_BYTES` or the `maxUploadBytes` config value.
-- 3c6b4a4: Run the suggested Linux restart commands inside a detached transient systemd user service (`systemd-run --user`) instead of directly. The restart now completes even when the launching PI WEB terminal is killed by restarting the session daemon, and its output can be inspected with `journalctl --user -u pi-web-restart`.
+- d17050e: Add image attachments to the chat composer. You can now paste (Ctrl/Cmd+V), drag-and-drop, or use the new Attach button to add PNG, JPEG, GIF, and WebP images to a message, with thumbnail previews and multi-image support. Attachments are delivered to the session using pi's native image format (images are auto-resized to pi's inline limits for full compatibility), and image content now renders inline in the transcript. A per-message delivery toggle also lets you instead save attachments into the workspace `.omp-web/attachments` folder and reference them so the agent reads them with its own tools. The accepted HTTP upload size is now configurable via `OMP_WEB_MAX_UPLOAD_BYTES` or the `maxUploadBytes` config value.
+- 3c6b4a4: Run the suggested Linux restart commands inside a detached transient systemd user service (`systemd-run --user`) instead of directly. The restart now completes even when the launching PI WEB terminal is killed by restarting the session daemon, and its output can be inspected with `journalctl --user -u omp-web-restart`.
 - 61f0b79: Move reload to the end of the session action menu.
 - 82db15f: Add a **Reload** action to the session three-dot menu that re-reads the session from disk. The session daemon keeps an in-memory `SessionManager` per session and never re-reads the session file, so when the same session is also driven by another process (for example the `pi` CLI), new on-disk entries were invisible to the web UI and the tail of the conversation appeared truncated. Reloading closes the active session, re-opens it from disk, discards the cached transcript, and re-fetches the history.
 
-  Reload is also available from the command palette as **Reload Session**, so it can be triggered from the keyboard and assigned a custom shortcut. Reload refuses to run while the session has work in progress and on archived (read-only) sessions, and is gated behind a new `sessions.reload` runtime capability so it only appears for machines whose Pi-Web runtime supports it (both the menu item and the palette action are disabled otherwise).
+  Reload is also available from the command palette as **Reload Session**, so it can be triggered from the keyboard and assigned a custom shortcut. Reload refuses to run while the session has work in progress and on archived (read-only) sessions, and is gated behind a new `sessions.reload` runtime capability so it only appears for machines whose Omp-Web runtime supports it (both the menu item and the palette action are disabled otherwise).
 
-  Note: this changes a session daemon code path, so `pi-web-sessiond.service` must be restarted manually for the server side of this change to take effect.
+  Note: this changes a session daemon code path, so `omp-web-sessiond.service` must be restarted manually for the server side of this change to take effect.
 
 - 95c1512: Let agents start new sessions with a `spawn_session` tool. An agent can dispatch a fresh, independent session with an initial prompt — useful for ralph-style loops (an agent kicks off the next iteration when done) and for chaining long plans across sessions. Spawned sessions are normal sessions a human can open and interact with, and they now appear in the session list the moment they are created (in the matching workspace) without a manual reload.
 
-  To keep every spawned session visible and controllable, an agent may only spawn into a workspace — any worktree, including one it just created — of the same registered project as the spawning session. The capability is on by default and can be toggled under Settings → Session daemon (or via the `spawnSessions` config key / `PI_WEB_SPAWN_SESSIONS` environment variable); changes take effect after the session daemon restarts.
+  To keep every spawned session visible and controllable, an agent may only spawn into a workspace — any worktree, including one it just created — of the same registered project as the spawning session. The capability is on by default and can be toggled under Settings → Session daemon (or via the `spawnSessions` config key / `OMP_WEB_SPAWN_SESSIONS` environment variable); changes take effect after the session daemon restarts.
 
-  Note: this adds a session daemon code path, so `pi-web-sessiond.service` must be restarted manually for the server side of this change to take effect.
+  Note: this adds a session daemon code path, so `omp-web-sessiond.service` must be restarted manually for the server side of this change to take effect.
 
 - 3c6b4a4: Make the Updates panel actionable: every suggested command now has both a Copy and a Run button (Run executes it in a workspace terminal), a single recommended all-in-one command is shown at the top so users do not have to choose, and the remaining commands are grouped as clearly optional additional commands.
 
@@ -72,7 +72,7 @@
 ### Patch Changes
 
 - c0d1222: Fix sessions outside the server's launch directory being invisible: listing returned no sessions and opening them failed with 404 "Session not found", leaving the model picker empty. Working directories are now normalized at the API boundary and when reading stored session data, so path differences (trailing slashes, redundant segments, and Windows backslash vs forward-slash forms) no longer hide live or archived sessions. Requests with a relative `cwd` are now rejected with a 400 error instead of being resolved against the server's own working directory. Requires Pi coding agent SDK 0.78.0 or newer.
-- 38cf334: Restart the web/UI services before the session daemon in the suggested "Restart all" command and `pi-web restart`, so running the command from a PI WEB terminal still restarts the UI even though restarting the session daemon kills the terminal.
+- 38cf334: Restart the web/UI services before the session daemon in the suggested "Restart all" command and `omp-web restart`, so running the command from a PI WEB terminal still restarts the UI even though restarting the session daemon kills the terminal.
 
 ## 1.202606.2
 
@@ -95,11 +95,11 @@
 - 0118e6e: Keep archived parent sessions visible in the current session tree while they still have unarchived children.
 - 058fdee: Clarify plugin docs and website copy around private PI WEB APIs and the supported helper surface.
 - b616684: Add draggable, persistent side panel resizing for the web UI navigation and workspace panels, including reset actions.
-- 06052ea: Respect Pi session directory settings in pi-web sessions, including project-local Pi settings, while allowing cwd-scoped session operations without breaking legacy id-only routes.
+- 06052ea: Respect Pi session directory settings in omp-web sessions, including project-local Pi settings, while allowing cwd-scoped session operations without breaking legacy id-only routes.
 - b2a7975: Align the desktop machine badge status to the right edge of the badge.
 - a3b5b72: Add safe bulk session actions for archiving current sessions and permanently deleting archived sessions, with runtime capability checks for remote compatibility.
 - 9dd59c0: Show model response errors in the chat transcript instead of leaving the conversation blank.
-- 4bc390a: Keep machine/session navigation snappy by deferring expensive Pi-Web status refreshes and caching status checks.
+- 4bc390a: Keep machine/session navigation snappy by deferring expensive Omp-Web status refreshes and caching status checks.
 - 577594a: Allow sidebar action/detail menus to expand beyond their list section when only a few rows are shown.
 - f501f9d: Pin navigation activity indicators to the top-right of list chips so active projects, workspaces, and sessions no longer shift their labels.
 
@@ -133,7 +133,7 @@
 - 0405b38: Add the first machine registry API and show the synthesized Local machine in the web UI as the foundation for machine federation.
 - 4bc0010: Add workspace file and render helpers to plugin workspace label callbacks so labels can load workspace-scoped metadata without hidden panels.
 - 08f69d0: Prevent redundant Workspace Tasks panel re-renders from resetting mobile scroll position or replacing task buttons mid-click, and show feedback for stale, cancelled, or already-starting tasks.
-- 08f69d0: Bundle Workspace Tasks with PI WEB as a built-in plugin for running `.pi-web/tasks.json` commands in workspace terminals.
+- 08f69d0: Bundle Workspace Tasks with PI WEB as a built-in plugin for running `.omp-web/tasks.json` commands in workspace terminals.
 
 ## 1.202606.0
 
@@ -141,10 +141,10 @@
 
 - 6c094af: Keep slash command autocomplete visible above the chat status indicator.
 - bad3a18: Add an action-palette command for deleting browser-cached new sessions, while keeping archive and delete session actions context-specific.
-- fdd2cf2: Keep chat file mention suggestions working on installations that do not have ripgrep available, add an all-file `@` mention mode, stop hiding directories in the file explorer, and report optional ripgrep availability in `pi-web doctor`.
+- fdd2cf2: Keep chat file mention suggestions working on installations that do not have ripgrep available, add an all-file `@` mention mode, stop hiding directories in the file explorer, and report optional ripgrep availability in `omp-web doctor`.
 - a038da6: Fix mobile browser layout so the app no longer leaves an extra bottom gap above browser controls while preserving standalone PWA safe-area spacing.
-- 9c80eb0: Avoid suggesting unavailable `pi-web` restart commands for local checkout installs, and show native service commands only when PI WEB can detect matching service files.
-- 5090661: Add `pi-web version` and include installed and running PI WEB version details in doctor output.
+- 9c80eb0: Avoid suggesting unavailable `omp-web` restart commands for local checkout installs, and show native service commands only when PI WEB can detect matching service files.
+- 5090661: Add `omp-web version` and include installed and running PI WEB version details in doctor output.
 - 9c80eb0: Rename the PI WEB status workspace tab to Updates so version and restart guidance is easier to find.
 
 ## 1.202605.14
@@ -156,8 +156,8 @@
 - 5737b22: Add a collapse control for the left navigation panel in wide and two-panel layouts.
 - 50f1ddc: Refresh session list message counts from live session status updates.
 - c73ac5b: Keep PWA navigation bars visible after returning to the app from the background.
-- 2abd1d9: Queue prompts submitted during session compaction in pi-web and deliver them only after compaction finishes.
-- 958596a: Make `pi-web status` print a concise service health report without invoking paged system service output.
+- 2abd1d9: Queue prompts submitted during session compaction in omp-web and deliver them only after compaction finishes.
+- 958596a: Make `omp-web status` print a concise service health report without invoking paged system service output.
 - f569467: Add an optional terminal soft-key bar for common control, navigation, and Meta-style key sequences, with mobile-friendly defaults and a persistent toggle.
 - 61a763a: Keep the chat status indicator bubble above sticky message titles.
 - 559c6f6: Add a desktop edge control for collapsing and expanding the workspace tools panel.
@@ -166,9 +166,9 @@
 
 ### Patch Changes
 
-- 57a6a4a: Improve `pi-web doctor` to report missing commands safely, skip Linux systemd checks on non-Linux platforms, and avoid misleading restart advice after the macOS node-pty permission workaround.
-- 34e657d: Add a `pi-web doctor` diagnostic for the upstream macOS node-pty `spawn-helper` permission issue, including the workaround and tracking links.
-- 8247281: Add macOS LaunchAgent service installs and a shared development install mode with `pi-web install --dev`.
+- 57a6a4a: Improve `omp-web doctor` to report missing commands safely, skip Linux systemd checks on non-Linux platforms, and avoid misleading restart advice after the macOS node-pty permission workaround.
+- 34e657d: Add a `omp-web doctor` diagnostic for the upstream macOS node-pty `spawn-helper` permission issue, including the workaround and tracking links.
+- 8247281: Add macOS LaunchAgent service installs and a shared development install mode with `omp-web install --dev`.
 - 4bfd4ac: Add homepage and remote-first website copy that explains PI WEB's persistent-by-default agent workflow.
 - 679008d: Fix workspace and project activity indicators so stale session activity clears instead of reappearing after idle sessions.
 - 56fa641: Restore spellcheck and autocorrect for prose in the web chat prompt while keeping command-like input protected from autocorrection.
@@ -201,7 +201,7 @@
 - 9d4a017: Deep-link terminal selection so action-created terminals open directly and reload back to the same terminal.
 - 698a899: Load and watch first-party workspace plugin packages from the single Pi Web development command without requiring local symlinks.
 - fb7903f: Document and harden separate Pi Web plugin package development, including the Actions plugin refresh flow and public terminal navigation helper.
-- 32182a5: Allow Pi package installs to create systemd services from bundled Pi Web entrypoints when `pi-web-server` and `pi-web-sessiond` are not on the service shell PATH.
+- 32182a5: Allow Pi package installs to create systemd services from bundled Pi Web entrypoints when `omp-web-server` and `omp-web-sessiond` are not on the service shell PATH.
 - 8fbdd6e: Prevent resize observers from attaching to missing UI elements during panel rerenders.
 - 1f06b25: Keep loading other external plugins when one plugin fails during registration.
 - 2631a63: Add persistent project, workspace, and session context in the web UI so mobile users keep their location visible while navigating between panels and chat.
@@ -243,14 +243,14 @@
 ### Patch Changes
 
 - c77c47c: Document the Pi Web CalVer release rule so releases use the release month, increment the patch component for additional releases in the same month, and require explicit user confirmation before any breaking major release.
-- 3099579: Document and tighten the Pi Web plugin API around explicit `piWeb.plugins` metadata, versioned browser modules, AI-oriented local plugin development, website plugin docs on pi-web.dev, feedback guidance, and resilient discovery that skips invalid plugins without hiding valid ones.
+- 3099579: Document and tighten the Pi Web plugin API around explicit `ompWeb.plugins` metadata, versioned browser modules, AI-oriented local plugin development, website plugin docs on omp-web.dev, feedback guidance, and resilient discovery that skips invalid plugins without hiding valid ones.
 
 ## 1.202605.7
 
 ### Patch Changes
 
 - aab9ffb: Preserve newly started empty sessions and their prompt drafts across browser reloads until the user deletes them.
-- c5bc855: Improve `pi-web doctor` and `pi-web install` to use the detected bash, zsh, or fish login shell, verify the systemd user service context can find required commands before installation, and print shell-specific PATH setup advice without persisting transient PATH values.
+- c5bc855: Improve `omp-web doctor` and `omp-web install` to use the detected bash, zsh, or fish login shell, verify the systemd user service context can find required commands before installation, and print shell-specific PATH setup advice without persisting transient PATH values.
 - 9b1b1bb: Fix the docs mobile navigation so FAQ pages no longer overflow and compact the GitHub/theme controls on small screens.
 - 0aa0a13: Fix chat history reloads so previously displayed messages are not duplicated from the browser cache.
 - 42cad58: Add remote-first development positioning to the website and docs, including a philosophy page and laptop-versus-server FAQ guidance.

@@ -1,11 +1,11 @@
 import type { FastifyInstance } from "fastify";
-import { effectivePiWebConfig, loadPiWebConfig, parseUploadsConfig, savePiWebConfig, type LoadOptions, type PiWebConfig } from "../config.js";
-import type { PiWebConfigEnvOverrides, PiWebConfigResponse, PiWebConfigValues } from "../shared/apiTypes.js";
-import { isPiWebPluginId } from "../shared/pluginIds.js";
+import { effectiveOmpWebConfig, loadOmpWebConfig, parseUploadsConfig, saveOmpWebConfig, type LoadOptions, type OmpWebConfig } from "../config.js";
+import type { OmpWebConfigEnvOverrides, OmpWebConfigResponse, OmpWebConfigValues } from "../shared/apiTypes.js";
+import { isOmpWebPluginId } from "../shared/pluginIds.js";
 
-export interface PiWebConfigService {
-  read: () => PiWebConfigResponse | Promise<PiWebConfigResponse>;
-  write: (config: PiWebConfigValues) => PiWebConfigResponse | Promise<PiWebConfigResponse>;
+export interface OmpWebConfigService {
+  read: () => OmpWebConfigResponse | Promise<OmpWebConfigResponse>;
+  write: (config: OmpWebConfigValues) => OmpWebConfigResponse | Promise<OmpWebConfigResponse>;
 }
 
 export const SELECTED_MACHINE_CONFIG_KEYS = [
@@ -15,34 +15,34 @@ export const SELECTED_MACHINE_CONFIG_KEYS = [
   "maxUploadBytes",
   "spawnSessions",
   "subsessions",
-] as const satisfies readonly (keyof PiWebConfigValues)[];
+] as const satisfies readonly (keyof OmpWebConfigValues)[];
 
 const SELECTED_MACHINE_CONFIG_KEY_SET = new Set<string>(SELECTED_MACHINE_CONFIG_KEYS);
 
-export function createFilePiWebConfigService(options: LoadOptions = {}): PiWebConfigService {
+export function createFileOmpWebConfigService(options: LoadOptions = {}): OmpWebConfigService {
   return {
-    read: () => currentPiWebConfigResponse(options),
+    read: () => currentOmpWebConfigResponse(options),
     write: (config) => {
-      savePiWebConfig(config, options);
-      return currentPiWebConfigResponse(options);
+      saveOmpWebConfig(config, options);
+      return currentOmpWebConfigResponse(options);
     },
   };
 }
 
-export function currentPiWebConfigResponse(options: LoadOptions = {}): PiWebConfigResponse {
-  const loaded = loadPiWebConfig(options);
-  const effective = effectivePiWebConfig(options);
+export function currentOmpWebConfigResponse(options: LoadOptions = {}): OmpWebConfigResponse {
+  const loaded = loadOmpWebConfig(options);
+  const effective = effectiveOmpWebConfig(options);
   const env = options.env ?? process.env;
   return {
     path: loaded.path,
     exists: loaded.exists,
     config: loaded.config,
     effectiveConfig: effective.config,
-    envOverrides: piWebConfigEnvOverrides(env),
+    envOverrides: ompWebConfigEnvOverrides(env),
   };
 }
 
-export function registerConfigRoutes(app: FastifyInstance, service: PiWebConfigService = createFilePiWebConfigService()): void {
+export function registerConfigRoutes(app: FastifyInstance, service: OmpWebConfigService = createFileOmpWebConfigService()): void {
   app.get("/api/config", async (_request, reply) => {
     try {
       return await service.read();
@@ -61,7 +61,7 @@ export function registerConfigRoutes(app: FastifyInstance, service: PiWebConfigS
   });
 }
 
-export function registerLocalMachineConfigRoutes(app: FastifyInstance, service: PiWebConfigService = createFilePiWebConfigService()): void {
+export function registerLocalMachineConfigRoutes(app: FastifyInstance, service: OmpWebConfigService = createFileOmpWebConfigService()): void {
   app.get("/api/machines/local/config", async (_request, reply) => {
     try {
       return selectedMachineConfigResponse(await service.read());
@@ -82,7 +82,7 @@ export function registerLocalMachineConfigRoutes(app: FastifyInstance, service: 
   });
 }
 
-export function parseSelectedMachineConfigRequest(value: unknown): PiWebConfig {
+export function parseSelectedMachineConfigRequest(value: unknown): OmpWebConfig {
   if (!isRecord(value)) throw new Error("PI WEB selected-machine config update must include a config object");
   for (const key of Object.keys(value)) {
     if (!SELECTED_MACHINE_CONFIG_KEY_SET.has(key)) throw new Error(`PI WEB selected-machine config key is not allowed: ${key}`);
@@ -94,11 +94,11 @@ export function parseSelectedMachineConfigRequest(value: unknown): PiWebConfig {
   }
 }
 
-export function mergeSelectedMachineConfig(current: PiWebConfigValues, patch: PiWebConfigValues): PiWebConfig {
+export function mergeSelectedMachineConfig(current: OmpWebConfigValues, patch: OmpWebConfigValues): OmpWebConfig {
   return { ...current, ...pickSelectedMachineConfig(patch) };
 }
 
-export function selectedMachineConfigResponse(response: PiWebConfigResponse): PiWebConfigResponse {
+export function selectedMachineConfigResponse(response: OmpWebConfigResponse): OmpWebConfigResponse {
   return {
     ...response,
     config: pickSelectedMachineConfig(response.config),
@@ -106,20 +106,20 @@ export function selectedMachineConfigResponse(response: PiWebConfigResponse): Pi
   };
 }
 
-export function parsePiWebConfigResponseBody(value: unknown, source = "PI WEB config response"): PiWebConfigResponse {
+export function parseOmpWebConfigResponseBody(value: unknown, source = "PI WEB config response"): OmpWebConfigResponse {
   const record = requireResponseRecord(value, source);
   return {
     path: requireResponseString(record, "path", source),
     exists: requireResponseBoolean(record, "exists", source),
     config: parseConfigRequest(record["config"]),
     effectiveConfig: parseConfigRequest(record["effectiveConfig"]),
-    envOverrides: parsePiWebConfigEnvOverridesResponse(record["envOverrides"], source),
+    envOverrides: parseOmpWebConfigEnvOverridesResponse(record["envOverrides"], source),
   };
 }
 
-function parseConfigRequest(value: unknown): PiWebConfig {
+function parseConfigRequest(value: unknown): OmpWebConfig {
   if (!isRecord(value)) throw new Error("PI WEB config update must include a config object");
-  const config: PiWebConfig = {};
+  const config: OmpWebConfig = {};
   const host = value["host"];
   const port = value["port"];
   const allowedHosts = value["allowedHosts"];
@@ -155,7 +155,7 @@ function parseConfigRequest(value: unknown): PiWebConfig {
   return config;
 }
 
-function pickSelectedMachineConfig(config: PiWebConfigValues): PiWebConfig {
+function pickSelectedMachineConfig(config: OmpWebConfigValues): OmpWebConfig {
   return {
     ...(config.plugins !== undefined ? { plugins: config.plugins } : {}),
     ...(config.pathAccess !== undefined ? { pathAccess: config.pathAccess } : {}),
@@ -188,7 +188,7 @@ function parseShortcutsRequest(value: unknown): Record<string, string | null> {
   }));
 }
 
-function parsePathAccessRequest(value: unknown): NonNullable<PiWebConfig["pathAccess"]> {
+function parsePathAccessRequest(value: unknown): NonNullable<OmpWebConfig["pathAccess"]> {
   if (!isRecord(value)) throw new Error("PI WEB config pathAccess must be an object");
   const allowedPaths = value["allowedPaths"];
   return {
@@ -212,10 +212,10 @@ function parseMaxUploadBytesRequest(value: unknown): number {
   return value;
 }
 
-function parsePluginsRequest(value: unknown): NonNullable<PiWebConfig["plugins"]> {
+function parsePluginsRequest(value: unknown): NonNullable<OmpWebConfig["plugins"]> {
   if (!isRecord(value) || Array.isArray(value)) throw new Error("PI WEB config plugins must be an object");
   return Object.fromEntries(Object.entries(value).map(([pluginId, config]) => {
-    if (!isPiWebPluginId(pluginId)) throw new Error("PI WEB config plugin ids are invalid");
+    if (!isOmpWebPluginId(pluginId)) throw new Error("PI WEB config plugin ids are invalid");
     if (!isRecord(config) || Array.isArray(config)) throw new Error("PI WEB config plugin entries must be objects");
     const enabled = config["enabled"];
     if (enabled !== undefined && typeof enabled !== "boolean") throw new Error("PI WEB config plugin enabled values must be booleans");
@@ -225,7 +225,7 @@ function parsePluginsRequest(value: unknown): NonNullable<PiWebConfig["plugins"]
   }));
 }
 
-function parsePiWebConfigEnvOverridesResponse(value: unknown, source: string): PiWebConfigEnvOverrides {
+function parseOmpWebConfigEnvOverridesResponse(value: unknown, source: string): OmpWebConfigEnvOverrides {
   const record = requireResponseRecord(value, `${source} envOverrides`);
   return {
     host: requireResponseBoolean(record, "host", source),
@@ -253,13 +253,13 @@ function requireResponseBoolean(record: Record<string, unknown>, key: string, so
   return value;
 }
 
-function piWebConfigEnvOverrides(env: NodeJS.ProcessEnv): PiWebConfigEnvOverrides {
+function ompWebConfigEnvOverrides(env: NodeJS.ProcessEnv): OmpWebConfigEnvOverrides {
   return {
-    host: isEnvSet(env["PI_WEB_HOST"]),
-    port: isEnvSet(env["PI_WEB_PORT"]) || isEnvSet(env["PORT"]),
-    allowedHosts: isEnvSet(env["PI_WEB_ALLOWED_HOSTS"]),
-    spawnSessions: isEnvSet(env["PI_WEB_SPAWN_SESSIONS"]),
-    subsessions: isEnvSet(env["PI_WEB_SUBSESSIONS"]),
+    host: isEnvSet(env["OMP_WEB_HOST"]),
+    port: isEnvSet(env["OMP_WEB_PORT"]) || isEnvSet(env["PORT"]),
+    allowedHosts: isEnvSet(env["OMP_WEB_ALLOWED_HOSTS"]),
+    spawnSessions: isEnvSet(env["OMP_WEB_SPAWN_SESSIONS"]),
+    subsessions: isEnvSet(env["OMP_WEB_SUBSESSIONS"]),
   };
 }
 

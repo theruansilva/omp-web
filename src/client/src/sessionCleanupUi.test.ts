@@ -78,6 +78,6 @@ describe("session cleanup UI helpers", () => {
     })).toBe(true);
     expect(confirmMessages[0]).toContain("permanently delete 1 archived session");
     expect(sessionCleanupConfirmationMessage(preview)).toContain("cannot be undone");
-    expect(sessionCleanupUnavailableMessage("Remote Dev")).toBe("Update and restart Pi-Web on Remote Dev to clean up sessions.");
+    expect(sessionCleanupUnavailableMessage("Remote Dev")).toBe("Update and restart Omp-Web on Remote Dev to clean up sessions.");
   });
 });

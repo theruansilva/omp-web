@@ -1,6 +1,6 @@
-import type { PiWebConfigResponse, PiWebConfigValues } from "../../api";
+import type { OmpWebConfigResponse, OmpWebConfigValues } from "../../api";
 
-export function mergeSelectedMachineAccessConfig(base: PiWebConfigResponse, selectedMachine: PiWebConfigResponse): PiWebConfigResponse {
+export function mergeSelectedMachineAccessConfig(base: OmpWebConfigResponse, selectedMachine: OmpWebConfigResponse): OmpWebConfigResponse {
   return {
     ...base,
     config: mergeAccessConfig(base.config, selectedMachine.config),
@@ -8,7 +8,7 @@ export function mergeSelectedMachineAccessConfig(base: PiWebConfigResponse, sele
   };
 }
 
-function mergeAccessConfig(base: PiWebConfigValues, selectedMachine: PiWebConfigValues): PiWebConfigValues {
+function mergeAccessConfig(base: OmpWebConfigValues, selectedMachine: OmpWebConfigValues): OmpWebConfigValues {
   return {
     ...base,
     ...(selectedMachine.pathAccess === undefined ? {} : { pathAccess: selectedMachine.pathAccess }),

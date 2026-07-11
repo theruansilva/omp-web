@@ -71,11 +71,11 @@ describe("workspaceUploadReviewError", () => {
     expect(workspaceUploadReviewError([
       new File(["a"], "a.txt"),
       new File(["b"], "b.txt"),
-    ], ".pi-web/uploads")).toBeUndefined();
+    ], ".omp-web/uploads")).toBeUndefined();
   });
 
   it("rejects empty selections and unsafe destinations before starting an upload", () => {
-    expect(workspaceUploadReviewError([], ".pi-web/uploads")).toBe("Choose at least one file to upload.");
+    expect(workspaceUploadReviewError([], ".omp-web/uploads")).toBe("Choose at least one file to upload.");
     expect(workspaceUploadReviewError([new File(["a"], "a.txt")], "../outside")).toContain("path traversal");
   });
 });
@@ -86,7 +86,7 @@ function uploadBatch(patch: Partial<WorkspaceUploadBatchState> = {}): WorkspaceU
     projectId: patch.projectId ?? "project-1",
     workspaceId: patch.workspaceId ?? "workspace-1",
     machineId: patch.machineId ?? "local",
-    destinationFolder: patch.destinationFolder ?? ".pi-web/uploads",
+    destinationFolder: patch.destinationFolder ?? ".omp-web/uploads",
     overwrite: patch.overwrite ?? true,
     createDirs: patch.createDirs ?? true,
     files: patch.files ?? [],

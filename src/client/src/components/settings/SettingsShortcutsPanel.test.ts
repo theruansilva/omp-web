@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { TemplateResult } from "lit";
-import type { PiWebConfigResponse, PiWebConfigValues } from "../../api";
+import type { OmpWebConfigResponse, OmpWebConfigValues } from "../../api";
 import { SettingsShortcutsPanel } from "./SettingsShortcutsPanel";
 import type { SettingsNotice } from "./SettingsPanelFrame";
 
@@ -139,9 +139,9 @@ function isStringArray(value: unknown): value is string[] {
   return Array.isArray(value) && value.every((item: unknown) => typeof item === "string");
 }
 
-function configResponse(config: PiWebConfigValues): PiWebConfigResponse {
+function configResponse(config: OmpWebConfigValues): OmpWebConfigResponse {
   return {
-    path: "/tmp/pi-web/config.json",
+    path: "/tmp/omp-web/config.json",
     exists: true,
     config,
     effectiveConfig: config,

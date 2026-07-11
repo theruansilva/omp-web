@@ -1,5 +1,5 @@
 ---
-"@ProgmRuanSilva/pi-web": patch
+"@ProgmRuanSilva/omp-web": patch
 ---
 
 Prevent iOS Safari from zooming into small text inputs across the web UI.

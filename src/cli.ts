@@ -5,19 +5,19 @@ import { mkdir, rm, writeFile } from "node:fs/promises";
 import { homedir, userInfo } from "node:os";
 import { basename, dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { defaultPiWebConfigPath, defaultPiWebDataDir, examplePiWebConfig } from "./config.js";
-import { packageVersion, printPiWebVersionReport } from "./piWebVersionReport.js";
+import { defaultOmpWebConfigPath, defaultOmpWebDataDir, exampleOmpWebConfig } from "./config.js";
+import { packageVersion, printOmpWebVersionReport } from "./ompWebVersionReport.js";
 import { checkNodePtyDarwinSpawnHelper, formatNodePtyDarwinSpawnHelperCheck } from "./server/diagnostics/nodePtySpawnHelper.js";
 
-const PI_WEB_PACKAGE_NAME = "@ProgmRuanSilva/omp-web";
+const OMP_WEB_PACKAGE_NAME = "@ProgmRuanSilva/omp-web";
 
 const systemdServiceDir = join(homedir(), ".config", "systemd", "user");
 const launchdServiceDir = join(homedir(), "Library", "LaunchAgents");
-const logDir = join(defaultPiWebDataDir(), "logs");
+const logDir = join(defaultOmpWebDataDir(), "logs");
 
-const sessiondServiceName = "pi-web-sessiond.service";
-const webServiceName = "pi-web.service";
-const uiDevServiceName = "pi-web-ui-dev.service";
+const sessiondServiceName = "omp-web-sessiond.service";
+const webServiceName = "omp-web.service";
+const uiDevServiceName = "omp-web-ui-dev.service";
 
 type InstallMode = "production" | "dev";
 type ServiceBackendKind = "systemd" | "launchd";
@@ -88,22 +88,22 @@ const serviceRefs: Record<ServiceId, ServiceRef> = {
   sessiond: {
     id: "sessiond",
     systemdName: sessiondServiceName,
-    launchdLabel: "com.pi-web.sessiond",
-    launchdPlistName: "com.pi-web.sessiond.plist",
+    launchdLabel: "com.omp-web.sessiond",
+    launchdPlistName: "com.omp-web.sessiond.plist",
     logName: "sessiond.log",
   },
   web: {
     id: "web",
     systemdName: webServiceName,
-    launchdLabel: "com.pi-web.web",
-    launchdPlistName: "com.pi-web.web.plist",
+    launchdLabel: "com.omp-web.web",
+    launchdPlistName: "com.omp-web.web.plist",
     logName: "web.log",
   },
   uiDev: {
     id: "uiDev",
     systemdName: uiDevServiceName,
-    launchdLabel: "com.pi-web.ui-dev",
-    launchdPlistName: "com.pi-web.ui-dev.plist",
+    launchdLabel: "com.omp-web.ui-dev",
+    launchdPlistName: "com.omp-web.ui-dev.plist",
     logName: "ui-dev.log",
   },
 };
@@ -111,7 +111,7 @@ const serviceRefs: Record<ServiceId, ServiceRef> = {
 const productionServiceIds: ServiceId[] = ["sessiond", "web"];
 const startServiceOrder: ServiceId[] = ["sessiond", "web", "uiDev"];
 const stopServiceOrder: ServiceId[] = ["web", "uiDev", "sessiond"];
-// Restart web/UI before sessiond: when `pi-web restart` runs in a pi-web
+// Restart web/UI before sessiond: when `omp-web restart` runs in a omp-web
 // terminal (owned by sessiond), restarting sessiond kills the command, so any
 // services handled after it would never be restarted.
 const restartServiceOrder: ServiceId[] = ["web", "uiDev", "sessiond"];
@@ -143,7 +143,7 @@ function manualRunAdvice(): string {
   return [
     "Run PI WEB manually from a checkout:",
     "  npm run start:sessiond",
-    "  PI_WEB_PORT=8504 npm start",
+    "  OMP_WEB_PORT=8504 npm start",
     "",
     "For development in one terminal:",
     "  npm run dev",
@@ -324,7 +324,7 @@ function bundledExecutable(command: string, entrypointPath: string, backend: Ser
   return { command: `node ${serviceShellQuote(entrypointPath)}`, checks };
 }
 
-function serviceExecutable(envName: "PI_WEB_SERVER_EXEC" | "PI_WEB_SESSIOND_EXEC", command: string, entrypointPath: string, backend: ServiceBackend): ServiceExecutable {
+function serviceExecutable(envName: "OMP_WEB_SERVER_EXEC" | "OMP_WEB_SESSIOND_EXEC", command: string, entrypointPath: string, backend: ServiceBackend): ServiceExecutable {
   const configured = process.env[envName]?.trim();
   if (configured !== undefined && configured !== "") return { command: configured, checks: [] };
   if (serviceShellCanFindCommand(command, backend)) return commandExecutable(command, backend);
@@ -334,8 +334,8 @@ function serviceExecutable(envName: "PI_WEB_SERVER_EXEC" | "PI_WEB_SESSIOND_EXEC
 
 function resolveServiceExecutables(backend: ServiceBackend): ServiceExecutables {
   return {
-    sessiond: serviceExecutable("PI_WEB_SESSIOND_EXEC", "pi-web-sessiond", packageEntrypointPath("sessiond"), backend),
-    web: serviceExecutable("PI_WEB_SERVER_EXEC", "pi-web-server", packageEntrypointPath("server"), backend),
+    sessiond: serviceExecutable("OMP_WEB_SESSIOND_EXEC", "omp-web-sessiond", packageEntrypointPath("sessiond"), backend),
+    web: serviceExecutable("OMP_WEB_SERVER_EXEC", "omp-web-server", packageEntrypointPath("server"), backend),
   };
 }
 
@@ -350,7 +350,7 @@ function describeServiceShell(): string {
 }
 
 function configEnvironment(options: InstallOptions, configPath: string): Record<string, string> {
-  return options.config === undefined ? {} : { PI_WEB_CONFIG: configPath };
+  return options.config === undefined ? {} : { OMP_WEB_CONFIG: configPath };
 }
 
 function serviceRefList(ids: ServiceId[]): ServiceRef[] {
@@ -418,8 +418,8 @@ function validateDevCheckout(root: string): void {
   }
 
   const parsed: unknown = JSON.parse(readFileSync(packageJsonPath, "utf8"));
-  if (!isRecord(parsed) || parsed["name"] !== PI_WEB_PACKAGE_NAME) {
-    throw new Error(`Development mode must be installed from a PI WEB checkout. ${packageJsonPath} is not ${PI_WEB_PACKAGE_NAME}.`);
+  if (!isRecord(parsed) || parsed["name"] !== OMP_WEB_PACKAGE_NAME) {
+    throw new Error(`Development mode must be installed from a PI WEB checkout. ${packageJsonPath} is not ${OMP_WEB_PACKAGE_NAME}.`);
   }
 
   const scripts = parsed["scripts"];
@@ -513,10 +513,10 @@ ${keepAlive}${plistString("StandardOutPath", launchdLogPath(service))}${plistStr
 }
 
 async function writeInitialConfig(options: InstallOptions): Promise<string> {
-  const configPath = options.config === undefined ? defaultPiWebConfigPath() : resolve(options.config);
+  const configPath = options.config === undefined ? defaultOmpWebConfigPath() : resolve(options.config);
   await mkdir(dirname(configPath), { recursive: true });
   if (!existsSync(configPath)) {
-    await writeFile(configPath, examplePiWebConfig({ host: options.host, port: Number(options.port) }));
+    await writeFile(configPath, exampleOmpWebConfig({ host: options.host, port: Number(options.port) }));
   }
   return configPath;
 }
@@ -737,13 +737,13 @@ function printServiceStatusReport(backend: ServiceBackend): boolean {
   console.log(`PI WEB services: ${serviceInstallMode(backend)} (${backend.label})`);
   if (refs.length === 0) {
     console.log("✗ no PI WEB service files found");
-    console.log("  Run `pi-web install` or `pi-web install --dev`.");
+    console.log("  Run `omp-web install` or `omp-web install --dev`.");
     return false;
   }
 
   const statuses = refs.map((ref) => runtimeStatus(backend, ref));
   for (const status of statuses) printServiceStatus(status);
-  console.log("\nUse `pi-web logs` for service logs.");
+  console.log("\nUse `omp-web logs` for service logs.");
   return statuses.every((status) => status.health === "running");
 }
 
@@ -784,7 +784,7 @@ function installPreflightChecks(backend: ServiceBackend, mode: InstallMode, exec
 }
 
 async function install(args: string[]): Promise<void> {
-  const backend = requireServiceBackend("pi-web install");
+  const backend = requireServiceBackend("omp-web install");
   const options = parseInstallOptions(args);
   const devRoot = options.mode === "dev" ? devRootPath() : undefined;
   if (devRoot !== undefined) validateDevCheckout(devRoot);
@@ -795,7 +795,7 @@ async function install(args: string[]): Promise<void> {
   console.log(`Service shell: ${describeServiceShell()}`);
   if (!runChecks(installPreflightChecks(backend, options.mode, executables, devRoot))) {
     printPathSetupAdvice();
-    throw new Error("Install preflight checks failed. Fix the failed checks above, then run `pi-web doctor` for more detail.");
+    throw new Error("Install preflight checks failed. Fix the failed checks above, then run `omp-web doctor` for more detail.");
   }
 
   const configPath = await writeInitialConfig(options);
@@ -825,13 +825,13 @@ async function install(args: string[]): Promise<void> {
   }
 
   console.log("\nUseful commands:");
-  console.log("  pi-web status");
-  console.log("  pi-web logs");
-  console.log("  pi-web restart");
+  console.log("  omp-web status");
+  console.log("  omp-web logs");
+  console.log("  omp-web restart");
 }
 
 async function uninstall(): Promise<void> {
-  const backend = requireServiceBackend("pi-web uninstall");
+  const backend = requireServiceBackend("omp-web uninstall");
   await uninstallNativeServices(backend);
   console.log(`PI WEB ${backend.label} removed. Production and development service files were removed; config and data were left in place.`);
 }
@@ -861,7 +861,7 @@ function launchdServiceAction(action: "start" | "stop" | "restart", refs: Servic
 }
 
 function serviceAction(action: "start" | "stop" | "restart" | "status"): void {
-  const backend = requireServiceBackend(`pi-web ${action}`);
+  const backend = requireServiceBackend(`omp-web ${action}`);
   if (action === "status") {
     if (!printServiceStatusReport(backend)) process.exitCode = 1;
     return;
@@ -873,7 +873,7 @@ function serviceAction(action: "start" | "stop" | "restart" | "status"): void {
 }
 
 function logs(): void {
-  const backend = requireServiceBackend("pi-web logs");
+  const backend = requireServiceBackend("omp-web logs");
   const refs = installedServiceRefs(backend);
   if (backend.kind === "systemd") {
     run("journalctl", ["--user", ...refs.flatMap((ref) => ["-u", ref.systemdName]), "-f"]);
@@ -1014,7 +1014,7 @@ async function doctor(): Promise<void> {
     console.log(`- Native user service checks skipped on ${platformLabel()}`);
   }
   console.log("");
-  await printPiWebVersionReport();
+  await printOmpWebVersionReport();
   console.log("\nDoctor checks:");
   const ok = runChecks(doctorChecks());
   printOptionalDoctorChecks();
@@ -1064,18 +1064,18 @@ function help(): void {
   console.log(`PI WEB
 
 Usage:
-  pi-web install [--dev] [--host 127.0.0.1] [--port 8504] [--config ~/.config/pi-web/config.json]
-  pi-web uninstall
-  pi-web start|stop|restart|status|logs
-  pi-web doctor
-  pi-web version
+  omp-web install [--dev] [--host 127.0.0.1] [--port 8504] [--config ~/.config/omp-web/config.json]
+  omp-web uninstall
+  omp-web start|stop|restart|status|logs
+  omp-web doctor
+  omp-web version
 
 Recommended install:
   npm install -g @ProgmRuanSilva/omp-web
-  pi-web install
+  omp-web install
 
 Development service install from a checkout:
-  pi-web install --dev
+  omp-web install --dev
 `);
 }
 
@@ -1086,7 +1086,7 @@ async function main(): Promise<void> {
   else if (command === "start" || command === "stop" || command === "restart" || command === "status") serviceAction(command);
   else if (command === "logs") logs();
   else if (command === "doctor") await doctor();
-  else if (command === "version") await printPiWebVersionReport();
+  else if (command === "version") await printOmpWebVersionReport();
   else if (command === "--version" || command === "-v") console.log(packageVersion());
   else if (command === "help" || command === "--help" || command === "-h") help();
   else throw new Error(`Unknown command: ${command}`);

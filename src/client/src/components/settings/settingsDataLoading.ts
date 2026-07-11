@@ -1,14 +1,14 @@
-import type { PiPackagesResponse, PiWebConfigResponse, PiWebPluginsResponse } from "../../api";
+import type { PiPackagesResponse, OmpWebConfigResponse, OmpWebPluginsResponse } from "../../api";
 import { friendlyPiPackageErrorMessage, isPiPackageManagementUnsupported, piPackageTargetLabel, type PiPackageManagementSupport, type PiPackageTargetContext } from "./piPackageSettings";
 
 export interface GatewaySettingsLoaders {
-  loadConfig: () => Promise<PiWebConfigResponse>;
-  loadPlugins: () => Promise<PiWebPluginsResponse>;
+  loadConfig: () => Promise<OmpWebConfigResponse>;
+  loadPlugins: () => Promise<OmpWebPluginsResponse>;
 }
 
 export interface GatewaySettingsLoadResult {
-  config?: PiWebConfigResponse;
-  plugins?: PiWebPluginsResponse;
+  config?: OmpWebConfigResponse;
+  plugins?: OmpWebPluginsResponse;
   error: string;
 }
 

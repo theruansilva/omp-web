@@ -8,7 +8,7 @@
       name="description"
       content="PI WEB is a web UI for Pi Coding Agent that keeps agent sessions running in real workspaces on your machine or server."
     />
-    <link rel="canonical" href="https://pi-web.dev/" />
+    <link rel="canonical" href="https://omp-web.dev/" />
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="PI WEB" />
     <meta property="og:title" content="PI WEB — web UI for Pi Coding Agent" />
@@ -16,8 +16,8 @@
       property="og:description"
       content="Run persistent Pi Coding Agent sessions in real workspaces and supervise them from any browser."
     />
-    <meta property="og:url" content="https://pi-web.dev/" />
-    <meta property="og:image" content="https://pi-web.dev/assets/pi-web-banner.png" />
+    <meta property="og:url" content="https://omp-web.dev/" />
+    <meta property="og:image" content="https://omp-web.dev/assets/omp-web-banner.png" />
     <meta property="og:image:alt" content="PI WEB browser UI for persistent Pi Coding Agent sessions" />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="PI WEB — web UI for Pi Coding Agent" />
@@ -25,7 +25,7 @@
       name="twitter:description"
       content="Run persistent Pi Coding Agent sessions in real workspaces and supervise them from any browser."
     />
-    <meta name="twitter:image" content="https://pi-web.dev/assets/pi-web-banner.png" />
+    <meta name="twitter:image" content="https://omp-web.dev/assets/omp-web-banner.png" />
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
@@ -34,18 +34,18 @@
         "alternateName": ["Pi web UI", "Pi Coding Agent web UI"],
         "applicationCategory": "DeveloperApplication",
         "operatingSystem": "Linux, macOS, Windows WSL",
-        "url": "https://pi-web.dev/",
-        "downloadUrl": "https://www.npmjs.com/package/@ProgmRuanSilva/pi-web",
-        "codeRepository": "https://github.com/ProgmRuanSilva/pi-web",
+        "url": "https://omp-web.dev/",
+        "downloadUrl": "https://www.npmjs.com/package/@ProgmRuanSilva/omp-web",
+        "codeRepository": "https://github.com/ProgmRuanSilva/omp-web",
         "description": "PI WEB is a web UI for Pi Coding Agent that keeps persistent agent sessions running in real workspaces on your machine or server.",
         "softwareRequirements": "Node.js 22 or newer and Pi Coding Agent",
-        "license": "https://github.com/ProgmRuanSilva/pi-web/blob/main/LICENSE"
+        "license": "https://github.com/ProgmRuanSilva/omp-web/blob/main/LICENSE"
       }
     </script>
     <link rel="icon" type="image/svg+xml" href="assets/favicon.svg" />
     <script>
       (() => {
-        const theme = window.localStorage.getItem("pi-web-theme");
+        const theme = window.localStorage.getItem("omp-web-theme");
         if (theme === "light" || theme === "dark") document.documentElement.dataset.theme = theme;
       })();
     </script>
@@ -71,7 +71,7 @@
             <a href="faq">FAQ</a>
           </div>
           <div class="nav-actions">
-            <a class="github-link" href="https://github.com/ProgmRuanSilva/pi-web" aria-label="PI WEB on GitHub">
+            <a class="github-link" href="https://github.com/ProgmRuanSilva/omp-web" aria-label="PI WEB on GitHub">
               <svg class="github-icon" viewBox="0 0 16 16" aria-hidden="true">
                 <path
                   fill="currentColor"
@@ -130,14 +130,14 @@
               <div class="dots"><span></span><span></span><span></span></div>
               <span>agent-hub.local</span>
             </div>
-            <pre><code><span class="prompt">$</span> pi-web status
+            <pre><code><span class="prompt">$</span> omp-web status
 ✓ session daemon running
 ✓ web server listening on 127.0.0.1:8504
 
 <span class="prompt">$</span> open http://127.0.0.1:8504
 # laptop, phone, tablet — same live sessions
 
-<span class="prompt">$</span> pi-web doctor
+<span class="prompt">$</span> omp-web doctor
 ✓ login shell can find node >= 22
 ✓ native service shell can find pi
 ✓ ready for persistent agent work</code></pre>
@@ -168,8 +168,8 @@
                 <div class="demo-shot-media">
                   <button class="demo-lightbox-trigger" type="button" data-demo-lightbox-trigger aria-label="Open desktop screenshot preview">
                     <img
-                      src="assets/pi-web-desktop.png"
-                      alt="PI WEB desktop screenshot showing an agent-created pi-web.dev screenshot selected in the file preview"
+                      src="assets/omp-web-desktop.png"
+                      alt="PI WEB desktop screenshot showing an agent-created omp-web.dev screenshot selected in the file preview"
                     />
                   </button>
                 </div>
@@ -178,7 +178,7 @@
               <figure class="demo-shot" data-demo-slide>
                 <div class="demo-shot-media">
                   <button class="demo-lightbox-trigger" type="button" data-demo-lightbox-trigger aria-label="Open tablet screenshot preview">
-                    <img src="assets/pi-web-tablet.png" alt="PI WEB tablet screenshot" />
+                    <img src="assets/omp-web-tablet.png" alt="PI WEB tablet screenshot" />
                   </button>
                 </div>
                 <figcaption><strong>Tablet</strong><span>The same live session on a wider touch screen.</span></figcaption>
@@ -186,7 +186,7 @@
               <figure class="demo-shot demo-shot-mobile" data-demo-slide>
                 <div class="demo-shot-media">
                   <button class="demo-lightbox-trigger" type="button" data-demo-lightbox-trigger aria-label="Open mobile screenshot preview">
-                    <img src="assets/pi-web-mobile.png" alt="PI WEB mobile chat screenshot" />
+                    <img src="assets/omp-web-mobile.png" alt="PI WEB mobile chat screenshot" />
                   </button>
                 </div>
                 <figcaption><strong>Mobile</strong><span>Readable chat controls when you are away from the desk.</span></figcaption>
@@ -337,10 +337,10 @@
               <strong>User service install</strong>
               <button class="copy-button" data-copy="#home-install">Copy</button>
             </div>
-            <pre id="home-install"><code><span class="prompt">$</span> npm install -g @ProgmRuanSilva/pi-web
-<span class="prompt">$</span> pi-web install
-<span class="prompt">$</span> pi-web doctor
-<span class="prompt">$</span> pi-web version
+            <pre id="home-install"><code><span class="prompt">$</span> npm install -g @ProgmRuanSilva/omp-web
+<span class="prompt">$</span> omp-web install
+<span class="prompt">$</span> omp-web doctor
+<span class="prompt">$</span> omp-web version
 <span class="comment"># Open http://127.0.0.1:8504</span></code></pre>
           </div>
         </div>
@@ -351,7 +351,7 @@
           <article class="doc-card">
             <h3>WSL and containers?</h3>
             <p>
-              Use <code>pi-web install</code> where a supported per-user service manager is available. WSL works with the
+              Use <code>omp-web install</code> where a supported per-user service manager is available. WSL works with the
               installer when systemd is enabled; otherwise use the manual run path.
             </p>
             <a href="faq#is-this-linux-only">Read compatibility notes →</a>
@@ -359,7 +359,7 @@
           <article class="doc-card">
             <h3>Local UI plugins?</h3>
             <p>
-              Ask AI agents to add trusted local UI plugins from <code>~/.pi-web/plugins</code> without rebuilding or
+              Ask AI agents to add trusted local UI plugins from <code>~/.omp-web/plugins</code> without rebuilding or
               restarting the session daemon.
             </p>
             <a href="plugins">Build a plugin →</a>
@@ -386,7 +386,7 @@
           <a href="config">Config</a>
           <a href="plugins">Plugins</a>
           <a href="faq">FAQ</a>
-          <a href="https://www.npmjs.com/package/@ProgmRuanSilva/pi-web">npm</a>
+          <a href="https://www.npmjs.com/package/@ProgmRuanSilva/omp-web">npm</a>
         </div>
       </div>
     </footer>

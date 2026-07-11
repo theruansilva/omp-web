@@ -1,4 +1,4 @@
-import type { PiWebConfigValues } from "../../api";
+import type { OmpWebConfigValues } from "../../api";
 
 export interface GatewayServerConfigDraft {
   host: string;
@@ -20,7 +20,7 @@ export function emptyMachineAccessConfigDraft(): MachineAccessConfigDraft {
   return { allowedPathsText: "", uploadDefaultFolder: "" };
 }
 
-export function gatewayServerDraftFromConfig(config: PiWebConfigValues): GatewayServerConfigDraft {
+export function gatewayServerDraftFromConfig(config: OmpWebConfigValues): GatewayServerConfigDraft {
   return {
     host: config.host ?? "",
     port: config.port === undefined ? "" : String(config.port),
@@ -29,14 +29,14 @@ export function gatewayServerDraftFromConfig(config: PiWebConfigValues): Gateway
   };
 }
 
-export function machineAccessDraftFromConfig(config: PiWebConfigValues): MachineAccessConfigDraft {
+export function machineAccessDraftFromConfig(config: OmpWebConfigValues): MachineAccessConfigDraft {
   return {
     allowedPathsText: config.pathAccess?.allowedPaths?.join("\n") ?? "",
     uploadDefaultFolder: config.uploads?.defaultFolder ?? "",
   };
 }
 
-export function gatewayServerConfigFromDraft(draft: GatewayServerConfigDraft, baseConfig: PiWebConfigValues = {}): PiWebConfigValues {
+export function gatewayServerConfigFromDraft(draft: GatewayServerConfigDraft, baseConfig: OmpWebConfigValues = {}): OmpWebConfigValues {
   const config = preservedGatewayConfigRemainder(baseConfig);
   const host = draft.host.trim();
   const port = draft.port.trim();
@@ -50,7 +50,7 @@ export function gatewayServerConfigFromDraft(draft: GatewayServerConfigDraft, ba
   return config;
 }
 
-export function machineAccessConfigPatchFromDraft(draft: MachineAccessConfigDraft): PiWebConfigValues {
+export function machineAccessConfigPatchFromDraft(draft: MachineAccessConfigDraft): OmpWebConfigValues {
   const allowedPaths = parseAllowedPathsText(draft.allowedPathsText);
   const uploadDefaultFolder = normalizeWorkspaceRelativeFolder(draft.uploadDefaultFolder);
   return {
@@ -59,7 +59,7 @@ export function machineAccessConfigPatchFromDraft(draft: MachineAccessConfigDraf
   };
 }
 
-function preservedGatewayConfigRemainder(baseConfig: PiWebConfigValues): PiWebConfigValues {
+function preservedGatewayConfigRemainder(baseConfig: OmpWebConfigValues): OmpWebConfigValues {
   return {
     ...(baseConfig.shortcuts === undefined ? {} : { shortcuts: baseConfig.shortcuts }),
     ...(baseConfig.plugins === undefined ? {} : { plugins: baseConfig.plugins }),

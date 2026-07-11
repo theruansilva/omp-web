@@ -1,19 +1,19 @@
 # PI WEB
 
-[![CI](https://github.com/ProgmRuanSilva/pi-web/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/ProgmRuanSilva/pi-web/actions/workflows/ci.yml)
-[![npm version](https://img.shields.io/npm/v/@ProgmRuanSilva/pi-web)](https://www.npmjs.com/package/@ProgmRuanSilva/pi-web)
-[![Node.js](https://img.shields.io/node/v/@ProgmRuanSilva/pi-web)](package.json)
+[![CI](https://github.com/ProgmRuanSilva/omp-web/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/ProgmRuanSilva/omp-web/actions/workflows/ci.yml)
+[![npm version](https://img.shields.io/npm/v/@ProgmRuanSilva/omp-web)](https://www.npmjs.com/package/@ProgmRuanSilva/omp-web)
+[![Node.js](https://img.shields.io/node/v/@ProgmRuanSilva/omp-web)](package.json)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 **PI WEB is a web UI for [Pi Coding Agent](https://github.com/earendil-works/pi/tree/main/packages/coding-agent) that keeps agent sessions running in real workspaces on your machine or server.**
 
 Run agents where your code, tools, credentials, and build caches live. Supervise them from any browser.
 
-Website and docs: <https://pi-web.dev/>
+Website and docs: <https://omp-web.dev/>
 
-![PI WEB](docs/assets/pi-web-banner.png)
+![PI WEB](docs/assets/omp-web-banner.png)
 
-![PI WEB desktop screenshot](docs/assets/pi-web-desktop.png)
+![PI WEB desktop screenshot](docs/assets/omp-web-desktop.png)
 
 ## Why PI WEB?
 
@@ -42,9 +42,9 @@ Requirements:
 Install and start PI WEB as per-user services:
 
 ```bash
-npm install -g @ProgmRuanSilva/pi-web
-pi-web install
-pi-web doctor
+npm install -g @ProgmRuanSilva/omp-web
+omp-web install
+omp-web doctor
 ```
 
 Then open:
@@ -56,15 +56,15 @@ http://127.0.0.1:8504
 Useful commands:
 
 ```bash
-pi-web status
-pi-web logs
-pi-web restart
-pi-web doctor
-pi-web version
-pi-web uninstall
+omp-web status
+omp-web logs
+omp-web restart
+omp-web doctor
+omp-web version
+omp-web uninstall
 ```
 
-For more install options, including one-line install, Pi package install, WSL/manual usage, and remote access, see the [installation guide](https://pi-web.dev/install).
+For more install options, including one-line install, Pi package install, WSL/manual usage, and remote access, see the [installation guide](https://omp-web.dev/install).
 
 ## Core model
 
@@ -93,7 +93,7 @@ Instead of tying agent work to your laptop session, run PI WEB on a machine that
 
 Use a private network, SSH tunnel, trusted reverse proxy, or federated PI WEB machine setup when accessing it remotely.
 
-Read more: [Remote-first development](https://pi-web.dev/remote-first)
+Read more: [Remote-first development](https://omp-web.dev/remote-first)
 
 ## Machines and fleets
 
@@ -101,7 +101,7 @@ PI WEB can register other PI WEB runtimes as remote machines. One browser-facing
 
 When a remote machine is selected, Settings tabs label their target. Pi packages, PI WEB plugin enablement, session daemon toggles, external file access, and upload defaults target the selected machine. Gateway/server settings such as host, port, allowed hosts, registered machines/tokens, and keyboard shortcuts stay local to the gateway/browser.
 
-Read more: [Fleet and machines guide](https://pi-web.dev/machines)
+Read more: [Fleet and machines guide](https://omp-web.dev/machines)
 
 ## Plugins
 
@@ -111,26 +111,26 @@ Pi packages are managed separately through Pi's package manager or **Settings â†
 
 After installing, updating, or removing a Pi package, type `/reload` in each idle PI WEB session on that machine to refresh Pi runtime resources such as extensions, skills, prompt templates, themes, and context/system prompt files. Reload the browser page separately for newly discovered or changed PI WEB plugins.
 
-Read more: [Plugin API](https://pi-web.dev/plugins)
+Read more: [Plugin API](https://omp-web.dev/plugins)
 
 ## Configuration
 
 Global config lives at:
 
 ```text
-$PI_WEB_CONFIG
-~/.config/pi-web/config.json
+$OMP_WEB_CONFIG
+~/.config/omp-web/config.json
 ```
 
 Project-local PI WEB config lives at:
 
 ```text
-<project>/.pi-web/config.json
+<project>/.omp-web/config.json
 ```
 
 Common configuration includes host/port, path access, uploads, PI WEB plugin enablement, shortcuts, and session daemon options. In Settings, machine-affecting config targets the selected machine; gateway host/port/allowed-hosts, remote machine registration, tokens, and keyboard shortcuts stay local.
 
-Read more: [Configuration reference](https://pi-web.dev/config)
+Read more: [Configuration reference](https://omp-web.dev/config)
 
 ## Development
 
@@ -169,13 +169,13 @@ It is not a sandbox, permission system, or multi-tenant platform. Do not expose 
 
 ## Documentation
 
-- [Website](https://pi-web.dev/)
-- [Install](https://pi-web.dev/install)
-- [Remote-first development](https://pi-web.dev/remote-first)
-- [Machines / fleet](https://pi-web.dev/machines)
-- [Configuration](https://pi-web.dev/config)
-- [Plugins](https://pi-web.dev/plugins)
-- [FAQ](https://pi-web.dev/faq)
+- [Website](https://omp-web.dev/)
+- [Install](https://omp-web.dev/install)
+- [Remote-first development](https://omp-web.dev/remote-first)
+- [Machines / fleet](https://omp-web.dev/machines)
+- [Configuration](https://omp-web.dev/config)
+- [Plugins](https://omp-web.dev/plugins)
+- [FAQ](https://omp-web.dev/faq)
 
 ## License
 

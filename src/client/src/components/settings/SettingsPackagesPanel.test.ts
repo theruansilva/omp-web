@@ -6,7 +6,7 @@ import type { SettingsNotice } from "./SettingsPanelFrame";
 import type { PiPackageManagementSupport, PiPackageTargetContext } from "./piPackageSettings";
 
 const remoteTarget: PiPackageTargetContext = { id: "lab-mac", name: "Lab Mac", kind: "remote" };
-const unsupportedMessage = "Pi package management is not available on Lab Mac. Update and restart Pi-Web on that machine, then try again.";
+const unsupportedMessage = "Pi package management is not available on Lab Mac. Update and restart Omp-Web on that machine, then try again.";
 
 describe("settings-packages-panel layout", () => {
   it("suppresses package controls and trust warnings when package management is unsupported", () => {

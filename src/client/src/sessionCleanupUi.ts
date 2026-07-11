@@ -104,7 +104,7 @@ export function sessionCleanupConfirmationMessage(preview: Pick<SessionCleanupPr
 }
 
 export function sessionCleanupUnavailableMessage(machineName: string | undefined): string {
-  return `Update and restart Pi-Web on ${machineName ?? "this machine"} to clean up sessions.`;
+  return `Update and restart Omp-Web on ${machineName ?? "this machine"} to clean up sessions.`;
 }
 
 function parseDayThreshold(value: string, label: string): number | string {

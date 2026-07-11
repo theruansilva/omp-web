@@ -17,9 +17,9 @@ export interface UnstableRuntimeCapabilities {
 }
 
 export interface UnstablePluginRuntimeContext {
-  piWebUnstable?: UnstableRuntimeCapabilities;
+  ompWebUnstable?: UnstableRuntimeCapabilities;
 }
 
 export interface UnstableWorkspacePanelContext {
-  piWebUnstable?: Pick<UnstableRuntimeCapabilities, "terminalCommandRuns">;
+  ompWebUnstable?: Pick<UnstableRuntimeCapabilities, "terminalCommandRuns">;
 }

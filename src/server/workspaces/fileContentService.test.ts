@@ -10,7 +10,7 @@ import { readWorkspaceImagePreview } from "./imagePreviewService.js";
 const roots: string[] = [];
 
 async function tempWorkspace(): Promise<string> {
-  const root = await mkdtemp(join(tmpdir(), "pi-web-file-content-"));
+  const root = await mkdtemp(join(tmpdir(), "omp-web-file-content-"));
   roots.push(root);
   return root;
 }
@@ -191,7 +191,7 @@ describe("writeWorkspaceFile", () => {
   it("prevents writing through symlinks that escape the workspace", async () => {
     const root = await tempWorkspace();
     await mkdir(join(root, "subdir"), { recursive: true });
-    const outsideDir = await mkdtemp(join(tmpdir(), "pi-web-outside-"));
+    const outsideDir = await mkdtemp(join(tmpdir(), "omp-web-outside-"));
     roots.push(outsideDir);
     await symlink(outsideDir, join(root, "subdir", "escape"), "junction");
 
@@ -242,7 +242,7 @@ describe("deleteWorkspaceFile", () => {
 
   it("deletes a symlink itself, not its target", async () => {
     const root = await tempWorkspace();
-    const outsideDir = await mkdtemp(join(tmpdir(), "pi-web-outside-delete-"));
+    const outsideDir = await mkdtemp(join(tmpdir(), "omp-web-outside-delete-"));
     roots.push(outsideDir);
     await writeFile(join(outsideDir, "real.txt"), "real content");
     // Create a symlink inside the workspace pointing outside
@@ -261,7 +261,7 @@ describe("deleteWorkspaceFile", () => {
     const root = await tempWorkspace();
     await mkdir(join(root, "subdir"), { recursive: true });
     // A real file living outside the workspace that must not be deletable.
-    const outsideDir = await mkdtemp(join(tmpdir(), "pi-web-outside-delete-parent-"));
+    const outsideDir = await mkdtemp(join(tmpdir(), "omp-web-outside-delete-parent-"));
     roots.push(outsideDir);
     await writeFile(join(outsideDir, "victim.txt"), "important");
     // A symlinked parent directory inside the workspace pointing outside.
@@ -371,7 +371,7 @@ describe("moveWorkspaceFile", () => {
     await mkdir(join(root, "subdir"), { recursive: true });
     await writeFile(join(root, "subdir", "file.txt"), "data");
     // Create a symlink inside the workspace that points outside
-    const outsideDir = await mkdtemp(join(tmpdir(), "pi-web-move-outside-"));
+    const outsideDir = await mkdtemp(join(tmpdir(), "omp-web-move-outside-"));
     roots.push(outsideDir);
     await symlink(outsideDir, join(root, "subdir", "escape"), "junction");
 

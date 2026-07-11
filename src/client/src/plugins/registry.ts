@@ -1,5 +1,5 @@
 import { html, svg } from "lit";
-import type { PiWebPluginRegistration, PluginAction, PluginRuntimeContext, QualifiedContributionId, QualifiedPluginAction, QualifiedThemeContribution, QualifiedThemePairContribution, QualifiedWorkspaceLabelContribution, QualifiedWorkspacePanelContribution, ThemeContribution, ThemePairContribution, WorkspaceLabelContext, WorkspaceLabelContribution, WorkspaceLabelItem, WorkspacePanelContext, WorkspacePanelContribution } from "./types";
+import type { OmpWebPluginRegistration, PluginAction, PluginRuntimeContext, QualifiedContributionId, QualifiedPluginAction, QualifiedThemeContribution, QualifiedThemePairContribution, QualifiedWorkspaceLabelContribution, QualifiedWorkspacePanelContribution, ThemeContribution, ThemePairContribution, WorkspaceLabelContext, WorkspaceLabelContribution, WorkspaceLabelItem, WorkspacePanelContext, WorkspacePanelContribution } from "./types";
 
 const idPattern = /^[a-z][a-z0-9.-]*$/u;
 const localIdPattern = /^[a-z][a-z0-9.-]*$/u;
@@ -26,7 +26,7 @@ export class PluginRegistry {
   private readonly remoteMachineSpecificPluginIds = new Map<string, Set<string>>();
   private readonly contributionIds = new Set<QualifiedContributionId>();
 
-  register(registration: PiWebPluginRegistration): void {
+  register(registration: OmpWebPluginRegistration): void {
     const { id, plugin } = registration;
     this.validatePluginId(id);
     const machineSpecific = this.parseMachineSpecific(id, registration.machineSpecific);

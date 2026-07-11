@@ -8,7 +8,7 @@
       name="description"
       content="Troubleshoot PI WEB, the web UI for Pi Coding Agent, including install, PATH, services, remote access, and runtime issues."
     />
-    <link rel="canonical" href="https://pi-web.dev/faq" />
+    <link rel="canonical" href="https://omp-web.dev/faq" />
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="PI WEB" />
     <meta property="og:title" content="PI WEB FAQ — Pi web UI troubleshooting" />
@@ -16,8 +16,8 @@
       property="og:description"
       content="Fix common PI WEB install, service, PATH, remote access, and session issues."
     />
-    <meta property="og:url" content="https://pi-web.dev/faq" />
-    <meta property="og:image" content="https://pi-web.dev/assets/pi-web-banner.png" />
+    <meta property="og:url" content="https://omp-web.dev/faq" />
+    <meta property="og:image" content="https://omp-web.dev/assets/omp-web-banner.png" />
     <meta property="og:image:alt" content="PI WEB browser UI for persistent Pi Coding Agent sessions" />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="PI WEB FAQ — Pi web UI troubleshooting" />
@@ -25,11 +25,11 @@
       name="twitter:description"
       content="Fix common PI WEB install, service, PATH, remote access, and session issues."
     />
-    <meta name="twitter:image" content="https://pi-web.dev/assets/pi-web-banner.png" />
+    <meta name="twitter:image" content="https://omp-web.dev/assets/omp-web-banner.png" />
     <link rel="icon" type="image/svg+xml" href="assets/favicon.svg" />
     <script>
       (() => {
-        const theme = window.localStorage.getItem("pi-web-theme");
+        const theme = window.localStorage.getItem("omp-web-theme");
         if (theme === "light" || theme === "dark") document.documentElement.dataset.theme = theme;
       })();
     </script>
@@ -55,7 +55,7 @@
             <a href="faq" aria-current="page">FAQ</a>
           </div>
           <div class="nav-actions">
-            <a class="github-link" href="https://github.com/ProgmRuanSilva/pi-web" aria-label="PI WEB on GitHub">
+            <a class="github-link" href="https://github.com/ProgmRuanSilva/omp-web" aria-label="PI WEB on GitHub">
               <svg class="github-icon" viewBox="0 0 16 16" aria-hidden="true">
                 <path
                   fill="currentColor"
@@ -90,7 +90,7 @@
           <aside class="toc" aria-label="FAQ contents">
             <strong>Questions</strong>
             <a href="#is-this-linux-only">What platforms are supported?</a>
-            <a href="#is-pi-web-a-web-ui">Is PI WEB a Pi web UI?</a>
+            <a href="#is-omp-web-a-web-ui">Is PI WEB a Pi web UI?</a>
             <a href="#tools-are-not-found">Tools are failing / node not found</a>
             <a href="#doctor-fails">What does doctor check?</a>
             <a href="#nvm-fnm-asdf">nvm, fnm, or asdf issues</a>
@@ -108,17 +108,17 @@
             <article id="is-this-linux-only" class="faq-item">
               <h2>What platforms are supported?</h2>
               <p>
-                PI WEB can run anywhere its runtime dependencies work. The automatic <code>pi-web install</code> command uses
+                PI WEB can run anywhere its runtime dependencies work. The automatic <code>omp-web install</code> command uses
                 a supported per-user service manager when one is available.
               </p>
               <ul>
-                <li><strong>User-service install:</strong> use <code>npm install -g @ProgmRuanSilva/pi-web</code> and <code>pi-web install</code>.</li>
+                <li><strong>User-service install:</strong> use <code>npm install -g @ProgmRuanSilva/omp-web</code> and <code>omp-web install</code>.</li>
                 <li><strong>WSL:</strong> if your distro has systemd enabled, the installer may work; otherwise use the manual run path.</li>
                 <li><strong>Native Windows:</strong> outside WSL is not the recommended path today.</li>
               </ul>
             </article>
 
-            <article id="is-pi-web-a-web-ui" class="faq-item">
+            <article id="is-omp-web-a-web-ui" class="faq-item">
               <h2>Is PI WEB a Pi web UI?</h2>
               <p>
                 Yes. PI WEB is a web UI for Pi Coding Agent that runs and supervises persistent sessions from a browser.
@@ -139,7 +139,7 @@
                   <strong>Run diagnostics</strong>
                   <button class="copy-button" data-copy="#doctor-command">Copy</button>
                 </div>
-                <pre id="doctor-command"><code><span class="prompt">$</span> pi-web doctor</code></pre>
+                <pre id="doctor-command"><code><span class="prompt">$</span> omp-web doctor</code></pre>
               </div>
               <ul>
                 <li><strong>bash:</strong> put PATH setup in <code>~/.bash_profile</code> or <code>~/.profile</code>. If <code>~/.bash_profile</code> exists, source <code>~/.profile</code> from it if needed.</li>
@@ -154,7 +154,7 @@
             </article>
 
             <article id="doctor-fails" class="faq-item">
-              <h2>What does <code>pi-web doctor</code> check?</h2>
+              <h2>What does <code>omp-web doctor</code> check?</h2>
               <p>
                 It checks whether the service shell and native service environment can find Node 22+, npm, Pi, and the Pi
                 Web binaries. It also prints installed and running PI WEB versions when available, reports optional ripgrep
@@ -178,7 +178,7 @@
                 <li>Prefer version-manager shims when available; for <code>mise</code>, use shims or enable its shim setup rather than relying only on shell activation.</li>
                 <li>Move any required version-manager initialization to your login shell file.</li>
                 <li>Make sure <code>node --version</code> is at least <code>v22</code> from <code>bash -lc</code>, <code>zsh -lc</code>, or your detected shell.</li>
-                <li>Run <code>pi-web doctor</code> again after changing shell files.</li>
+                <li>Run <code>omp-web doctor</code> again after changing shell files.</li>
               </ul>
             </article>
 
@@ -193,17 +193,17 @@
                   <strong>Manual run</strong>
                   <button class="copy-button" data-copy="#manual-faq">Copy</button>
                 </div>
-                <pre id="manual-faq"><code><span class="prompt">$</span> pi-web-sessiond
+                <pre id="manual-faq"><code><span class="prompt">$</span> omp-web-sessiond
 <span class="comment"># in another terminal</span>
-<span class="prompt">$</span> PI_WEB_PORT=8504 pi-web-server</code></pre>
+<span class="prompt">$</span> OMP_WEB_PORT=8504 omp-web-server</code></pre>
               </div>
             </article>
 
             <article id="cannot-open" class="faq-item">
               <h2>I cannot open the web UI</h2>
               <ul>
-                <li>Check <code>pi-web status</code>.</li>
-                <li>Check logs with <code>pi-web logs</code>.</li>
+                <li>Check <code>omp-web status</code>.</li>
+                <li>Check logs with <code>omp-web logs</code>.</li>
                 <li>Make sure port <code>8504</code> is not already in use.</li>
                 <li>On a remote server, use an SSH tunnel: <code>ssh -L 8504:127.0.0.1:8504 user@server</code>.</li>
               </ul>
@@ -259,9 +259,9 @@
             <article id="plugins" class="faq-item">
               <h2>Can I use local plugins with production PI WEB?</h2>
               <p>
-                Yes. Put trusted browser-side plugins in <code>~/.pi-web/plugins/&lt;plugin-id&gt;/</code>, or symlink a
-                development folder there. Reload the browser tab after edits. If <code>PI_WEB_DATA_DIR</code> is set, use
-                <code>$PI_WEB_DATA_DIR/plugins</code> instead.
+                Yes. Put trusted browser-side plugins in <code>~/.omp-web/plugins/&lt;plugin-id&gt;/</code>, or symlink a
+                development folder there. Reload the browser tab after edits. If <code>OMP_WEB_DATA_DIR</code> is set, use
+                <code>$OMP_WEB_DATA_DIR/plugins</code> instead.
               </p>
               <p><a href="plugins">Read the plugin guide →</a></p>
             </article>
@@ -277,8 +277,8 @@
                   <strong>Session daemon logs</strong>
                   <button class="copy-button" data-copy="#session-logs">Copy</button>
                 </div>
-                <pre id="session-logs"><code><span class="prompt">$</span> pi-web status
-<span class="prompt">$</span> pi-web logs</code></pre>
+                <pre id="session-logs"><code><span class="prompt">$</span> omp-web status
+<span class="prompt">$</span> omp-web logs</code></pre>
               </div>
             </article>
 
@@ -290,7 +290,7 @@
                   <strong>Logs</strong>
                   <button class="copy-button" data-copy="#logs-command">Copy</button>
                 </div>
-                <pre id="logs-command"><code><span class="prompt">$</span> pi-web logs</code></pre>
+                <pre id="logs-command"><code><span class="prompt">$</span> omp-web logs</code></pre>
               </div>
             </article>
           </div>
@@ -308,7 +308,7 @@
           <a href="install">Install</a>
           <a href="config">Config</a>
           <a href="plugins">Plugins</a>
-          <a href="https://github.com/ProgmRuanSilva/pi-web/issues">Issues</a>
+          <a href="https://github.com/ProgmRuanSilva/omp-web/issues">Issues</a>
         </div>
       </div>
     </footer>

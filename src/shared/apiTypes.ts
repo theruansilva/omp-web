@@ -1,7 +1,7 @@
 export type MachineKind = "local" | "remote";
 export type MachineStatus = "unknown" | "online" | "offline" | "error";
 
-export const PI_WEB_CAPABILITIES = {
+export const OMP_WEB_CAPABILITIES = {
   sessionsDeleteArchived: "sessions.deleteArchived",
   sessionsBulkMutations: "sessions.bulkMutations",
   sessionsCleanup: "sessions.cleanup",
@@ -12,7 +12,7 @@ export const PI_WEB_CAPABILITIES = {
   selectedMachineSettings: "settings.selectedMachine",
 } as const;
 
-export type PiWebCapability = typeof PI_WEB_CAPABILITIES[keyof typeof PI_WEB_CAPABILITIES];
+export type OmpWebCapability = typeof OMP_WEB_CAPABILITIES[keyof typeof OMP_WEB_CAPABILITIES];
 
 export interface Machine {
   id: string;
@@ -30,8 +30,8 @@ export interface MachineHealth {
   ok: boolean;
   checkedAt: string;
   status?: MachineStatus;
-  web?: PiWebComponentStatus;
-  sessiond?: PiWebComponentStatus;
+  web?: OmpWebComponentStatus;
+  sessiond?: OmpWebComponentStatus;
   error?: string;
 }
 
@@ -41,39 +41,39 @@ export interface MachineRuntime {
   checkedAt: string;
   packageName?: string;
   generatedAt?: string;
-  components?: PiWebRuntimeResponse["components"];
-  capabilities?: PiWebCapability[];
+  components?: OmpWebRuntimeResponse["components"];
+  capabilities?: OmpWebCapability[];
   error?: string;
 }
 
-export type PiWebShortcutConfig = Record<string, string | null>;
-export type PiWebPluginSettings = Record<string, unknown>;
-export type PiWebPluginConfigMap = Record<string, PiWebPluginConfig>;
+export type OmpWebShortcutConfig = Record<string, string | null>;
+export type OmpWebPluginSettings = Record<string, unknown>;
+export type OmpWebPluginConfigMap = Record<string, OmpWebPluginConfig>;
 
-export interface PiWebPluginConfig {
+export interface OmpWebPluginConfig {
   enabled?: boolean;
-  settings?: PiWebPluginSettings;
+  settings?: OmpWebPluginSettings;
   [key: string]: unknown;
 }
 
-export interface PiWebPathAccessConfig {
+export interface OmpWebPathAccessConfig {
   allowedPaths?: string[];
 }
 
-export interface PiWebUploadsConfig {
+export interface OmpWebUploadsConfig {
   defaultFolder?: string;
 }
 
-export interface PiWebConfigValues {
+export interface OmpWebConfigValues {
   host?: string;
   port?: number;
   allowedHosts?: string[] | true;
-  shortcuts?: PiWebShortcutConfig;
-  plugins?: PiWebPluginConfigMap;
+  shortcuts?: OmpWebShortcutConfig;
+  plugins?: OmpWebPluginConfigMap;
   /** External filesystem roots PI WEB may expose outside a workspace. */
-  pathAccess?: PiWebPathAccessConfig;
+  pathAccess?: OmpWebPathAccessConfig;
   /** Workspace-relative defaults for manual file uploads. */
-  uploads?: PiWebUploadsConfig;
+  uploads?: OmpWebUploadsConfig;
   /** Maximum accepted HTTP request body size in bytes (uploads/attachments). */
   maxUploadBytes?: number;
   /** When true, LLMs can start new sessions via the spawn_session tool. */
@@ -87,19 +87,19 @@ export interface PiWebConfigValues {
   subsessions?: boolean;
 }
 
-export type PiWebPluginScope = "bundled" | "local" | "user" | "project";
+export type OmpWebPluginScope = "bundled" | "local" | "user" | "project";
 
-export interface PiWebPluginInfo {
+export interface OmpWebPluginInfo {
   id: string;
   module: string;
   source: string;
-  scope: PiWebPluginScope;
+  scope: OmpWebPluginScope;
   machineSpecific: boolean;
   enabled: boolean;
 }
 
-export interface PiWebPluginsResponse {
-  plugins: PiWebPluginInfo[];
+export interface OmpWebPluginsResponse {
+  plugins: OmpWebPluginInfo[];
 }
 
 export type PiPackageScope = "user" | "project";
@@ -139,7 +139,7 @@ export interface PiPackageMutationResponse extends PiPackagesResponse {
   removed?: boolean;
 }
 
-export interface PiWebConfigEnvOverrides {
+export interface OmpWebConfigEnvOverrides {
   host: boolean;
   port: boolean;
   allowedHosts: boolean;
@@ -147,12 +147,12 @@ export interface PiWebConfigEnvOverrides {
   subsessions: boolean;
 }
 
-export interface PiWebConfigResponse {
+export interface OmpWebConfigResponse {
   path: string;
   exists: boolean;
-  config: PiWebConfigValues;
-  effectiveConfig: PiWebConfigValues;
-  envOverrides: PiWebConfigEnvOverrides;
+  config: OmpWebConfigValues;
+  effectiveConfig: OmpWebConfigValues;
+  envOverrides: OmpWebConfigEnvOverrides;
 }
 
 export interface Project {
@@ -163,7 +163,7 @@ export interface Project {
 }
 
 export interface WorkspaceEffectiveConfig {
-  uploads?: PiWebUploadsConfig;
+  uploads?: OmpWebUploadsConfig;
 }
 
 export interface Workspace {
@@ -555,41 +555,41 @@ export interface TerminalCommandRunFilter {
   metadata?: Record<string, string>;
 }
 
-export type PiWebServiceComponent = "web" | "sessiond";
-export type PiWebStatusSeverity = "info" | "warning" | "error";
-export type PiWebInstallationKind = "pi-package" | "npm-global" | "local" | "docker" | "unknown";
-export type PiWebDockerMode = "runtime" | "dev";
+export type OmpWebServiceComponent = "web" | "sessiond";
+export type OmpWebStatusSeverity = "info" | "warning" | "error";
+export type OmpWebInstallationKind = "pi-package" | "npm-global" | "local" | "docker" | "unknown";
+export type OmpWebDockerMode = "runtime" | "dev";
 
-export interface PiWebInstallationInfo {
-  kind: PiWebInstallationKind;
+export interface OmpWebInstallationInfo {
+  kind: OmpWebInstallationKind;
   path?: string;
   source?: string;
   scope?: "user" | "project";
   npmRoot?: string;
-  dockerMode?: PiWebDockerMode;
+  dockerMode?: OmpWebDockerMode;
 }
 
-export interface PiWebComponentStatus {
-  component: PiWebServiceComponent;
+export interface OmpWebComponentStatus {
+  component: OmpWebServiceComponent;
   label: string;
   runtimeVersion?: string;
   installedVersion?: string;
   stale: boolean;
   available: boolean;
-  installation?: PiWebInstallationInfo;
+  installation?: OmpWebInstallationInfo;
   error?: string;
 }
 
-export interface PiWebRuntimeComponent {
-  component: PiWebServiceComponent;
+export interface OmpWebRuntimeComponent {
+  component: OmpWebServiceComponent;
   label: string;
   runtimeVersion?: string;
   available: boolean;
-  capabilities: PiWebCapability[];
+  capabilities: OmpWebCapability[];
   error?: string;
 }
 
-export interface PiWebReleaseStatus {
+export interface OmpWebReleaseStatus {
   packageName: string;
   latestVersion?: string;
   updateAvailable: boolean;
@@ -598,35 +598,35 @@ export interface PiWebReleaseStatus {
   error?: string;
 }
 
-export interface PiWebStatusMessage {
+export interface OmpWebStatusMessage {
   id: string;
-  severity: PiWebStatusSeverity;
+  severity: OmpWebStatusSeverity;
   title: string;
   body: string;
   command?: string;
 }
 
-export interface PiWebVersionResponse {
+export interface OmpWebVersionResponse {
   packageName: string;
   generatedAt: string;
   components: {
-    web: PiWebComponentStatus;
-    sessiond: PiWebComponentStatus;
+    web: OmpWebComponentStatus;
+    sessiond: OmpWebComponentStatus;
   };
 }
 
-export interface PiWebRuntimeResponse {
+export interface OmpWebRuntimeResponse {
   packageName: string;
   generatedAt: string;
   components: {
-    web: PiWebRuntimeComponent;
-    sessiond: PiWebRuntimeComponent;
+    web: OmpWebRuntimeComponent;
+    sessiond: OmpWebRuntimeComponent;
   };
-  capabilities: PiWebCapability[];
+  capabilities: OmpWebCapability[];
 }
 
-export interface PiWebStatusResponse extends PiWebVersionResponse {
-  release: PiWebReleaseStatus;
+export interface OmpWebStatusResponse extends OmpWebVersionResponse {
+  release: OmpWebReleaseStatus;
   commands: {
     update?: string;
     restart?: string;
@@ -634,7 +634,7 @@ export interface PiWebStatusResponse extends PiWebVersionResponse {
     restartSessiond?: string;
     status?: string;
   };
-  messages: PiWebStatusMessage[];
+  messages: OmpWebStatusMessage[];
 }
 
 export type TerminalUiEvent =

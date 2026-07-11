@@ -36,8 +36,8 @@ export class SessionList extends LitElement implements KeyboardNavigableSection 
   @property({ type: Boolean }) canDeleteArchived = false;
   @property({ type: Boolean }) canReload = false;
   @property({ type: Boolean }) canCleanup = false;
-  @property({ type: String }) archivedDeleteUnavailableMessage = "Update and restart Pi-Web on this machine to delete archived sessions.";
-  @property({ type: String }) cleanupUnavailableMessage = "Update and restart Pi-Web on this machine to clean up sessions.";
+  @property({ type: String }) archivedDeleteUnavailableMessage = "Update and restart Omp-Web on this machine to delete archived sessions.";
+  @property({ type: String }) cleanupUnavailableMessage = "Update and restart Omp-Web on this machine to clean up sessions.";
   @property({ type: Boolean, reflect: true }) collapsible = false;
   @property({ type: Boolean, reflect: true }) collapsed = false;
   @property({ attribute: false }) onSelect?: (session: SessionInfo) => void;

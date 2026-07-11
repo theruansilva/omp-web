@@ -17,11 +17,11 @@ import { WorkspaceService } from "./workspaces/workspaceService.js";
 import { sessiondSocketPath } from "../sessiond/config.js";
 import { TerminalService } from "./terminals/terminalService.js";
 import { registerTerminalRoutes } from "./terminals/terminalRoutes.js";
-import { getPiWebRuntimeComponent } from "./piWebStatus.js";
+import { getOmpWebRuntimeComponent } from "./ompWebStatus.js";
 import { SESSIOND_RUNTIME_CAPABILITIES } from "../shared/capabilities.js";
-import { effectivePiWebConfig, maxUploadBytes, spawnSessionsEnabled, subsessionsEnabled } from "../config.js";
+import { effectiveOmpWebConfig, maxUploadBytes, spawnSessionsEnabled, subsessionsEnabled } from "../config.js";
 
-const { config } = effectivePiWebConfig();
+const { config } = effectiveOmpWebConfig();
 const app = Fastify({ logger: true, bodyLimit: maxUploadBytes(process.env, config) });
 await app.register(fastifyWebsocket);
 
@@ -46,7 +46,7 @@ registerSessionRoutes(app, sessions, eventHub);
 registerTerminalRoutes(app, terminals);
 
 app.get("/health", () => {
-  const runtime = getPiWebRuntimeComponent("sessiond", SESSIOND_RUNTIME_CAPABILITIES);
+  const runtime = getOmpWebRuntimeComponent("sessiond", SESSIOND_RUNTIME_CAPABILITIES);
   return {
     ok: true,
     activeSessions: sessions.activeCount(),
@@ -61,7 +61,7 @@ app.get("/health", () => {
   };
 });
 
-app.get("/runtime", () => getPiWebRuntimeComponent("sessiond", SESSIOND_RUNTIME_CAPABILITIES));
+app.get("/runtime", () => getOmpWebRuntimeComponent("sessiond", SESSIOND_RUNTIME_CAPABILITIES));
 
 let shuttingDown = false;
 async function shutdown(signal: NodeJS.Signals): Promise<void> {
@@ -77,9 +77,9 @@ async function shutdown(signal: NodeJS.Signals): Promise<void> {
 process.once("SIGINT", (signal) => { void shutdown(signal); });
 process.once("SIGTERM", (signal) => { void shutdown(signal); });
 
-const portValue = process.env["PI_WEB_SESSIOND_PORT"];
+const portValue = process.env["OMP_WEB_SESSIOND_PORT"];
 const port = portValue !== undefined && portValue !== "" ? Number(portValue) : undefined;
-const host = process.env["PI_WEB_SESSIOND_HOST"] ?? "127.0.0.1";
+const host = process.env["OMP_WEB_SESSIOND_HOST"] ?? "127.0.0.1";
 
 if (port !== undefined) {
   await app.listen({ port, host });

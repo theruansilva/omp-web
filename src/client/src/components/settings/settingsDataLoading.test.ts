@@ -1,23 +1,23 @@
 import { describe, expect, it, vi } from "vitest";
-import type { PiPackagesResponse, PiWebConfigResponse, PiWebPluginsResponse } from "../../api";
+import type { PiPackagesResponse, OmpWebConfigResponse, OmpWebPluginsResponse } from "../../api";
 import { loadGatewaySettingsData, loadPiPackagesData } from "./settingsDataLoading";
 import type { PiPackageManagementSupport } from "./piPackageSettings";
 
-const configResponse: PiWebConfigResponse = {
-  path: "/home/test/.config/pi-web/config.json",
+const configResponse: OmpWebConfigResponse = {
+  path: "/home/test/.config/omp-web/config.json",
   exists: true,
   config: { host: "127.0.0.1" },
   effectiveConfig: { host: "127.0.0.1" },
   envOverrides: { host: false, port: false, allowedHosts: false, spawnSessions: false, subsessions: false },
 };
 
-const pluginsResponse: PiWebPluginsResponse = { plugins: [] };
+const pluginsResponse: OmpWebPluginsResponse = { plugins: [] };
 const packagesResponse: PiPackagesResponse = { packages: [{ source: "npm:@acme/tools", scope: "user", filtered: false }] };
 
 const remoteTarget = { id: "remote-a", name: "Lab Mac", kind: "remote" } as const;
 const unsupportedPackageManagement: PiPackageManagementSupport = {
   state: "unsupported",
-  message: "Pi package management is not available on Lab Mac. Update and restart Pi-Web on that machine, then try again.",
+  message: "Pi package management is not available on Lab Mac. Update and restart Omp-Web on that machine, then try again.",
 };
 
 describe("settings data loading helpers", () => {

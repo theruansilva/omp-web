@@ -281,9 +281,9 @@ interface CreateAgentRuntimeOptions {
  initialModel?: AgentModel;
 }
 
-type PiWebCreateAgentSessionRuntimeFactory = (options: CreateAgentRuntimeOptions & { sessionStartEvent?: unknown }) => Promise<PiSessionRuntime>;
+type OmpWebCreateAgentSessionRuntimeFactory = (options: CreateAgentRuntimeOptions & { sessionStartEvent?: unknown }) => Promise<PiSessionRuntime>;
 
-type CreateAgentRuntime = (createRuntime: PiWebCreateAgentSessionRuntimeFactory, options: CreateAgentRuntimeOptions) => Promise<PiSessionRuntime>;
+type CreateAgentRuntime = (createRuntime: OmpWebCreateAgentSessionRuntimeFactory, options: CreateAgentRuntimeOptions) => Promise<PiSessionRuntime>;
 
 class DefaultPiAgentSession implements PiAgentSession {
  private _isBashRunning = false;
@@ -483,13 +483,13 @@ class DefaultPiSessionRuntime implements PiSessionRuntime {
  }
 }
 
-function defaultCreateAgentRuntime(createRuntime: PiWebCreateAgentSessionRuntimeFactory, options: CreateAgentRuntimeOptions): Promise<PiSessionRuntime> {
+function defaultCreateAgentRuntime(createRuntime: OmpWebCreateAgentSessionRuntimeFactory, options: CreateAgentRuntimeOptions): Promise<PiSessionRuntime> {
  return createRuntime(options);
 }
 
 type SpawnSessionFn = (input: SpawnSessionInvocation) => Promise<SpawnSessionResult>;
 
-function createDefaultRuntimeFactory(authStorage: AuthStorage, modelRegistry: ModelRegistryInstance, schedulePromptService: SchedulePromptService, spawn?: SpawnSessionFn, subsessions?: SubsessionToolDeps): PiWebCreateAgentSessionRuntimeFactory {
+function createDefaultRuntimeFactory(authStorage: AuthStorage, modelRegistry: ModelRegistryInstance, schedulePromptService: SchedulePromptService, spawn?: SpawnSessionFn, subsessions?: SubsessionToolDeps): OmpWebCreateAgentSessionRuntimeFactory {
  let pendingInitialModel: AgentModel | undefined;
  return async ({ cwd, agentDir, sessionManager, sessionStartEvent, initialModel }) => {
   if (!(sessionManager instanceof SessionManager)) throw new Error("Default runtime creation requires an SDK SessionManager");
@@ -501,7 +501,7 @@ function createDefaultRuntimeFactory(authStorage: AuthStorage, modelRegistry: Mo
   let scheduleScheduler!: CronScheduler;
   const customTools = [
    createSchedulePromptToolDefinition(sessionId, () => scheduleStorage, () => scheduleScheduler),
-   createPiWebEditToolDefinition(cwd),
+   createOmpWebEditToolDefinition(cwd),
    ...(spawn === undefined ? [] : [createSpawnSessionToolDefinition(cwd, { spawn })] as unknown as import("@oh-my-pi/pi-coding-agent/extensibility/extensions/types").ToolDefinition[]),
    ...(subsessions === undefined ? [] : createSubsessionToolDefinitions(cwd, subsessions) as unknown as import("@oh-my-pi/pi-coding-agent/extensibility/extensions/types").ToolDefinition[]),
   ];
@@ -527,7 +527,7 @@ function createDefaultRuntimeFactory(authStorage: AuthStorage, modelRegistry: Mo
  };
 }
 
-function createPiWebEditToolDefinition(cwd: string): ToolDefinition {
+function createOmpWebEditToolDefinition(cwd: string): ToolDefinition {
  const editTool = new EditTool({
   cwd,
   hasUI: true,
@@ -557,7 +557,7 @@ export interface PiSessionServiceDependencies {
  archiveStore?: SessionArchiveRepository;
  agentDir?: string;
  sessionManager?: PiSessionManagerGateway;
- createRuntime?: PiWebCreateAgentSessionRuntimeFactory;
+ createRuntime?: OmpWebCreateAgentSessionRuntimeFactory;
  createAgentRuntime?: CreateAgentRuntime;
  modelRegistry?: ModelRegistryInstance;
  heartbeatIntervalMs?: number;
@@ -608,7 +608,7 @@ export class PiSessionService {
  private readonly archiveStore: SessionArchiveRepository;
  private readonly agentDir: string;
  private readonly sessionManager: PiSessionManagerGateway;
- private readonly createRuntime: PiWebCreateAgentSessionRuntimeFactory;
+ private readonly createRuntime: OmpWebCreateAgentSessionRuntimeFactory;
  private readonly createAgentRuntime: CreateAgentRuntime;
  private readonly modelRegistry: ModelRegistryInstance;
  private readonly workspaceActivity: Pick<WorkspaceActivityService, "applySessionStatus" | "applySessionActivity" | "removeSession" | "reconcileSessionActivity"> | undefined;
@@ -641,7 +641,7 @@ export class PiSessionService {
       read: (parentSessionId, sessionId, query, parentSessionFile) => this.readSubsession(parentSessionId, sessionId, query, parentSessionFile),
      },
     )
-    : undefined as unknown as PiWebCreateAgentSessionRuntimeFactory
+    : undefined as unknown as OmpWebCreateAgentSessionRuntimeFactory
    );
   this.createAgentRuntime = deps.createAgentRuntime ?? defaultCreateAgentRuntime;
   this.workspaceActivity = deps.workspaceActivity;
@@ -2509,10 +2509,10 @@ function historyMessages(session: PiAgentSession): unknown[] {
 }
 
 /** custom entry type used to persist parent -> child subsession links outside LLM context. */
-const SUBSESSION_LINK_CUSTOM_TYPE = "pi-web.subsession.link";
+const SUBSESSION_LINK_CUSTOM_TYPE = "omp-web.subsession.link";
 
 /** custom entry type used to mark a child as created by spawn_subsession. */
-const SUBSESSION_CHILD_LINK_CUSTOM_TYPE = "pi-web.subsession.spawned";
+const SUBSESSION_CHILD_LINK_CUSTOM_TYPE = "omp-web.subsession.spawned";
 
 /** customType marking a parent-facing subsession-completion notice. */
 const SUBSESSION_NOTIFICATION_CUSTOM_TYPE = "subsession.completion";

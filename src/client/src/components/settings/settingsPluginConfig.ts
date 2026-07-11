@@ -1,6 +1,6 @@
-import type { PiWebConfigResponse, PiWebConfigValues } from "../../api";
+import type { OmpWebConfigResponse, OmpWebConfigValues } from "../../api";
 
-export function pluginEnabledConfigPatch(baseConfig: PiWebConfigValues, pluginId: string, enabled: boolean): PiWebConfigValues {
+export function pluginEnabledConfigPatch(baseConfig: OmpWebConfigValues, pluginId: string, enabled: boolean): OmpWebConfigValues {
   const currentPlugins = baseConfig.plugins ?? {};
   const currentPluginConfig = currentPlugins[pluginId] ?? {};
   return {
@@ -11,7 +11,7 @@ export function pluginEnabledConfigPatch(baseConfig: PiWebConfigValues, pluginId
   };
 }
 
-export function mergeSelectedMachinePluginConfig(base: PiWebConfigResponse, selectedMachine: PiWebConfigResponse): PiWebConfigResponse {
+export function mergeSelectedMachinePluginConfig(base: OmpWebConfigResponse, selectedMachine: OmpWebConfigResponse): OmpWebConfigResponse {
   return {
     ...base,
     config: mergePluginConfig(base.config, selectedMachine.config),
@@ -19,7 +19,7 @@ export function mergeSelectedMachinePluginConfig(base: PiWebConfigResponse, sele
   };
 }
 
-function mergePluginConfig(base: PiWebConfigValues, selectedMachine: PiWebConfigValues): PiWebConfigValues {
+function mergePluginConfig(base: OmpWebConfigValues, selectedMachine: OmpWebConfigValues): OmpWebConfigValues {
   if (selectedMachine.plugins === undefined) return base;
   return { ...base, plugins: selectedMachine.plugins };
 }

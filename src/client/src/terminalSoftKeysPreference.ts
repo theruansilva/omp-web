@@ -1,4 +1,4 @@
-export const TERMINAL_SOFT_KEYS_STORAGE_KEY = "pi-web.terminal.softKeys";
+export const TERMINAL_SOFT_KEYS_STORAGE_KEY = "omp-web.terminal.softKeys";
 export const TERMINAL_SOFT_KEYS_DEFAULT_ENVIRONMENT_MEDIA = "(pointer: coarse), (max-width: 760px)";
 
 export type TerminalSoftKeysStorage = Pick<Storage, "getItem" | "setItem">;

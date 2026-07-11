@@ -1,4 +1,4 @@
-# Relatório de Dependências e Estrutura do Projeto (`pi-web`)
+# Relatório de Dependências e Estrutura do Projeto (`omp-web`)
 
 ## 1. Dependências do `package.json`
 Após análise das dependências (tanto `dependencies` quanto `devDependencies`), o projeto se concentra em tecnologias em tempo real e de interface:
@@ -23,7 +23,7 @@ O repositório é um monorepo/workspace bem segregado:
 - `/src/client/`: Código do Frontend (UI, React/Lit, componentes web, gerenciamento de estado da UI).
 - `/src/server/`: Código do Backend (API Web, `sessiond`, orquestração de sessões do Pi, terminais em Node/Bun).
 - `/src/shared/`: Interfaces TypeScript e utilitários divididos entre o Client e o Server.
-- `/pi-web-plugins/`: Códigos baseados na arquitetura de plugins do Pi.
+- `/omp-web-plugins/`: Códigos baseados na arquitetura de plugins do Pi.
 - `/extensions/`: Comandos e extensões da CLI.
 - `/docs/`: Documentação geral (onde este e o outro relatório habitam).
 
@@ -36,5 +36,5 @@ Todo o "agendamento" atual é feito ad-hoc de forma efêmera e em memória, atra
 
 ## 5. Diretório de Tipos/Esquemas Compartilhados
 Sim, existe! A pasta central de contratos entre a API e a UI está em `/src/shared/`.
-- O principal arquivo de definições de interfaces de comunicação é o `src/shared/apiTypes.ts` (contém definições como `SessionInfo`, `MachineStatus`, `PiWebPluginConfig`, etc).
+- O principal arquivo de definições de interfaces de comunicação é o `src/shared/apiTypes.ts` (contém definições como `SessionInfo`, `MachineStatus`, `OmpWebPluginConfig`, etc).
 - Há também validações parciais que fazem uso do `typebox` e exports explícitos de enums e tipos que trafegam pelo websocket e endpoints HTTP.

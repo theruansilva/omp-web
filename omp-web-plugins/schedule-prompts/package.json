@@ -1,0 +1,9 @@
+{
+  "name": "@omp-web/schedule-prompts-plugin",
+  "private": true,
+  "ompWeb": {
+    "plugins": [
+      { "id": "schedule-prompts", "module": "omp-web-plugin.js" }
+    ]
+  }
+}

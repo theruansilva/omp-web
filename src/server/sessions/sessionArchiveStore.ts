@@ -39,7 +39,7 @@ export class SessionArchiveStore {
   private operationQueue: Promise<void> = Promise.resolve();
 
   constructor(
-    private readonly filePath = join(homedir(), ".pi-web", "archived-sessions.json"),
+    private readonly filePath = join(homedir(), ".omp-web", "archived-sessions.json"),
     private readonly archiveDir = join(dirname(filePath), "archived-sessions"),
   ) {}
 

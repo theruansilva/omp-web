@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { TemplateResult } from "lit";
-import type { PiWebConfigResponse, PiWebConfigValues, PiWebPluginInfo } from "../../api";
+import type { OmpWebConfigResponse, OmpWebConfigValues, OmpWebPluginInfo } from "../../api";
 import { SettingsPluginsPanel } from "./SettingsPluginsPanel";
 import type { SettingsNotice } from "./SettingsPanelFrame";
 
@@ -67,13 +67,13 @@ describe("settings-plugins-panel layout", () => {
   });
 });
 
-function renderPluginTemplate(panel: SettingsPluginsPanel, plugin: PiWebPluginInfo): TemplateResult {
+function renderPluginTemplate(panel: SettingsPluginsPanel, plugin: OmpWebPluginInfo): TemplateResult {
   const renderPlugin: unknown = Reflect.get(panel, "renderPlugin");
   if (!isPanelRenderPlugin(renderPlugin)) throw new Error("SettingsPluginsPanel.renderPlugin is not callable");
   return renderPlugin.call(panel, plugin);
 }
 
-function isPanelRenderPlugin(value: unknown): value is (this: SettingsPluginsPanel, plugin: PiWebPluginInfo) => TemplateResult {
+function isPanelRenderPlugin(value: unknown): value is (this: SettingsPluginsPanel, plugin: OmpWebPluginInfo) => TemplateResult {
   return typeof value === "function";
 }
 
@@ -156,9 +156,9 @@ function isBoolean(value: unknown): value is boolean {
   return typeof value === "boolean";
 }
 
-function configResponse(config: PiWebConfigValues): PiWebConfigResponse {
+function configResponse(config: OmpWebConfigValues): OmpWebConfigResponse {
   return {
-    path: "/tmp/pi-web/config.json",
+    path: "/tmp/omp-web/config.json",
     exists: true,
     config,
     effectiveConfig: config,
@@ -166,10 +166,10 @@ function configResponse(config: PiWebConfigValues): PiWebConfigResponse {
   };
 }
 
-function pluginInfo(id: string, enabled: boolean): PiWebPluginInfo {
+function pluginInfo(id: string, enabled: boolean): OmpWebPluginInfo {
   return {
     id,
-    module: `/pi-web-plugins/${id}/plugin.js`,
+    module: `/omp-web-plugins/${id}/plugin.js`,
     source: "test",
     scope: "local",
     machineSpecific: false,

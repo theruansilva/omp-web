@@ -1,0 +1,9 @@
+{
+  "name": "@omp-web/updates-plugin",
+  "private": true,
+  "ompWeb": {
+    "plugins": [
+      { "id": "updates", "module": "omp-web-plugin.js", "machineSpecific": true }
+    ]
+  }
+}

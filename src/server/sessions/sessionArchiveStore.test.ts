@@ -13,7 +13,7 @@ describe("SessionArchiveStore", () => {
   });
 
   it("moves archived session files out of the active session directory and restores them", async () => {
-    const root = await mkdtemp(join(tmpdir(), "pi-web-archive-"));
+    const root = await mkdtemp(join(tmpdir(), "omp-web-archive-"));
     tempRoots.push(root);
     const activeDir = join(root, "active");
     await mkdir(activeDir, { recursive: true });
@@ -46,7 +46,7 @@ describe("SessionArchiveStore", () => {
   });
 
   it("permanently deletes archived session files and records", async () => {
-    const root = await mkdtemp(join(tmpdir(), "pi-web-archive-delete-"));
+    const root = await mkdtemp(join(tmpdir(), "omp-web-archive-delete-"));
     tempRoots.push(root);
     const activeDir = join(root, "active");
     await mkdir(activeDir, { recursive: true });
@@ -73,7 +73,7 @@ describe("SessionArchiveStore", () => {
   });
 
   it("archives and permanently deletes sessions in batches", async () => {
-    const root = await mkdtemp(join(tmpdir(), "pi-web-archive-batch-"));
+    const root = await mkdtemp(join(tmpdir(), "omp-web-archive-batch-"));
     tempRoots.push(root);
     const activeDir = join(root, "active");
     await mkdir(activeDir, { recursive: true });

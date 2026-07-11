@@ -1,5 +1,5 @@
 import type { Machine, MachineKind, MachineRuntime, PiPackageInfo, PiPackageMutationAction } from "../../api";
-import { PI_WEB_CAPABILITIES, supportsPiWebCapability } from "../../../../shared/capabilities";
+import { OMP_WEB_CAPABILITIES, supportsOmpWebCapability } from "../../../../shared/capabilities";
 
 export type PiPackageOperationKind = PiPackageMutationAction | "update-all";
 
@@ -33,7 +33,7 @@ export function piPackageTargetLabel(target: PiPackageTargetContext): string {
 export function piPackageManagementSupport(target: PiPackageTargetContext, runtime: Pick<MachineRuntime, "ok" | "capabilities"> | undefined): PiPackageManagementSupport {
   if (target.kind === "local") return { state: "supported" };
   if (runtime?.ok !== true) return { state: "unknown" };
-  if (supportsPiWebCapability(runtime, PI_WEB_CAPABILITIES.piPackagesManage)) return { state: "supported" };
+  if (supportsOmpWebCapability(runtime, OMP_WEB_CAPABILITIES.piPackagesManage)) return { state: "supported" };
   return { state: "unsupported", message: piPackageManagementUnavailableMessage(target) };
 }
 
@@ -46,7 +46,7 @@ export function isPiPackageManagementUnsupported(support: PiPackageManagementSup
 }
 
 export function piPackageManagementUnavailableMessage(target: PiPackageTargetContext): string {
-  return `Pi package management is not available on ${target.name}. Update and restart Pi-Web on that machine, then try again.`;
+  return `Pi package management is not available on ${target.name}. Update and restart Omp-Web on that machine, then try again.`;
 }
 
 export function shouldRefreshGatewayPluginsAfterPiPackageMutation(target: PiPackageTargetContext): boolean {

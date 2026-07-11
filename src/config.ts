@@ -1,15 +1,15 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { dirname, isAbsolute, join, resolve } from "node:path";
-import type { PiWebConfigValues } from "./shared/apiTypes.js";
-import { isPiWebPluginId, piWebPluginIdPattern } from "./shared/pluginIds.js";
+import type { OmpWebConfigValues } from "./shared/apiTypes.js";
+import { isOmpWebPluginId, ompWebPluginIdPattern } from "./shared/pluginIds.js";
 
-export type PiWebConfig = PiWebConfigValues;
+export type OmpWebConfig = OmpWebConfigValues;
 
-export interface LoadedPiWebConfig {
+export interface LoadedOmpWebConfig {
   path: string;
   exists: boolean;
-  config: PiWebConfig;
+  config: OmpWebConfig;
 }
 
 export interface LoadOptions {
@@ -17,13 +17,13 @@ export interface LoadOptions {
   cwd?: string;
 }
 
-export function defaultPiWebConfigPath(env: NodeJS.ProcessEnv = process.env): string {
+export function defaultOmpWebConfigPath(env: NodeJS.ProcessEnv = process.env): string {
   const xdgConfigHome = env["XDG_CONFIG_HOME"];
-  return join(xdgConfigHome !== undefined && xdgConfigHome !== "" ? xdgConfigHome : join(homedir(), ".config"), "pi-web", "config.json");
+  return join(xdgConfigHome !== undefined && xdgConfigHome !== "" ? xdgConfigHome : join(homedir(), ".config"), "omp-web", "config.json");
 }
 
-export function defaultPiWebDataDir(): string {
-  return join(homedir(), ".pi-web");
+export function defaultOmpWebDataDir(): string {
+  return join(homedir(), ".omp-web");
 }
 
 /**
@@ -33,14 +33,14 @@ export function defaultPiWebDataDir(): string {
  */
 export const DEFAULT_MAX_UPLOAD_BYTES = 64 * 1024 * 1024;
 
-export const DEFAULT_UPLOADS_FOLDER = ".pi-web/uploads";
+export const DEFAULT_UPLOADS_FOLDER = ".omp-web/uploads";
 
-export function effectiveUploadsConfig(config: Pick<PiWebConfig, "uploads"> = {}): NonNullable<PiWebConfig["uploads"]> {
+export function effectiveUploadsConfig(config: Pick<OmpWebConfig, "uploads"> = {}): NonNullable<OmpWebConfig["uploads"]> {
   return { defaultFolder: config.uploads?.defaultFolder ?? DEFAULT_UPLOADS_FOLDER };
 }
 
-export function maxUploadBytes(env: NodeJS.ProcessEnv = process.env, config: PiWebConfig = {}): number {
-  const fromEnv = env["PI_WEB_MAX_UPLOAD_BYTES"];
+export function maxUploadBytes(env: NodeJS.ProcessEnv = process.env, config: OmpWebConfig = {}): number {
+  const fromEnv = env["OMP_WEB_MAX_UPLOAD_BYTES"];
   if (fromEnv !== undefined && fromEnv !== "") {
     const parsed = Number(fromEnv);
     if (Number.isInteger(parsed) && parsed > 0) return parsed;
@@ -49,45 +49,45 @@ export function maxUploadBytes(env: NodeJS.ProcessEnv = process.env, config: PiW
   return DEFAULT_MAX_UPLOAD_BYTES;
 }
 
-export function piWebDataDir(env: NodeJS.ProcessEnv = process.env, cwd = process.cwd()): string {
-  const configured = env["PI_WEB_DATA_DIR"];
-  if (configured === undefined || configured === "") return defaultPiWebDataDir();
+export function ompWebDataDir(env: NodeJS.ProcessEnv = process.env, cwd = process.cwd()): string {
+  const configured = env["OMP_WEB_DATA_DIR"];
+  if (configured === undefined || configured === "") return defaultOmpWebDataDir();
   return resolve(cwd, configured);
 }
 
-export function piWebConfigPath(env: NodeJS.ProcessEnv = process.env, cwd = process.cwd()): string {
-  const configured = env["PI_WEB_CONFIG"];
-  if (configured === undefined || configured === "") return defaultPiWebConfigPath(env);
+export function ompWebConfigPath(env: NodeJS.ProcessEnv = process.env, cwd = process.cwd()): string {
+  const configured = env["OMP_WEB_CONFIG"];
+  if (configured === undefined || configured === "") return defaultOmpWebConfigPath(env);
   return resolve(cwd, configured);
 }
 
-export function loadPiWebConfig(options: LoadOptions = {}): LoadedPiWebConfig {
+export function loadOmpWebConfig(options: LoadOptions = {}): LoadedOmpWebConfig {
   const env = options.env ?? process.env;
-  const path = piWebConfigPath(env, options.cwd ?? process.cwd());
+  const path = ompWebConfigPath(env, options.cwd ?? process.cwd());
   if (!existsSync(path)) return { path, exists: false, config: {} };
 
   const parsed: unknown = JSON.parse(readFileSync(path, "utf8"));
   if (!isRecord(parsed)) throw new Error(`PI WEB config must be a JSON object: ${path}`);
 
-  return { path, exists: true, config: parsePiWebConfig(parsed, path) };
+  return { path, exists: true, config: parseOmpWebConfig(parsed, path) };
 }
 
-export function effectivePiWebConfig(options: LoadOptions = {}): LoadedPiWebConfig {
-  const loaded = loadPiWebConfig(options);
+export function effectiveOmpWebConfig(options: LoadOptions = {}): LoadedOmpWebConfig {
+  const loaded = loadOmpWebConfig(options);
   const env = options.env ?? process.env;
-  const host = env["PI_WEB_HOST"];
-  const port = env["PI_WEB_PORT"] ?? env["PORT"];
-  const allowedHosts = env["PI_WEB_ALLOWED_HOSTS"];
-  const maxUpload = env["PI_WEB_MAX_UPLOAD_BYTES"];
+  const host = env["OMP_WEB_HOST"];
+  const port = env["OMP_WEB_PORT"] ?? env["PORT"];
+  const allowedHosts = env["OMP_WEB_ALLOWED_HOSTS"];
+  const maxUpload = env["OMP_WEB_MAX_UPLOAD_BYTES"];
 
   return {
     ...loaded,
     config: {
       ...loaded.config,
       ...(host !== undefined && host !== "" ? { host } : {}),
-      ...(port !== undefined && port !== "" ? { port: parsePort(port, "PI_WEB_PORT") } : {}),
+      ...(port !== undefined && port !== "" ? { port: parsePort(port, "OMP_WEB_PORT") } : {}),
       ...(allowedHosts !== undefined && allowedHosts !== "" ? { allowedHosts: parseAllowedHostsEnv(allowedHosts) } : {}),
-      ...(maxUpload !== undefined && maxUpload !== "" ? { maxUploadBytes: parseMaxUploadBytes(maxUpload, "PI_WEB_MAX_UPLOAD_BYTES") } : {}),
+      ...(maxUpload !== undefined && maxUpload !== "" ? { maxUploadBytes: parseMaxUploadBytes(maxUpload, "OMP_WEB_MAX_UPLOAD_BYTES") } : {}),
       uploads: effectiveUploadsConfig(loaded.config),
       // Always resolved (on by default) so the effective config is the single
       // source of truth for the runtime state and the settings UI toggle.
@@ -98,10 +98,10 @@ export function effectivePiWebConfig(options: LoadOptions = {}): LoadedPiWebConf
   };
 }
 
-export function savePiWebConfig(config: PiWebConfig, options: LoadOptions = {}): LoadedPiWebConfig {
+export function saveOmpWebConfig(config: OmpWebConfig, options: LoadOptions = {}): LoadedOmpWebConfig {
   const env = options.env ?? process.env;
-  const path = piWebConfigPath(env, options.cwd ?? process.cwd());
-  const normalized = parsePiWebConfig(piWebConfigRecord(config), path);
+  const path = ompWebConfigPath(env, options.cwd ?? process.cwd());
+  const normalized = parseOmpWebConfig(ompWebConfigRecord(config), path);
   const existing = readExistingConfigObject(path);
   delete existing["host"];
   delete existing["port"];
@@ -113,7 +113,7 @@ export function savePiWebConfig(config: PiWebConfig, options: LoadOptions = {}):
   delete existing["maxUploadBytes"];
   delete existing["spawnSessions"];
   delete existing["subsessions"];
-  const merged = { ...existing, ...piWebConfigRecord(normalized) };
+  const merged = { ...existing, ...ompWebConfigRecord(normalized) };
   mkdirSync(dirname(path), { recursive: true });
   writeFileSync(path, `${JSON.stringify(merged, null, 2)}\n`, "utf8");
   return { path, exists: true, config: normalized };
@@ -126,7 +126,7 @@ function readExistingConfigObject(path: string): Record<string, unknown> {
   return parsed;
 }
 
-function piWebConfigRecord(config: PiWebConfig): Record<string, unknown> {
+function ompWebConfigRecord(config: OmpWebConfig): Record<string, unknown> {
   return {
     ...(config.host !== undefined ? { host: config.host } : {}),
     ...(config.port !== undefined ? { port: config.port } : {}),
@@ -141,7 +141,7 @@ function piWebConfigRecord(config: PiWebConfig): Record<string, unknown> {
   };
 }
 
-function parsePiWebConfig(value: Record<string, unknown>, path: string): PiWebConfig {
+function parseOmpWebConfig(value: Record<string, unknown>, path: string): OmpWebConfig {
   return {
     ...(value["host"] !== undefined ? { host: parseString(value["host"], "host", path) } : {}),
     ...(value["port"] !== undefined ? { port: parsePort(value["port"], "port", path) } : {}),
@@ -170,11 +170,11 @@ function parseSpawnSessions(value: unknown, path: string): boolean {
 /**
  * Whether LLMs may start new sessions via the spawn_session tool. On by default
  * (spawned sessions appear in the session list, so humans notice them); set the
- * env var `PI_WEB_SPAWN_SESSIONS` or the `spawnSessions` config key to `false`
+ * env var `OMP_WEB_SPAWN_SESSIONS` or the `spawnSessions` config key to `false`
  * to disable. The env var takes precedence over the config file.
  */
-export function spawnSessionsEnabled(env: NodeJS.ProcessEnv = process.env, config: PiWebConfig = {}): boolean {
-  const fromEnv = env["PI_WEB_SPAWN_SESSIONS"];
+export function spawnSessionsEnabled(env: NodeJS.ProcessEnv = process.env, config: OmpWebConfig = {}): boolean {
+  const fromEnv = env["OMP_WEB_SPAWN_SESSIONS"];
   if (fromEnv !== undefined && fromEnv !== "") return fromEnv === "1" || fromEnv.toLowerCase() === "true";
   return config.spawnSessions ?? true;
 }
@@ -188,12 +188,12 @@ function parseSubsessions(value: unknown, path: string): boolean {
  * Beta: whether LLMs may start tracked child sessions via the spawn_subsession
  * family of tools. Off by default while the capability stabilizes, so it can
  * ship in main without affecting releases; enable with the env var
- * `PI_WEB_SUBSESSIONS` or the `subsessions` config key. The env var takes
+ * `OMP_WEB_SUBSESSIONS` or the `subsessions` config key. The env var takes
  * precedence over the config file. Subsessions also require spawnSessions to be
  * enabled (they share the same project-scope resolver).
  */
-export function subsessionsEnabled(env: NodeJS.ProcessEnv = process.env, config: PiWebConfig = {}): boolean {
-  const fromEnv = env["PI_WEB_SUBSESSIONS"];
+export function subsessionsEnabled(env: NodeJS.ProcessEnv = process.env, config: OmpWebConfig = {}): boolean {
+  const fromEnv = env["OMP_WEB_SUBSESSIONS"];
   if (fromEnv !== undefined && fromEnv !== "") return fromEnv === "1" || fromEnv.toLowerCase() === "true";
   return config.subsessions ?? false;
 }
@@ -222,7 +222,7 @@ function parseAllowedHostsEnv(value: string): string[] | true {
   return value.split(",").map((host) => host.trim()).filter((host) => host !== "");
 }
 
-export function parsePathAccessConfig(value: unknown, path: string): NonNullable<PiWebConfigValues["pathAccess"]> {
+export function parsePathAccessConfig(value: unknown, path: string): NonNullable<OmpWebConfigValues["pathAccess"]> {
   if (!isRecord(value)) throw new Error(`PI WEB config pathAccess must be an object: ${path}`);
   const allowedPaths = value["allowedPaths"];
   return {
@@ -235,7 +235,7 @@ function parseAllowedPaths(value: unknown, path: string): string[] {
   return value;
 }
 
-export function parseUploadsConfig(value: unknown, path: string): NonNullable<PiWebConfigValues["uploads"]> {
+export function parseUploadsConfig(value: unknown, path: string): NonNullable<OmpWebConfigValues["uploads"]> {
   if (!isRecord(value)) throw new Error(`PI WEB config uploads must be an object: ${path}`);
   const defaultFolder = value["defaultFolder"];
   return {
@@ -267,10 +267,10 @@ function parseShortcuts(value: unknown, path: string): Record<string, string | n
   }));
 }
 
-function parsePlugins(value: unknown, path: string): NonNullable<PiWebConfigValues["plugins"]> {
+function parsePlugins(value: unknown, path: string): NonNullable<OmpWebConfigValues["plugins"]> {
   if (!isRecord(value) || Array.isArray(value)) throw new Error(`PI WEB config plugins must be an object: ${path}`);
   return Object.fromEntries(Object.entries(value).map(([pluginId, config]) => {
-    if (!isPiWebPluginId(pluginId)) throw new Error(`PI WEB config plugin ids must match ${piWebPluginIdPattern.source}: ${path}`);
+    if (!isOmpWebPluginId(pluginId)) throw new Error(`PI WEB config plugin ids must match ${ompWebPluginIdPattern.source}: ${path}`);
     if (!isRecord(config) || Array.isArray(config)) throw new Error(`PI WEB config plugin entries must be objects: ${path}`);
     const enabled = config["enabled"];
     if (enabled !== undefined && typeof enabled !== "boolean") throw new Error(`PI WEB config plugin enabled values must be booleans: ${path}`);
@@ -288,7 +288,7 @@ function isNonEmptyStringArray(value: unknown): value is string[] {
   return Array.isArray(value) && value.every((item) => typeof item === "string" && item !== "");
 }
 
-export function examplePiWebConfig(config: PiWebConfig = {}): string {
+export function exampleOmpWebConfig(config: OmpWebConfig = {}): string {
   return `${JSON.stringify({ host: config.host ?? "127.0.0.1", port: config.port ?? 8504, allowedHosts: config.allowedHosts ?? [] }, null, 2)}\n`;
 }
 

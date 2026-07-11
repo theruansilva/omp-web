@@ -1,5 +1,5 @@
 #!/usr/bin/env sh
 set -eu
 
-npm install -g @ProgmRuanSilva/pi-web
-pi-web install
+npm install -g @ProgmRuanSilva/omp-web
+omp-web install

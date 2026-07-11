@@ -10,7 +10,7 @@ import { fileCompletionInsertText } from "../promptCompletions";
 import { SessionSocket, type GlobalSessionEvent, type SessionUiEvent } from "../sessionSocket";
 import { isArchivableSessionInfo, isTransientNewSessionInfo } from "../sessionPersistence";
 import { isSessionActive } from "../../../shared/activity";
-import { PI_WEB_CAPABILITIES, supportsPiWebCapability } from "../../../shared/capabilities";
+import { OMP_WEB_CAPABILITIES, supportsOmpWebCapability } from "../../../shared/capabilities";
 import type { PromptAttachmentDelivery } from "../../../shared/apiTypes";
 import { InMemorySessionSelectionMemory, markSessionArchived, markSessionsArchived, selectPreferredSession, selectionAfterArchivingSession, selectionAfterArchivingSessions, shouldDeselectAfterArchivedCollapse, type SessionSelectionMemory } from "./sessionSelection";
 import { selectedMachineId, type GetState, type SetState, type UpdateUrl } from "./types";
@@ -453,8 +453,8 @@ export class SessionController {
 
     const machineId = selectedMachineId(this.getState());
     const runtime = this.getState().machineRuntimes[machineId];
-    if (runtime?.ok !== true || !supportsPiWebCapability(runtime, PI_WEB_CAPABILITIES.sessionsDeleteArchived)) {
-      this.setState({ error: "Deleting archived sessions requires an updated Pi-Web runtime on this machine." });
+    if (runtime?.ok !== true || !supportsOmpWebCapability(runtime, OMP_WEB_CAPABILITIES.sessionsDeleteArchived)) {
+      this.setState({ error: "Deleting archived sessions requires an updated Omp-Web runtime on this machine." });
       return;
     }
     try {
@@ -478,7 +478,7 @@ export class SessionController {
 
   private async archiveSessionBatch(sessions: readonly SessionInfo[], machineId: string): Promise<BulkSessionMutationResult> {
     const runtime = this.getState().machineRuntimes[machineId];
-    if (runtime?.ok === true && supportsPiWebCapability(runtime, PI_WEB_CAPABILITIES.sessionsBulkMutations)) {
+    if (runtime?.ok === true && supportsOmpWebCapability(runtime, OMP_WEB_CAPABILITIES.sessionsBulkMutations)) {
       const response = await this.api.archiveMany(sessions, machineId);
       return { succeededIds: response.archivedSessionIds, failures: bulkFailureMessages(response.failures), generatedAt: response.generatedAt };
     }
@@ -492,7 +492,7 @@ export class SessionController {
 
   private async deleteArchivedSessionBatch(sessions: readonly SessionInfo[], machineId: string): Promise<BulkSessionMutationResult> {
     const runtime = this.getState().machineRuntimes[machineId];
-    if (runtime?.ok === true && supportsPiWebCapability(runtime, PI_WEB_CAPABILITIES.sessionsBulkMutations)) {
+    if (runtime?.ok === true && supportsOmpWebCapability(runtime, OMP_WEB_CAPABILITIES.sessionsBulkMutations)) {
       const response = await this.api.deleteArchivedMany(sessions, machineId);
       return { succeededIds: response.deletedSessionIds, failures: bulkFailureMessages(response.failures) };
     }
@@ -608,8 +608,8 @@ export class SessionController {
     if (session === undefined || !isArchivableSessionInfo(session, this.statusForSession(session))) return;
     const machineId = selectedMachineId(this.getState());
     const runtime = this.getState().machineRuntimes[machineId];
-    if (runtime?.ok !== true || !supportsPiWebCapability(runtime, PI_WEB_CAPABILITIES.sessionsReload)) {
-      this.setState({ error: "Reloading sessions from disk requires an updated Pi-Web runtime on this machine." });
+    if (runtime?.ok !== true || !supportsOmpWebCapability(runtime, OMP_WEB_CAPABILITIES.sessionsReload)) {
+      this.setState({ error: "Reloading sessions from disk requires an updated Omp-Web runtime on this machine." });
       return;
     }
     try {
@@ -774,7 +774,7 @@ export class SessionController {
     const now = new Date().toISOString();
     const session: ClientPendingStartSessionInfo = {
       id: tempId,
-      path: `pi-web://pending-session/${tempId}`,
+      path: `omp-web://pending-session/${tempId}`,
       cwd: workspace.path,
       persisted: false,
       name: "New session",

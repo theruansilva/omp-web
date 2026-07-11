@@ -2,7 +2,7 @@ import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
-import { checkNodePtyDarwinSpawnHelper, formatNodePtyDarwinSpawnHelperCheck, PI_WEB_SPAWN_HELPER_ISSUE_URL } from "./nodePtySpawnHelper.js";
+import { checkNodePtyDarwinSpawnHelper, formatNodePtyDarwinSpawnHelperCheck, OMP_WEB_SPAWN_HELPER_ISSUE_URL } from "./nodePtySpawnHelper.js";
 
 const allowAccess = (): void => undefined;
 
@@ -40,9 +40,9 @@ describe("node-pty macOS spawn-helper diagnostics", () => {
 
     const formatted = formatNodePtyDarwinSpawnHelperCheck(check);
     expect(formatted.ok).toBe(false);
-    expect(formatted.lines).toContain(`  PI WEB tracking issue: ${PI_WEB_SPAWN_HELPER_ISSUE_URL}`);
+    expect(formatted.lines).toContain(`  PI WEB tracking issue: ${OMP_WEB_SPAWN_HELPER_ISSUE_URL}`);
     expect(formatted.lines).toContain(`    chmod +x '${fixture.helperPath}'`);
-    expect(formatted.lines).toContain("  Then run `pi-web doctor` again and retry opening a terminal.");
+    expect(formatted.lines).toContain("  Then run `omp-web doctor` again and retry opening a terminal.");
     expect(formatted.lines.join("\n")).not.toContain("restart");
   });
 
@@ -82,7 +82,7 @@ describe("node-pty macOS spawn-helper diagnostics", () => {
   });
 
   async function createNodePtyFixture(): Promise<{ root: string; packageJsonPath: string; helperPath: string }> {
-    const root = await mkdtemp(join(tmpdir(), "pi-web-node-pty-"));
+    const root = await mkdtemp(join(tmpdir(), "omp-web-node-pty-"));
     tempRoots.push(root);
 
     const packageJsonPath = join(root, "package.json");

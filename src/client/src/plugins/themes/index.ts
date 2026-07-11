@@ -1,4 +1,4 @@
-import type { PiWebPlugin, ThemeTokens } from "../types";
+import type { OmpWebPlugin, ThemeTokens } from "../types";
 
 const classicTokens = {
   "--pi-bg": "#0d1117",
@@ -38,7 +38,7 @@ const classicTokens = {
   "--pi-terminal-selection": "#264f78",
 } satisfies ThemeTokens;
 
-const piWebDarkTokens = {
+const ompWebDarkTokens = {
   "--pi-bg": "#070912",
   "--pi-surface": "#101527",
   "--pi-surface-hover": "#151b31",
@@ -76,7 +76,7 @@ const piWebDarkTokens = {
   "--pi-terminal-selection": "#3d4a78",
 } satisfies ThemeTokens;
 
-const piWebLightTokens = {
+const ompWebLightTokens = {
   "--pi-bg": "#f7f1e6",
   "--pi-surface": "#fff9ee",
   "--pi-surface-hover": "#f0e6d6",
@@ -114,27 +114,27 @@ const piWebLightTokens = {
   "--pi-terminal-selection": "#8d7b64",
 } satisfies ThemeTokens;
 
-export const themePackPlugin: PiWebPlugin = {
+export const themePackPlugin: OmpWebPlugin = {
   apiVersion: 1,
   name: "PI WEB Themes",
   activate: () => ({
     contributions: {
       themes: [
         {
-          id: "pi-web-dark",
+          id: "omp-web-dark",
           name: "PI WEB Dark",
           description: "Dark PI WEB palette.",
           order: 10,
           colorScheme: "dark",
-          tokens: piWebDarkTokens,
+          tokens: ompWebDarkTokens,
         },
         {
-          id: "pi-web-light",
+          id: "omp-web-light",
           name: "PI WEB Light",
           description: "Light PI WEB palette.",
           order: 20,
           colorScheme: "light",
-          tokens: piWebLightTokens,
+          tokens: ompWebLightTokens,
         },
         {
           id: "classic",
@@ -147,12 +147,12 @@ export const themePackPlugin: PiWebPlugin = {
       ],
       themePairs: [
         {
-          id: "pi-web",
+          id: "omp-web",
           name: "PI WEB",
           description: "Follow the system light/dark preference with PI WEB themes.",
           order: 10,
-          light: "pi-web-light",
-          dark: "pi-web-dark",
+          light: "omp-web-light",
+          dark: "omp-web-dark",
         },
       ],
     },

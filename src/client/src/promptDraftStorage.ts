@@ -1,4 +1,4 @@
-const draftStoragePrefix = "pi-web:prompt-draft:";
+const draftStoragePrefix = "omp-web:prompt-draft:";
 
 function draftStorageKey(sessionId: string): string {
   return `${draftStoragePrefix}${sessionId}`;

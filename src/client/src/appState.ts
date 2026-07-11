@@ -1,4 +1,4 @@
-import type { AuthProviderOption, CommandOption, CommandResult, FileContentResponse, FileTreeEntry, GitDiffResponse, GitStatusResponse, Machine, MachineHealth, MachineRuntime, OAuthFlowState, PiWebStatusResponse, Project, QueuedSessionMessage, SessionActivity, SessionInfo, SessionStatus, TerminalCommandRun, Workspace, WorkspaceActivity } from "./api";
+import type { AuthProviderOption, CommandOption, CommandResult, FileContentResponse, FileTreeEntry, GitDiffResponse, GitStatusResponse, Machine, MachineHealth, MachineRuntime, OAuthFlowState, OmpWebStatusResponse, Project, QueuedSessionMessage, SessionActivity, SessionInfo, SessionStatus, TerminalCommandRun, Workspace, WorkspaceActivity } from "./api";
 import type { ChatLine } from "./components/shared";
 import type { QualifiedContributionId } from "./plugins/ids";
 import type { WorkspaceUploadBatchState } from "./workspaceUploadState";
@@ -63,7 +63,7 @@ export interface AppState {
   gitStale: boolean;
   activeTerminalCount: number;
   selectedTerminalId: string | undefined;
-  piWebStatus: PiWebStatusResponse | undefined;
+  ompWebStatus: OmpWebStatusResponse | undefined;
   error: string;
 }
 
@@ -168,7 +168,7 @@ export function initialAppState(): AppState {
     gitStale: false,
     activeTerminalCount: 0,
     selectedTerminalId: undefined,
-    piWebStatus: undefined,
+    ompWebStatus: undefined,
     error: "",
   };
 }

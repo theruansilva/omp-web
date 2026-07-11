@@ -1,8 +1,8 @@
-import type { PiWebPlugin } from "../types";
+import type { OmpWebPlugin } from "../types";
 import { createCoreActions } from "./actions";
 import { createCoreWorkspacePanels } from "./panels";
 
-export const corePlugin: PiWebPlugin = {
+export const corePlugin: OmpWebPlugin = {
   apiVersion: 1,
   name: "PI WEB Core",
   activate: () => ({

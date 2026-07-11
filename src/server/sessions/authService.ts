@@ -3,7 +3,7 @@ import type { AuthProvidersResponse, AuthType, OAuthFlowState, AuthProviderStatu
 import { getLoginProviderOptions, getLogoutProviderOptions, type AuthProviderModelRegistry } from "./authProviderOptions.js";
 import { OAuthLoginFlowService } from "./oauthLoginFlowService.js";
 
-/** Adapt omp ModelRegistry to pi-web's AuthProviderModelRegistry interface. */
+/** Adapt omp ModelRegistry to omp-web's AuthProviderModelRegistry interface. */
 function toAuthProviderModelRegistry(mr: ModelRegistry): AuthProviderModelRegistry {
  return {
   authStorage: mr.authStorage as unknown as AuthProviderModelRegistry["authStorage"],

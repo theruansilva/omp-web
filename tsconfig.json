@@ -36,6 +36,6 @@
     "vite.config.ts",
     "vitest.config.ts",
     "extensions/**/*.ts",
-    "pi-web-plugins/**/*.ts"
+    "omp-web-plugins/**/*.ts"
   ]
 }

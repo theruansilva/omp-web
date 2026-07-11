@@ -5,7 +5,7 @@ dist/
 *.log
 .playwright-cli/
 
-# Local plugin development sandboxes. Symlink these into ~/.pi-web/plugins/<plugin-id>.
+# Local plugin development sandboxes. Symlink these into ~/.omp-web/plugins/<plugin-id>.
 /dev-plugins/
 
 # Local Docker image build hooks for development containers.
@@ -13,5 +13,5 @@ dist/
 !/docker/custom-image.d/.gitkeep
 
 # Local runtime attachment uploads (created by the chat composer "save to folder" mode).
-.pi-web/
+.omp-web/
 bun.lock

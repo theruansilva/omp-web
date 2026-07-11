@@ -1,5 +1,5 @@
 const themeButtons = document.querySelectorAll("[data-theme-toggle]");
-const themeStorageKey = "pi-web-theme";
+const themeStorageKey = "omp-web-theme";
 const systemPrefersLight = window.matchMedia("(prefers-color-scheme: light)");
 
 function storedThemeMode() {

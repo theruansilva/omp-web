@@ -12,7 +12,7 @@ let agentDir: string;
 let cwd: string;
 
 beforeEach(async () => {
-  tempDir = await mkdtemp(join(tmpdir(), "pi-web-session-gateway-test-"));
+  tempDir = await mkdtemp(join(tmpdir(), "omp-web-session-gateway-test-"));
   agentDir = join(tempDir, "agent");
   cwd = join(tempDir, "workspace");
   await mkdir(cwd, { recursive: true });

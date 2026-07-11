@@ -1,7 +1,7 @@
 import { createReadStream, type ReadStream } from "node:fs";
 import { stat } from "node:fs/promises";
 import { extname } from "node:path";
-import type { PiWebPathAccessConfig } from "../../shared/apiTypes.js";
+import type { OmpWebPathAccessConfig } from "../../shared/apiTypes.js";
 import { MAX_IMAGE_PREVIEW_BYTES, MAX_IMAGE_PREVIEW_LABEL } from "../../shared/workspaceFiles.js";
 import { resolveWorkspacePathAccessTarget } from "./pathAccessPolicy.js";
 
@@ -29,7 +29,7 @@ export function imageMimeTypeForPath(path: string): string | undefined {
   return IMAGE_MIME_TYPES[extname(path).toLowerCase()];
 }
 
-export async function readWorkspaceImagePreview(rootPath: string, path: string | undefined, pathAccess?: PiWebPathAccessConfig): Promise<WorkspaceImagePreview> {
+export async function readWorkspaceImagePreview(rootPath: string, path: string | undefined, pathAccess?: OmpWebPathAccessConfig): Promise<WorkspaceImagePreview> {
   if (path === undefined || path === "") throw new Error("path query parameter is required");
   const { target, displayPath } = await resolveWorkspacePathAccessTarget(rootPath, path, pathAccess);
   const s = await stat(target);

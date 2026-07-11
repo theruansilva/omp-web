@@ -3,9 +3,9 @@ set -euo pipefail
 
 nodejs_major=${NODEJS_MAJOR:-22}
 nodejs_repo=${NODEJS_REPO:-auto}
-extra_zypper_packages=${PI_WEB_EXTRA_ZYPPER_PACKAGES:-}
-runtime_uid=${PI_WEB_UID:-1000}
-runtime_gid=${PI_WEB_GID:-1000}
+extra_zypper_packages=${OMP_WEB_EXTRA_ZYPPER_PACKAGES:-}
+runtime_uid=${OMP_WEB_UID:-1000}
+runtime_gid=${OMP_WEB_GID:-1000}
 
 nodejs_repo_flavor() {
   local rpm_arch
@@ -45,8 +45,8 @@ add_nodejs_repo() {
       ;;
   esac
 
-  zypper --non-interactive removerepo pi-web-nodejs >/dev/null 2>&1 || true
-  zypper --non-interactive addrepo --refresh "$repo_url" pi-web-nodejs
+  zypper --non-interactive removerepo omp-web-nodejs >/dev/null 2>&1 || true
+  zypper --non-interactive addrepo --refresh "$repo_url" omp-web-nodejs
 }
 
 # The codec repository is not needed for this image and can make noninteractive
@@ -109,7 +109,7 @@ packages=(
 extra_packages=()
 if [ -n "$extra_zypper_packages" ]; then
   # Intentionally split a whitespace-delimited package list supplied as a Docker
-  # build arg, e.g. PI_WEB_EXTRA_ZYPPER_PACKAGES="go rustup kubernetes-client".
+  # build arg, e.g. OMP_WEB_EXTRA_ZYPPER_PACKAGES="go rustup kubernetes-client".
   # shellcheck disable=SC2206
   extra_packages=($extra_zypper_packages)
 fi
@@ -124,22 +124,22 @@ git --version
 
 case "$runtime_uid" in
   ""|*[!0-9]*)
-    echo "PI_WEB_UID must be a numeric user ID, got: $runtime_uid" >&2
+    echo "OMP_WEB_UID must be a numeric user ID, got: $runtime_uid" >&2
     exit 1
     ;;
 esac
 
 case "$runtime_gid" in
   ""|*[!0-9]*)
-    echo "PI_WEB_GID must be a numeric group ID, got: $runtime_gid" >&2
+    echo "OMP_WEB_GID must be a numeric group ID, got: $runtime_gid" >&2
     exit 1
     ;;
 esac
 
-runtime_user=pi-web
-runtime_group=pi-web
+runtime_user=omp-web
+runtime_group=omp-web
 runtime_home=/data/home
-mkdir -p "$runtime_home" /data/config /data/npm-cache /data/pi-web /data/pi-agent /workspace
+mkdir -p "$runtime_home" /data/config /data/npm-cache /data/omp-web /data/pi-agent /workspace
 
 if getent group "$runtime_gid" >/dev/null 2>&1; then
   runtime_group=$(getent group "$runtime_gid" | cut -d: -f1)
