@@ -4,7 +4,7 @@ This Docker setup is beta. It is useful for trusted local/server testing and dev
 
 PI WEB has two Docker modes:
 
-- **Runtime/server mode** builds a local image from npm packages and runs split `sessiond` + `web` services. This is for users and servers.
+- **Runtime/server mode** builds a local image from npm registry packages and runs split `sessiond` + `web` services. This is for users and servers.
 - **Development mode** builds from this checkout and runs the same split shape while letting the web/API/client services autoreload. This is for hacking on PI WEB.
 
 No prebuilt image or registry is required in either mode. The single human-facing Docker entrypoint is `omp-web-docker`: runtime mode is the default, and development mode is explicit with `--dev`.
@@ -40,7 +40,7 @@ Prerequisites:
 
 The installer fails closed on unknown or unsupported Docker setups, such as remote Docker contexts, `DOCKER_HOST` overrides outside the supported local Unix socket, rootless/alternate Linux sockets, Docker Desktop for Linux, Colima, or OrbStack. It prints the detected host OS, Docker context, endpoint, `DOCKER_HOST`, socket source, and Docker OS before exiting, and it does not recreate services.
 
-The Docker bootstrap does not require Node.js or npm on the host. It only needs a supported Docker/Compose setup plus `curl` or `wget`; Node and PI WEB are installed inside the local Docker image.
+The Docker bootstrap does not require Bun or Node.js on the host. It only needs a supported Docker/Compose setup plus `curl` or `wget`; Bun and PI WEB are installed inside the local Docker image.
 
 Install with the bootstrap one-liner:
 
@@ -48,14 +48,14 @@ Install with the bootstrap one-liner:
 curl -fsSL https://raw.githubusercontent.com/ProgmRuanSilva/omp-web/main/docker/install.sh | sh
 ```
 
-The one-liner is idempotent. Each run refreshes Docker assets from the requested Git ref, writes host-specific `.env` values, rebuilds the local image from npm with `--pull --no-cache`, and recreates the split services without deleting persistent data. After installation, use the canonical runtime command in the install directory, for example `~/.local/share/omp-web-docker/omp-web-docker update`.
+The one-liner is idempotent. Each run refreshes Docker assets from the requested Git ref, writes host-specific `.env` values, rebuilds the local image from registry packages with `--pull --no-cache`, and recreates the split services without deleting persistent data. After installation, use the canonical runtime command in the install directory, for example `~/.local/share/omp-web-docker/omp-web-docker update`.
 
 Defaults:
 
 - install directory: `~/.local/share/omp-web-docker` (or `$XDG_DATA_HOME/omp-web-docker`);
 - persistent data: `<install-dir>/data`, mounted at `/data`;
 - browser URL: <http://127.0.0.1:8504>;
-- npm packages: latest `@ProgmRuanSilva/omp-web` and latest Pi Coding Agent package unless pinned.
+- packages: latest `@ProgmRuanSilva/omp-web` and latest Pi Coding Agent package unless pinned.
 
 Updating recreates the Docker `sessiond` container. Active Pi agent runtimes in this Docker install may stop, so update while sessions are idle. Persisted PI WEB state, Pi config, and session history under the data directory are kept.
 
@@ -109,8 +109,8 @@ Common environment variables written to `.env`:
 | `OMP_WEB_DOCKER_HOST_PROFILE`, `HOSTEXEC_MODE` | detected host profile and host-command capability toggle |
 | `OMP_WEB_DOCKER_EXTRA_HOST_PATHS` | optional whitespace-separated existing absolute paths to bind-mount read/write at the same path |
 | `OMP_WEB_BIND_ADDR`, `OMP_WEB_PORT` | host bind address and port |
-| `OMP_WEB_VERSION` | npm version/range for `@ProgmRuanSilva/omp-web` |
-| `PI_VERSION` | npm version/range for `@earendil-works/pi-coding-agent` |
+| `OMP_WEB_VERSION` | version/range for `@ProgmRuanSilva/omp-web` on npm |
+| `PI_VERSION` | version/range for `@earendil-works/pi-coding-agent` on npm |
 | `OMP_WEB_OPENSUSE_IMAGE` | openSUSE base image used for the runtime build |
 | `OMP_WEB_NODEJS_MAJOR` | Node.js major package to install, defaulting to `22` |
 | `OMP_WEB_NODEJS_REPO` | Node.js zypper repository URL, `auto`, or `disabled` |
@@ -125,7 +125,7 @@ The installer also writes a generated `compose.override.yml` in the install dire
 
 ### Base image and tooling
 
-The Docker runtime and development images are openSUSE Tumbleweed based by default. They install Node.js 22, npm, `npx`, and Corepack through zypper, using the openSUSE Node.js build service repository when needed for the selected architecture. The image's `omp-web` account is created with `OMP_WEB_UID:OMP_WEB_GID` and `/data/home` as its home directory, so shells have a passwd entry instead of showing `I have no name!` while user config stays in the persistent `/data` mount. The image also includes common agent/development tools such as Git/Git LFS, GitHub CLI, OpenSSH, Python with pip/virtualenv and headers, native build tooling, `jq`, `ripgrep`, `fd`, `fzf`, `bat`, ShellCheck, archive tools, network utilities, and the Docker CLI with Compose and Buildx plugins.
+The Docker runtime and development images are openSUSE Tumbleweed based by default. They install Node.js 22, npm, `npx`, and Corepack through zypper for native addon builds, and install Bun for package management and running the server. The image's `omp-web` account is created with `OMP_WEB_UID:OMP_WEB_GID` and `/data/home` as its home directory, so shells have a passwd entry instead of showing `I have no name!` while user config stays in the persistent `/data` mount. The image also includes common agent/development tools such as Git/Git LFS, GitHub CLI, OpenSSH, Python with pip/virtualenv and headers, native build tooling, `jq`, `ripgrep`, `fd`, `fzf`, `bat`, ShellCheck, archive tools, network utilities, and the Docker CLI with Compose and Buildx plugins.
 
 Install extra distro packages without writing a hook by setting a whitespace-delimited package list:
 
@@ -173,7 +173,7 @@ Files in that development hook directory are ignored by Git except for the place
 
 ### Version pinning
 
-Pin npm package versions when you want repeatable rebuilds:
+Pin package versions when you want repeatable rebuilds:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/ProgmRuanSilva/omp-web/main/docker/install.sh \
@@ -187,7 +187,7 @@ OMP_WEB_VERSION=1.202606.4
 PI_VERSION=0.79.1
 ```
 
-Then rerun the one-liner to rebuild/recreate with those pins. Use `latest` again when you want the runtime to track the newest npm releases.
+Then rerun the one-liner to rebuild/recreate with those pins. Use `latest` again when you want the runtime to track the newest releases.
 
 To pin the Docker asset templates themselves, fetch the installer from a specific Git branch, tag, or commit and pass the same ref as the asset source:
 
@@ -246,8 +246,8 @@ On native Linux, `hostexec` starts a temporary privileged helper container throu
 
 Use this mode when developing PI WEB from this checkout. It bind-mounts the source tree, keeps dependencies in a Docker volume, stores PI WEB/Pi data in the same host data directory as runtime mode by default, and preserves the split runtime model:
 
-- `sessiond` runs `npm run start:sessiond` as the long-lived owner of Pi agent runtimes;
-- `web` runs `npm run dev:web` and `npm run dev:client` so API, plugin, and Vite changes can autoreload without restarting `sessiond`.
+- `sessiond` runs `bun run start:sessiond` as the long-lived owner of Pi agent runtimes;
+- `web` runs `bun run dev:web` and `bun run dev:client` so API, plugin, and Vite changes can autoreload without restarting `sessiond`.
 
 From the repository root, use the canonical Docker command so the same fail-closed host profile detection is applied as runtime mode:
 

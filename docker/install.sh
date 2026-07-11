@@ -432,7 +432,7 @@ OMP_WEB_DOCKER_REF=$asset_ref
 OMP_WEB_BIND_ADDR=$omp_web_bind_addr
 OMP_WEB_PORT=$omp_web_port
 
-# npm version pins. Use latest for quick updates, or set concrete versions.
+# Package version pins. Use latest for quick updates, or set concrete versions.
 OMP_WEB_VERSION=$omp_web_version
 PI_VERSION=$pi_version
 

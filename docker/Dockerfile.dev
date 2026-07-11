@@ -17,8 +17,7 @@ SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
 ENV NODE_ENV=development \
   PATH=/workspace/node_modules/.bin:$PATH \
-  NPM_CONFIG_UPDATE_NOTIFIER=false \
-  NPM_CONFIG_CACHE=/data/npm-cache \
+  BUN_INSTALL_CACHE_DIR=/data/bun-cache \
   HOME=/data/home \
   XDG_CONFIG_HOME=/data/config \
   OMP_WEB_DATA_DIR=/data/omp-web \
@@ -34,11 +33,11 @@ RUN chmod 0755 /usr/local/sbin/install-omp-web-opensuse-base \
 
 WORKDIR /workspace
 
-COPY package.json package-lock.json ./
+COPY package.json bun.lock ./
 COPY scripts/install-git-hooks.mjs scripts/install-git-hooks.mjs
-RUN npm ci \
+RUN bun install --frozen-lockfile \
   && ln -sf /workspace/node_modules/.bin/pi /usr/local/bin/pi \
-  && npm cache clean --force \
+  && bun pm cache rm \
   && chmod -R a+rwX /workspace/node_modules /data \
   && chmod 0777 /workspace
 
@@ -63,4 +62,4 @@ RUN bash -euxo pipefail -c '\
 EXPOSE 8504 8505
 
 ENTRYPOINT ["tini", "--"]
-CMD ["npm", "run", "dev"]
+CMD ["bun", "run", "dev"]

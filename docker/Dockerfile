@@ -16,6 +16,7 @@ ARG OMP_WEB_GID=1000
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
 ENV NPM_CONFIG_UPDATE_NOTIFIER=false \
+  BUN_INSTALL=/usr/local \
   SHELL=/bin/bash \
   TERM=xterm-256color
 
@@ -31,15 +32,15 @@ ARG CACHE_BUST=local
 
 RUN set -eux; \
   echo "PI WEB Docker build cache bust: ${CACHE_BUST}"; \
-  npm install -g --omit=dev --no-audit --no-fund \
+  bun add -g \
     "@ProgmRuanSilva/omp-web@${OMP_WEB_VERSION}" \
     "@earendil-works/pi-coding-agent@${PI_VERSION}"; \
-  npm cache clean --force
+  bun pm cache rm
 
 FROM base AS runtime
 
 ENV NODE_ENV=production \
-  NPM_CONFIG_UPDATE_NOTIFIER=false \
+  BUN_INSTALL=/usr/local \
   HOME=/data/home \
   XDG_CONFIG_HOME=/data/config \
   OMP_WEB_HOST=0.0.0.0 \

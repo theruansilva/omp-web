@@ -28,8 +28,7 @@ x-omp-web-dev-environment: &omp-web-dev-environment
   OMP_WEB_DOCKER_DEV_REPO_ROOT: ${OMP_WEB_DOCKER_DEV_REPO_ROOT:?set by docker/omp-web-docker --dev}
   OMP_WEB_DOCKER_HELPER_IMAGE: ${OMP_WEB_DEV_IMAGE:-omp-web:dev}
   COMPOSE_PROJECT_NAME: ${COMPOSE_PROJECT_NAME:-omp-web-dev}
-  NPM_CONFIG_UPDATE_NOTIFIER: "false"
-  NPM_CONFIG_CACHE: /data/npm-cache
+  BUN_INSTALL_CACHE_DIR: /data/bun-cache
 
 x-omp-web-dev-data-volume: &omp-web-dev-data-volume
   type: bind
@@ -54,7 +53,7 @@ services:
       - -lc
       - |
         set -euo pipefail
-        mkdir -p /data/home /data/config /data/npm-cache /data/omp-web /data/pi-agent
+        mkdir -p /data/home /data/config /data/bun-cache /data/omp-web /data/pi-agent
         chown -R "${OMP_WEB_UID:-1000}:${OMP_WEB_GID:-1000}" /data
     user: "0:0"
     security_opt:
@@ -68,7 +67,7 @@ services:
   sessiond:
     build: *omp-web-dev-build
     image: ${OMP_WEB_DEV_IMAGE:-omp-web:dev}
-    command: ["npm", "run", "start:sessiond"]
+    command: ["bun", "run", "start:sessiond"]
     working_dir: /workspace
     depends_on:
       data-init:
@@ -90,7 +89,7 @@ services:
   web:
     build: *omp-web-dev-build
     image: ${OMP_WEB_DEV_IMAGE:-omp-web:dev}
-    command: ["bash", "-lc", "trap 'kill 0' EXIT; npm run dev:web & npm run dev:client & wait"]
+    command: ["bash", "-lc", "trap 'kill 0' EXIT; bun run dev:web & bun run dev:client & wait"]
     working_dir: /workspace
     depends_on:
       sessiond:

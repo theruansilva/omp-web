@@ -119,6 +119,14 @@ zypper --non-interactive install --no-recommends "${packages[@]}" "${extra_packa
 node --version
 npm --version
 npx --version
+
+# Install bun via official installer
+curl -fsSL https://bun.sh/install | bash
+export BUN_INSTALL="${HOME:-/root}/.bun"
+export PATH="$BUN_INSTALL/bin:$PATH"
+ln -sf "$BUN_INSTALL/bin/bun" /usr/local/bin/bun
+ln -sf "$BUN_INSTALL/bin/bunx" /usr/local/bin/bunx
+bun --version
 python3 --version
 git --version
 
@@ -139,7 +147,7 @@ esac
 runtime_user=omp-web
 runtime_group=omp-web
 runtime_home=/data/home
-mkdir -p "$runtime_home" /data/config /data/npm-cache /data/omp-web /data/pi-agent /workspace
+mkdir -p "$runtime_home" /data/config /data/bun-cache /data/omp-web /data/pi-agent /workspace
 
 if getent group "$runtime_gid" >/dev/null 2>&1; then
   runtime_group=$(getent group "$runtime_gid" | cut -d: -f1)
