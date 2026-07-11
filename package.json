@@ -1,7 +1,7 @@
 {
   "name": "@ProgmRuanSilva/omp-web",
-  "version": "1.202606.7",
-  "description": "Web UI for persistent Pi Coding Agent sessions in real workspaces.",
+  "version": "1.0.0",
+  "description": "Web UI for Oh My Pi Coding Agent",
   "license": "MIT",
   "author": "ProgmRuanSilva",
   "type": "module",
@@ -43,10 +43,7 @@
     "pack:dry": "bun pm pack --dry-run",
     "prepublishOnly": "bun run verify",
     "publish:npm": "npm publish --access public",
-    "prepare": "bun scripts/install-git-hooks.mjs",
-    "changeset": "changeset",
-    "release:version": "changeset version",
-    "changelog:status": "changeset status"
+    "prepare": "bun scripts/install-git-hooks.mjs"
   },
   "dependencies": {
     "@codemirror/commands": "^6.10.3",
@@ -78,7 +75,6 @@
     "ws": "^8.20.1"
   },
   "devDependencies": {
-    "@changesets/cli": "^2.31.0",
     "@eslint/js": "^10.0.1",
     "@oh-my-pi/pi-agent-core": "^16.3.6",
     "@oh-my-pi/pi-ai": "^16.3.6",

@@ -18,3 +18,6 @@ Changes to the web/API/UI side generally only require the `omp-web-ui-dev.servic
 - Project-local PI WEB core config should use one commit-able file: `<project>/.omp-web/config.json`.
 - Core features should add keys to these config files, not create one project file per feature.
 - Plugins may own separate project config files, such as `.omp-web/tasks.json`.
+## Commits
+
+- Make atomic commits using the gitmoji convention.
