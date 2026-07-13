@@ -1,5 +1,5 @@
 import { realpath } from "node:fs/promises";
-import { isAbsolute, join, relative, sep } from "node:path";
+import { isAbsolute, join, relative, sep, win32 } from "node:path";
 
 export async function resolveInsideWorkspace(rootPath: string, relativePath: string | undefined): Promise<{ root: string; target: string; relativePath: string }> {
   const requested = normalizeRelativePath(relativePath);
@@ -39,4 +39,11 @@ export function ensureInside(root: string, target: string): void {
   if (rel === "") return;
   if (rel.startsWith("..") || isAbsolute(rel)) throw new Error("Path escapes workspace");
   if (sep !== "/" && rel.split(sep).includes("..")) throw new Error("Path escapes workspace");
+}
+
+export function appendRequestPath(base: string, name: string): string {
+  if (base === "") return name;
+  if (isAbsolute(base) || win32.isAbsolute(base)) return join(base, name);
+  if (base.endsWith("/") || base.endsWith("\\")) return `${base}${name}`;
+  return `${base}/${name}`;
 }

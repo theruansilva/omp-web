@@ -7,6 +7,7 @@ import { sanitizedGitEnv } from "../git/gitEnv.js";
 import type { OmpWebPathAccessConfig } from "../../shared/apiTypes.js";
 import type { ClientFileSuggestion } from "../types.js";
 import { createPathAccessPolicy, isAbsoluteishPath, resolvePathAccessTarget, type PathAccessPolicy } from "./pathAccessPolicy.js";
+import { appendRequestPath } from "./pathSafety.js";
 
 const execFileAsync = promisify(execFile);
 const commandMaxBuffer = 1024 * 1024 * 8;
@@ -204,12 +205,6 @@ function pathSuggestionPrefix(query: string): { directoryPrefix: string; searchP
   return { directoryPrefix: directory === "." ? "" : directory, searchPrefix: basename(query) };
 }
 
-function appendRequestPath(base: string, name: string): string {
-  if (base === "") return name;
-  if (isAbsolute(base) || win32.isAbsolute(base)) return join(base, name);
-  if (hasTrailingPathSeparator(base)) return `${base}${name}`;
-  return `${base}/${name}`;
-}
 
 function pathStartsWith(path: string, query: string): boolean {
   return path.toLowerCase().startsWith(query.toLowerCase());

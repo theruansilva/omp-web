@@ -1,7 +1,8 @@
 import { lstat, readdir } from "node:fs/promises";
-import { isAbsolute, join, win32 } from "node:path";
+import { join } from "node:path";
 import type { FileTreeEntry, FileTreeResponse, OmpWebPathAccessConfig } from "../../shared/apiTypes.js";
 import { resolveWorkspacePathAccessTarget } from "./pathAccessPolicy.js";
+import { appendRequestPath } from "./pathSafety.js";
 
 const MAX_ENTRIES = 1000;
 
@@ -27,9 +28,3 @@ export async function listWorkspaceTree(rootPath: string, path: string | undefin
   return { path: displayPath, entries, scannedAt: new Date().toISOString(), truncated: sorted.length > selected.length };
 }
 
-function appendRequestPath(base: string, name: string): string {
-  if (base === "") return name;
-  if (isAbsolute(base) || win32.isAbsolute(base)) return join(base, name);
-  if (base.endsWith("/") || base.endsWith("\\")) return `${base}${name}`;
-  return `${base}/${name}`;
-}
