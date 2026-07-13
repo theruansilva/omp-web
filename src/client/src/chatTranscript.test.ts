@@ -192,12 +192,12 @@ describe("applyTranscriptEvent", () => {
 
   it("replaces multiple streamed skill reads with the finalized grouped skill message", () => {
     const firstTool: ChatLine = { role: "tool", parts: [{ type: "toolExecution", toolCallId: "read-1", toolName: "read", summary: "/skills/code-quality-architecture/SKILL.md", status: "success", resultText: "content" }] };
-    const secondTool: ChatLine = { role: "tool", parts: [{ type: "toolExecution", toolCallId: "read-2", toolName: "read", summary: "/skills/relay/SKILL.md", status: "success", resultText: "content" }] };
+    const secondTool: ChatLine = { role: "tool", parts: [{ type: "toolExecution", toolCallId: "read-2", toolName: "read", summary: "/skills/tlc-spec-driven/SKILL.md", status: "success", resultText: "content" }] };
     const thirdTool: ChatLine = { role: "tool", parts: [{ type: "toolExecution", toolCallId: "read-3", toolName: "read", summary: "/skills/skill-creator/SKILL.md", status: "success", resultText: "content" }] };
     const streamed: ChatLine[] = [
       { role: "skill", parts: [{ type: "skillRead", name: "code-quality-architecture", path: "/skills/code-quality-architecture/SKILL.md", toolCallId: "read-1" }] },
       firstTool,
-      { role: "skill", parts: [{ type: "skillRead", name: "relay", path: "/skills/relay/SKILL.md", toolCallId: "read-2" }] },
+      { role: "skill", parts: [{ type: "skillRead", name: "tlc-spec-driven", path: "/skills/tlc-spec-driven/SKILL.md", toolCallId: "read-2" }] },
       secondTool,
       { role: "skill", parts: [{ type: "skillRead", name: "skill-creator", path: "/skills/skill-creator/SKILL.md", toolCallId: "read-3" }] },
       thirdTool,
@@ -209,7 +209,7 @@ describe("applyTranscriptEvent", () => {
         role: "assistant",
         content: [
           { type: "toolCall", id: "read-1", name: "read", arguments: { path: "/skills/code-quality-architecture/SKILL.md" } },
-          { type: "toolCall", id: "read-2", name: "read", arguments: { path: "/skills/relay/SKILL.md" } },
+          { type: "toolCall", id: "read-2", name: "read", arguments: { path: "/skills/tlc-spec-driven/SKILL.md" } },
           { type: "toolCall", id: "read-3", name: "read", arguments: { path: "/skills/skill-creator/SKILL.md" } },
         ],
         timestamp: "2026-05-09T12:00:00.000Z",
@@ -219,7 +219,7 @@ describe("applyTranscriptEvent", () => {
         role: "skill",
         parts: [
           { type: "skillRead", name: "code-quality-architecture", path: "/skills/code-quality-architecture/SKILL.md", toolCallId: "read-1" },
-          { type: "skillRead", name: "relay", path: "/skills/relay/SKILL.md", toolCallId: "read-2" },
+          { type: "skillRead", name: "tlc-spec-driven", path: "/skills/tlc-spec-driven/SKILL.md", toolCallId: "read-2" },
           { type: "skillRead", name: "skill-creator", path: "/skills/skill-creator/SKILL.md", toolCallId: "read-3" },
         ],
         meta: { timestamp: "2026-05-09T12:00:00.000Z" },
@@ -236,14 +236,14 @@ describe("applyTranscriptEvent", () => {
         role: "skill",
         parts: [
           { type: "skillRead", name: "code-quality-architecture", path: "/skills/code-quality-architecture/SKILL.md", toolCallId: "read-1" },
-          { type: "skillRead", name: "relay", path: "/skills/relay/SKILL.md", toolCallId: "read-2" },
+          { type: "skillRead", name: "tlc-spec-driven", path: "/skills/tlc-spec-driven/SKILL.md", toolCallId: "read-2" },
         ],
         meta: { timestamp: "2026-05-09T12:00:00.000Z" },
       },
       { role: "tool", parts: [{ type: "toolExecution", toolCallId: "read-1", toolName: "read", summary: "/skills/code-quality-architecture/SKILL.md", status: "success", resultText: "content" }] },
     ];
 
-    expect(applyTranscriptEvent(messages, { type: "tool.start", toolName: "read", toolCallId: "read-2", summary: "", args: { path: "/skills/relay/SKILL.md" } })).toEqual(messages);
+    expect(applyTranscriptEvent(messages, { type: "tool.start", toolName: "read", toolCallId: "read-2", summary: "", args: { path: "/skills/tlc-spec-driven/SKILL.md" } })).toEqual(messages);
   });
 
   it("allows the same skill read after a user boundary", () => {

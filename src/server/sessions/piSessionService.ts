@@ -37,7 +37,7 @@ import { SessionArchiveStore, type ArchivedSessionRecord, type ArchiveSessionInp
 import { findArchiveCandidateByIdOrPrefix, planSessionArchiveTree, type SessionArchiveTreeCandidate } from "./sessionArchiveTree.js";
 import type { ActiveSession } from "./sessionRuntimeStore.js";
 import type { AuthChange } from "./authService.js";
-import { deterministicSessionName, fallbackSessionName, generateShortSessionName } from "./sessionNameGenerator.js";
+import { fallbackSessionName, generateShortSessionName } from "./sessionNameGenerator.js";
 import { computeEditPreview, type EditPreviewResult, type EditReplacement } from "./editPreview.js";
 import { createPiSessionManagerGateway } from "./piSessionManagerGateway.js";
 import { attachmentsToInlineImages, saveAttachmentsToWorkspace } from "./attachmentService.js";
@@ -1931,11 +1931,6 @@ export class PiSessionService {
  private maybeGenerateSessionName(session: PiAgentSession, firstMessage: string): void {
   if (session.sessionName !== undefined || session.messages.length !== 0 || session.isStreaming || session.isCompacting) return;
 
-  const deterministicName = deterministicSessionName(firstMessage);
-  if (deterministicName !== undefined) {
-   this.applyGeneratedSessionName(session, deterministicName);
-   return;
-  }
 
   const model = session.model;
   if (model === undefined) return;
