@@ -103,11 +103,11 @@ export class SettingsDialog extends LitElement {
   override render(): TemplateResult {
     return html`
       <div class="backdrop" @mousedown=${() => this.onClose?.()}>
-        <section class="settings-shell" role="dialog" aria-modal="true" aria-label="PI WEB settings" @mousedown=${(event: MouseEvent) => { event.stopPropagation(); }} @keydown=${(event: KeyboardEvent) => { this.handleKeyDown(event); }}>
+        <section class="settings-shell" role="dialog" aria-modal="true" aria-label="OMP Web settings" @mousedown=${(event: MouseEvent) => { event.stopPropagation(); }} @keydown=${(event: KeyboardEvent) => { this.handleKeyDown(event); }}>
           <header class="settings-header">
             <div>
               <span class="eyebrow">Settings</span>
-              <h1>PI WEB</h1>
+              <h1>OMP Web</h1>
             </div>
             <button class="close-button" title="Close settings" aria-label="Close settings" @click=${() => this.onClose?.()}>×</button>
           </header>
