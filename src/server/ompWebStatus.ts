@@ -11,6 +11,7 @@ import { effectiveOmpWebCapabilities, WEB_RUNTIME_CAPABILITIES } from "../shared
 import { ompWebDockerCommand } from "../docker/ompWebDockerCommandPlan.js";
 import { parseOmpWebComponentStatus, parseOmpWebRuntimeComponent } from "../shared/ompWebStatusParsing.js";
 import { SessionDaemonClient } from "../sessiond/sessionDaemonClient.js";
+import { isRecord } from "./utils.js";
 
 const OMP_WEB_PACKAGE_NAME = "@ProgmRuanSilva/omp-web";
 const OMP_WEB_NPM_SOURCE = `npm:${OMP_WEB_PACKAGE_NAME}`;
@@ -652,6 +653,3 @@ function formatVersion(version: string | undefined): string {
   return version ?? "unknown";
 }
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}

@@ -8,6 +8,7 @@ import { fileURLToPath } from "node:url";
 import { defaultOmpWebConfigPath, defaultOmpWebDataDir, exampleOmpWebConfig } from "./config.js";
 import { packageVersion, printOmpWebVersionReport } from "./ompWebVersionReport.js";
 import { checkNodePtyDarwinSpawnHelper, formatNodePtyDarwinSpawnHelperCheck } from "./server/diagnostics/nodePtySpawnHelper.js";
+import { isRecord } from "./server/utils.js";
 
 const OMP_WEB_PACKAGE_NAME = "@ProgmRuanSilva/omp-web";
 
@@ -162,15 +163,12 @@ function run(command: string, args: string[], options: { check?: boolean } = {})
   return status;
 }
 
-function outputText(value: unknown): string {
-  return typeof value === "string" ? value : "";
-}
 
 function capture(command: string, args: string[]): { status: number; stdout: string; stderr: string } {
   const result = spawnSync(command, args, { encoding: "utf8" });
   const errorMessage = result.error instanceof Error ? result.error.message : "";
-  const stderr = outputText(result.stderr);
-  return { status: result.status ?? 1, stdout: outputText(result.stdout), stderr: stderr === "" ? errorMessage : stderr };
+  const stderr = typeof result.stderr === "string" ? result.stderr : "";
+  return { status: result.status ?? 1, stdout: typeof result.stdout === "string" ? result.stdout : "", stderr: stderr === "" ? errorMessage : stderr };
 }
 
 function runQuiet(command: string, args: string[]): number {
@@ -1056,9 +1054,6 @@ function printNodePtyDarwinSpawnHelperCheck(): boolean {
   return result.ok;
 }
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}
 
 function help(): void {
   console.log(`PI WEB

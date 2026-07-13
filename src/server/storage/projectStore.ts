@@ -3,14 +3,12 @@ import { dirname, join, resolve } from "node:path";
 import { ompWebDataDir } from "../../config.js";
 import { randomUUID } from "node:crypto";
 import type { Project } from "../types.js";
+import { isRecord, isNodeErrorWithCode } from "../utils.js";
 
 interface ProjectFile {
   projects: Project[];
 }
 
-function isNodeErrorWithCode(error: unknown, code: string): error is NodeJS.ErrnoException {
-  return error instanceof Error && "code" in error && error.code === code;
-}
 
 function parseProjectFile(value: unknown): ProjectFile {
   if (!isRecord(value) || !Array.isArray(value["projects"])) throw new Error("Invalid project file");
@@ -27,9 +25,6 @@ function parseProject(value: unknown): Project {
   return { id, name, path, createdAt };
 }
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null;
-}
 
 export function defaultProjectStorePath(env: NodeJS.ProcessEnv = process.env, cwd = process.cwd()): string {
   return join(ompWebDataDir(env, cwd), "projects.json");

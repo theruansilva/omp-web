@@ -4,6 +4,7 @@ import { normalizeRequestCwd } from "../workingDirectory.js";
 import type { SessionEventHub } from "../realtime/sessionEventHub.js";
 import type { PiSessionRef, PiSessionService } from "./piSessionService.js";
 import { normalizeSessionCleanupRequest } from "./sessionCleanup.js";
+import { errorMessage, isRecord } from "../utils.js";
 
 type SessionLookup = string | PiSessionRef;
 
@@ -362,9 +363,6 @@ function optionalNumber(value: string | undefined): number | undefined {
   return Number.isFinite(parsed) ? parsed : undefined;
 }
 
-function errorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : String(error);
-}
 
 function mutationErrorStatus(error: unknown): 400 | 404 {
   return isSessionNotFoundError(error) ? 404 : 400;
@@ -375,6 +373,3 @@ function isSessionNotFoundError(error: unknown): boolean {
   return message === "Session not found" || message === "Archived session not found";
 }
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}

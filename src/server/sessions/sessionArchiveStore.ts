@@ -4,6 +4,7 @@ import { access, copyFile, mkdir, readFile, rename, unlink, writeFile } from "no
 import { basename, dirname, join } from "node:path";
 import { homedir } from "node:os";
 import { canonicalizeStoredCwd } from "../workingDirectory.js";
+import { isRecord, isNodeErrorWithCode } from "../utils.js";
 
 export interface ArchiveSessionInput {
   sessionId: string;
@@ -284,10 +285,3 @@ function uniqueStrings(values: readonly string[]): string[] {
   return [...new Set(values)];
 }
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null;
-}
-
-function isNodeErrorWithCode(error: unknown, code: string): error is NodeJS.ErrnoException {
-  return error instanceof Error && "code" in error && error.code === code;
-}

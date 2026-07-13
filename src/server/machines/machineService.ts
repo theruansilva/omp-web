@@ -3,6 +3,7 @@ import { parseOmpWebRuntimeResponse } from "../../shared/ompWebStatusParsing.js"
 import { getOmpWebRuntime } from "../ompWebStatus.js";
 import { DEFAULT_REMOTE_HEALTH_TIMEOUT_MS, RemoteMachineClient, type MachineClient, validateConfiguredMachineHeaders } from "./machineClient.js";
 import { MachineStore, type StoredMachine } from "./machineStore.js";
+import { errorMessage, isRecord } from "../utils.js";
 
 export interface CreateMachineInput {
   name?: string;
@@ -208,9 +209,6 @@ function validateHeaders(value: Record<string, string>): Record<string, string> 
   return validateConfiguredMachineHeaders(value) ?? {};
 }
 
-function errorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : String(error);
-}
 
 function componentStatusFromRuntime(runtime: OmpWebRuntimeComponent): OmpWebComponentStatus {
   return {
@@ -251,6 +249,3 @@ function isOmpWebComponentStatus(value: unknown): value is OmpWebComponentStatus
     && typeof value["available"] === "boolean";
 }
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}

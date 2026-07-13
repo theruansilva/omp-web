@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { chmod, mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
 import { ompWebDataDir } from "../../config.js";
+import { isRecord, isNodeErrorWithCode } from "../utils.js";
 
 export interface StoredMachine {
   id: string;
@@ -133,10 +134,3 @@ async function restrictMachineStorePermissions(path: string): Promise<void> {
   await chmod(path, MACHINE_STORE_FILE_MODE);
 }
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}
-
-function isNodeErrorWithCode(error: unknown, code: string): error is NodeJS.ErrnoException {
-  return error instanceof Error && "code" in error && error.code === code;
-}

@@ -6,6 +6,7 @@ import { getAgentDir } from "@oh-my-pi/pi-coding-agent";
 import { loadOmpWebConfig, ompWebDataDir, type OmpWebConfig } from "../config.js";
 import type { OmpWebPluginInfo, OmpWebPluginsResponse, OmpWebPluginScope } from "../shared/apiTypes.js";
 import { isOmpWebPluginId } from "../shared/pluginIds.js";
+import { isRecord } from "./utils.js";
 
 export type { OmpWebPluginInfo, OmpWebPluginsResponse, OmpWebPluginScope } from "../shared/apiTypes.js";
 
@@ -334,6 +335,3 @@ function contentTypeFor(path: string): string {
   return "application/octet-stream";
 }
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}

@@ -23,6 +23,7 @@
     "plugin-api/unstable.d.ts"
   ],
   "scripts": {
+    "typecheck": "tsc --noEmit",
     "dev": "bash -c 'trap \"kill 0\" EXIT; bun run dev:sessiond & bun run dev:web & bun run dev:client & wait'",
     "dev:sessiond": "bun --watch src/server/sessiond.ts",
     "dev:web": "bash -c 'set -e; bun run build:plugins; trap \"kill 0\" EXIT; bun run dev:plugins & bun --watch src/server/index.ts & wait'",

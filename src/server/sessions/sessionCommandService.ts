@@ -2,6 +2,7 @@ import crypto from "node:crypto";
 import type { SessionUiEvent } from "../../shared/apiTypes.js";
 import type { ClientCommandResult, ClientSession } from "../types.js";
 import { isBuiltinCommand } from "./builtinCommands.js";
+import { isRecord } from "../utils.js";
 
 export interface CommandSession {
   sessionId: string;
@@ -283,9 +284,6 @@ function normalizedName(name: string | undefined): string | undefined {
   return trimmed === undefined || trimmed === "" ? undefined : trimmed;
 }
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null;
-}
 
 function isDefined<T>(value: T | undefined): value is T {
   return value !== undefined;

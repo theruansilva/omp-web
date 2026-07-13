@@ -4,6 +4,7 @@ import { normalizeRequestCwd } from "../workingDirectory.js";
 import type { TerminalCommandRun, TerminalCommandRunFilter, TerminalCommandRunStatus } from "../../shared/apiTypes.js";
 import type { RunTerminalCommandOptions, TerminalInfo } from "./terminalService.js";
 import { parseTerminalSize } from "./terminalSize.js";
+import { isRecord } from "../utils.js";
 
 export interface TerminalRouteService {
   list(cwd: string): TerminalInfo[];
@@ -173,6 +174,3 @@ function rawDataToString(data: RawData): string {
   return data.toString("utf8");
 }
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null;
-}

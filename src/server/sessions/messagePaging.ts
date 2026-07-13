@@ -1,3 +1,4 @@
+import { isRecord } from "../utils.js";
 const DEFAULT_LIMIT = 100;
 const MAX_LIMIT = 500;
 
@@ -40,9 +41,6 @@ function getProperty(value: unknown, key: string): unknown {
   return value[key];
 }
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null;
-}
 
 function getString(value: unknown, key: string): string | undefined {
   const property = getProperty(value, key);

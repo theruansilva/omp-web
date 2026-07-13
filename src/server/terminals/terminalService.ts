@@ -20,6 +20,7 @@ try {
 import type { TerminalCommandRun, TerminalCommandRunFilter, TerminalCommandRunStatus, TerminalUiEvent } from "../../shared/apiTypes.js";
 import type { SessionEventHub } from "../realtime/sessionEventHub.js";
 import type { WorkspaceActivityService } from "../activity/workspaceActivityService.js";
+import { isRecord } from "../utils.js";
 
 const MAX_REPLAY_BUFFER = 200_000;
 
@@ -338,6 +339,3 @@ function copyCommandRun(run: TerminalCommandRun): TerminalCommandRun {
   return { ...run, metadata: { ...run.metadata } };
 }
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null;
-}

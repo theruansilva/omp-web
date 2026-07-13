@@ -45,6 +45,7 @@ import { parsePromptAttachments } from "../../shared/promptAttachments.js";
 import type { SavedPromptAttachment, SessionBulkArchiveResponse, SessionBulkDeleteArchivedResponse, SessionBulkFailure, SessionBulkMutationRef } from "../../shared/apiTypes.js";
 
 import { cwdPathsEqual } from "../workingDirectory.js";
+import { errorMessage, isRecord } from "../utils.js";
 import type { WorkspaceActivityService } from "../activity/workspaceActivityService.js";
 import { createSpawnSessionToolDefinition, type SpawnSessionInvocation, type SpawnSessionResult } from "./spawnSessionTool.js";
 import { createSubsessionToolDefinitions, type SpawnSubsessionInvocation, type SpawnSubsessionResult, type SubsessionCheckResult, type SubsessionReadQuery, type SubsessionReadResult, type SubsessionStatus, type SubsessionSummary, type SubsessionToolDeps } from "./spawnSubsessionTool.js";
@@ -2156,9 +2157,6 @@ function uniqueStrings(values: readonly string[]): string[] {
  return [...new Set(values)];
 }
 
-function errorMessage(error: unknown): string {
- return error instanceof Error ? error.message : String(error);
-}
 
 function modelToClientModel(model: PiAgentSession["model"]): ClientSessionModel {
  if (model === undefined) return {};
@@ -2616,9 +2614,6 @@ function stringifyToolResult(result: unknown): string {
  return stringifyPrimitive(result);
 }
 
-function isRecord(value: unknown): value is Record<string, unknown> {
- return typeof value === "object" && value !== null;
-}
 
 function getProperty(value: unknown, key: string): unknown {
  return isRecord(value) ? value[key] : undefined;

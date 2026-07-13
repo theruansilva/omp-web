@@ -1,6 +1,7 @@
 import { accessSync, constants, existsSync, statSync, type Stats } from "node:fs";
 import { createRequire } from "node:module";
 import { dirname, join } from "node:path";
+import { errorMessage } from "../utils.js";
 
 export const OMP_WEB_SPAWN_HELPER_ISSUE_URL = "https://github.com/ProgmRuanSilva/omp-web/issues/4";
 export const NODE_PTY_SPAWN_HELPER_UPSTREAM_ISSUE_URL = "https://github.com/microsoft/node-pty/issues/850";
@@ -169,6 +170,3 @@ function isFileNotFoundError(error: unknown): boolean {
   return error instanceof Error && "code" in error && error.code === "ENOENT";
 }
 
-function errorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : String(error);
-}

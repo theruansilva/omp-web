@@ -2,6 +2,7 @@ import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { effectiveUploadsConfig, parsePathAccessConfig, parseUploadsConfig, type OmpWebConfig } from "../../config.js";
 import type { OmpWebPathAccessConfig, OmpWebUploadsConfig } from "../../shared/apiTypes.js";
+import { isRecord, isNodeErrorWithCode } from "../utils.js";
 
 export const PROJECT_OMP_WEB_CONFIG_PATH = ".omp-web/config.json";
 
@@ -69,10 +70,3 @@ function dedupe(values: readonly string[]): string[] {
   return result;
 }
 
-function isNodeErrorWithCode(error: unknown, code: string): error is NodeJS.ErrnoException {
-  return error instanceof Error && "code" in error && error.code === code;
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}

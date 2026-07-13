@@ -2,6 +2,7 @@ import type { FastifyInstance } from "fastify";
 import { effectiveOmpWebConfig, loadOmpWebConfig, parseUploadsConfig, saveOmpWebConfig, type LoadOptions, type OmpWebConfig } from "../config.js";
 import type { OmpWebConfigEnvOverrides, OmpWebConfigResponse, OmpWebConfigValues } from "../shared/apiTypes.js";
 import { isOmpWebPluginId } from "../shared/pluginIds.js";
+import { errorMessage, isRecord } from "./utils.js";
 
 export interface OmpWebConfigService {
   read: () => OmpWebConfigResponse | Promise<OmpWebConfigResponse>;
@@ -271,10 +272,3 @@ function isConfigValidationError(error: unknown): boolean {
   return error instanceof Error && (error.message.startsWith("PI WEB config") || error.message.startsWith("PI WEB selected-machine config"));
 }
 
-function errorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : String(error);
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}

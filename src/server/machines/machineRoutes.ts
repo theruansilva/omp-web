@@ -1,5 +1,6 @@
 import type { FastifyInstance } from "fastify";
 import { MachineService, type CreateMachineInput, type UpdateMachineInput } from "./machineService.js";
+import { errorMessage } from "../utils.js";
 
 export function registerMachineRoutes(app: FastifyInstance, machines = new MachineService()): void {
   app.get("/api/machines", async () => ({ machines: await machines.list() }));
@@ -51,6 +52,3 @@ export function registerMachineRoutes(app: FastifyInstance, machines = new Machi
   });
 }
 
-function errorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : String(error);
-}

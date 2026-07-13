@@ -5,6 +5,7 @@ import { effectiveOmpWebConfig } from "./config.js";
 import { SessionDaemonClient } from "./sessiond/sessionDaemonClient.js";
 import type { OmpWebComponentStatus, OmpWebInstallationInfo, OmpWebVersionResponse } from "./shared/apiTypes.js";
 import { parseOmpWebComponentStatus, parseOmpWebVersionResponse } from "./shared/ompWebStatusParsing.js";
+import { errorMessage, isRecord } from "./server/utils.js";
 
 const OMP_WEB_PACKAGE_NAME = "@ProgmRuanSilva/omp-web";
 const OMP_WEB_VERSION_TIMEOUT_MS = 2000;
@@ -109,7 +110,7 @@ async function collectRunningVersionInfo(): Promise<RunningVersionInfo> {
     } catch (error) {
       let webError = `${endpoint.endpoint}: ${errorMessage(error)}`;
       const statusEndpoint = statusEndpointFor(endpoint.endpoint);
-      if (statusEndpoint !== endpoint.endpoint && isHttpNotFound(error)) {
+      if (statusEndpoint !== endpoint.endpoint && error instanceof Error && error.message === "HTTP 404") {
         try {
           const status = await fetchOmpWebVersionResponse(statusEndpoint);
           return { generatedAt: status.generatedAt, web: status.components.web, sessiond: status.components.sessiond };
@@ -167,9 +168,6 @@ async function withTimeout<T>(promise: Promise<T>, timeoutMs: number, timeoutMes
   }
 }
 
-function isHttpNotFound(error: unknown): boolean {
-  return error instanceof Error && error.message === "HTTP 404";
-}
 
 function printInstalledPackageVersions(): void {
   const info = readPackageInfo();
@@ -234,10 +232,3 @@ function formatVersion(version: string | undefined): string {
   return version === undefined || version === "" ? "unknown" : version;
 }
 
-function errorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : String(error);
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}
