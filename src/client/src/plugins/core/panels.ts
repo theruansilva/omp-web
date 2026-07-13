@@ -2,6 +2,7 @@ import { html, type TemplateResult } from "lit";
 import type { GitDiffResponse, GitStatusResponse } from "../../api";
 import { renderBuiltinTabIcon } from "../../components/tabIcons";
 import "../../components/WorkspaceFilesPanel";
+import "../../components/WorkspaceTasksPanel";
 import type { WorkspacePanelContribution, WorkspacePanelContext } from "../types";
 
 export function createCoreWorkspacePanels(): WorkspacePanelContribution[] {
@@ -28,6 +29,13 @@ export function createCoreWorkspacePanels(): WorkspacePanelContribution[] {
       order: 30,
       badge: (context) => context.activeTerminalCount > 0 ? context.activeTerminalCount : undefined,
       render: renderTerminal,
+    },
+    {
+      id: "workspace.tasks",
+      title: "Tasks",
+      icon: renderBuiltinTabIcon("tasks"),
+      order: 35,
+      render: renderTasks,
     },
   ];
 }
@@ -98,6 +106,10 @@ function loadUnifiedDiffViewer(): void {
 
 function loadTerminalPanel(): void {
   void import("../../components/TerminalPanel");
+}
+
+function renderTasks(context: WorkspacePanelContext): TemplateResult {
+  return html`<workspace-tasks-panel .context=${context}></workspace-tasks-panel>`;
 }
 
 function gitSummary(status: GitStatusResponse): string {

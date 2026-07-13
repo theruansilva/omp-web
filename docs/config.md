@@ -56,7 +56,6 @@ Process restarts depend on the key:
   "spawnSessions": true,
   "subsessions": false,
   "plugins": {
-    "workspace-tasks": { "enabled": true },
     "updates": { "enabled": true },
     "info": { "enabled": false }
   },
@@ -184,13 +183,10 @@ Plugins are enabled by default. Set `plugins.<id>.enabled` to `false` to remove 
 ```json
 {
   "plugins": {
-    "workspace-tasks": { "enabled": true, "settings": {} },
     "updates": { "enabled": false }
   }
 }
 ```
-
-Reload the browser tab after changing plugin enablement. Already-loaded plugin JavaScript is not unloaded from the current page.
 
 ### Shortcut config
 

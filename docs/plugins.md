@@ -178,7 +178,7 @@ Plugin preferences are stored under the top-level `plugins` config key in the PI
 ```json
 {
   "plugins": {
-    "workspace-tasks": {
+    "updates": {
       "enabled": true,
       "settings": {}
     },
@@ -212,62 +212,6 @@ Updates is enabled by default. It declares `machineSpecific: true` so the gatewa
     "updates": { "enabled": false }
   }
 }
-```
-
-### Workspace Tasks
-
-**Plugin id:** `workspace-tasks`
-**Config file:** `.omp-web/tasks.json`
-**What it does:** adds a **Tasks** workspace tab for running configured shell commands in dedicated PI WEB terminals.
-
-Workspace Tasks is enabled by default. To hide it, disable `workspace-tasks` in **Settings → PI WEB plugins** or set:
-
-```json
-{
-  "plugins": {
-    "workspace-tasks": { "enabled": false }
-  }
-}
-```
-
-Configure workspace tasks in `.omp-web/tasks.json`:
-
-```json
-{
-  "version": 1,
-  "tasks": [
-    {
-      "id": "app.start",
-      "title": "Start app",
-      "group": "Development",
-      "description": "Start the local development server.",
-      "command": "npm run dev"
-    },
-    {
-      "id": "db.reset",
-      "title": "Reset DB",
-      "group": "Database",
-      "command": "go -C klingit-go run ./cli db reset",
-      "confirm": true
-    }
-  ]
-}
-```
-
-Open a workspace, choose the **Tasks** tab, and click **Run** next to a task. Commands run in the workspace root because PI WEB creates the terminal for that workspace.
-
-Task fields:
-
-- `version`: must be `1`.
-- `tasks`: array of task definitions.
-- `id`: stable task id, matching `^[a-z][a-z0-9.-]*$`.
-- `title`: button label.
-- `command`: literal shell command sent to the terminal.
-- `description`: optional explanatory text.
-- `group`: optional group heading.
-- `confirm`: optional boolean. When true, the browser asks before dispatching the command.
-
-Review task configs before running them, especially in shared projects. Workspace Tasks runs trusted shell commands from your repositories.
 
 ## Discovery and packaging
 

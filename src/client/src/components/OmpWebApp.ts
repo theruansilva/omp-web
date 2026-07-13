@@ -1241,13 +1241,13 @@ export class OmpWebApp extends LitElement {
     if (project === undefined) {
       return this.state.projects.length === 0
         ? {
-            title: "No projects yet",
-            body: "Use Actions → Add Project to add a folder. Workspace tools will appear here after you choose a workspace.",
-          }
+          title: "No projects yet",
+          body: "Use Actions → Add Project to add a folder. Workspace tools will appear here after you choose a workspace.",
+        }
         : {
-            title: "Select a project",
-            body: "Choose a project from the sidebar, then select a workspace to inspect files, Git, or terminals.",
-          };
+          title: "Select a project",
+          body: "Choose a project from the sidebar, then select a workspace to inspect files, Git, or terminals.",
+        };
     }
     if (this.state.isLoadingWorkspaces) {
       return {
@@ -1286,6 +1286,7 @@ export class OmpWebApp extends LitElement {
       case "core:workspace.files": return "files";
       case "core:workspace.git": return "git";
       case "core:workspace.terminal": return "terminal";
+      case "core:workspace.tasks": return "tasks";
       default: return undefined;
     }
   }
