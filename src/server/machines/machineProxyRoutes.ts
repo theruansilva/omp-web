@@ -5,19 +5,12 @@ import { mergeSelectedMachineConfig, parseOmpWebConfigResponseBody, parseSelecte
 import { bridgeSockets } from "../webSocketBridge.js";
 import { RemoteMachineRequestError, type MachineClient, type MachineJsonResponse, type MachineRequestOptions } from "./machineClient.js";
 import { MachineService } from "./machineService.js";
+import { applySafeHeaders, sendGatewayError } from "./proxyUtils.js";
+import { errorMessage, isRecord } from "../utils.js";
 
 export const REMOTE_HTTP_ROUTES = FEDERATED_HTTP_ROUTES;
 export const REMOTE_WEBSOCKET_ROUTES = FEDERATED_WEBSOCKET_ROUTES;
 
-const SAFE_RESPONSE_HEADERS = new Set([
-  "content-type",
-  "content-length",
-  "cache-control",
-  "last-modified",
-  "etag",
-  "content-security-policy",
-  "x-content-type-options",
-]);
 
 export function registerMachineProxyRoutes(app: FastifyInstance, machines = new MachineService()): void {
   for (const spec of REMOTE_HTTP_ROUTES) {
@@ -146,33 +139,8 @@ function firstHeaderValue(value: string | string[] | undefined): string | undefi
   return Array.isArray(value) ? value[0] : value;
 }
 
-function applySafeHeaders(reply: FastifyReply, headers: Record<string, string | string[] | undefined>): void {
-  for (const [name, value] of Object.entries(headers)) {
-    if (value === undefined) continue;
-    if (!SAFE_RESPONSE_HEADERS.has(name.toLowerCase())) continue;
-    reply.header(name, value);
-  }
-}
 
 function isSelectedMachineConfigRequestError(error: unknown): boolean {
   return error instanceof Error && error.message.startsWith("PI WEB selected-machine config");
 }
 
-function errorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : String(error);
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}
-
-function sendGatewayError(reply: FastifyReply, machineId: string, error: unknown): FastifyReply {
-  const statusCode = error instanceof RemoteMachineRequestError ? error.statusCode : 502;
-  const label = statusCode === 504 ? "Remote machine timeout" : "Remote machine unavailable";
-  return reply.code(statusCode).send({
-    error: label,
-    machineId,
-    statusCode,
-    detail: errorMessage(error),
-  });
-}

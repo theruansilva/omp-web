@@ -3,6 +3,8 @@ import { machineScopedPluginId, parseMachineScopedPluginId, type MachineScopedPl
 import { isOmpWebPluginId } from "../../shared/pluginIds.js";
 import { RemoteMachineRequestError, type MachineClient } from "./machineClient.js";
 import { MachineService } from "./machineService.js";
+import { applySafeHeaders, sendGatewayError } from "./proxyUtils.js";
+import { isRecord } from "../utils.js";
 
 interface RemotePluginManifestEntry {
   id: string;
@@ -22,15 +24,6 @@ interface MachinePluginProxyMachines {
 
 const MACHINE_PLUGIN_MANIFEST_TIMEOUT_MS = 10_000;
 
-const SAFE_RESPONSE_HEADERS = new Set([
-  "content-type",
-  "content-length",
-  "cache-control",
-  "last-modified",
-  "etag",
-  "content-security-policy",
-  "x-content-type-options",
-]);
 
 export function registerMachinePluginProxyRoutes(app: FastifyInstance, machines: MachinePluginProxyMachines = new MachineService()): void {
   app.get<{ Params: { machineId: string } }>("/api/machines/:machineId/omp-web-plugins/manifest.json", async (request, reply) => {
@@ -171,25 +164,3 @@ function parseRemoteMachineSpecific(value: unknown): { machineSpecific?: boolean
   return { machineSpecific: value };
 }
 
-function applySafeHeaders(reply: FastifyReply, headers: Record<string, string | string[] | undefined>): void {
-  for (const [name, value] of Object.entries(headers)) {
-    if (value === undefined) continue;
-    if (!SAFE_RESPONSE_HEADERS.has(name.toLowerCase())) continue;
-    reply.header(name, value);
-  }
-}
-
-function sendGatewayError(reply: FastifyReply, machineId: string, error: unknown): FastifyReply {
-  const statusCode = error instanceof RemoteMachineRequestError ? error.statusCode : 502;
-  const label = statusCode === 504 ? "Remote machine timeout" : "Remote machine unavailable";
-  return reply.code(statusCode).send({
-    error: label,
-    machineId,
-    statusCode,
-    detail: error instanceof Error ? error.message : String(error),
-  });
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}
