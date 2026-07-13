@@ -194,8 +194,6 @@ async function detectOmpWebInstallation(): Promise<OmpWebInstallationInfo> {
   if (docker !== undefined) return docker;
   const root = packageRootPath();
   const realRoot = await realPathOrSelf(root);
-  const piPackage = await detectPiPackageInstallation(realRoot, root);
-  if (piPackage !== undefined) return piPackage;
   const npmGlobal = await detectNpmGlobalInstallation(realRoot, root);
   if (npmGlobal !== undefined) return npmGlobal;
   return { kind: "local", path: root };
@@ -241,9 +239,6 @@ function isTruthyEnv(key: string): boolean {
   return value !== undefined && value !== "" && value !== "0" && value.toLowerCase() !== "false";
 }
 
-async function detectPiPackageInstallation(_realRoot: string, _displayPath: string): Promise<OmpWebInstallationInfo | undefined> {
-  return undefined;
-}
 
 async function detectNpmGlobalInstallation(realRoot: string, displayPath: string): Promise<OmpWebInstallationInfo | undefined> {
   const bunInstall = process.env["BUN_INSTALL"] ?? join(process.env["HOME"] ?? "~", ".bun");

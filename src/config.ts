@@ -5,12 +5,11 @@ import type { OmpWebConfigValues } from "./shared/apiTypes.js";
 import { isOmpWebPluginId, ompWebPluginIdPattern } from "./shared/pluginIds.js";
 import { isRecord } from "./server/utils.js";
 
-export type OmpWebConfig = OmpWebConfigValues;
 
 export interface LoadedOmpWebConfig {
  path: string;
  exists: boolean;
- config: OmpWebConfig;
+ config: OmpWebConfigValues;
 }
 
 export interface LoadOptions {
@@ -36,11 +35,11 @@ export const DEFAULT_MAX_UPLOAD_BYTES = 64 * 1024 * 1024;
 
 export const DEFAULT_UPLOADS_FOLDER = ".omp-web/uploads";
 
-export function effectiveUploadsConfig(config: Pick<OmpWebConfig, "uploads"> = {}): NonNullable<OmpWebConfig["uploads"]> {
+export function effectiveUploadsConfig(config: Pick<OmpWebConfigValues, "uploads"> = {}): NonNullable<OmpWebConfigValues["uploads"]> {
  return { defaultFolder: config.uploads?.defaultFolder ?? DEFAULT_UPLOADS_FOLDER };
 }
 
-export function maxUploadBytes(env: NodeJS.ProcessEnv = process.env, config: OmpWebConfig = {}): number {
+export function maxUploadBytes(env: NodeJS.ProcessEnv = process.env, config: OmpWebConfigValues = {}): number {
  const fromEnv = env["OMP_WEB_MAX_UPLOAD_BYTES"];
  if (fromEnv !== undefined && fromEnv !== "") {
   const parsed = Number(fromEnv);
@@ -99,7 +98,7 @@ export function effectiveOmpWebConfig(options: LoadOptions = {}): LoadedOmpWebCo
  };
 }
 
-export function saveOmpWebConfig(config: OmpWebConfig, options: LoadOptions = {}): LoadedOmpWebConfig {
+export function saveOmpWebConfig(config: OmpWebConfigValues, options: LoadOptions = {}): LoadedOmpWebConfig {
  const env = options.env ?? process.env;
  const path = ompWebConfigPath(env, options.cwd ?? process.cwd());
  const normalized = parseOmpWebConfig(ompWebConfigRecord(config), path);
@@ -127,7 +126,7 @@ function readExistingConfigObject(path: string): Record<string, unknown> {
  return parsed;
 }
 
-function ompWebConfigRecord(config: OmpWebConfig): Record<string, unknown> {
+function ompWebConfigRecord(config: OmpWebConfigValues): Record<string, unknown> {
  return {
   ...(config.host !== undefined ? { host: config.host } : {}),
   ...(config.port !== undefined ? { port: config.port } : {}),
@@ -142,7 +141,7 @@ function ompWebConfigRecord(config: OmpWebConfig): Record<string, unknown> {
  };
 }
 
-function parseOmpWebConfig(value: Record<string, unknown>, path: string): OmpWebConfig {
+function parseOmpWebConfig(value: Record<string, unknown>, path: string): OmpWebConfigValues {
  return {
   ...(value["host"] !== undefined ? { host: parseString(value["host"], "host", path) } : {}),
   ...(value["port"] !== undefined ? { port: parsePort(value["port"], "port", path) } : {}),
@@ -174,7 +173,7 @@ function parseSpawnSessions(value: unknown, path: string): boolean {
  * env var `OMP_WEB_SPAWN_SESSIONS` or the `spawnSessions` config key to `false`
  * to disable. The env var takes precedence over the config file.
  */
-export function spawnSessionsEnabled(env: NodeJS.ProcessEnv = process.env, config: OmpWebConfig = {}): boolean {
+export function spawnSessionsEnabled(env: NodeJS.ProcessEnv = process.env, config: OmpWebConfigValues = {}): boolean {
  const fromEnv = env["OMP_WEB_SPAWN_SESSIONS"];
  if (fromEnv !== undefined && fromEnv !== "") return fromEnv === "1" || fromEnv.toLowerCase() === "true";
  return config.spawnSessions ?? true;
@@ -193,7 +192,7 @@ function parseSubsessions(value: unknown, path: string): boolean {
  * precedence over the config file. Subsessions also require spawnSessions to be
  * enabled (they share the same project-scope resolver).
  */
-export function subsessionsEnabled(env: NodeJS.ProcessEnv = process.env, config: OmpWebConfig = {}): boolean {
+export function subsessionsEnabled(env: NodeJS.ProcessEnv = process.env, config: OmpWebConfigValues = {}): boolean {
  const fromEnv = env["OMP_WEB_SUBSESSIONS"];
  if (fromEnv !== undefined && fromEnv !== "") return fromEnv === "1" || fromEnv.toLowerCase() === "true";
  return config.subsessions ?? false;
@@ -286,7 +285,7 @@ function isNonEmptyStringArray(value: unknown): value is string[] {
  return Array.isArray(value) && value.every((item) => typeof item === "string" && item !== "");
 }
 
-export function exampleOmpWebConfig(config: OmpWebConfig = {}): string {
+export function exampleOmpWebConfig(config: OmpWebConfigValues = {}): string {
  return `${JSON.stringify({ host: config.host ?? "127.0.0.1", port: config.port ?? 8504, allowedHosts: config.allowedHosts ?? [] }, null, 2)}\n`;
 }
 

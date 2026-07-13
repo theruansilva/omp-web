@@ -222,53 +222,32 @@ export class CronScheduler {
  }
 
  /**
-  * Parse relative time delta (e.g., "+10s", "+5m", "+1h")
+  * Parse a duration string like "10s", "5m", "1h", "2d" (optionally with
+  * leading `+`) into milliseconds. Returns null on invalid input.
   */
- static parseRelativeTime(delta: string): string | null {
-  const re = /^\+(\d+)(s|m|h|d)$/;
-  const match = re.exec(delta);
+ static parseDuration(value: string): number | null {
+  const re = /^\+?(\d+)(s|m|h|d)$/;
+  const match = re.exec(value);
   if (!match) return null;
   const valStr = match[1];
   const unitStr = match[2];
   if (valStr == null || unitStr == null) return null;
 
-  const value = parseInt(valStr, 10);
-  const unit = unitStr;
-
-  const msMap: Record<string, number> = {
-   s: 1000,
-   m: 60 * 1000,
-   h: 60 * 60 * 1000,
-   d: 24 * 60 * 60 * 1000,
-  };
-
-  const ms = value * (msMap[unit] ?? 0);
-  const futureTime = new Date(Date.now() + ms);
-  return futureTime.toISOString();
- }
-
- /**
-  * Parse interval string to milliseconds
-  */
- static parseInterval(interval: string): number | null {
-  const re = /^(\d+)(s|m|h|d)$/;
-  const match = re.exec(interval);
-  if (!match) return null;
-  const valStr = match[1];
-  const unitStr = match[2];
-  if (valStr == null || unitStr == null) return null;
-
-  const value = parseInt(valStr, 10);
-  const unit = unitStr;
-
+  const valueNum = parseInt(valStr, 10);
   const multipliers: Record<string, number> = {
    s: 1000,
    m: 60 * 1000,
    h: 60 * 60 * 1000,
    d: 24 * 60 * 60 * 1000,
   };
+  return valueNum * (multipliers[unitStr] ?? 0);
+ }
 
-  return value * (multipliers[unit] ?? 0);
+ /** Parse relative time delta (e.g., "+10s") → ISO string */
+ static parseRelativeTime(delta: string): string | null {
+  const ms = CronScheduler.parseDuration(delta);
+  if (ms == null) return null;
+  return new Date(Date.now() + ms).toISOString();
  }
 
  /**
@@ -276,7 +255,7 @@ export class CronScheduler {
   */
  static validateSchedule(type: CronJobType, schedule: string): ValidateScheduleResult {
   if (type === "interval") {
-   const intervalMs = CronScheduler.parseInterval(schedule);
+   const intervalMs = CronScheduler.parseDuration(schedule);
    if (intervalMs == null || intervalMs <= 0) {
     return {
      ok: false,

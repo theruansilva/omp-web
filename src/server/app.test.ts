@@ -43,7 +43,6 @@ beforeEach(async () => {
         if (remoteClient === undefined) throw new Error("No remote machine client configured");
         return remoteClient;
       },
-      now: () => new Date("2026-05-25T00:00:00.000Z"),
       localRuntime: () => Promise.resolve({
         packageName: "@ProgmRuanSilva/omp-web",
         generatedAt: "2026-05-25T00:00:00.000Z",

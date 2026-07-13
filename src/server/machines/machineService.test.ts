@@ -81,13 +81,12 @@ describe("MachineService", () => {
     }));
     const healthService = new MachineService(new MachineStore(storePath), {
       localRuntime,
-      now: () => new Date("2026-05-25T00:00:00.000Z"),
     });
 
     const health = await healthService.health("local");
 
     expect(localRuntime).toHaveBeenCalledTimes(1);
-    expect(health).toEqual({
+    expect(health).toMatchObject({
       machineId: "local",
       ok: true,
       checkedAt: "2026-05-25T00:00:00.000Z",

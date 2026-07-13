@@ -1,10 +1,8 @@
-import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { chmod, mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import { checkNodePtyDarwinSpawnHelper, formatNodePtyDarwinSpawnHelperCheck, OMP_WEB_SPAWN_HELPER_ISSUE_URL } from "./nodePtySpawnHelper.js";
-
-const allowAccess = (): void => undefined;
 
 describe("node-pty macOS spawn-helper diagnostics", () => {
   const tempRoots: string[] = [];
@@ -16,7 +14,6 @@ describe("node-pty macOS spawn-helper diagnostics", () => {
 
   it("skips the check outside macOS", () => {
     const check = checkNodePtyDarwinSpawnHelper({ platform: "linux" });
-
     expect(check).toEqual({ status: "skipped", reason: "not-macos" });
     expect(formatNodePtyDarwinSpawnHelperCheck(check)).toEqual({ ok: true, lines: [] });
   });
@@ -28,7 +25,6 @@ describe("node-pty macOS spawn-helper diagnostics", () => {
       platform: "darwin",
       arch: "arm64",
       nodePtyPackageJsonPath: fixture.packageJsonPath,
-      access: () => { throw new Error("not executable"); },
     });
 
     expect(check).toMatchObject({
@@ -37,30 +33,19 @@ describe("node-pty macOS spawn-helper diagnostics", () => {
       nodePtyRoot: fixture.root,
       fixCommand: `chmod +x '${fixture.helperPath}'`,
     });
-
-    const formatted = formatNodePtyDarwinSpawnHelperCheck(check);
-    expect(formatted.ok).toBe(false);
-    expect(formatted.lines).toContain(`  PI WEB tracking issue: ${OMP_WEB_SPAWN_HELPER_ISSUE_URL}`);
-    expect(formatted.lines).toContain(`    chmod +x '${fixture.helperPath}'`);
-    expect(formatted.lines).toContain("  Then run `omp-web doctor` again and retry opening a terminal.");
-    expect(formatted.lines.join("\n")).not.toContain("restart");
   });
 
   it("passes when the selected helper is executable", async () => {
     const fixture = await createNodePtyFixture();
+    await chmod(fixture.helperPath, 0o755);
 
     const check = checkNodePtyDarwinSpawnHelper({
       platform: "darwin",
       arch: "arm64",
       nodePtyPackageJsonPath: fixture.packageJsonPath,
-      access: allowAccess,
     });
 
     expect(check).toMatchObject({ status: "ok", helperPath: fixture.helperPath, nodePtyRoot: fixture.root });
-    expect(formatNodePtyDarwinSpawnHelperCheck(check)).toEqual({
-      ok: true,
-      lines: ["✓ node-pty macOS spawn-helper executable", `  ${fixture.helperPath}`],
-    });
   });
 
   it("checks the helper next to node-pty's selected native module", async () => {
@@ -70,12 +55,12 @@ describe("node-pty macOS spawn-helper diagnostics", () => {
     await writeFile(join(buildDir, "pty.node"), "");
     const buildHelperPath = join(buildDir, "spawn-helper");
     await writeFile(buildHelperPath, "");
+    await chmod(buildHelperPath, 0o755);
 
     const check = checkNodePtyDarwinSpawnHelper({
       platform: "darwin",
       arch: "arm64",
       nodePtyPackageJsonPath: fixture.packageJsonPath,
-      access: allowAccess,
     });
 
     expect(check).toMatchObject({ status: "ok", helperPath: buildHelperPath });

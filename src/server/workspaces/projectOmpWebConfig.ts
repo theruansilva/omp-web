@@ -1,7 +1,7 @@
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
-import { effectiveUploadsConfig, parsePathAccessConfig, parseUploadsConfig, type OmpWebConfig } from "../../config.js";
-import type { OmpWebPathAccessConfig, OmpWebUploadsConfig } from "../../shared/apiTypes.js";
+import { effectiveUploadsConfig, parsePathAccessConfig, parseUploadsConfig } from "../../config.js";
+import type { OmpWebConfigValues, OmpWebPathAccessConfig, OmpWebUploadsConfig } from "../../shared/apiTypes.js";
 import { isRecord, isNodeErrorWithCode } from "../utils.js";
 
 export const PROJECT_OMP_WEB_CONFIG_PATH = ".omp-web/config.json";
@@ -30,12 +30,12 @@ export async function loadProjectOmpWebConfig(projectPath: string): Promise<Load
   }
 }
 
-export async function loadEffectiveProjectPathAccess(projectPath: string, globalConfig: OmpWebConfig): Promise<OmpWebPathAccessConfig | undefined> {
+export async function loadEffectiveProjectPathAccess(projectPath: string, globalConfig: OmpWebConfigValues): Promise<OmpWebPathAccessConfig | undefined> {
   const projectConfig = await loadProjectOmpWebConfig(projectPath);
   return mergePathAccessConfigs(globalConfig.pathAccess, projectConfig.config.pathAccess);
 }
 
-export async function loadEffectiveProjectUploadsConfig(projectPath: string, globalConfig: OmpWebConfig): Promise<OmpWebUploadsConfig> {
+export async function loadEffectiveProjectUploadsConfig(projectPath: string, globalConfig: OmpWebConfigValues): Promise<OmpWebUploadsConfig> {
   const projectConfig = await loadProjectOmpWebConfig(projectPath);
   return effectiveUploadsConfig({ uploads: { ...(globalConfig.uploads ?? {}), ...(projectConfig.config.uploads ?? {}) } });
 }

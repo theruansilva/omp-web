@@ -1,5 +1,5 @@
 import type { FastifyInstance } from "fastify";
-import { effectiveOmpWebConfig, loadOmpWebConfig, parseUploadsConfig, saveOmpWebConfig, type LoadOptions, type OmpWebConfig } from "../config.js";
+import { effectiveOmpWebConfig, loadOmpWebConfig, parseUploadsConfig, saveOmpWebConfig, type LoadOptions } from "../config.js";
 import type { OmpWebConfigEnvOverrides, OmpWebConfigResponse, OmpWebConfigValues } from "../shared/apiTypes.js";
 import { isOmpWebPluginId } from "../shared/pluginIds.js";
 import { errorMessage, isRecord } from "./utils.js";
@@ -83,7 +83,7 @@ export function registerLocalMachineConfigRoutes(app: FastifyInstance, service: 
   });
 }
 
-export function parseSelectedMachineConfigRequest(value: unknown): OmpWebConfig {
+export function parseSelectedMachineConfigRequest(value: unknown): OmpWebConfigValues {
   if (!isRecord(value)) throw new Error("PI WEB selected-machine config update must include a config object");
   for (const key of Object.keys(value)) {
     if (!SELECTED_MACHINE_CONFIG_KEY_SET.has(key)) throw new Error(`PI WEB selected-machine config key is not allowed: ${key}`);
@@ -95,7 +95,7 @@ export function parseSelectedMachineConfigRequest(value: unknown): OmpWebConfig 
   }
 }
 
-export function mergeSelectedMachineConfig(current: OmpWebConfigValues, patch: OmpWebConfigValues): OmpWebConfig {
+export function mergeSelectedMachineConfig(current: OmpWebConfigValues, patch: OmpWebConfigValues): OmpWebConfigValues {
   return { ...current, ...pickSelectedMachineConfig(patch) };
 }
 
@@ -118,9 +118,9 @@ export function parseOmpWebConfigResponseBody(value: unknown, source = "PI WEB c
   };
 }
 
-function parseConfigRequest(value: unknown): OmpWebConfig {
+function parseConfigRequest(value: unknown): OmpWebConfigValues {
   if (!isRecord(value)) throw new Error("PI WEB config update must include a config object");
-  const config: OmpWebConfig = {};
+  const config: OmpWebConfigValues = {};
   const host = value["host"];
   const port = value["port"];
   const allowedHosts = value["allowedHosts"];
@@ -156,7 +156,7 @@ function parseConfigRequest(value: unknown): OmpWebConfig {
   return config;
 }
 
-function pickSelectedMachineConfig(config: OmpWebConfigValues): OmpWebConfig {
+function pickSelectedMachineConfig(config: OmpWebConfigValues): OmpWebConfigValues {
   return {
     ...(config.plugins !== undefined ? { plugins: config.plugins } : {}),
     ...(config.pathAccess !== undefined ? { pathAccess: config.pathAccess } : {}),
@@ -189,7 +189,7 @@ function parseShortcutsRequest(value: unknown): Record<string, string | null> {
   }));
 }
 
-function parsePathAccessRequest(value: unknown): NonNullable<OmpWebConfig["pathAccess"]> {
+function parsePathAccessRequest(value: unknown): NonNullable<OmpWebConfigValues["pathAccess"]> {
   if (!isRecord(value)) throw new Error("PI WEB config pathAccess must be an object");
   const allowedPaths = value["allowedPaths"];
   return {
@@ -213,7 +213,7 @@ function parseMaxUploadBytesRequest(value: unknown): number {
   return value;
 }
 
-function parsePluginsRequest(value: unknown): NonNullable<OmpWebConfig["plugins"]> {
+function parsePluginsRequest(value: unknown): NonNullable<OmpWebConfigValues["plugins"]> {
   if (!isRecord(value) || Array.isArray(value)) throw new Error("PI WEB config plugins must be an object");
   return Object.fromEntries(Object.entries(value).map(([pluginId, config]) => {
     if (!isOmpWebPluginId(pluginId)) throw new Error("PI WEB config plugin ids are invalid");

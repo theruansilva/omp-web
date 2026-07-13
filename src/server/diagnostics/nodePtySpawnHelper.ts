@@ -9,18 +9,12 @@ export const NODE_PTY_SPAWN_HELPER_UPSTREAM_ISSUE_URL = "https://github.com/micr
 const doctorLabel = "node-pty macOS spawn-helper executable";
 const requireFromHere = createRequire(import.meta.url);
 
-type FileExists = (path: string) => boolean;
-type FileStat = (path: string) => Stats;
-type FileAccess = (path: string, mode: number) => void;
 
 export interface NodePtyDarwinSpawnHelperCheckOptions {
   platform?: NodeJS.Platform;
   arch?: string;
   nodePtyPackageJsonPath?: string;
   resolveNodePtyPackageJson?: () => string;
-  exists?: FileExists;
-  stat?: FileStat;
-  access?: FileAccess;
 }
 
 export type NodePtyDarwinSpawnHelperCheck =
@@ -43,9 +37,6 @@ export function checkNodePtyDarwinSpawnHelper(options: NodePtyDarwinSpawnHelperC
   if (platform !== "darwin") return { status: "skipped", reason: "not-macos" };
 
   const arch = options.arch ?? process.arch;
-  const exists = options.exists ?? existsSync;
-  const stat = options.stat ?? statSync;
-  const access = options.access ?? accessSync;
 
   let nodePtyPackageJsonPath: string;
   try {
@@ -55,7 +46,7 @@ export function checkNodePtyDarwinSpawnHelper(options: NodePtyDarwinSpawnHelperC
   }
 
   const nodePtyRoot = dirname(nodePtyPackageJsonPath);
-  const nativeDir = findNodePtyNativeDir(nodePtyRoot, platform, arch, exists);
+  const nativeDir = findNodePtyNativeDir(nodePtyRoot, platform, arch);
   if (nativeDir === undefined) {
     return {
       status: "native-module-not-found",
@@ -66,14 +57,14 @@ export function checkNodePtyDarwinSpawnHelper(options: NodePtyDarwinSpawnHelperC
 
   const helperPath = join(nativeDir, "spawn-helper");
   try {
-    if (!stat(helperPath).isFile()) return { status: "spawn-helper-not-file", helperPath, nodePtyRoot };
+    if (!statSync(helperPath).isFile()) return { status: "spawn-helper-not-file", helperPath, nodePtyRoot };
   } catch (error) {
     if (isFileNotFoundError(error)) return { status: "spawn-helper-missing", helperPath, nodePtyRoot };
     return { status: "spawn-helper-stat-error", helperPath, nodePtyRoot, message: errorMessage(error) };
   }
 
   try {
-    access(helperPath, constants.X_OK);
+    accessSync(helperPath, constants.X_OK);
     return { status: "ok", helperPath, nodePtyRoot };
   } catch {
     return { status: "spawn-helper-not-executable", helperPath, nodePtyRoot, fixCommand: chmodFixCommand(helperPath) };
@@ -114,9 +105,9 @@ function resolveNodePtyPackageJson(): string {
   return requireFromHere.resolve("node-pty/package.json");
 }
 
-function findNodePtyNativeDir(nodePtyRoot: string, platform: NodeJS.Platform, arch: string, exists: FileExists): string | undefined {
+function findNodePtyNativeDir(nodePtyRoot: string, platform: NodeJS.Platform, arch: string): string | undefined {
   for (const dir of nodePtyNativeDirs(nodePtyRoot, platform, arch)) {
-    if (exists(join(dir, "pty.node"))) return dir;
+    if (existsSync(join(dir, "pty.node"))) return dir;
   }
   return undefined;
 }

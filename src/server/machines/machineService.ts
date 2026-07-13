@@ -17,9 +17,6 @@ export type UpdateMachineInput = Partial<CreateMachineInput>;
 export interface MachineServiceDependencies {
   localRuntime?: () => Promise<OmpWebRuntimeResponse>;
   remoteClientFactory?: (machine: StoredMachine) => MachineClient;
-  now?: () => Date;
-  healthCacheTtlMs?: number;
-  runtimeCacheTtlMs?: number;
 }
 
 const LOCAL_MACHINE_TIMESTAMP = "1970-01-01T00:00:00.000Z";
@@ -29,7 +26,7 @@ export class MachineService {
   private readonly healthCache = new Map<string, { expiresAt: number; health: MachineHealth }>();
   private readonly runtimeCache = new Map<string, { expiresAt: number; runtime: MachineRuntime }>();
 
-  constructor(private readonly store = new MachineStore(), private readonly deps: MachineServiceDependencies = {}) {}
+  constructor(private readonly store = new MachineStore(), private readonly deps: MachineServiceDependencies = {}) { }
 
   async list(): Promise<Machine[]> {
     return [localMachine(), ...(await this.store.list()).map(publicMachine)];
@@ -82,31 +79,30 @@ export class MachineService {
     const machine = await this.storedRemote(id);
     return machine === undefined ? undefined : this.clientFor(machine);
   }
-
   async health(id: string): Promise<MachineHealth | undefined> {
     const cached = this.healthCache.get(id);
-    const now = this.now().getTime();
+    const now = Date.now();
     if (cached !== undefined && cached.expiresAt > now) return cached.health;
 
     const health = id === "local" ? await this.localHealth() : await this.remoteHealth(id);
     if (health === undefined) return undefined;
-    this.healthCache.set(id, { expiresAt: now + (this.deps.healthCacheTtlMs ?? DEFAULT_HEALTH_CACHE_TTL_MS), health });
+    this.healthCache.set(id, { expiresAt: now + DEFAULT_HEALTH_CACHE_TTL_MS, health });
     return health;
   }
 
   async runtime(id: string): Promise<MachineRuntime | undefined> {
     const cached = this.runtimeCache.get(id);
-    const now = this.now().getTime();
+    const now = Date.now();
     if (cached !== undefined && cached.expiresAt > now) return cached.runtime;
 
     const runtime = id === "local" ? await this.localRuntime() : await this.remoteRuntime(id);
     if (runtime === undefined) return undefined;
-    this.runtimeCache.set(id, { expiresAt: now + (this.deps.runtimeCacheTtlMs ?? DEFAULT_HEALTH_CACHE_TTL_MS), runtime });
+    this.runtimeCache.set(id, { expiresAt: now + DEFAULT_HEALTH_CACHE_TTL_MS, runtime });
     return runtime;
   }
 
   private async localHealth(): Promise<MachineHealth> {
-    const checkedAt = this.now().toISOString();
+    const checkedAt = new Date().toISOString();
     try {
       const runtime = await (this.deps.localRuntime ?? getOmpWebRuntime)();
       return {
@@ -125,7 +121,7 @@ export class MachineService {
   private async remoteHealth(id: string): Promise<MachineHealth | undefined> {
     const machine = await this.storedRemote(id);
     if (machine === undefined) return undefined;
-    const checkedAt = this.now().toISOString();
+    const checkedAt = new Date().toISOString();
     try {
       const response = await this.clientFor(machine).requestJson("GET", "/api/omp-web/status", undefined, { timeoutMs: DEFAULT_REMOTE_HEALTH_TIMEOUT_MS });
       if (response.statusCode >= 200 && response.statusCode < 300 && isOmpWebStatusResponse(response.body)) {
@@ -138,7 +134,7 @@ export class MachineService {
   }
 
   private async localRuntime(): Promise<MachineRuntime> {
-    const checkedAt = this.now().toISOString();
+    const checkedAt = new Date().toISOString();
     try {
       return machineRuntime("local", checkedAt, await (this.deps.localRuntime ?? getOmpWebRuntime)());
     } catch (error) {
@@ -149,7 +145,7 @@ export class MachineService {
   private async remoteRuntime(id: string): Promise<MachineRuntime | undefined> {
     const machine = await this.storedRemote(id);
     if (machine === undefined) return undefined;
-    const checkedAt = this.now().toISOString();
+    const checkedAt = new Date().toISOString();
     try {
       const response = await this.clientFor(machine).requestJson("GET", "/api/omp-web/runtime", undefined, { timeoutMs: DEFAULT_REMOTE_HEALTH_TIMEOUT_MS });
       const runtime = parseOmpWebRuntimeResponse(response.body);
@@ -164,11 +160,7 @@ export class MachineService {
     return this.deps.remoteClientFactory?.(machine) ?? new RemoteMachineClient(machine);
   }
 
-  private now(): Date {
-    return this.deps.now?.() ?? new Date();
-  }
 }
-
 export function localMachine(): Machine {
   return { id: "local", name: "Local", kind: "local", createdAt: LOCAL_MACHINE_TIMESTAMP, updatedAt: LOCAL_MACHINE_TIMESTAMP };
 }

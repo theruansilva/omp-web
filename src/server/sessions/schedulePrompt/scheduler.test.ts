@@ -92,17 +92,17 @@ describe("CronScheduler", () => {
     });
   });
 
-  describe("parseInterval", () => {
+  describe("parseDuration", () => {
     it("parses '5m' to 300000 ms", () => {
-      expect(CronScheduler.parseInterval("5m")).toBe(300000);
+      expect(CronScheduler.parseDuration("5m")).toBe(300000);
     });
 
     it("parses '1h' to 3600000 ms", () => {
-      expect(CronScheduler.parseInterval("1h")).toBe(3600000);
+      expect(CronScheduler.parseDuration("1h")).toBe(3600000);
     });
 
     it("returns null for invalid format", () => {
-      expect(CronScheduler.parseInterval("abc")).toBeNull();
+      expect(CronScheduler.parseDuration("abc")).toBeNull();
     });
   });
 

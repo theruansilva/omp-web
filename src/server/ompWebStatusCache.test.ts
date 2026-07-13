@@ -1,28 +1,31 @@
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import type { OmpWebStatusResponse } from "../shared/apiTypes.js";
 import { createOmpWebStatusCache } from "./ompWebStatusCache.js";
 
 describe("createOmpWebStatusCache", () => {
+  afterEach(() => { vi.useRealTimers(); });
+
   it("serves cached status while it is fresh", async () => {
-    const now = 1_000;
+    vi.useFakeTimers();
     const load = vi.fn(() => Promise.resolve(status("first")));
-    const cache = createOmpWebStatusCache(load, { ttlMs: 100, now: () => now });
+    const cache = createOmpWebStatusCache(load, { ttlMs: 100 });
 
     await expect(cache.get()).resolves.toMatchObject({ generatedAt: "first" });
+    vi.advanceTimersByTime(50);
     await expect(cache.get()).resolves.toMatchObject({ generatedAt: "first" });
 
     expect(load).toHaveBeenCalledTimes(1);
   });
 
   it("returns stale status immediately while refreshing in the background", async () => {
-    let now = 1_000;
+    vi.useFakeTimers();
     const load = vi.fn()
       .mockResolvedValueOnce(status("first"))
       .mockResolvedValueOnce(status("second"));
-    const cache = createOmpWebStatusCache(load, { ttlMs: 100, now: () => now });
+    const cache = createOmpWebStatusCache(load, { ttlMs: 100 });
 
     await expect(cache.get()).resolves.toMatchObject({ generatedAt: "first" });
-    now = 1_101;
+    vi.advanceTimersByTime(101);
 
     await expect(cache.get()).resolves.toMatchObject({ generatedAt: "first" });
     await waitForMicrotasks();

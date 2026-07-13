@@ -3,8 +3,8 @@ import { readdir, readFile, realpath, stat } from "node:fs/promises";
 import { dirname, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import { getAgentDir } from "@oh-my-pi/pi-coding-agent";
-import { loadOmpWebConfig, ompWebDataDir, type OmpWebConfig } from "../config.js";
-import type { OmpWebPluginInfo, OmpWebPluginsResponse, OmpWebPluginScope } from "../shared/apiTypes.js";
+import { loadOmpWebConfig, ompWebDataDir } from "../config.js";
+import type { OmpWebPluginInfo, OmpWebPluginsResponse, OmpWebPluginScope, OmpWebConfigValues } from "../shared/apiTypes.js";
 import { isOmpWebPluginId } from "../shared/pluginIds.js";
 import { isRecord } from "./utils.js";
 
@@ -48,7 +48,7 @@ interface OmpWebPluginServiceOptions {
   cwd?: string;
   agentDir?: string;
   packageProvider?: PiPackageProvider | false;
-  configProvider?: () => OmpWebConfig;
+  configProvider?: () => OmpWebConfigValues;
 }
 
 interface LocalPluginRoot {
@@ -84,7 +84,7 @@ export class DefaultPiPackageProvider implements PiPackageProvider {
 export class OmpWebPluginService {
   private readonly roots: LocalPluginRoot[];
   private readonly packageProvider: PiPackageProvider | undefined;
-  private readonly configProvider: () => OmpWebConfig;
+  private readonly configProvider: () => OmpWebConfigValues;
 
   constructor(options: OmpWebPluginServiceOptions = {}) {
     const cwd = options.cwd ?? process.cwd();
@@ -125,7 +125,7 @@ export class OmpWebPluginService {
     return { content: await readFile(realAsset), contentType: contentTypeFor(realAsset) };
   }
 
-  private pluginInfo(plugin: PluginRecord, config: OmpWebConfig): OmpWebPluginInfo {
+  private pluginInfo(plugin: PluginRecord, config: OmpWebConfigValues): OmpWebPluginInfo {
     return {
       id: plugin.id,
       module: `/omp-web-plugins/${encodeURIComponent(plugin.id)}/${plugin.entryFile}?${pluginModuleQuery(plugin)}`,

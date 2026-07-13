@@ -19,17 +19,13 @@ export interface AuthChange {
 
 type AuthChangeListener = (change: AuthChange) => void;
 
-export interface AuthServiceDependencies {
- modelRegistry: ModelRegistry;
- authFlows?: OAuthLoginFlowService;
-}
 
 export class AuthService {
  readonly modelRegistry: ModelRegistry;
  private readonly authFlows: OAuthLoginFlowService;
  private readonly listeners = new Set<AuthChangeListener>();
 
- constructor(deps: AuthServiceDependencies) {
+ constructor(deps: { modelRegistry: ModelRegistry; authFlows?: OAuthLoginFlowService }) {
   this.modelRegistry = deps.modelRegistry;
   this.authFlows = deps.authFlows ?? new OAuthLoginFlowService();
  }
@@ -38,7 +34,7 @@ export class AuthService {
   * Create an AuthService with the given or default model registry.
   * The default path uses an in-memory auth storage.
   */
- static async create(deps: Partial<AuthServiceDependencies> = {}): Promise<AuthService> {
+ static async create(deps: { modelRegistry?: ModelRegistry; authFlows?: OAuthLoginFlowService } = {}): Promise<AuthService> {
   const modelRegistry = deps.modelRegistry ?? await createDefaultModelRegistry();
   return new AuthService({ modelRegistry, ...(deps.authFlows === undefined ? {} : { authFlows: deps.authFlows }) });
  }

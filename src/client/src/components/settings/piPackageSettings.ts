@@ -1,4 +1,5 @@
 import type { Machine, MachineKind, MachineRuntime, PiPackageInfo, PiPackageMutationAction } from "../../api";
+import { settingsMachineTarget } from "./settingsMachineTarget.js";
 import { OMP_WEB_CAPABILITIES, supportsOmpWebCapability } from "../../../../shared/capabilities";
 
 export type PiPackageOperationKind = PiPackageMutationAction | "update-all";
@@ -22,8 +23,7 @@ export interface PiPackageManagementSupport {
 }
 
 export function piPackageTargetContext(machine: Pick<Machine, "id" | "name" | "kind"> | undefined): PiPackageTargetContext {
-  if (machine !== undefined) return { id: machine.id, name: machine.name, kind: machine.kind };
-  return { id: "local", name: "local", kind: "local" };
+  return settingsMachineTarget(machine);
 }
 
 export function piPackageTargetLabel(target: PiPackageTargetContext): string {

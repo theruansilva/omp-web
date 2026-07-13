@@ -2,10 +2,6 @@ import type { PiPackagesResponse, OmpWebConfigResponse, OmpWebPluginsResponse } 
 import { friendlyPiPackageErrorMessage, isPiPackageManagementUnsupported, piPackageTargetLabel, type PiPackageManagementSupport, type PiPackageTargetContext } from "./piPackageSettings";
 import { errorMessage } from "../../utils.js";
 
-export interface GatewaySettingsLoaders {
-  loadConfig: () => Promise<OmpWebConfigResponse>;
-  loadPlugins: () => Promise<OmpWebPluginsResponse>;
-}
 
 export interface GatewaySettingsLoadResult {
   config?: OmpWebConfigResponse;
@@ -19,7 +15,7 @@ export interface PiPackagesLoadResult {
   skipped?: boolean;
 }
 
-export async function loadGatewaySettingsData(loaders: GatewaySettingsLoaders): Promise<GatewaySettingsLoadResult> {
+export async function loadGatewaySettingsData(loaders: { loadConfig: () => Promise<OmpWebConfigResponse>; loadPlugins: () => Promise<OmpWebPluginsResponse> }): Promise<GatewaySettingsLoadResult> {
   const [config, plugins] = await Promise.allSettled([loaders.loadConfig(), loaders.loadPlugins()]);
   const result: GatewaySettingsLoadResult = { error: "" };
   const errors: string[] = [];
