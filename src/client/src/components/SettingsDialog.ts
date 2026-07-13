@@ -1,5 +1,6 @@
 import { css, html, LitElement, type PropertyValues, type TemplateResult } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
+import { errorMessage } from "../utils.js";
 import type { AppAction } from "../actions";
 import { configApi, piPackagesApi, pluginsApi, type Machine, type MachineRuntime, type PiPackageMutationResponse, type PiPackageScope, type PiPackagesResponse, type OmpWebConfigResponse, type OmpWebConfigValues, type OmpWebPluginsResponse } from "../api";
 import type { SettingsSection } from "../settingsRoute";
@@ -653,6 +654,3 @@ export class SettingsDialog extends LitElement {
   `;
 }
 
-function errorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : String(error);
-}

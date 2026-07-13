@@ -1,4 +1,5 @@
 import { LitElement, css, html } from "lit";
+import { isRecord } from "../utils.js";
 import { customElement, property, state } from "lit/decorators.js";
 import type { ToolExecutionPart } from "./shared";
 
@@ -236,9 +237,6 @@ function statusLabel(status: ToolExecutionPart["status"]): string {
   return "pending";
 }
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null;
-}
 
 function getProperty(value: unknown, key: string): unknown {
   return isRecord(value) ? value[key] : undefined;

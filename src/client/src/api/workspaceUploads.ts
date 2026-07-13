@@ -1,6 +1,7 @@
 import type { WriteWorkspaceFileOptions, WriteWorkspaceFileResponse } from "../../../shared/apiTypes";
 import { parseWriteWorkspaceFileResponse } from "./parsers";
 import { workspaceFileWriteUrl } from "./urls";
+import { errorMessage, isRecord } from "../utils.js";
 
 export const DEFAULT_WORKSPACE_UPLOADS_FOLDER = ".omp-web/uploads";
 
@@ -300,9 +301,6 @@ function uploadBatchErrorMessage(failures: readonly WorkspaceUploadFileFailure[]
   return `${String(failures.length)} files failed to upload`;
 }
 
-function errorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : String(error);
-}
 
 function isUploadCancellation(error: unknown, cancellation: { requested: boolean }): boolean {
   return cancellation.requested || error instanceof WorkspaceUploadCancelledError;
@@ -350,6 +348,3 @@ function safeReadXhrJson(xhr: WorkspaceUploadXhr): unknown {
   }
 }
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null;
-}

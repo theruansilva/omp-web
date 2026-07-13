@@ -1,4 +1,5 @@
 import type { AppState } from "../appState";
+import { isRecord } from "../utils.js";
 import { LOCAL_MACHINE_ID } from "../machineKeys";
 import type { AppRoute } from "../route";
 import { browserSessionStorage, PersistentValueMap, type KeyValueStorage } from "./sessionStorageMemory";
@@ -150,6 +151,3 @@ function optionalStringField(record: Record<string, unknown>, key: string): stri
   return typeof value === "string" && value !== "" ? value : undefined;
 }
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null;
-}

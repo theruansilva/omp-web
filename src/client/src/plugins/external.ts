@@ -1,5 +1,6 @@
 import { machineScopedPluginId } from "../../../shared/machinePluginIds";
 import type { OmpWebPlugin, OmpWebPluginRegistration } from "./types";
+import { isRecord } from "../utils.js";
 
 export interface PluginManifestEntry {
   id: string;
@@ -74,6 +75,3 @@ function isOmpWebPlugin(value: unknown): value is OmpWebPlugin {
   return isRecord(value) && value["apiVersion"] === 1 && typeof value["name"] === "string" && typeof value["activate"] === "function";
 }
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null;
-}

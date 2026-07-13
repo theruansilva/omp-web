@@ -1,4 +1,5 @@
 import type { ChatLine, ChatPart, ToolExecutionPart, ToolPreview } from "./components/shared";
+import { isRecord } from "./utils.js";
 
 export function normalizeMessages(messages: unknown[]): ChatLine[] {
   return coalesceToolExecutions(messages.flatMap(normalizeMessage)).filter((message) => message.parts.length > 0);
@@ -312,9 +313,6 @@ function shortValue(value: unknown): string {
   return "";
 }
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null;
-}
 
 function getProperty(value: unknown, key: string): unknown {
   return isRecord(value) ? value[key] : undefined;

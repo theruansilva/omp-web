@@ -1,4 +1,5 @@
 import { css, html, LitElement, type PropertyValues } from "lit";
+import { isRecord } from "../utils.js";
 import { customElement, property, query, state } from "lit/decorators.js";
 import { Terminal, type ITerminalOptions, type ITheme } from "@xterm/xterm";
 import { FitAddon, type ITerminalDimensions } from "@xterm/addon-fit";
@@ -652,6 +653,3 @@ function isValidTerminalSize(cols: number, rows: number): boolean {
   return Number.isFinite(cols) && Number.isFinite(rows) && cols > 0 && rows > 0;
 }
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null;
-}

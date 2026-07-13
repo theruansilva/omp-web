@@ -1,5 +1,6 @@
 import type { PiPackagesResponse, OmpWebConfigResponse, OmpWebPluginsResponse } from "../../api";
 import { friendlyPiPackageErrorMessage, isPiPackageManagementUnsupported, piPackageTargetLabel, type PiPackageManagementSupport, type PiPackageTargetContext } from "./piPackageSettings";
+import { errorMessage } from "../../utils.js";
 
 export interface GatewaySettingsLoaders {
   loadConfig: () => Promise<OmpWebConfigResponse>;
@@ -45,6 +46,3 @@ export async function loadPiPackagesData(target: PiPackageTargetContext, loadPac
   }
 }
 
-function errorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : String(error);
-}

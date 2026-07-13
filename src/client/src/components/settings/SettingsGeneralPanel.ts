@@ -1,5 +1,6 @@
 import { css, html, LitElement, type PropertyValues, type TemplateResult } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
+import { errorMessage } from "../../utils.js";
 import { DEFAULT_WORKSPACE_UPLOADS_FOLDER, type OmpWebConfigEnvOverrides, type OmpWebConfigResponse, type OmpWebConfigValues } from "../../api";
 import "./SettingsPanelFrame";
 import type { SettingsNotice } from "./SettingsPanelFrame";
@@ -313,6 +314,3 @@ function textAreaValue(event: Event): string {
   return event.target instanceof HTMLTextAreaElement ? event.target.value : "";
 }
 
-function errorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : String(error);
-}

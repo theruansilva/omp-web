@@ -8,6 +8,7 @@ import {
   type WriteWorkspaceFileResponse,
 } from "../api";
 import { queryNamespace, setNamespacedQueryKey } from "../namespacedQueryArgs";
+import { errorMessage } from "../utils.js";
 import {
   cancelWorkspaceUploadBatch,
   completeWorkspaceUploadBatch,
@@ -250,9 +251,6 @@ function isWorkspaceUploadCancelled(error: unknown): boolean {
   return error instanceof WorkspaceUploadCancelledError;
 }
 
-function errorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : String(error);
-}
 
 function omitKey<T>(record: Record<string, T>, keyToOmit: string): Record<string, T> {
   return Object.fromEntries(Object.entries(record).filter(([key]) => key !== keyToOmit));

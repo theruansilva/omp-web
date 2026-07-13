@@ -1,4 +1,5 @@
 import type { SessionInfo } from "./api";
+import { isRecord } from "./utils.js";
 
 const storageKey = "omp-web:cached-new-sessions:v1";
 const markerProperty = "browserCachedNew";
@@ -114,9 +115,6 @@ function hasCachedNewMarker(session: SessionInfo): session is SessionInfo & { br
   return markerProperty in session;
 }
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null;
-}
 
 function stringField(record: Record<string, unknown>, key: string): string | undefined {
   const value = record[key];

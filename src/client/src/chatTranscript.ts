@@ -1,4 +1,5 @@
 import { appendText, appendThinking, normalizeMessage, previewFromDetails, summarizeArgs, textMessage } from "./chatMessages";
+import { isRecord } from "./utils.js";
 import type { ChatLine, ToolExecutionPart } from "./components/shared";
 import { appendShellChunk, finalizeShellMessage, shellStartMessage } from "./shellMessages";
 import type { SessionUiEvent } from "./sessionSocket";
@@ -265,9 +266,6 @@ function lastUserBoundaryIndex(messages: ChatLine[]): number {
   return -1;
 }
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null;
-}
 
 function getProperty(value: unknown, key: string): unknown {
   return isRecord(value) ? value[key] : undefined;

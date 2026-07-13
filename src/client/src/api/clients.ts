@@ -50,6 +50,7 @@ import {
   parseWorkspaceActivityResponse,
 } from "./parsers";
 import { machineGitDiffUrl, messageUrl } from "./urls";
+import { isRecord } from "../utils.js";
 
 const machinePrefix = (machineId = "local") => `/api/machines/${encodeURIComponent(machineId)}`;
 
@@ -278,9 +279,6 @@ function apiErrorMessage(value: unknown): string | undefined {
   return typeof error === "string" ? error : undefined;
 }
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null;
-}
 
 export interface FileSuggestionQueryOptions {
   kind?: FileSuggestion["kind"] | undefined;
