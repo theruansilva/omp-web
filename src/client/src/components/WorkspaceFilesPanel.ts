@@ -234,7 +234,7 @@ export class WorkspaceFilesPanel extends LitElement {
 
   private readonly handleFileInputChange = (event: Event): void => {
     const input = event.currentTarget instanceof HTMLInputElement ? event.currentTarget : undefined;
-    const files = fileListToArray(input?.files);
+    const files = input?.files ? Array.from(input.files) : [];
     if (input !== undefined) input.value = "";
     if (files.length > 0) this.openUploadReview(files);
   };
@@ -265,7 +265,7 @@ export class WorkspaceFilesPanel extends LitElement {
     event.preventDefault();
     this.dragDepth = 0;
     this.dragActive = false;
-    const files = fileListToArray(event.dataTransfer?.files);
+    const files = event.dataTransfer?.files ? Array.from(event.dataTransfer.files) : [];
     const context = this.context;
     if (files.length > 0 && context !== undefined) startDirectWorkspaceUpload(context, files);
   };
@@ -420,9 +420,6 @@ function workspaceContextKey(context: WorkspacePanelContext): string {
   return `${context.machine.id}:${context.workspace.projectId}:${context.workspace.id}`;
 }
 
-function fileListToArray(files: FileList | null | undefined): File[] {
-  return files === null || files === undefined ? [] : Array.from(files);
-}
 
 function isFileDrag(event: DragEvent): boolean {
   return Array.from(event.dataTransfer?.types ?? []).includes("Files");

@@ -2,7 +2,6 @@ import { html, svg } from "lit";
 import type { OmpWebPluginRegistration, PluginAction, PluginRuntimeContext, QualifiedContributionId, QualifiedPluginAction, QualifiedThemeContribution, QualifiedThemePairContribution, QualifiedWorkspaceLabelContribution, QualifiedWorkspacePanelContribution, ThemeContribution, ThemePairContribution, WorkspaceLabelContext, WorkspaceLabelContribution, WorkspaceLabelItem, WorkspacePanelContext, WorkspacePanelContribution } from "./types";
 
 const idPattern = /^[a-z][a-z0-9.-]*$/u;
-const localIdPattern = /^[a-z][a-z0-9.-]*$/u;
 const pluginRuntimeScopes = new WeakMap<PluginRuntimeContext, (pluginId: string) => PluginRuntimeContext>();
 const workspacePanelScopes = new WeakMap<WorkspacePanelContext, (pluginId: string) => WorkspacePanelContext>();
 
@@ -197,7 +196,7 @@ export class PluginRegistry {
   }
 
   private validateLocalId(localId: string): void {
-    if (!localIdPattern.test(localId)) throw new Error(`Invalid contribution id: ${localId}`);
+    if (!idPattern.test(localId)) throw new Error(`Invalid contribution id: ${localId}`);
   }
 
   private parseMachineSpecific(pluginId: string, value: unknown): boolean {
