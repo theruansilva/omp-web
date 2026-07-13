@@ -1,5 +1,6 @@
 import type { OmpWebComponentStatus, OmpWebInstallationInfo, OmpWebRuntimeComponent, OmpWebRuntimeResponse, OmpWebVersionResponse } from "./apiTypes.js";
 import { parseKnownOmpWebCapabilities } from "./capabilities.js";
+import { isRecord } from "./utils.js";
 
 export function parseOmpWebVersionResponse(value: unknown): OmpWebVersionResponse | undefined {
   if (!isRecord(value)) return undefined;
@@ -89,6 +90,3 @@ export function parseOmpWebInstallationInfo(value: unknown): OmpWebInstallationI
   };
 }
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}
