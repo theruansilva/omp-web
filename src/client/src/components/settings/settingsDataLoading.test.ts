@@ -38,7 +38,7 @@ describe("settings data loading helpers", () => {
 
     expect(result.config).toBe(configResponse);
     expect(result.plugins).toBeUndefined();
-    expect(result.error).toBe("Failed to load settings: PI WEB plugins: plugin scan failed");
+    expect(result.error).toBe("Failed to load settings: OMP plugins: plugin scan failed");
   });
 
   it("loads Pi packages for the selected target with package-scoped errors", async () => {

@@ -24,7 +24,7 @@ export async function loadGatewaySettingsData(loaders: { loadConfig: () => Promi
   else errors.push(`config: ${errorMessage(config.reason)}`);
 
   if (plugins.status === "fulfilled") result.plugins = plugins.value;
-  else errors.push(`PI WEB plugins: ${errorMessage(plugins.reason)}`);
+  else errors.push(`OMP plugins: ${errorMessage(plugins.reason)}`);
 
   if (errors.length > 0) result.error = `Failed to load settings: ${errors.join("; ")}`;
   return result;

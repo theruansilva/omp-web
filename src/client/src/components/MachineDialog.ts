@@ -101,7 +101,7 @@ export class MachineDialog extends LitElement {
             <div class="body">
               ${this.error === "" ? null : html`<div class="dialog-error" role="alert">${this.error}</div>`}
               <label>
-                Remote PI WEB URL
+                Remote OMP URL
                 <input name="baseUrl" type="url" .value=${this.url} @input=${(event: InputEvent) => { this.handleUrlInput(event); }} placeholder="http://dev-box.local:8504" autocomplete="url" inputmode="url" autofocus />
               </label>
               <small class=${urlError === undefined ? "hint" : "field-error"}>${urlError ?? "Enter the reachable base URL first, including http:// or https://."}</small>
@@ -115,8 +115,8 @@ export class MachineDialog extends LitElement {
                   Bearer token <span class="optional">optional</span>
                   <input name="token" type="password" .value=${this.token} @input=${(event: InputEvent) => { this.handleTokenInput(event); }} placeholder="Leave blank if the remote machine does not require one" autocomplete="off" />
                 </label>
-                <small class="hint">Paste only the token value; PI WEB sends it as an Authorization: Bearer header.</small>
-              ` : html`<p class="hint intro">After you enter a URL, PI WEB will suggest a machine name and let you add an optional bearer token.</p>`}
+                <small class="hint">Paste only the token value; OMP sends it as an Authorization: Bearer header.</small>
+              ` : html`<p class="hint intro">After you enter a URL, OMP will suggest a machine name and let you add an optional bearer token.</p>`}
             </div>
             <footer>
               <button type="button" @click=${() => { this.onCancel?.(); }}>Cancel</button>
@@ -161,7 +161,7 @@ export function suggestedMachineNameFromUrl(value: string): string {
 
 export function machineBaseUrlValidationMessage(value: string): string | undefined {
   const raw = value.trim();
-  if (raw === "") return "Remote PI WEB URL is required.";
+  if (raw === "") return "Remote OMP URL is required.";
   let url: URL;
   try {
     url = new URL(raw);

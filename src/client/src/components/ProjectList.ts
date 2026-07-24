@@ -115,7 +115,7 @@ export class ProjectList extends LitElement implements KeyboardNavigableSection 
 
   private close(project: Project) {
     this.openMenuProjectId = undefined;
-    if (confirm(`Close ${project.name}?\n\nThis only removes it from PI WEB; it will not change the project folder.`)) this.onClose?.(project);
+    if (confirm(`Close ${project.name}?\n\nThis only removes it from OMP; it will not change the project folder.`)) this.onClose?.(project);
   }
 
   static override styles = listStyles;

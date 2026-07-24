@@ -42,7 +42,7 @@ describe("selected-machine settings target helpers", () => {
   it("turns older remote config route failures into selected-machine compatibility guidance", () => {
     const target = settingsMachineTarget(remoteMachine);
 
-    expect(selectedMachineSettingsUnavailableMessage(target)).toBe("Selected-machine settings are not available on Lab Mac. Update and restart PI WEB on that machine, then try again.");
+    expect(selectedMachineSettingsUnavailableMessage(target)).toBe("Selected-machine settings are not available on Lab Mac. Update and restart OMP on that machine, then try again.");
     expect(friendlySelectedMachineSettingsErrorMessage("Not Found", target)).toBe(selectedMachineSettingsUnavailableMessage(target));
     expect(friendlySelectedMachineSettingsErrorMessage("route GET:/api/config not found", target)).toBe(selectedMachineSettingsUnavailableMessage(target));
     expect(friendlySelectedMachineSettingsErrorMessage("Cannot PUT /api/config", target)).toBe(selectedMachineSettingsUnavailableMessage(target));

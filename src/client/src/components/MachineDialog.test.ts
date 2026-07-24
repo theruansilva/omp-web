@@ -19,7 +19,7 @@ describe("machineBaseUrlValidationMessage", () => {
   });
 
   it("explains invalid machine URLs", () => {
-    expect(machineBaseUrlValidationMessage("")).toBe("Remote PI WEB URL is required.");
+    expect(machineBaseUrlValidationMessage("")).toBe("Remote OMP URL is required.");
     expect(machineBaseUrlValidationMessage("devbox.local:8504")).toBe("Use an http:// or https:// URL.");
     expect(machineBaseUrlValidationMessage("ftp://devbox.example.test")).toBe("Use an http:// or https:// URL.");
     expect(machineBaseUrlValidationMessage("https://user@devbox.example.test")).toBe("Do not include credentials in the machine URL.");

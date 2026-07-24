@@ -3,6 +3,7 @@ import { customElement, property } from "lit/decorators.js";
 import type { ToolExecutionPart } from "./shared";
 import { workspacePanelStyles } from "./shared";
 import type { WorkspacePanelContext } from "../plugins/types";
+import { isRecord } from "../utils.js";
 
 interface TaskSubagent {
   id?: string | undefined;
@@ -10,11 +11,6 @@ interface TaskSubagent {
   assignment?: string | undefined;
 }
 
-interface TodoArgs {
-  op?: string;
-  task?: string;
-  phase?: string;
-}
 
 @customElement("workspace-tasks-panel")
 export class WorkspaceTasksPanel extends LitElement {
@@ -23,7 +19,7 @@ export class WorkspaceTasksPanel extends LitElement {
   private get executions(): ToolExecutionPart[] {
     if (!this.context) return [];
     const messages = this.context.state.messages;
-    if (!messages) return [];
+    if (messages.length === 0) return [];
 
     const result: ToolExecutionPart[] = [];
     for (const msg of messages) {
@@ -78,21 +74,20 @@ export class WorkspaceTasksPanel extends LitElement {
         <div class="task-body">
           ${this.renderTaskContext(task)}
           ${subagents?.map((agent) => this.renderSubagent(agent))}
-          ${task.resultText ? html`<pre class="task-result">${task.resultText}</pre>` : ""}
+          ${task.resultText !== undefined && task.resultText !== "" ? html`<pre class="task-result">${task.resultText}</pre>` : ""}
         </div>
       </details>
     `;
   }
 
   private renderTodo(exec: ToolExecutionPart) {
-    const args = (exec.args ?? {}) as Record<string, unknown>;
-    const op = String(args["op"] ?? "");
-    const task = String(args["task"] ?? "");
-    const phase = String(args["phase"] ?? "");
+    const args = isRecord(exec.args) ? exec.args : {};
+    const op = typeof args["op"] === "string" ? args["op"] : "";
+    const task = typeof args["task"] === "string" ? args["task"] : "";
+    const phase = typeof args["phase"] === "string" ? args["phase"] : "";
 
-    const opLabel = op
-      ? ({ init: "Initialized", start: "Started", done: "Completed", append: "Added", drop: "Removed" } as Record<string, string>)[op] ?? op
-      : "";
+    const opLabels: Record<string, string> = { init: "Initialized", start: "Started", done: "Completed", append: "Added", drop: "Removed" };
+    const opLabel = op ? opLabels[op] ?? op : "";
 
     return html`
       <details class="todo-card ${exec.status}">
@@ -108,14 +103,14 @@ export class WorkspaceTasksPanel extends LitElement {
         <div class="task-body">
           ${phase ? html`<div class="todo-phase">Phase: ${phase}</div>` : ""}
           ${task ? html`<div class="todo-task">${task}</div>` : ""}
-          ${exec.resultText ? html`<pre class="task-result">${exec.resultText}</pre>` : ""}
+          ${exec.resultText !== undefined && exec.resultText !== "" ? html`<pre class="task-result">${exec.resultText}</pre>` : ""}
         </div>
       </details>
     `;
   }
 
   private renderTaskContext(task: ToolExecutionPart) {
-    const args = task.args as Record<string, unknown> | undefined;
+    const args = isRecord(task.args) ? task.args : undefined;
     if (!args) return null;
     const context = args["context"];
     if (typeof context !== "string" || context === "") return null;
@@ -134,7 +129,7 @@ export class WorkspaceTasksPanel extends LitElement {
         <span class="subagent-icon">◈</span>
         <div class="subagent-info">
           <div class="subagent-label">${label}</div>
-          ${agent.assignment ? html`<div class="subagent-assignment">${agent.assignment}</div>` : ""}
+          ${agent.assignment !== undefined && agent.assignment !== "" ? html`<div class="subagent-assignment">${agent.assignment}</div>` : ""}
         </div>
       </div>
     `;
@@ -198,17 +193,15 @@ function statusLabel(status: ToolExecutionPart["status"]): string {
 }
 
 function parseTaskArgs(args: unknown): TaskSubagent[] | undefined {
-  if (!args || typeof args !== "object") return undefined;
-  const record = args as Record<string, unknown>;
-  const tasks = record["tasks"];
+  if (!isRecord(args)) return undefined;
+  const tasks = args["tasks"];
   if (!Array.isArray(tasks)) return undefined;
   return tasks.map((t: unknown): TaskSubagent => {
-    if (!t || typeof t !== "object") return {};
-    const item = t as Record<string, unknown>;
+    if (!isRecord(t)) return {};
     return {
-      ...(typeof item["id"] === "string" ? { id: item["id"] } : {}),
-      ...(typeof item["description"] === "string" ? { description: item["description"] } : {}),
-      ...(typeof item["assignment"] === "string" ? { assignment: item["assignment"] } : {}),
+      ...(typeof t["id"] === "string" ? { id: t["id"] } : {}),
+      ...(typeof t["description"] === "string" ? { description: t["description"] } : {}),
+      ...(typeof t["assignment"] === "string" ? { assignment: t["assignment"] } : {}),
     };
   });
 }

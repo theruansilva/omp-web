@@ -315,7 +315,7 @@ export class OmpWebApp extends LitElement {
       if (selectedMachineId(this.state) === machineId) this.setState({ ompWebStatus });
     } catch (error) {
       if (selectedMachineId(this.state) === machineId) this.setState({ ompWebStatus: undefined });
-      console.warn(`Failed to refresh PI WEB status for ${machineId}`, error);
+      console.warn(`Failed to refresh OMP status for ${machineId}`, error);
     }
   }
 
@@ -340,7 +340,7 @@ export class OmpWebApp extends LitElement {
     try {
       this.applyClientConfig((await configApi.config()).effectiveConfig);
     } catch (error) {
-      console.warn("Failed to load PI WEB config", error);
+      console.warn("Failed to load OMP config", error);
     }
   }
 
@@ -1236,7 +1236,7 @@ export class OmpWebApp extends LitElement {
     if (this.state.isLoadingProjects) {
       return {
         title: "Loading projects…",
-        body: "Looking for projects you have added to PI WEB.",
+        body: "Looking for projects you have added to OMP.",
       };
     }
     if (project === undefined) {
@@ -1471,7 +1471,7 @@ export class OmpWebApp extends LitElement {
   }
 
   private async loadExternalPlugins(): Promise<void> {
-    await this.registerExternalPlugins("PI WEB plugins", () => loadExternalPlugins());
+    await this.registerExternalPlugins("OMP plugins", () => loadExternalPlugins());
   }
 
   private async loadPluginsForSelectedMachine(): Promise<void> {
@@ -1486,7 +1486,7 @@ export class OmpWebApp extends LitElement {
     const existing = this.machinePluginLoadPromises.get(machine.id);
     if (existing !== undefined) return existing;
 
-    const load = this.registerExternalPlugins(`PI WEB plugins from ${machine.name}`, () => loadExternalPlugins(`/api/machines/${encodeURIComponent(machine.id)}/omp-web-plugins/manifest.json`, {
+    const load = this.registerExternalPlugins(`OMP plugins from ${machine.name}`, () => loadExternalPlugins(`/api/machines/${encodeURIComponent(machine.id)}/omp-web-plugins/manifest.json`, {
       machineId: machine.id,
       shouldLoadPlugin: (entry) => this.plugins.shouldLoadRemotePlugin(entry.id, entry.machineSpecific),
     }))
@@ -1503,7 +1503,7 @@ export class OmpWebApp extends LitElement {
         try {
           this.plugins.register(registration);
         } catch (error) {
-          console.warn(`Failed to register PI WEB plugin ${registration.id}`, error);
+          console.warn(`Failed to register OMP plugin ${registration.id}`, error);
         }
       }
       this.applyPreferredTheme(false);
@@ -1690,7 +1690,7 @@ export class OmpWebApp extends LitElement {
 
   private async removeMachine(machine: Machine | undefined = this.state.selectedMachine): Promise<void> {
     if (machine === undefined || machine.kind === "local") return;
-    if (!window.confirm(`Remove ${machine.name}?\n\nThis only removes it from this PI WEB gateway.`)) return;
+    if (!window.confirm(`Remove ${machine.name}?\n\nThis only removes it from this OMP gateway.`)) return;
     const wasSelected = this.state.selectedMachine?.id === machine.id;
     if (wasSelected) this.rememberCurrentMachineNavigation();
     const fallback = await this.machines.deleteMachine(machine, { selectFallback: !wasSelected });
@@ -1912,6 +1912,29 @@ export class OmpWebApp extends LitElement {
     ];
   }
 
+  private renderMainHeader() {
+    const session = this.state.selectedSession;
+    const title = session?.name || session?.id || "Chat";
+    const workspace = this.state.selectedWorkspace;
+    return html`
+      <header class="main-header">
+        <div class="main-header-title">
+          <strong>${title}</strong>
+          ${workspace ? html`<span class="main-header-workspace">${workspace.label}</span>` : null}
+        </div>
+        <div class="main-header-actions">
+          <button
+            class="workspace-toggle-button"
+            title=${this.panelCollapse.workspacePanelCollapsed ? "Show Workspace Tools" : "Hide Workspace Tools"}
+            @click=${() => this.panelCollapse.toggleWorkspacePanel()}
+          >
+            ${this.panelCollapse.workspacePanelCollapsed ? "Show Tools" : "Hide Tools"}
+          </button>
+        </div>
+      </header>
+    `;
+  }
+
   private renderAppRefresh() {
     return html`<app-refresh-control .onReload=${() => { this.hardReloadApp(); }}></app-refresh-control>`;
   }
@@ -1923,6 +1946,7 @@ export class OmpWebApp extends LitElement {
         <aside id="navigation-panel">${this.appShell.isMobileNavigationLayout ? null : this.renderNavigationPanel()}</aside>
         ${this.renderNavigationPanelEdgeControl()}
         <main class=${mainViewClass(state.mainView)}>
+          ${this.renderMainHeader()}
           ${this.renderContextBar()}
           ${this.renderMobileMainTabs()}
           ${state.error ? html`<div class="error">${state.error}</div>` : null}

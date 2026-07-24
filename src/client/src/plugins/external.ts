@@ -35,7 +35,7 @@ export async function loadExternalPlugins(manifestUrl = "/omp-web-plugins/manife
         ...(options.machineId === undefined ? {} : { machineId: options.machineId, sourcePluginId: entry.id }),
       });
     } catch (error) {
-      console.warn(`Failed to load PI WEB plugin ${entry.module}`, error);
+      console.warn(`Failed to load OMP plugin ${entry.module}`, error);
     }
   }
   return registrations;

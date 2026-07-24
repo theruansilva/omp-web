@@ -4,6 +4,7 @@ import { errorMessage } from "../../utils.js";
 import { DEFAULT_WORKSPACE_UPLOADS_FOLDER, type OmpWebConfigEnvOverrides, type OmpWebConfigResponse, type OmpWebConfigValues } from "../../api";
 import "./SettingsPanelFrame";
 import type { SettingsNotice } from "./SettingsPanelFrame";
+import { isPushSubscribed, isPushSupported, subscribeToPush, unsubscribeFromPush, type PushSubscriptionInfo } from "../../pushNotifications.js";
 import {
   emptyGatewayServerConfigDraft,
   emptyMachineAccessConfigDraft,
@@ -38,6 +39,19 @@ export class SettingsGeneralPanel extends LitElement {
   @state() private machineDraft: MachineAccessConfigDraft = emptyMachineAccessConfigDraft();
   @state() private gatewayLocalError = "";
   @state() private machineLocalError = "";
+  @state() private pushState: PushSubscriptionInfo = { enabled: false };
+  @state() private pushLoading = false;
+
+  override connectedCallback(): void {
+    super.connectedCallback();
+    if (isPushSupported()) {
+      void this.refreshPushState();
+    }
+  }
+
+  private async refreshPushState(): Promise<void> {
+    this.pushState = { enabled: await isPushSubscribed() };
+  }
 
   protected override willUpdate(changed: PropertyValues<this>): void {
     if (changed.has("configResponse") && this.configResponse !== undefined) {
@@ -62,6 +76,7 @@ export class SettingsGeneralPanel extends LitElement {
       >
         <div class="settings-sections">
           ${this.renderGatewayServerSettings()}
+          ${this.renderPushNotificationSettings()}
           ${this.renderSelectedMachineAccessSettings()}
         </div>
       </settings-panel-frame>
@@ -89,7 +104,7 @@ export class SettingsGeneralPanel extends LitElement {
                 ${this.renderOverrideBadge("host")}
               </span>
               <input .value=${this.gatewayDraft.host} placeholder="127.0.0.1" autocomplete="off" spellcheck="false" @input=${(event: Event) => { this.updateGatewayDraft({ host: inputValue(event) }); }}>
-              <small>Address the web server should bind to. Leave empty to use PI WEB's default.</small>
+              <small>Address the web server should bind to. Leave empty to use OMP's default.</small>
             </label>
 
             <label class="field">
@@ -98,7 +113,7 @@ export class SettingsGeneralPanel extends LitElement {
                 ${this.renderOverrideBadge("port")}
               </span>
               <input .value=${this.gatewayDraft.port} inputmode="numeric" pattern="[0-9]*" placeholder="8504" autocomplete="off" @input=${(event: Event) => { this.updateGatewayDraft({ port: inputValue(event) }); }}>
-              <small>TCP port from 1 to 65535. Leave empty to use PI WEB's default.</small>
+              <small>TCP port from 1 to 65535. Leave empty to use OMP's default.</small>
             </label>
 
             <div class="field">
@@ -111,13 +126,13 @@ export class SettingsGeneralPanel extends LitElement {
                 <option value="all">Allow every host</option>
               </select>
               <textarea .value=${this.gatewayDraft.allowedHostsText} ?disabled=${this.gatewayDraft.allowedHostsMode === "all"} rows="4" placeholder="example.local&#10;192.168.1.20" spellcheck="false" @input=${(event: Event) => { this.updateGatewayDraft({ allowedHostsText: textAreaValue(event) }); }}></textarea>
-              <small>Enter one host per line, or choose “Allow every host” to write <code>true</code>.</small>
+              <small>Enter one host per line, or choose "Allow every host" to write <code>true</code>.</small>
             </div>
 
             ${this.renderGatewayEffectiveConfig()}
 
             <footer class="form-actions">
-              <button class="primary" ?disabled=${this.loading || this.saving}>${this.saving ? "Saving…" : "Save gateway server config"}</button>
+              <button class="primary" ?disabled=${this.loading || this.saving}>${this.saving ? "Saving\u2026" : "Save gateway server config"}</button>
             </footer>
           </form>
         `}
@@ -134,7 +149,7 @@ export class SettingsGeneralPanel extends LitElement {
           <p>External filesystem roots and upload defaults are saved on ${this.targetLabel}.</p>
         </div>
         ${this.renderMachineMessages()}
-        ${config === undefined ? html`<div class="loading-card">${this.machineLoading ? "Loading selected-machine file access config…" : "Selected-machine file access config is unavailable. Reload before saving file/upload settings."}</div>` : html`
+        ${config === undefined ? html`<div class="loading-card">${this.machineLoading ? "Loading selected-machine file access config\u2026" : "Selected-machine file access config is unavailable. Reload before saving file/upload settings."}</div>` : html`
           <div class="config-path-card">
             <span>Selected machine config file</span>
             <code>${config.path}</code>
@@ -154,13 +169,13 @@ export class SettingsGeneralPanel extends LitElement {
                 <span>Default upload folder</span>
               </span>
               <input .value=${this.machineDraft.uploadDefaultFolder} placeholder=${DEFAULT_WORKSPACE_UPLOADS_FOLDER} autocomplete="off" spellcheck="false" @input=${(event: Event) => { this.updateMachineDraft({ uploadDefaultFolder: inputValue(event) }); }}>
-              <small>Workspace-relative folder for manual file uploads on ${this.targetLabel}. Leave empty to use PI WEB's default <code>${DEFAULT_WORKSPACE_UPLOADS_FOLDER}</code>.</small>
+              <small>Workspace-relative folder for manual file uploads on ${this.targetLabel}. Leave empty to use OMP's default <code>${DEFAULT_WORKSPACE_UPLOADS_FOLDER}</code>.</small>
             </label>
 
             ${this.renderMachineEffectiveConfig()}
 
             <footer class="form-actions">
-              <button class="primary" ?disabled=${this.machineLoading || this.saving}>${this.saving ? "Saving…" : "Save file/upload config"}</button>
+              <button class="primary" ?disabled=${this.machineLoading || this.saving}>${this.saving ? "Saving\u2026" : "Save file/upload config"}</button>
             </footer>
           </form>
         `}
@@ -180,6 +195,46 @@ export class SettingsGeneralPanel extends LitElement {
     const error = this.machineLocalError || this.machineError;
     if (error === "") return null;
     return html`<div class="message error-message">${error}</div>`;
+  }
+
+  private renderPushNotificationSettings(): TemplateResult {
+    const supported = isPushSupported();
+    return html`
+      <section class="settings-card" aria-label="Push notification settings">
+        <div class="card-heading">
+          <h3>Web Push notifications</h3>
+          <p>Receive a notification when a session finishes work, even when the tab is in the background.</p>
+        </div>
+        ${!supported ? html`<div class="message error-message">Push notifications are not supported in this browser.</div>` : html`
+          <div class="push-toggle-row">
+            <label class="toggle-label">
+              <span>Enable push notifications</span>
+              <small>${this.pushState.error ?? ""}</small>
+            </label>
+            <button
+              class="toggle-button ${this.pushState.enabled ? "active" : ""}"
+              ?disabled=${this.pushLoading}
+              @click=${() => { void this.togglePush(); }}
+            >
+              ${this.pushLoading ? "..." : this.pushState.enabled ? "ON" : "OFF"}
+            </button>
+          </div>
+        `}
+      </section>
+    `;
+  }
+
+  private async togglePush(): Promise<void> {
+    this.pushLoading = true;
+    try {
+      if (this.pushState.enabled) {
+        this.pushState = await unsubscribeFromPush();
+      } else {
+        this.pushState = await subscribeToPush();
+      }
+    } finally {
+      this.pushLoading = false;
+    }
   }
 
   private renderOverrideBadge(key: keyof OmpWebConfigEnvOverrides): TemplateResult | null {

@@ -3,7 +3,7 @@ import { OMP_WEB_CAPABILITIES } from "../../../shared/capabilities";
 import { parseCommandResult, parseFileContentResponse, parseFileSuggestion, parseGitStatusResponse, parseMessagePage, parsePiPackageMutationResponse, parsePiPackagesResponse, parseOmpWebConfigResponse, parseOmpWebPluginsResponse, parseOmpWebRuntimeResponse, parseOmpWebStatusResponse, parseSessionBulkArchiveResponse, parseSessionBulkDeleteArchivedResponse, parseSessionCleanupExecuteResponse, parseSessionCleanupPreviewResponse, parseSessionInfo, parseSessionStatus, parseSlashCommand, parseTerminalCommandRun, parseTerminalInfo, parseWorkspace, parseWorkspaceActivityResponse } from "./parsers";
 
 describe("API parsers", () => {
-  it("parses PI WEB config responses", () => {
+  it("parses OMP config responses", () => {
     expect(parseOmpWebConfigResponse({
       path: "/tmp/config.json",
       exists: true,
@@ -19,7 +19,7 @@ describe("API parsers", () => {
     });
   });
 
-  it("parses PI WEB runtime responses", () => {
+  it("parses OMP runtime responses", () => {
     expect(parseOmpWebRuntimeResponse({
       packageName: "@ProgmRuanSilva/omp-web",
       generatedAt: "now",
@@ -53,7 +53,7 @@ describe("API parsers", () => {
     expect(() => parsePiPackagesResponse({ packages: [{ source: "npm:@acme/tools", scope: "user", filtered: "no" }] })).toThrow("Expected boolean field: filtered");
   });
 
-  it("parses Docker PI WEB installation metadata", () => {
+  it("parses Docker OMP installation metadata", () => {
     const response = {
       packageName: "@ProgmRuanSilva/omp-web",
       generatedAt: "now",
@@ -77,10 +77,10 @@ describe("API parsers", () => {
         ...response.components,
         web: { ...response.components.web, installation: { kind: "docker", dockerMode: "hidden" } },
       },
-    })).toThrow("Invalid PI WEB Docker mode");
+    })).toThrow("Invalid OMP Docker mode");
   });
 
-  it("parses PI WEB plugin status responses", () => {
+  it("parses OMP plugin status responses", () => {
     expect(parseOmpWebPluginsResponse({
       plugins: [{ id: "info", module: "/omp-web-plugins/info/omp-web-plugin.js?v=1", source: "bundled", scope: "bundled", machineSpecific: true, enabled: false }],
     })).toEqual({

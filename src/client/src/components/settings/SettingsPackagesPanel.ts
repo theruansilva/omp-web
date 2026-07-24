@@ -53,7 +53,7 @@ export class SettingsPackagesPanel extends LitElement {
     if (showTrustedCodeWarning) {
       notices.push({
         type: "security",
-        content: html`<strong>Trusted code warning:</strong> Pi packages and PI WEB plugins can run with your user permissions. Install packages and enable plugins only from sources you trust.`,
+        content: html`<strong>Trusted code warning:</strong> Pi packages and OMP plugins can run with your user permissions. Install packages and enable plugins only from sources you trust.`,
       });
     }
     return notices;
@@ -79,7 +79,7 @@ export class SettingsPackagesPanel extends LitElement {
           <button type="submit" title="Install this Pi package" ?disabled=${this.isOperating}>${isPiPackageOperationPending(this.operation, "install") ? "Installing…" : "Install"}</button>
         </div>
         ${this.validationMessage === "" ? null : html`<div class="field-error">${this.validationMessage}</div>`}
-        <small>Installs run on ${targetLabel} and use Pi's default package location, equivalent to <code>pi install &lt;source&gt;</code>. PI WEB does not ask you to choose an install location.</small>
+        <small>Installs run on ${targetLabel} and use Pi's default package location, equivalent to <code>pi install &lt;source&gt;</code>. OMP does not ask you to choose an install location.</small>
       </form>
     `;
   }
@@ -235,5 +235,5 @@ export class SettingsPackagesPanel extends LitElement {
 }
 
 function packagesDescription(targetLabel: string): TemplateResult {
-  return html`Managing Pi packages on <strong>${targetLabel}</strong>. Install, remove, and update packages managed by Pi on the selected machine. Pi packages can provide extensions, skills, prompt templates, themes, context/system prompt files, and PI WEB browser plugins.`;
+  return html`Managing Pi packages on <strong>${targetLabel}</strong>. Install, remove, and update packages managed by Pi on the selected machine. Pi packages can provide extensions, skills, prompt templates, themes, context/system prompt files, and OMP browser plugins.`;
 }
