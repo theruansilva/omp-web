@@ -1,0 +1,1 @@
+@media(prefers-reduced-motion:reduce){.preview-panel{transition:none!important;animation:none!important}}.preview-panel{animation:preview-panel-enter .25s cubic-bezier(.4,0,.2,1) forwards;will-change:opacity,transform}@keyframes preview-panel-enter{0%{opacity:0;transform:translate(20px)}to{opacity:1;transform:translate(0)}}
