@@ -20,6 +20,8 @@ import { registerTerminalRoutes } from "./terminals/terminalRoutes.js";
 import { getOmpWebRuntimeComponent } from "./ompWebStatus.js";
 import { SESSIOND_RUNTIME_CAPABILITIES } from "../shared/capabilities.js";
 import { effectiveOmpWebConfig, maxUploadBytes, spawnSessionsEnabled, subsessionsEnabled } from "../config.js";
+import { PushNotificationService } from "./push/PushNotificationService.js";
+import { registerPushRoutes } from "./push/pushRoutes.js";
 
 const { config } = effectiveOmpWebConfig();
 const app = Fastify({ logger: true, bodyLimit: maxUploadBytes(process.env, config) });
@@ -31,10 +33,12 @@ const auth = await AuthService.create();
 const spawnTargets = spawnSessionsEnabled(process.env, config)
   ? new ProjectScopedSpawnTargetResolver({ projects: new ProjectService(new ProjectStore()), workspaces: new WorkspaceService() })
   : undefined;
+const pushService = new PushNotificationService((msg) => { app.log.warn({ service: "push" }, msg); });
 const sessions = new PiSessionService(eventHub, {
   modelRegistry: auth.modelRegistry,
   workspaceActivity,
   logger: app.log,
+  pushService,
   ...(spawnTargets === undefined ? {} : { spawnTargets }),
   subsessionsEnabled: spawnTargets !== undefined && subsessionsEnabled(process.env, config),
 });
@@ -44,6 +48,7 @@ registerWorkspaceActivityRoutes(app, workspaceActivity);
 registerAuthRoutes(app, auth);
 registerSessionRoutes(app, sessions, eventHub);
 registerTerminalRoutes(app, terminals);
+registerPushRoutes(app, pushService);
 
 app.get("/health", () => {
   const runtime = getOmpWebRuntimeComponent("sessiond", SESSIOND_RUNTIME_CAPABILITIES);

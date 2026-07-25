@@ -28,6 +28,8 @@ import { MachineService } from "./machines/machineService.js";
 import { registerMachineRoutes } from "./machines/machineRoutes.js";
 import { registerMachineProxyRoutes } from "./machines/machineProxyRoutes.js";
 import { proxyMachinePluginAsset, registerMachinePluginProxyRoutes } from "./machines/machinePluginProxyRoutes.js";
+import { PushNotificationService } from "./push/PushNotificationService.js";
+import { registerPushRoutes } from "./push/pushRoutes.js";
 import type { Project, Workspace } from "./types.js";
 
 export interface AppDependencies {
@@ -177,11 +179,18 @@ export async function buildApp(deps: AppDependencies = {}): Promise<FastifyInsta
 
   registerMachineProxyRoutes(app, machines);
 
+  const pushService = new PushNotificationService((msg) => { app.log.warn({ service: "push" }, msg); });
+  registerPushRoutes(app, pushService);
+
   const packagedClientDist = join(dirname(fileURLToPath(import.meta.url)), "..", "client");
   const clientDist = deps.clientDist ?? (existsSync(packagedClientDist) ? packagedClientDist : join(process.cwd(), "dist", "client"));
   if (clientDist !== false && existsSync(clientDist)) {
     await app.register(fastifyStatic, { root: clientDist });
     app.setNotFoundHandler((_request, reply) => reply.sendFile("index.html"));
+  }
+  const reactClientDist = join(dirname(fileURLToPath(import.meta.url)), "..", "client-react");
+  if (existsSync(reactClientDist)) {
+    await app.register(fastifyStatic, { root: reactClientDist, prefix: "/app-react/", decorateReply: false });
   }
 
   return app;
