@@ -120,8 +120,8 @@ export class OAuthLoginFlowService {
   if (!state) return { status: "cancelled", flowId: "", progress: [] };
   if (state.pendingResolve && state.prompt?.requestId === requestId) {
    state.pendingResolve(value);
-   (state as { pendingResolve: undefined }).pendingResolve = undefined;
-   (state as unknown as { prompt: undefined }).prompt = undefined;
+   state.pendingResolve = undefined;
+   delete state.prompt;
   }
   return makeView(state);
  }
@@ -130,8 +130,8 @@ export class OAuthLoginFlowService {
   const state = this.#flows.get(flowId);
   if (!state) return;
   state.pendingReject?.(new Error("Login cancelled"));
-  (state as { pendingResolve: undefined }).pendingResolve = undefined;
-  (state as { pendingReject: undefined }).pendingReject = undefined;
+  state.pendingResolve = undefined;
+  state.pendingReject = undefined;
   state.rejectedLogin?.(new Error("Login cancelled"));
  }
 
@@ -158,9 +158,9 @@ export class OAuthLoginFlowService {
     state.rejectedLogin = reject;
 
     options.authStorage.login(options.providerId, {
-     signal: undefined as unknown as AbortSignal,
+     signal: new AbortController().signal,
      onAuth: (info: { url?: string; instructions?: string }) => {
-      if (info.url) {
+      if (typeof info.url === "string" && info.url !== "") {
        const auth: { url: string; instructions?: string } = { url: info.url };
        if (info.instructions !== undefined) auth.instructions = info.instructions;
        state.auth = auth;
@@ -184,7 +184,7 @@ export class OAuthLoginFlowService {
     }).then(() => {
      resolve();
     }, (error: unknown) => {
-     reject(error);
+     reject(error instanceof Error ? error : new Error(String(error)));
     });
    });
 

@@ -1,4 +1,3 @@
-import { getAgentDir } from "@oh-my-pi/pi-coding-agent";
 import type { PiPackageInfo, PiPackageMutationAction, PiPackageMutationResponse, PiPackageScope, PiPackagesResponse } from "../shared/apiTypes.js";
 
 export interface PiPackageManagerPort {
@@ -84,11 +83,11 @@ export class DefaultPiPackageService implements PiPackageService {
   }
 }
 
-export function createDefaultPiPackageService(_cwd = process.cwd(), _agentDir = getAgentDir()): PiPackageService {
+export function createDefaultPiPackageService(): PiPackageService {
   return new DefaultPiPackageService({
     listConfiguredPackages: () => [],
-    installAndPersist: async () => { },
-    removeAndPersist: async () => true,
-    update: async () => { },
+    installAndPersist: () => Promise.resolve(),
+    removeAndPersist: () => Promise.resolve(true),
+    update: () => Promise.resolve(),
   });
 }

@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import { Readable } from "node:stream";
 import type { FastifyInstance } from "fastify";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { isRecord } from "./utils.js";
 import { buildApp } from "./app.js";
 import { ProjectService } from "./projects/projectService.js";
 import { ProjectStore } from "./storage/projectStore.js";
@@ -1093,9 +1094,6 @@ function isMachineConfigWriteBody(value: unknown): value is MachineConfigWriteBo
   return isRecord(value["config"]);
 }
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null;
-}
 
 function fakePiPackageService(): PiPackageService {
   const packages: PiPackageInfo[] = [{ source: "npm:@acme/tools", scope: "user", filtered: false, installedPath: "/tmp/pi-tools" }];

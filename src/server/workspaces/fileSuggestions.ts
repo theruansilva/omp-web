@@ -1,7 +1,7 @@
 import { execFile, spawn } from "node:child_process";
 import { readdir, stat } from "node:fs/promises";
 import { homedir } from "node:os";
-import { basename, dirname, isAbsolute, join, relative, sep, win32 } from "node:path";
+import { basename, dirname, isAbsolute, join, relative, sep } from "node:path";
 import { promisify } from "node:util";
 import { sanitizedGitEnv } from "../git/gitEnv.js";
 import type { OmpWebPathAccessConfig } from "../../shared/apiTypes.js";

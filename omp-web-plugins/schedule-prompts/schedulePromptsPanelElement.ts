@@ -81,10 +81,11 @@ class OmpWebSchedulePromptsPanel extends HTMLElement {
     });
 
     this.root.querySelector("button[data-toggle]")?.addEventListener("click", (e) => {
-      const btn = e.currentTarget as HTMLElement;
+      const btn = e.currentTarget;
+      if (!(btn instanceof HTMLElement)) return;
       const jobId = btn.getAttribute("data-job-id");
       const enabled = btn.getAttribute("data-enabled") === "true";
-      if (jobId && context) {
+      if (jobId !== null && jobId !== "") {
         context.prompt.insertText(enabled
           ? `schedule_prompt action="disable" jobId="${jobId}"`
           : `schedule_prompt action="enable" jobId="${jobId}"`);
@@ -92,9 +93,10 @@ class OmpWebSchedulePromptsPanel extends HTMLElement {
     });
 
     this.root.querySelector("button[data-remove]")?.addEventListener("click", (e) => {
-      const btn = e.currentTarget as HTMLElement;
+      const btn = e.currentTarget;
+      if (!(btn instanceof HTMLElement)) return;
       const jobId = btn.getAttribute("data-job-id");
-      if (jobId && context) {
+      if (jobId !== null && jobId !== "") {
         context.prompt.insertText(`schedule_prompt action="remove" jobId="${jobId}"`);
       }
     });
@@ -119,8 +121,8 @@ class OmpWebSchedulePromptsPanel extends HTMLElement {
     const statusIcon = statusIconFor(job.lastStatus, job.enabled);
     const scheduleText = humanizeSchedule(job);
     const truncatedPrompt = job.prompt.length > 60 ? job.prompt.slice(0, 60) + "…" : job.prompt;
-    const nextRun = job.nextRun ? formatDate(job.nextRun) : "—";
-    const lastRun = job.lastRun ? formatDate(job.lastRun) : "—";
+    const nextRun = job.nextRun !== undefined && job.nextRun !== "" ? formatDate(job.nextRun) : "—";
+    const lastRun = job.lastRun !== undefined && job.lastRun !== "" ? formatDate(job.lastRun) : "—";
     const statusLabel = job.lastStatus ?? "pending";
 
     return `
@@ -131,7 +133,7 @@ class OmpWebSchedulePromptsPanel extends HTMLElement {
             <strong>${escapeHtml(job.name)}</strong>
             <span class="schedule">${escapeHtml(scheduleText)}</span>
             <span class="prompt-text">${escapeHtml(truncatedPrompt)}</span>
-            <span class="meta">Next: ${nextRun} | Last: ${lastRun} | Runs: ${job.runCount} | ${statusLabel}</span>
+            <span class="meta">Next: ${nextRun} | Last: ${lastRun} | Runs: ${String(job.runCount)} | ${statusLabel}</span>
           </div>
         </div>
         <div class="job-actions">
@@ -150,7 +152,11 @@ class OmpWebSchedulePromptsPanel extends HTMLElement {
       const content = typeof response.content === "string"
         ? response.content
         : new TextDecoder().decode(response.content);
-      configCache.set(key, JSON.parse(content) as CronStore);
+      const parsed: unknown = JSON.parse(content);
+      if (!isCronStore(parsed)) {
+        throw new Error("Invalid schedule-prompts payload");
+      }
+      configCache.set(key, parsed);
     } catch {
       configCache.set(key, {
         kind: "unavailable",
@@ -208,11 +214,21 @@ function formatDate(input: string): string {
   const date = new Date(input);
   if (Number.isNaN(date.getTime())) return input;
   const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-  const month = months[date.getMonth()];
-  const day = date.getDate();
+  const month = months[date.getMonth()] ?? "";
+  const day = String(date.getDate());
   const hours = String(date.getHours()).padStart(2, "0");
   const minutes = String(date.getMinutes()).padStart(2, "0");
   return `${month} ${day} ${hours}:${minutes}`;
+}
+function isCronStore(value: unknown): value is CronStore {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    "version" in value &&
+    value.version === 1 &&
+    "jobs" in value &&
+    Array.isArray(value.jobs)
+  );
 }
 
 function escapeHtml(value: unknown): string {

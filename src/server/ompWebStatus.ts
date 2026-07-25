@@ -5,7 +5,6 @@ import { promisify } from "node:util";
 import { homedir } from "node:os";
 import { dirname, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
-import { getAgentDir } from "@oh-my-pi/pi-coding-agent";
 import type { OmpWebCapability, OmpWebComponentStatus, OmpWebInstallationInfo, OmpWebReleaseStatus, OmpWebRuntimeComponent, OmpWebRuntimeResponse, OmpWebServiceComponent, OmpWebStatusMessage, OmpWebStatusResponse, OmpWebVersionResponse } from "../shared/apiTypes.js";
 import { effectiveOmpWebCapabilities, WEB_RUNTIME_CAPABILITIES } from "../shared/capabilities.js";
 import { ompWebDockerCommand } from "../docker/ompWebDockerCommandPlan.js";

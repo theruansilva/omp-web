@@ -1,7 +1,7 @@
 import type { FastifyInstance, FastifyReply } from "fastify";
 import { machineScopedPluginId, parseMachineScopedPluginId, type MachineScopedPluginIdParts } from "../../shared/machinePluginIds.js";
 import { isOmpWebPluginId } from "../../shared/pluginIds.js";
-import { RemoteMachineRequestError, type MachineClient } from "./machineClient.js";
+import { type MachineClient } from "./machineClient.js";
 import { MachineService } from "./machineService.js";
 import { applySafeHeaders, sendGatewayError } from "./proxyUtils.js";
 import { isRecord } from "../utils.js";

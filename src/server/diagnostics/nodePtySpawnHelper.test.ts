@@ -1,8 +1,8 @@
 import { chmod, mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { dirname, join } from "node:path";
+import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
-import { checkNodePtyDarwinSpawnHelper, formatNodePtyDarwinSpawnHelperCheck, OMP_WEB_SPAWN_HELPER_ISSUE_URL } from "./nodePtySpawnHelper.js";
+import { checkNodePtyDarwinSpawnHelper, formatNodePtyDarwinSpawnHelperCheck } from "./nodePtySpawnHelper.js";
 
 describe("node-pty macOS spawn-helper diagnostics", () => {
   const tempRoots: string[] = [];

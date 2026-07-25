@@ -5,12 +5,17 @@ import { OAuthLoginFlowService } from "./oauthLoginFlowService.js";
 
 /** Adapt omp ModelRegistry to omp-web's AuthProviderModelRegistry interface. */
 function toAuthProviderModelRegistry(mr: ModelRegistry): AuthProviderModelRegistry {
- return {
-  authStorage: mr.authStorage as unknown as AuthProviderModelRegistry["authStorage"],
-  getAll: () => mr.getAll().map((m) => ({ provider: m.provider })),
-  getProviderDisplayName: (provider: string) => mr.getProviderBaseUrl(provider) ?? provider,
-  getProviderAuthStatus: (_provider: string): AuthProviderStatus => ({ configured: true }) as AuthProviderStatus,
- };
+	const authStorage = mr.authStorage;
+	return {
+		authStorage: {
+			getOAuthProviders: (): { id: string; name: string }[] => [],
+			list: () => authStorage.list(),
+			get: (provider: string) => authStorage.get(provider),
+		},
+		getAll: () => mr.getAll().map((m) => ({ provider: m.provider })),
+		getProviderDisplayName: (provider: string) => mr.getProviderBaseUrl(provider) ?? provider,
+		getProviderAuthStatus: (): AuthProviderStatus => ({ configured: true }),
+	};
 }
 
 export interface AuthChange {

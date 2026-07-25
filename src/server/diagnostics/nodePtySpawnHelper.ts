@@ -1,4 +1,4 @@
-import { accessSync, constants, existsSync, statSync, type Stats } from "node:fs";
+import { accessSync, constants, existsSync, statSync } from "node:fs";
 import { createRequire } from "node:module";
 import { dirname, join } from "node:path";
 import { errorMessage } from "../utils.js";

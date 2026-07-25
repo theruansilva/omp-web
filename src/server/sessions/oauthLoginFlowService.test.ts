@@ -97,7 +97,7 @@ describe("OAuthLoginFlowService", () => {
   service.dispose();
  });
 
- it("expires abandoned running flows and evicts terminal flows", async () => {
+ it("expires abandoned running flows and evicts terminal flows", () => {
   vi.useFakeTimers();
   const service = new OAuthLoginFlowService({ runningTtlMs: 10_000, terminalTtlMs: 5_000 });
   const state = service.start({

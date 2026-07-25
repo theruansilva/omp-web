@@ -3,7 +3,7 @@ import type { WebSocket } from "ws";
 import { FEDERATED_HTTP_ROUTES, FEDERATED_WEBSOCKET_ROUTES, type FederatedHttpRouteSpec } from "../../shared/federatedRoutes.js";
 import { mergeSelectedMachineConfig, parseOmpWebConfigResponseBody, parseSelectedMachineConfigRequest, selectedMachineConfigResponse } from "../configRoutes.js";
 import { bridgeSockets } from "../webSocketBridge.js";
-import { RemoteMachineRequestError, type MachineClient, type MachineJsonResponse, type MachineRequestOptions } from "./machineClient.js";
+import { type MachineClient, type MachineJsonResponse, type MachineRequestOptions } from "./machineClient.js";
 import { MachineService } from "./machineService.js";
 import { applySafeHeaders, sendGatewayError } from "./proxyUtils.js";
 import { errorMessage, isRecord } from "../utils.js";

@@ -70,13 +70,13 @@ interface OmpWebPluginEntry {
 type ArraylessPluginRecord = Omit<PluginRecord, "source" | "scope">;
 
 export class DefaultPiPackageProvider implements PiPackageProvider {
-  constructor(private readonly _cwd = process.cwd(), private readonly _agentDir = getAgentDir()) { }
+  // eslint-disable-next-line @typescript-eslint/no-useless-constructor, @typescript-eslint/no-unused-vars
+  constructor(_cwd?: string, _agentDir?: string) { /* no-op */ }
 
   listPackages(): ConfiguredPiPackage[] {
     return [];
   }
-
-  getInstalledPath(_source: string, _scope: "user" | "project"): string | undefined {
+  getInstalledPath(): string | undefined {
     return undefined;
   }
 }
