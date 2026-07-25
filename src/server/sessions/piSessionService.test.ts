@@ -15,7 +15,8 @@ import { PiSessionService, type PiAgentSession, type PiSessionManager, type PiSe
 import type { SpawnTargetDecision } from "./spawnTargetResolver.js";
 
 // Module-level model registry for tests that need a real ModelRegistry
-const _testAuthStorage = new AuthStorage(new SqliteAuthCredentialStore(new Database(":memory:")));
+// eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+const _testAuthStorage = new AuthStorage(new SqliteAuthCredentialStore(Reflect.construct(Database, [":memory:"])));
 const _testModelRegistry = new ModelRegistry(_testAuthStorage);
 
 
@@ -92,6 +93,10 @@ function fakeRuntime(sessionId = "session-1", patch: Partial<TestSession> = {}) 
     extensionRunner: { getRegisteredCommands: () => [] },
     promptTemplates: [],
     resourceLoader: { getSkills: () => ({ skills: [] }) },
+    getPlanModeState: () => undefined,
+    setPlanModeState: () => { /* no-op */ },
+    toggleAdvisorEnabled: () => false,
+    setAdvisorEnabled: () => false,
     subscribe: (listener: (event: unknown) => void) => {
       listeners.push(listener);
       return () => {
@@ -503,7 +508,7 @@ describe("PiSessionService", () => {
       ["/two", [sessionRecord("c", "/two")]],
     ]);
     const listCalls: string[] = [];
-    const open = vi.fn(async () => { throw new Error("bulk archive should not open inactive runtimes"); });
+    const open = vi.fn(() => Promise.reject(new Error("bulk archive should not open inactive runtimes")));
     const archiveMany = vi.fn((inputs: readonly { sessionId: string; cwd: string }[]) => Promise.resolve(inputs.map((input) => ({ sessionId: input.sessionId, cwd: input.cwd, archivedAt: "2026-01-03T00:00:00.000Z" }))));
     const service = new PiSessionService(new CapturingSessionEventHub(), {
       archiveStore: {
@@ -1587,7 +1592,7 @@ describe("PiSessionService", () => {
         const parent = fakeRuntime("parent-1", { sessionFile: parentFile, sessionManager: parentManager });
         const runtimes = [child.runtime, parent.runtime];
         let index = 0;
-        const open = vi.fn(async (path: string) => path === parentFile ? parentManager : childManager);
+        const open = vi.fn((path: string) => Promise.resolve(path === parentFile ? parentManager : childManager));
         const service = new PiSessionService(new CapturingSessionEventHub(), {
           createAgentRuntime: () => {
             const runtime = runtimes[index] ?? parent.runtime;
@@ -1643,10 +1648,10 @@ describe("PiSessionService", () => {
         const parent = fakeRuntime("parent-1", { sessionFile: parentFile, sessionManager: parentManager });
         const runtimes = [fork.runtime, child.runtime, parent.runtime];
         let index = 0;
-        const open = vi.fn(async (path: string) => {
-          if (path === parentFile) return parentManager;
-          if (path === forkParentFile) return forkManager;
-          return childManager;
+        const open = vi.fn((path: string) => {
+          if (path === parentFile) return Promise.resolve(parentManager);
+          if (path === forkParentFile) return Promise.resolve(forkManager);
+          return Promise.resolve(childManager);
         });
         const service = new PiSessionService(new CapturingSessionEventHub(), {
           createAgentRuntime: () => {
@@ -1704,7 +1709,7 @@ describe("PiSessionService", () => {
         const parent = fakeRuntime("parent-1", { sessionFile: parentFile, sessionManager: parentManager });
         const runtimes = [child.runtime, parent.runtime];
         let index = 0;
-        const open = vi.fn(async (path: string) => path === parentFile ? parentManager : childManager);
+        const open = vi.fn((path: string) => Promise.resolve(path === parentFile ? parentManager : childManager));
         const service = new PiSessionService(new CapturingSessionEventHub(), {
           createAgentRuntime: () => {
             const runtime = runtimes[index] ?? parent.runtime;
@@ -1763,11 +1768,11 @@ describe("PiSessionService", () => {
           if (options.sessionManager === parentManager) return Promise.resolve(parent.runtime);
           throw new Error("unexpected session manager");
         };
-        const open = vi.fn(async (path: string) => {
-          if (path === copiedChildFile) return copiedManager;
-          if (path === originalChildFile) return originalManager;
-          if (path === parentFile) return parentManager;
-          throw new Error(`unexpected open path ${path}`);
+        const open = vi.fn((path: string) => {
+          if (path === copiedChildFile) return Promise.resolve(copiedManager);
+          if (path === originalChildFile) return Promise.resolve(originalManager);
+          if (path === parentFile) return Promise.resolve(parentManager);
+          return Promise.resolve(parentManager);
         });
         const service = new PiSessionService(new CapturingSessionEventHub(), {
           createAgentRuntime,
@@ -1838,11 +1843,11 @@ describe("PiSessionService", () => {
           if (options.sessionManager === copiedParentManager) return Promise.resolve(copiedParent.runtime);
           throw new Error("unexpected session manager");
         };
-        const open = vi.fn(async (path: string) => {
-          if (path === childFile) return childManager;
-          if (path === parentFile) return parentManager;
-          if (path === copiedParentFile) return copiedParentManager;
-          throw new Error(`unexpected open path ${path}`);
+        const open = vi.fn((path: string) => {
+          if (path === childFile) return Promise.resolve(childManager);
+          if (path === parentFile) return Promise.resolve(parentManager);
+          if (path === copiedParentFile) return Promise.resolve(copiedParentManager);
+          return Promise.resolve(parentManager);
         });
         const service = new PiSessionService(new CapturingSessionEventHub(), {
           createAgentRuntime,
@@ -1900,7 +1905,7 @@ describe("PiSessionService", () => {
         const parent = fakeRuntime("parent-1", { sessionFile: parentFile, sessionManager: parentManager });
         const runtimes = [child.runtime, parent.runtime];
         let index = 0;
-        const open = vi.fn(async (path: string) => path === parentFile ? parentManager : childManager);
+        const open = vi.fn((path: string) => Promise.resolve(path === parentFile ? parentManager : childManager));
         const service = new PiSessionService(new CapturingSessionEventHub(), {
           createAgentRuntime: () => {
             const runtime = runtimes[index] ?? parent.runtime;
@@ -1952,7 +1957,7 @@ describe("PiSessionService", () => {
         const child = fakeRuntime("child-1", { sessionFile: childFile, sessionManager: childManager });
         const runtimes = [child.runtime, parent.runtime];
         let index = 0;
-        const open = vi.fn(async (path: string) => path === actualParentFile ? parent.session.sessionManager : childManager);
+        const open = vi.fn((path: string) => Promise.resolve(path === actualParentFile ? parent.session.sessionManager : childManager));
         const service = new PiSessionService(new CapturingSessionEventHub(), {
           createAgentRuntime: () => {
             const runtime = runtimes[index] ?? parent.runtime;

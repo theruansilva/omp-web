@@ -48,7 +48,7 @@ export class SessionDirResolver {
   }
 
   const settingsSessionDir = SessionManager.getDefaultSessionDir(cwd, this.agentDir);
-  if (settingsSessionDir !== undefined && settingsSessionDir !== "") {
+  if (settingsSessionDir !== "") {
    return { source: "settings", sessionDir: resolveConfiguredPath(settingsSessionDir, cwd), usesConfiguredSessionDir: true };
   }
 
@@ -70,7 +70,7 @@ class SettingsAwarePiSessionManagerGateway implements PiSessionManagerGateway {
   return filterSessionsForCwd(await listSessionsInDir(resolution.sessionDir), cwd);
  }
 
- create(cwd: string, _options?: { parentSession?: string }): PiSessionManager {
+ create(cwd: string): PiSessionManager {
   const resolution = this.resolver.resolve(cwd);
   return SessionManager.create(cwd, resolution.sessionDir);
  }
@@ -105,11 +105,6 @@ export function filterSessionsForCwd(sessions: readonly PiSessionListEntry[], cw
  return sessions.filter((session) => session.cwd !== "" && cwdPathsEqual(session.cwd, cwd));
 }
 
-function uniqueSessionsByPath(sessions: readonly PiSessionListEntry[]): PiSessionListEntry[] {
- const byPath = new Map<string, PiSessionListEntry>();
- for (const session of sessions) byPath.set(session.path, session);
- return [...byPath.values()].sort((a, b) => b.modified.getTime() - a.modified.getTime());
-}
 
 export function defaultPiSessionsRoot(agentDir = getAgentDir()): string {
  return join(agentDir, "sessions");

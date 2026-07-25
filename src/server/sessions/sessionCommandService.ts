@@ -98,7 +98,7 @@ export class SessionCommandService<TSession extends CommandSession = CommandSess
       return { type: "unsupported", message: `Unknown command: /${name}` };
     }
 
-    if (name === "plan") { session.setPlanModeState(session.getPlanModeState()?.enabled ? undefined : { enabled: true, planFilePath: "PLAN.md" }); return { type: "done", message: "Plan mode toggled." }; }
+    if (name === "plan") { session.setPlanModeState(session.getPlanModeState()?.enabled === true ? undefined : { enabled: true, planFilePath: "PLAN.md" }); return { type: "done", message: "Plan mode toggled." }; }
 
     if (name === "advisor") { session.toggleAdvisorEnabled(); return { type: "done", message: "Advisor toggled." }; }
 

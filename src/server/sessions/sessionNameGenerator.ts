@@ -1,4 +1,4 @@
-import type { Effort } from "@oh-my-pi/pi-catalog/effort";
+import { Effort } from "@oh-my-pi/pi-catalog/effort";
 import type { Api, AssistantMessage, Model } from "@oh-my-pi/pi-ai";
 import type { StreamFn } from "@oh-my-pi/pi-agent-core";
 
@@ -20,7 +20,7 @@ export async function generateShortSessionName<TApi extends Api>(streamFn: Strea
     },
     {
       maxTokens: 24,
-      reasoning: "minimal" as unknown as Effort,
+      reasoning: Effort.Minimal,
       signal: AbortSignal.timeout(SESSION_NAME_TIMEOUT_MS),
     },
   );

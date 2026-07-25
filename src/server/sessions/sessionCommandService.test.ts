@@ -19,6 +19,10 @@ function activeSession(overrides: Partial<TestCommandSession> = {}): CommandActi
     promptTemplates: [{ name: "template" }],
     extensionRunner: { getRegisteredCommands: () => [{ name: "ext" }] },
     resourceLoader: { getSkills: () => ({ skills: [{ name: "skill-a" }] }) },
+    getPlanModeState: () => undefined,
+    setPlanModeState: () => { /* no-op */ },
+    toggleAdvisorEnabled: () => false,
+    setAdvisorEnabled: () => false,
     sessionManager: { getLeafId: () => "leaf-1" },
     setSessionName: vi.fn((name: string) => { session.sessionName = name; }),
     compact: vi.fn(async () => {

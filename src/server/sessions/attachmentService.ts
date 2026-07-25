@@ -26,13 +26,12 @@ export interface InlineImage {
  * (2000x2000, ~4.5MB base64). Images that cannot be resized below the limit
  * are dropped, matching pi's `[Image omitted]` behaviour.
  */
-export async function attachmentsToInlineImages(attachments: PromptImageAttachment[]): Promise<InlineImage[]> {
+export function attachmentsToInlineImages(attachments: PromptImageAttachment[]): InlineImage[] {
  const results: InlineImage[] = [];
  for (const attachment of attachments) {
-  const bytes = Buffer.from(attachment.data, "base64");
-  results.push({
-   image: { type: "image", data: bytes, mimeType: attachment.mimeType } as unknown as ImageContent,
-  });
+		results.push({
+			image: { type: "image", data: attachment.data, mimeType: attachment.mimeType },
+		});
  }
  return results;
 }

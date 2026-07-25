@@ -1,7 +1,7 @@
-import { Type } from "typebox";
-import type { Static } from "typebox";
+import { isRecord } from "../utils.js";
+import { Type } from "@oh-my-pi/pi-coding-agent/extensibility/typebox";
 import type { ExtensionContext, ToolDefinition } from "@oh-my-pi/pi-coding-agent";
-import type { AgentToolResult, AgentToolUpdateCallback } from "@oh-my-pi/pi-coding-agent/extensibility/extensions/types";
+import type { AgentToolUpdateCallback } from "@oh-my-pi/pi-coding-agent/extensibility/extensions/types";
 
 export interface SpawnSessionResult {
  sessionId: string;
@@ -39,25 +39,27 @@ const SpawnSessionParams = Type.Object({
  * a human can open and interact with. The tool is constructed per-session, so it
  * carries the spawning session's cwd for project-scope validation.
  */
-export function createSpawnSessionToolDefinition(spawningCwd: string, deps: SpawnSessionToolDeps) {
- const def = {
+export function createSpawnSessionToolDefinition(spawningCwd: string, deps: SpawnSessionToolDeps): ToolDefinition {
+ const def: ToolDefinition = {
   name: "spawn_session",
   label: "Spawn session",
   description: "Start a new, independent omp-web session and send it an initial prompt. Use this to dispatch a fresh agent to continue work or follow a plan. The new session runs on its own and a human can interact with it; you do not receive its output.",
   parameters: SpawnSessionParams,
   async execute(_toolCallId: string, params: unknown, _signal: AbortSignal | undefined, _onUpdate: AgentToolUpdateCallback<SpawnSessionToolDetails> | undefined, ctx: ExtensionContext) {
-   const p = params as Static<typeof SpawnSessionParams>;
+   const p = isRecord(params) ? params : {};
+   const prompt = typeof p["prompt"] === "string" ? p["prompt"] : "";
+   const cwd = typeof p["cwd"] === "string" ? p["cwd"] : undefined;
    const result = await deps.spawn({
     spawningCwd,
-    prompt: p.prompt,
-    cwd: p.cwd,
+    prompt,
+    cwd,
     ...(ctx.model === undefined ? {} : { model: ctx.model }),
    });
    return {
     content: [{ type: "text", text: `Started session ${result.sessionId} in ${result.cwd}.` }],
     details: result,
-   } as AgentToolResult<SpawnSessionToolDetails>;
+   };
   },
  };
- return def as unknown as ToolDefinition;
+ return def;
 }

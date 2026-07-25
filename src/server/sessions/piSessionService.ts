@@ -9,25 +9,10 @@ import {
  getAgentDir,
  ModelRegistry,
  SessionManager,
- type CreateAgentSessionOptions,
  Settings,
 } from "@oh-my-pi/pi-coding-agent";
 import { EditTool } from "@oh-my-pi/pi-coding-agent/edit";
-import type { ExtensionContext, ToolDefinition } from "@oh-my-pi/pi-coding-agent/extensibility/extensions/types";
-
-/**
- * omp's ConfiguredThinkingLevel type is incomplete due to const enum Effort
- * not resolving across bundler module boundaries. This type alias captures
- * the actual parameter accepted by AgentSession.setThinkingLevel at runtime.
- * Used only for type-safe casts when bridging our wider ClientThinkingLevel.
- */
-type OmpConfiguredThinkingLevel = string;
-/** Parameter type for EditTool.execute's params argument (second param). */
-type EditToolExecuteParams = Parameters<EditTool["execute"]>[1];
-/** Parameter type for EditTool.execute's onUpdate callback (fourth param). */
-type EditToolExecuteOnUpdate = ((update: { content: unknown[]; details?: unknown }) => void) | undefined;
-
-import type { EditToolDetails } from "@oh-my-pi/pi-coding-agent/edit/renderer";
+import type { ToolDefinition } from "@oh-my-pi/pi-coding-agent/extensibility/extensions/types";
 import type { ClientArchiveSessionsResponse, ClientCommand, ClientCommandResult, ClientMessagePage, ClientSession, ClientSessionCleanupExecuteResponse, ClientSessionCleanupPreviewResponse, ClientSessionModel, ClientSessionRef, ClientSessionStatus, ClientThinkingLevel, SessionUiEvent } from "../types.js";
 import { pageMessagesAtSafeBoundary } from "./messagePaging.js";
 import type { SessionEventHub } from "../realtime/sessionEventHub.js";
@@ -38,11 +23,12 @@ import { findArchiveCandidateByIdOrPrefix, planSessionArchiveTree, type SessionA
 import type { ActiveSession } from "./sessionRuntimeStore.js";
 import type { AuthChange } from "./authService.js";
 import { fallbackSessionName, generateShortSessionName } from "./sessionNameGenerator.js";
-import { computeEditPreview, type EditPreviewResult, type EditReplacement } from "./editPreview.js";
+import { computeEditPreview, type EditReplacement } from "./editPreview.js";
 import { createPiSessionManagerGateway } from "./piSessionManagerGateway.js";
 import { attachmentsToInlineImages, saveAttachmentsToWorkspace } from "./attachmentService.js";
 import { parsePromptAttachments } from "../../shared/promptAttachments.js";
 import type { SavedPromptAttachment, SessionBulkArchiveResponse, SessionBulkDeleteArchivedResponse, SessionBulkFailure, SessionBulkMutationRef } from "../../shared/apiTypes.js";
+import { isKnownThinkingLevel } from "../../shared/thinkingLevels.js";
 
 import { cwdPathsEqual } from "../workingDirectory.js";
 import { errorMessage, isRecord } from "../utils.js";
@@ -56,6 +42,7 @@ import type { CronScheduler } from "./schedulePrompt/scheduler.js";
 import { SchedulePromptService } from "./schedulePrompt/schedulePromptService.js";
 import type { CronStorage } from "./schedulePrompt/storage.js";
 import { createSchedulePromptToolDefinition } from "./schedulePrompt/tool.js";
+import type { PushNotificationService } from "../push/PushNotificationService.js";
 
 /**
  * Minimal structured-logging seam, shaped like Fastify's logger so sessiond can
@@ -174,6 +161,7 @@ interface BulkSessionLookupContext {
 
 interface BulkArchivePlanItem {
  input: ArchiveSessionInput;
+ activeSession?: PiAgentSession;
 }
 
 interface BulkDeletePlanItem {
@@ -284,7 +272,7 @@ interface CreateAgentRuntimeOptions {
 
 type OmpWebCreateAgentSessionRuntimeFactory = (options: CreateAgentRuntimeOptions & { sessionStartEvent?: unknown }) => Promise<PiSessionRuntime>;
 
-type CreateAgentRuntime = (createRuntime: OmpWebCreateAgentSessionRuntimeFactory, options: CreateAgentRuntimeOptions) => Promise<PiSessionRuntime>;
+type CreateAgentRuntime = (createRuntime: OmpWebCreateAgentSessionRuntimeFactory | undefined, options: CreateAgentRuntimeOptions) => Promise<PiSessionRuntime>;
 
 class DefaultPiAgentSession implements PiAgentSession {
  private _isBashRunning = false;
@@ -294,18 +282,19 @@ class DefaultPiAgentSession implements PiAgentSession {
   private readonly piSessionManager: PiSessionManager,
  ) { }
 
- get modelRegistry(): ModelRegistryInstance { return this.ompSession.modelRegistry as unknown as ModelRegistryInstance; }
+ get modelRegistry(): ModelRegistryInstance { return this.ompSession.modelRegistry; }
  get sessionManager(): PiSessionManager { return this.piSessionManager; }
  get scopedModels(): readonly { model: AgentModel; thinkingLevel?: ClientThinkingLevel }[] {
-  return this.ompSession.scopedModels as unknown as readonly { model: AgentModel; thinkingLevel?: ClientThinkingLevel }[];
+  return this.ompSession.scopedModels;
  }
  get sessionId(): string { return this.ompSession.sessionId; }
  get sessionFile(): string | undefined { return this.ompSession.sessionFile; }
  get sessionName(): string | undefined { return this.ompSession.sessionName; }
  get messages(): readonly unknown[] { return this.ompSession.messages; }
- get model(): AgentModel | undefined { return this.ompSession.model as unknown as AgentModel | undefined; }
+ get model(): AgentModel | undefined { return this.ompSession.model; }
  get thinkingLevel(): ClientThinkingLevel {
-  return (this.ompSession.configuredThinkingLevel() ?? "off") as ClientThinkingLevel;
+  const configured = this.ompSession.configuredThinkingLevel();
+  return configured !== undefined && isKnownThinkingLevel(configured) ? configured : "off";
  }
  get isStreaming(): boolean { return this.ompSession.isStreaming; }
  get isCompacting(): boolean { return this.ompSession.isCompacting; }
@@ -323,19 +312,39 @@ class DefaultPiAgentSession implements PiAgentSession {
    }),
   };
  }
- getPlanModeState(): { enabled: boolean; planFilePath: string } | undefined { return (this.ompSession as any).getPlanModeState(); }
- setPlanModeState(state: { enabled: boolean; planFilePath: string } | undefined): void { (this.ompSession as any).setPlanModeState(state); }
- toggleAdvisorEnabled(): boolean { return (this.ompSession as any).toggleAdvisorEnabled(); }
- setAdvisorEnabled(enabled: boolean): boolean { return (this.ompSession as any).setAdvisorEnabled(enabled); }
+ getPlanModeState(): { enabled: boolean; planFilePath: string } | undefined {
+  const fn = Reflect.get(this.ompSession, "getPlanModeState");
+  if (typeof fn !== "function") return undefined;
+  const res = fn.call(this.ompSession);
+  return isRecord(res) && typeof res.enabled === "boolean" && typeof res.planFilePath === "string"
+   ? { enabled: res.enabled, planFilePath: res.planFilePath }
+   : undefined;
+ }
+ setPlanModeState(state: { enabled: boolean; planFilePath: string } | undefined): void {
+  const fn = Reflect.get(this.ompSession, "setPlanModeState");
+  if (typeof fn === "function") fn.call(this.ompSession, state);
+ }
+ toggleAdvisorEnabled(): boolean {
+  const fn = Reflect.get(this.ompSession, "toggleAdvisorEnabled");
+  if (typeof fn !== "function") return false;
+  const res = fn.call(this.ompSession);
+  return typeof res === "boolean" ? res : false;
+ }
+ setAdvisorEnabled(enabled: boolean): boolean {
+  const fn = Reflect.get(this.ompSession, "setAdvisorEnabled");
+  if (typeof fn !== "function") return false;
+  const res = fn.call(this.ompSession, enabled);
+  return typeof res === "boolean" ? res : false;
+ }
  get agent(): { streamFn: StreamFn } {
-  return { streamFn: this.ompSession.agent.streamFn as unknown as StreamFn };
+  return { streamFn: this.ompSession.agent.streamFn };
  }
 
  subscribe(listener: (event: unknown) => void): () => void {
   return this.ompSession.subscribe(listener);
  }
 
- bindExtensions(_bindings: PiExtensionBindings): Promise<void> {
+ bindExtensions(): Promise<void> {
   // Handled via onExtensionError in createAgentSession options
   return Promise.resolve();
  }
@@ -361,7 +370,7 @@ class DefaultPiAgentSession implements PiAgentSession {
    userMessages: stats.userMessages,
    assistantMessages: stats.assistantMessages,
    toolCalls: stats.toolCalls,
-   tokens: stats.tokens as ClientSessionStatus["tokens"],
+   tokens: stats.tokens,
    cost: stats.cost,
   };
  }
@@ -375,7 +384,7 @@ class DefaultPiAgentSession implements PiAgentSession {
  }
 
  async prompt(text: string, options?: { streamingBehavior?: "steer" | "followUp"; images?: ImageContent[] }): Promise<void> {
-  await this.ompSession.prompt(text, options as Record<string, unknown>);
+  await this.ompSession.prompt(text, options);
  }
 
  async sendCustomMessage(
@@ -410,9 +419,14 @@ class DefaultPiAgentSession implements PiAgentSession {
 
  clearQueue(): { steering: string[]; followUp: string[] } {
   const result = this.ompSession.clearQueue();
+  const extractText = (m: unknown): string => {
+   if (typeof m === "string") return m;
+   if (isRecord(m) && typeof m["text"] === "string") return m["text"];
+   return "";
+  };
   return {
-   steering: result.steering.map((m) => typeof m === "string" ? m : (m as { text?: string }).text ?? ""),
-   followUp: result.followUp.map((m) => typeof m === "string" ? m : (m as { text?: string }).text ?? ""),
+   steering: result.steering.map(extractText),
+   followUp: result.followUp.map(extractText),
   };
  }
 
@@ -425,32 +439,45 @@ class DefaultPiAgentSession implements PiAgentSession {
  }
 
  async setModel(model: AgentModel): Promise<void> {
-  await this.ompSession.setModel(model as unknown as Parameters<AgentSession["setModel"]>[0]);
+  await this.ompSession.setModel(model);
  }
  setThinkingLevel(level: ClientThinkingLevel): void {
-  this.ompSession.setThinkingLevel((level === "off" ? undefined : level) as unknown as Parameters<AgentSession["setThinkingLevel"]>[0]);
+  const setLevel = Reflect.get(this.ompSession, "setThinkingLevel");
+  if (typeof setLevel === "function") {
+   Reflect.apply(setLevel, this.ompSession, [level === "off" ? undefined : level]);
+  }
  }
 
  async cycleModel(direction?: "forward" | "backward"): Promise<{ model: AgentModel } | undefined> {
   const result = await this.ompSession.cycleModel(direction);
   if (result === undefined) return undefined;
-  return { model: result.model as unknown as AgentModel };
+  return { model: result.model };
  }
 
  getAvailableThinkingLevels(): ClientThinkingLevel[] {
   const efforts = this.ompSession.getAvailableThinkingLevels();
-  return ["off", ...efforts] as ClientThinkingLevel[];
+  const levels: ClientThinkingLevel[] = ["off"];
+  for (const effort of efforts) {
+   if (isKnownThinkingLevel(effort)) levels.push(effort);
+  }
+  return levels;
  }
 
  cycleThinkingLevel(): ClientThinkingLevel | undefined {
   const levels = this.ompSession.getAvailableThinkingLevels();
-  const fullCycle = ["off", ...levels] as ClientThinkingLevel[];
+  const fullCycle: ClientThinkingLevel[] = ["off"];
+  for (const level of levels) {
+   if (isKnownThinkingLevel(level)) fullCycle.push(level);
+  }
   const current = this.ompSession.configuredThinkingLevel();
-  const currentIndex = fullCycle.indexOf(current as ClientThinkingLevel);
+  if (current !== undefined && !isKnownThinkingLevel(current)) return undefined;
+  const currentLevel: ClientThinkingLevel = current !== undefined && isKnownThinkingLevel(current) ? current : "off";
+  const currentIndex = fullCycle.indexOf(currentLevel);
   if (currentIndex === -1) return undefined;
   const nextIndex = (currentIndex + 1) % fullCycle.length;
   const next = fullCycle[nextIndex];
-  this.ompSession.setThinkingLevel((next === "off" ? undefined : next) as unknown as Parameters<AgentSession["setThinkingLevel"]>[0]);
+  if (next === undefined) return undefined;
+  this.setThinkingLevel(next);
   return next;
  }
 
@@ -475,7 +502,7 @@ class DefaultPiSessionRuntime implements PiSessionRuntime {
   this.rebindSessionCallback = rebindSession;
  }
 
- async fork(entryId: string, _options?: { position?: "before" | "at" }): Promise<{ cancelled: boolean; selectedText?: string }> {
+ async fork(entryId: string): Promise<{ cancelled: boolean; selectedText?: string }> {
   return this.ompSession.branch(entryId);
  }
 
@@ -484,27 +511,35 @@ class DefaultPiSessionRuntime implements PiSessionRuntime {
  }
 }
 
-function defaultCreateAgentRuntime(createRuntime: OmpWebCreateAgentSessionRuntimeFactory, options: CreateAgentRuntimeOptions): Promise<PiSessionRuntime> {
+function defaultCreateAgentRuntime(createRuntime: OmpWebCreateAgentSessionRuntimeFactory | undefined, options: CreateAgentRuntimeOptions): Promise<PiSessionRuntime> {
+ if (createRuntime === undefined) throw new Error("Runtime factory is required");
  return createRuntime(options);
 }
 
 type SpawnSessionFn = (input: SpawnSessionInvocation) => Promise<SpawnSessionResult>;
 
 function createDefaultRuntimeFactory(authStorage: AuthStorage, modelRegistry: ModelRegistryInstance, schedulePromptService: SchedulePromptService, spawn?: SpawnSessionFn, subsessions?: SubsessionToolDeps): OmpWebCreateAgentSessionRuntimeFactory {
- let pendingInitialModel: AgentModel | undefined;
- return async ({ cwd, agentDir, sessionManager, sessionStartEvent, initialModel }) => {
+ return async ({ cwd, agentDir, sessionManager, initialModel }) => {
   if (!(sessionManager instanceof SessionManager)) throw new Error("Default runtime creation requires an SDK SessionManager");
-  const model = pendingInitialModel ?? initialModel;
+  const model = initialModel;
   const sessionId = sessionManager.getSessionId();
   // Deferred refs — populated after piSession is created. The getters are
   // only called at tool-execution time, long after these are assigned.
-  let scheduleStorage!: CronStorage;
-  let scheduleScheduler!: CronScheduler;
+  const scheduleStorageRef: { storage?: CronStorage } = {};
+  const scheduleSchedulerRef: { scheduler?: CronScheduler } = {};
+  const scheduleStorage = (): CronStorage => {
+   if (scheduleStorageRef.storage === undefined) throw new Error("Schedule storage uninitialized");
+   return scheduleStorageRef.storage;
+  };
+  const scheduleScheduler = (): CronScheduler => {
+   if (scheduleSchedulerRef.scheduler === undefined) throw new Error("Schedule scheduler uninitialized");
+   return scheduleSchedulerRef.scheduler;
+  };
   const customTools = [
-   createSchedulePromptToolDefinition(sessionId, () => scheduleStorage, () => scheduleScheduler),
+   createSchedulePromptToolDefinition(sessionId, scheduleStorage, scheduleScheduler),
    createOmpWebEditToolDefinition(cwd),
-   ...(spawn === undefined ? [] : [createSpawnSessionToolDefinition(cwd, { spawn })] as unknown as import("@oh-my-pi/pi-coding-agent/extensibility/extensions/types").ToolDefinition[]),
-   ...(subsessions === undefined ? [] : createSubsessionToolDefinitions(cwd, subsessions) as unknown as import("@oh-my-pi/pi-coding-agent/extensibility/extensions/types").ToolDefinition[]),
+   ...(spawn === undefined ? [] : [createSpawnSessionToolDefinition(cwd, { spawn })]),
+   ...(subsessions === undefined ? [] : createSubsessionToolDefinitions(cwd, subsessions)),
   ];
   const result = await createAgentSession({
    cwd,
@@ -522,12 +557,19 @@ function createDefaultRuntimeFactory(authStorage: AuthStorage, modelRegistry: Mo
    cwd,
    (text) => piSession.prompt(text, { streamingBehavior: "followUp" }),
   );
-  scheduleStorage = started.storage;
-  scheduleScheduler = started.scheduler;
+  scheduleStorageRef.storage = started.storage;
+  scheduleSchedulerRef.scheduler = started.scheduler;
   return new DefaultPiSessionRuntime(piSession, cwd, result);
  };
 }
 
+function isEditReplacement(x: unknown): x is EditReplacement {
+ return isRecord(x);
+}
+
+function isEditParams(params: unknown): params is Parameters<EditTool["execute"]>[1] {
+ return isRecord(params) && typeof params["path"] === "string" && Array.isArray(params["edits"]);
+}
 function createOmpWebEditToolDefinition(cwd: string): ToolDefinition {
  const editTool = new EditTool({
   cwd,
@@ -536,22 +578,32 @@ function createOmpWebEditToolDefinition(cwd: string): ToolDefinition {
   getSessionSpawns: () => null,
   settings: Settings.isolated({}),
  });
- return {
+ const def: ToolDefinition = {
   name: editTool.name,
   label: editTool.label,
   description: editTool.description,
   parameters: editTool.parameters,
-  async execute(toolCallId: string, params: unknown, signal: AbortSignal | undefined, onUpdate: ((update: { content: unknown[]; details?: unknown }) => void) | undefined, ctx: ExtensionContext) {
-   const paramsRec = params as Record<string, unknown>;
-   if (paramsRec["path"]) {
-    const preview = await computeEditPreview(paramsRec["path"] as string, paramsRec["edits"] as EditReplacement[], cwd);
+  async execute(toolCallId, params, signal, onUpdate) {
+   if (isRecord(params) && typeof params["path"] === "string" && params["path"].length > 0) {
+    const path = params["path"];
+    const rawEdits = Array.isArray(params["edits"]) ? params["edits"] : [];
+    const edits: EditReplacement[] = [];
+    for (const item of rawEdits) {
+     if (isEditReplacement(item)) edits.push(item);
+    }
+    const preview = await computeEditPreview(path, edits, cwd);
     if (signal?.aborted !== true) {
      onUpdate?.({ content: [{ type: "text", text: "Edit preview computed." }], details: { preview } });
     }
    }
-   return editTool.execute(toolCallId, paramsRec as unknown as EditToolExecuteParams, signal, onUpdate as unknown as EditToolExecuteOnUpdate, undefined);
+   type EditExecuteFn = (toolCallId: string, params: Parameters<EditTool["execute"]>[1], signal?: AbortSignal, onUpdate?: (partialResult: { content: ({ type: "text"; text: string } | ImageContent)[]; details?: unknown }) => void) => Promise<{ content: ({ type: "text"; text: string } | ImageContent)[] }>;
+   const execute: EditExecuteFn = Reflect.get(editTool, "execute");
+   const executeParams = isEditParams(params) ? params : { path: "", edits: [] };
+   const res = execute.call(editTool, toolCallId, executeParams, signal, onUpdate);
+   return res;
   },
- } as unknown as ToolDefinition;
+ };
+ return def;
 }
 
 export interface PiSessionServiceDependencies {
@@ -581,6 +633,8 @@ export interface PiSessionServiceDependencies {
  logger?: PiSessionLogger;
  /** Clock seam for cleanup planning tests. */
  now?: () => Date;
+ /** Optional push notification service for session-completion alerts. */
+ pushService?: PushNotificationService;
 }
 
 export class PiSessionService {
@@ -609,22 +663,26 @@ export class PiSessionService {
  private readonly archiveStore: SessionArchiveRepository;
  private readonly agentDir: string;
  private readonly sessionManager: PiSessionManagerGateway;
- private readonly createRuntime: OmpWebCreateAgentSessionRuntimeFactory;
+ private readonly createRuntime: OmpWebCreateAgentSessionRuntimeFactory | undefined;
  private readonly createAgentRuntime: CreateAgentRuntime;
- private readonly modelRegistry: ModelRegistryInstance;
+ private readonly modelRegistry: ModelRegistryInstance | undefined;
  private readonly workspaceActivity: Pick<WorkspaceActivityService, "applySessionStatus" | "applySessionActivity" | "removeSession" | "reconcileSessionActivity"> | undefined;
  private readonly spawnTargets: SpawnTargetResolver | undefined;
  private readonly logger: PiSessionLogger;
  private readonly now: () => Date;
+ private readonly pushService: PushNotificationService | undefined;
+ /** Session ids for which we've already sent a "work complete" push notification. */
+ private readonly notifiedWorkComplete = new Set<string>();
 
  constructor(private readonly events: SessionEventHub, deps: PiSessionServiceDependencies = {}) {
   this.archiveStore = deps.archiveStore ?? new SessionArchiveStore();
   this.agentDir = deps.agentDir ?? getAgentDir();
   this.sessionManager = deps.sessionManager ?? createPiSessionManagerGateway({ agentDir: this.agentDir });
-  this.modelRegistry = deps.modelRegistry ?? (undefined as unknown as ModelRegistryInstance);
+  this.modelRegistry = deps.modelRegistry;
   this.spawnTargets = deps.spawnTargets;
   this.logger = deps.logger ?? noopLogger;
   this.now = deps.now ?? (() => new Date());
+  this.pushService = deps.pushService;
   // Subsessions are a beta capability gated behind their own flag, and they
   // also require the spawn capability (they share its project-scope resolver).
   const subsessionsActive = this.spawnTargets !== undefined && deps.subsessionsEnabled === true;
@@ -642,7 +700,7 @@ export class PiSessionService {
       read: (parentSessionId, sessionId, query, parentSessionFile) => this.readSubsession(parentSessionId, sessionId, query, parentSessionFile),
      },
     )
-    : undefined as unknown as OmpWebCreateAgentSessionRuntimeFactory
+    : undefined
    );
   this.createAgentRuntime = deps.createAgentRuntime ?? defaultCreateAgentRuntime;
   this.workspaceActivity = deps.workspaceActivity;
@@ -1178,7 +1236,7 @@ export class PiSessionService {
 
  async availableModels(ref: PiSessionLookup): Promise<ClientSessionModel[]> {
   const session = await this.getOrOpen(ref);
-  session.modelRegistry.refresh();
+  await session.modelRegistry.refresh();
   const models = session.scopedModels.length > 0
    ? session.scopedModels.map((scoped) => scoped.model)
    : session.modelRegistry.getAvailable();
@@ -1188,7 +1246,7 @@ export class PiSessionService {
  async setModel(ref: PiSessionLookup, provider: string, modelId: string): Promise<ClientSessionStatus> {
   await this.assertWritable(ref);
   const session = await this.getOrOpen(ref);
-  session.modelRegistry.refresh();
+  await session.modelRegistry.refresh();
   const candidates = session.scopedModels.length > 0
    ? session.scopedModels.map((scoped) => scoped.model)
    : session.modelRegistry.getAvailable();
@@ -1264,7 +1322,7 @@ export class PiSessionService {
   const echoUserMessage = options?.echoUserMessage !== false;
   const requestedBehavior = parsePromptStreamingBehavior(streamingBehavior);
   const parsedAttachments = parsePromptAttachments(attachments, { enforceInlineSizeLimit: false });
-  const images = (await attachmentsToInlineImages(parsedAttachments)).map((entry) => entry.image);
+  const images = attachmentsToInlineImages(parsedAttachments).map((entry) => entry.image);
   await this.assertWritable(ref);
   const session = await this.getOrOpen(ref);
   this.maybeGenerateSessionName(session, promptText);
@@ -1375,9 +1433,8 @@ export class PiSessionService {
 
  async archive(ref: PiSessionLookup): Promise<void> {
   const session = await this.getOrOpen(ref);
-  if (this.hasActiveWork(session)) throw new Error("Stop current session activity before archiving");
+  await this.gracefulStopAndClose(session);
   const archiveInput = await this.archiveInputForSession(session);
-  await this.closeActive(session.sessionId);
   await this.archiveStore.archive(archiveInput);
  }
 
@@ -1401,16 +1458,12 @@ export class PiSessionService {
    const active = this.activeForLookup(bulkRefToLookup(ref));
    const listed = findListedSessionForBulkRef(sessionContext, ref);
    const resolvedSessionId = active?.runtime.session.sessionId ?? listed?.id ?? ref.id;
-   if (active !== undefined && this.hasActiveWork(active.runtime.session)) {
-    failures.push({ sessionId: resolvedSessionId, error: "Stop current session activity before archiving" });
-    continue;
-   }
 
    try {
     if (listed !== undefined) {
      planItems.push({ input: archiveInputFromListEntry(listed) });
     } else if (active !== undefined) {
-     planItems.push({ input: archiveInputFromActiveSession(active.runtime.session) });
+     planItems.push({ input: archiveInputFromActiveSession(active.runtime.session), activeSession: active.runtime.session });
     } else {
      failures.push({ sessionId: ref.id, error: "Session not found" });
     }
@@ -1422,7 +1475,9 @@ export class PiSessionService {
   const readyInputs: ArchiveSessionInput[] = [];
   for (const item of planItems) {
    try {
-    await this.closeActive(item.input.sessionId);
+    if (item.activeSession) {
+     await this.gracefulStopAndClose(item.activeSession);
+    }
     readyInputs.push(item.input);
    } catch (error: unknown) {
     failures.push({ sessionId: item.input.sessionId, error: errorMessage(error) });
@@ -1439,7 +1494,7 @@ export class PiSessionService {
 
   return {
    archived: true,
-   archivedSessionIds: uniqueStrings(archivedSessionIds),
+   archivedSessionIds,
    failures,
    generatedAt: new Date().toISOString(),
   };
@@ -1450,11 +1505,15 @@ export class PiSessionService {
   const catalog = await this.workspaceArchiveCandidates(session.sessionManager.getCwd());
   const root = findArchiveCandidateByIdOrPrefix(catalog, session.sessionId) ?? archiveCandidateFromActiveSession(session, false);
   const plan = planSessionArchiveTree(root, catalog);
-  const busy = plan.targets.map((target) => target.activeSession).find((target) => target !== undefined && this.hasActiveWork(target));
-  if (busy !== undefined) throw new Error(`Stop current session activity before archiving ${sessionDisplayName(busy)}`);
 
   const archiveInputs = plan.unarchivedTargets.map((target) => archiveInputFromCandidate(target));
-  for (const input of archiveInputs) await this.closeActive(input.sessionId);
+  for (const target of plan.unarchivedTargets) {
+   if (target.activeSession) {
+    await this.gracefulStopAndClose(target.activeSession);
+   } else {
+    await this.closeActive(target.id);
+   }
+  }
   await this.archiveStoreArchiveMany(archiveInputs);
 
   return {
@@ -1779,6 +1838,29 @@ export class PiSessionService {
   }
  }
 
+ private async gracefulStopAndClose(session: PiAgentSession, timeoutMs = 5000): Promise<void> {
+  if (this.hasActiveWork(session)) {
+   this.logger.info({ sessionId: session.sessionId }, "Session has active work, requesting abort for graceful shutdown...");
+   // Signal an abort to stop the stream/work
+   await session.abort().catch(() => undefined);
+
+   // Wait for the session to settle and fire its hooks
+   const start = Date.now();
+   while (this.hasActiveWork(session)) {
+    if (Date.now() - start > timeoutMs) {
+     this.logger.info({ sessionId: session.sessionId, timeoutMs }, "Session did not settle within timeout, forcing hard kill.");
+     break;
+    }
+    // Small delay to yield the event loop
+    await new Promise((resolve) => setTimeout(resolve, 100));
+   }
+  }
+
+  // Give any fire-and-forget hooks (like ai-memory's stop.sh) a brief window to read the file before we move it
+  await new Promise((resolve) => setTimeout(resolve, 500));
+  await this.closeActive(session.sessionId);
+ }
+
  private async assertWritable(ref: PiSessionLookup): Promise<void> {
   if (await this.getArchived(ref) !== undefined) throw new Error("Archived sessions are read-only. Restore the session to continue.");
  }
@@ -1950,10 +2032,10 @@ export class PiSessionService {
  }
 
  applyAuthChange(change: AuthChange = {}): void {
-  this.modelRegistry.refresh();
+  void this.modelRegistry?.refresh();
   for (const active of this.active.values()) {
    const { session } = active.runtime;
-   session.modelRegistry.refresh();
+   void session.modelRegistry.refresh();
    this.syncCurrentModelAuthWarning(session, change.removedProviderId);
    this.publishStatus(session);
   }
@@ -2027,12 +2109,21 @@ export class PiSessionService {
  private publishActivityForEvent(session: PiAgentSession, event: unknown): void {
   const eventType = getString(event, "type");
   if (eventType === undefined) return;
-  if (eventType === "agent_start") { this.publishActivity(session, "agent running", "active"); return; }
+  if (eventType === "agent_start") {
+   this.publishActivity(session, "agent running", "active");
+   this.notifiedWorkComplete.delete(session.sessionId);
+   return;
+  }
   if (eventType === "agent_end") {
    this.publishActivity(session, "idle", "idle");
    setTimeout(() => {
     this.publishActivity(session, "idle", "idle");
     this.publishStatus(session);
+    if (this.pushService !== undefined && !this.notifiedWorkComplete.has(session.sessionId) && !sessionHasActiveWork(session)) {
+     this.notifiedWorkComplete.add(session.sessionId);
+     const messages = session.sessionManager.getEntries?.() ?? session.sessionManager.getBranch();
+     void this.pushService.notifySessionComplete(session.sessionId, session.sessionName, messages);
+    }
    }, 250);
    return;
   }
@@ -2264,10 +2355,6 @@ function archiveInputFromCandidate(candidate: WorkspaceArchiveCandidate): Archiv
 
 function sessionHasActiveWork(session: PiAgentSession, extraQueuedMessageCount = 0): boolean {
  return session.isStreaming || session.isCompacting || session.isBashRunning || session.pendingMessageCount + extraQueuedMessageCount > 0;
-}
-
-function sessionDisplayName(session: PiAgentSession): string {
- return session.sessionName ?? session.sessionId;
 }
 
 function clientSessionFromArchivedRecord(record: ArchivedSessionRecord, fallback: PiSessionListEntry | undefined): ClientSession | undefined {

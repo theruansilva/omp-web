@@ -1,22 +1,24 @@
-import type { Api, AssistantMessage, Model } from "@oh-my-pi/pi-ai";
+import type { AssistantMessage, Model } from "@oh-my-pi/pi-ai";
 import { AssistantMessageEventStream } from "@oh-my-pi/pi-ai/utils/event-stream";
 import type { StreamFn } from "@oh-my-pi/pi-agent-core";
 import { describe, expect, it } from "vitest";
 import { cleanSessionName, fallbackSessionName, generateShortSessionName } from "./sessionNameGenerator.js";
 
-function fakeModel(): Model<Api> {
- return {
+function fakeModel(): Model {
+ const model: Model = {
   id: "fake-model",
   name: "Fake Model",
   api: "anthropic-messages",
   provider: "anthropic",
   baseUrl: "https://example.test",
   reasoning: false,
-  input: ["text"] as Model<Api>["input"],
+  input: ["text"],
+  compat: undefined,
   cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
   contextWindow: 1000,
   maxTokens: 100,
- } as Model<Api>;
+ };
+ return model;
 }
 
 function fakeAssistantMessage(overrides: Partial<AssistantMessage> = {}): AssistantMessage {

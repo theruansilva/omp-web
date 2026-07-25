@@ -1,5 +1,7 @@
-import { Type } from "typebox";
+import { isRecord } from "../utils.js";
+import { Type } from "@oh-my-pi/pi-coding-agent/extensibility/typebox";
 import type { ExtensionContext, ToolDefinition } from "@oh-my-pi/pi-coding-agent";
+import type { AgentToolUpdateCallback } from "@oh-my-pi/pi-coding-agent/extensibility/extensions/types";
 import type { TranscriptContentKind, TranscriptEntry, TranscriptRole, TranscriptView } from "./subsessionTranscript.js";
 
 /** Lifecycle phase of a tracked subsession as seen by its parent. */
@@ -180,76 +182,99 @@ export function createSubsessionToolDefinitions(spawningCwd: string, deps: Subse
   label: "Spawn subsession",
   description: "Start a tracked child session and send it an initial prompt. The subsession runs independently and a human can interact with it, but unlike spawn_session it is linked to you: you are notified when it stops working (finished, idle, or errored), and you can inspect it with list_subsessions, check_subsession (a quick glance at its latest output), and read_subsession (read through its transcript). Use this to delegate work you intend to follow up on.",
   parameters: SpawnSubsessionParams,
-  async execute(_toolCallId: string, params: unknown, _signal: AbortSignal | undefined, _onUpdate: import("@oh-my-pi/pi-coding-agent/extensibility/extensions/types").AgentToolUpdateCallback<SpawnSubsessionResult> | undefined, ctx: ExtensionContext) {
-   const p = params as import("typebox").Static<typeof SpawnSubsessionParams>;
+  async execute(_toolCallId: string, params: unknown, _signal: AbortSignal | undefined, _onUpdate: AgentToolUpdateCallback<SpawnSubsessionResult> | undefined, ctx: ExtensionContext) {
+   const p = isRecord(params) ? params : {};
+   const prompt = typeof p["prompt"] === "string" ? p["prompt"] : "";
+   const cwd = typeof p["cwd"] === "string" ? p["cwd"] : undefined;
    const parentSessionId = ctx.sessionManager.getSessionId();
    const parentSessionFile = ctx.sessionManager.getSessionFile() ?? undefined;
    const result = await deps.spawn({
     spawningCwd,
     parentSessionId,
     parentSessionFile,
-    prompt: p.prompt,
-    cwd: p.cwd,
+    prompt,
+    cwd,
     ...(ctx.model === undefined ? {} : { model: ctx.model }),
    });
    return {
     content: [{ type: "text", text: `Started subsession ${result.sessionId} in ${result.cwd}. You will be notified when it stops working.` }],
     details: result,
-   } as import("@oh-my-pi/pi-coding-agent/extensibility/extensions/types").AgentToolResult<SpawnSubsessionResult>;
+   };
   },
- } as unknown as ToolDefinition;
+ };
 
  const listTool: ToolDefinition = {
   name: "list_subsessions",
   label: "List subsessions",
   description: "List the tracked subsessions you spawned, with their current status (working, idle, error, or unknown).",
   parameters: ListSubsessionsParams,
-  async execute(_toolCallId: string, _params: unknown, _signal: AbortSignal | undefined, _onUpdate: import("@oh-my-pi/pi-coding-agent/extensibility/extensions/types").AgentToolUpdateCallback<{ subsessions: SubsessionSummary[] }> | undefined, ctx: ExtensionContext) {
+  async execute(_toolCallId: string, _params: unknown, _signal: AbortSignal | undefined, _onUpdate: AgentToolUpdateCallback<{ subsessions: SubsessionSummary[] }> | undefined, ctx: ExtensionContext) {
    const parentSessionId = ctx.sessionManager.getSessionId();
    const parentSessionFile = ctx.sessionManager.getSessionFile() ?? undefined;
    const subsessions = await deps.list(parentSessionId, parentSessionFile);
    const text = subsessions.length === 0
     ? "You have not spawned any subsessions."
     : `Your subsessions:\n${subsessions.map(statusLine).join("\n")}`;
-   return { content: [{ type: "text", text }], details: { subsessions } } as import("@oh-my-pi/pi-coding-agent/extensibility/extensions/types").AgentToolResult<{ subsessions: SubsessionSummary[] }>;
+   return { content: [{ type: "text", text }], details: { subsessions } };
   },
- } as unknown as ToolDefinition;
+ };
 
  const checkTool: ToolDefinition = {
   name: "check_subsession",
   label: "Check subsession",
   description: "Quick glance at a subsession you spawned: its current status and most recent assistant output. Use this to react to what a subsession produced. When the summary is not enough, use read_subsession to look through its full transcript.",
   parameters: CheckSubsessionParams,
-  async execute(_toolCallId: string, params: unknown, _signal: AbortSignal | undefined, _onUpdate: import("@oh-my-pi/pi-coding-agent/extensibility/extensions/types").AgentToolUpdateCallback<SubsessionCheckResult> | undefined, ctx: ExtensionContext) {
-   const p = params as import("typebox").Static<typeof CheckSubsessionParams>;
+  async execute(_toolCallId: string, params: unknown, _signal: AbortSignal | undefined, _onUpdate: AgentToolUpdateCallback<SubsessionCheckResult> | undefined, ctx: ExtensionContext) {
+   const p = isRecord(params) ? params : {};
+   const sessionId = typeof p["sessionId"] === "string" ? p["sessionId"] : "";
    const parentSessionId = ctx.sessionManager.getSessionId();
    const parentSessionFile = ctx.sessionManager.getSessionFile() ?? undefined;
-   const result = await deps.check(parentSessionId, p.sessionId, parentSessionFile);
+   const result = await deps.check(parentSessionId, sessionId, parentSessionFile);
    const body = result.finalText === "" ? "(no output yet)" : result.finalText;
    return {
     content: [{ type: "text", text: `Subsession ${result.sessionId} [${result.status}]:\n\n${body}` }],
     details: result,
-   } as import("@oh-my-pi/pi-coding-agent/extensibility/extensions/types").AgentToolResult<SubsessionCheckResult>;
+   };
   },
- } as unknown as ToolDefinition;
+ };
 
  const readTool: ToolDefinition = {
   name: "read_subsession",
   label: "Read subsession",
-  description: "Read through the transcript of a subsession you spawned. Returns its messages filtered and paginated however you ask: choose which roles (assistant, user, tool, system, custom) and content kinds (text, thinking, tool_call, tool_result, image) to include, search for a substring (always over full content), cap each value's length with maxChars (omit for full text; clipped parts are flagged so truncation is never silent), optionally include raw tool args, and page backward with 'before'/'limit'. Start narrow (e.g. assistant text with a small maxChars) and widen the filters, raise maxChars, or page further back if you don't find what you need. For just the final result, use check_subsession instead.",
+  description: "Read through the transcript of a subsession you spawned.",
   parameters: ReadSubsessionParams,
-  async execute(_toolCallId: string, params: unknown, _signal: AbortSignal | undefined, _onUpdate: import("@oh-my-pi/pi-coding-agent/extensibility/extensions/types").AgentToolUpdateCallback<SubsessionReadResult> | undefined, ctx: ExtensionContext) {
-   const p = params as import("typebox").Static<typeof ReadSubsessionParams>;
+  async execute(_toolCallId: string, params: unknown, _signal: AbortSignal | undefined, _onUpdate: AgentToolUpdateCallback<SubsessionReadResult> | undefined, ctx: ExtensionContext) {
+   const p = isRecord(params) ? params : {};
+   const sessionId = typeof p["sessionId"] === "string" ? p["sessionId"] : "";
+   const query: SubsessionReadQuery = parseReadQuery(p);
    const parentSessionId = ctx.sessionManager.getSessionId();
    const parentSessionFile = ctx.sessionManager.getSessionFile() ?? undefined;
-   const { sessionId, ...query } = p;
    const result = await deps.read(parentSessionId, sessionId, query, parentSessionFile);
    return {
     content: [{ type: "text", text: renderTranscript(result) }],
     details: result,
-   } as import("@oh-my-pi/pi-coding-agent/extensibility/extensions/types").AgentToolResult<SubsessionReadResult>;
+   };
   },
- } as unknown as ToolDefinition;
+ };
 
  return [spawnTool, listTool, checkTool, readTool];
+}
+function parseReadQuery(p: Record<string, unknown>): SubsessionReadQuery {
+ const query: SubsessionReadQuery = {};
+ if (Array.isArray(p["roles"])) query.roles = p["roles"].filter(isRole);
+ if (Array.isArray(p["include"])) query.include = p["include"].filter(isContentKind);
+ if (typeof p["search"] === "string") query.search = p["search"];
+ if (typeof p["maxChars"] === "number") query.maxChars = p["maxChars"];
+ if (typeof p["includeToolArgs"] === "boolean") query.includeToolArgs = p["includeToolArgs"];
+ if (typeof p["before"] === "number") query.before = p["before"];
+ if (typeof p["limit"] === "number") query.limit = p["limit"];
+ return query;
+}
+
+function isRole(value: unknown): value is TranscriptRole {
+ return typeof value === "string" && (value === "assistant" || value === "user" || value === "tool" || value === "system" || value === "custom");
+}
+
+function isContentKind(value: unknown): value is TranscriptContentKind {
+ return typeof value === "string" && (value === "text" || value === "thinking" || value === "tool_call" || value === "tool_result" || value === "image");
 }
