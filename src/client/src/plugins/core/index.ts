@@ -4,7 +4,7 @@ import { createCoreWorkspacePanels } from "./panels";
 
 export const corePlugin: OmpWebPlugin = {
   apiVersion: 1,
-  name: "OMP Core",
+  name: "PI WEB Core",
   activate: () => ({
     contributions: {
       actions: createCoreActions(),

@@ -31,13 +31,13 @@ afterEach(() => {
 });
 
 describe("machine-scoped runtime API", () => {
-  it("reads machine OMP status through the gateway route", async () => {
+  it("reads machine PI WEB status through the gateway route", async () => {
     const fetchMock = stubJsonFetch({
       packageName: "@ProgmRuanSilva/omp-web",
       generatedAt: "now",
       components: {
-        web: { component: "web", label: "OMP", available: true, stale: false },
-        sessiond: { component: "sessiond", label: "OMP Session Daemon", available: true, stale: false },
+        web: { component: "web", label: "PI WEB", available: true, stale: false },
+        sessiond: { component: "sessiond", label: "PI WEB Session Daemon", available: true, stale: false },
       },
       release: { packageName: "@ProgmRuanSilva/omp-web", updateAvailable: false },
       commands: {},

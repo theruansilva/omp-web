@@ -92,7 +92,7 @@ export class AppNavigationPanel extends LitElement {
   override render() {
     return html`
       <header>
-        <strong>OMP</strong>
+        <strong>OMP Web</strong>
         ${shouldShowMachinesSection(this.machines) ? html`
           <machine-switcher
             .machines=${this.machines}
@@ -106,7 +106,6 @@ export class AppNavigationPanel extends LitElement {
           ></machine-switcher>
         ` : null}
         <div class="header-actions">
-          <button class="new-chat-button" title="New Chat" aria-label="New Chat" ?disabled=${!this.canStartSession} @click=${() => { void this.onStartSession?.(); }}>+ New Chat</button>
           ${this.refreshControl}
           <button title="Show Actions" aria-label="Show Actions" @click=${() => { this.onShowActions?.(); }}>Actions</button>
         </div>
@@ -212,13 +211,11 @@ export class AppNavigationPanel extends LitElement {
   static override styles = css`
     :host { display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
     :host([compact]) { flex: 1 1 auto; }
-    header { flex: 0 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 0 12px; height: 52px; border-bottom: 1px solid var(--pi-border); }
-    header strong { flex: 0 0 auto; font-size: 16px; font-weight: 600; letter-spacing: -0.01em; }
+    header { flex: 0 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 12px; border-bottom: 1px solid var(--pi-border); }
+    header strong { flex: 0 0 auto; }
     machine-switcher { flex: 1 1 auto; min-width: 0; }
     :host([compact]) header { display: none; }
-    .header-actions { flex: 0 0 auto; display: flex; align-items: center; gap: 6px; }
-    .new-chat-button { background: var(--pi-accent); color: #ffffff; border: 0; font-weight: 500; font-size: 12px; padding: 5px 10px; border-radius: 6px; }
-    .new-chat-button:hover { opacity: 0.9; }
+    .header-actions { flex: 0 0 auto; display: flex; align-items: center; gap: 8px; }
     machine-list, project-list, workspace-list { flex: 0 0 auto; max-height: 26%; min-height: 0; overflow: hidden; border-bottom: 1px solid var(--pi-border-muted); }
     session-list { flex: 1 1 auto; min-height: 0; overflow: hidden; }
     machine-list[collapsed],

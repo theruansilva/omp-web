@@ -39,7 +39,7 @@ export function isSelectedMachineSettingsUnsupported(support: SelectedMachineSet
 }
 
 export function selectedMachineSettingsUnavailableMessage(target: SettingsMachineTarget): string {
-  return `Selected-machine settings are not available on ${target.name}. Update and restart OMP on that machine, then try again.`;
+  return `Selected-machine settings are not available on ${target.name}. Update and restart PI WEB on that machine, then try again.`;
 }
 
 export function friendlySelectedMachineSettingsErrorMessage(message: string, target: SettingsMachineTarget): string {

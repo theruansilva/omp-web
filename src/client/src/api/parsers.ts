@@ -569,12 +569,12 @@ function optionalAllowedHosts(value: unknown): OmpWebConfigValues["allowedHosts"
   if (value === undefined) return undefined;
   if (value === true) return true;
   if (isStringArray(value)) return value;
-  throw new Error("Invalid OMP allowedHosts field");
+  throw new Error("Invalid PI WEB allowedHosts field");
 }
 
 function optionalPathAccess(value: unknown): OmpWebConfigValues["pathAccess"] | undefined {
   if (value === undefined) return undefined;
-  if (!isRecord(value)) throw new Error("Invalid OMP pathAccess field");
+  if (!isRecord(value)) throw new Error("Invalid PI WEB pathAccess field");
   const allowedPaths = value["allowedPaths"];
   return {
     ...optionalField("allowedPaths", optionalStringArray(allowedPaths, "pathAccess.allowedPaths")),
@@ -584,12 +584,12 @@ function optionalPathAccess(value: unknown): OmpWebConfigValues["pathAccess"] | 
 function optionalStringArray(value: unknown, field: string): string[] | undefined {
   if (value === undefined) return undefined;
   if (isNonEmptyStringArray(value)) return value;
-  throw new Error(`Invalid OMP ${field} field`);
+  throw new Error(`Invalid PI WEB ${field} field`);
 }
 
 function optionalUploads(value: unknown): OmpWebConfigValues["uploads"] | undefined {
   if (value === undefined) return undefined;
-  if (!isRecord(value) || Array.isArray(value)) throw new Error("Invalid OMP uploads field");
+  if (!isRecord(value) || Array.isArray(value)) throw new Error("Invalid PI WEB uploads field");
   return {
     ...optionalField("defaultFolder", optionalString(value, "defaultFolder")),
   };
@@ -605,22 +605,22 @@ function isNonEmptyStringArray(value: unknown): value is string[] {
 
 function optionalShortcuts(value: unknown): OmpWebShortcutConfig | undefined {
   if (value === undefined) return undefined;
-  if (!isRecord(value) || Array.isArray(value)) throw new Error("Invalid OMP shortcuts field");
+  if (!isRecord(value) || Array.isArray(value)) throw new Error("Invalid PI WEB shortcuts field");
   return Object.fromEntries(Object.entries(value).map(([actionId, shortcut]) => {
-    if (shortcut !== null && (typeof shortcut !== "string" || shortcut === "")) throw new Error("Invalid OMP shortcut field");
+    if (shortcut !== null && (typeof shortcut !== "string" || shortcut === "")) throw new Error("Invalid PI WEB shortcut field");
     return [actionId, shortcut];
   }));
 }
 
 function optionalPlugins(value: unknown): OmpWebPluginConfigMap | undefined {
   if (value === undefined) return undefined;
-  if (!isRecord(value) || Array.isArray(value)) throw new Error("Invalid OMP plugins field");
+  if (!isRecord(value) || Array.isArray(value)) throw new Error("Invalid PI WEB plugins field");
   return Object.fromEntries(Object.entries(value).map(([pluginId, config]) => {
-    if (!isRecord(config) || Array.isArray(config)) throw new Error("Invalid OMP plugin config field");
+    if (!isRecord(config) || Array.isArray(config)) throw new Error("Invalid PI WEB plugin config field");
     const enabled = config["enabled"];
-    if (enabled !== undefined && typeof enabled !== "boolean") throw new Error("Invalid OMP plugin enabled field");
+    if (enabled !== undefined && typeof enabled !== "boolean") throw new Error("Invalid PI WEB plugin enabled field");
     const settings = config["settings"];
-    if (settings !== undefined && (!isRecord(settings) || Array.isArray(settings))) throw new Error("Invalid OMP plugin settings field");
+    if (settings !== undefined && (!isRecord(settings) || Array.isArray(settings))) throw new Error("Invalid PI WEB plugin settings field");
     return [pluginId, config];
   }));
 }
@@ -687,7 +687,7 @@ function parseOmpWebPluginInfo(value: unknown): OmpWebPluginInfo {
 }
 
 function parseOmpWebPluginScope(value: unknown): OmpWebPluginScope {
-  if (value !== "bundled" && value !== "local" && value !== "user" && value !== "project") throw new Error("Invalid OMP plugin scope");
+  if (value !== "bundled" && value !== "local" && value !== "user" && value !== "project") throw new Error("Invalid PI WEB plugin scope");
   return value;
 }
 
@@ -759,11 +759,11 @@ function optionalOmpWebInstallationInfo(value: unknown): OmpWebInstallationInfo 
   if (value === undefined) return undefined;
   const record = requireRecord(value);
   const kind = requireString(record, "kind");
-  if (kind !== "pi-package" && kind !== "npm-global" && kind !== "local" && kind !== "docker" && kind !== "unknown") throw new Error("Invalid OMP installation kind");
+  if (kind !== "pi-package" && kind !== "npm-global" && kind !== "local" && kind !== "docker" && kind !== "unknown") throw new Error("Invalid PI WEB installation kind");
   const scope = record["scope"];
-  if (scope !== undefined && scope !== "user" && scope !== "project") throw new Error("Invalid OMP installation scope");
+  if (scope !== undefined && scope !== "user" && scope !== "project") throw new Error("Invalid PI WEB installation scope");
   const dockerMode = record["dockerMode"];
-  if (dockerMode !== undefined && dockerMode !== "runtime" && dockerMode !== "dev") throw new Error("Invalid OMP Docker mode");
+  if (dockerMode !== undefined && dockerMode !== "runtime" && dockerMode !== "dev") throw new Error("Invalid PI WEB Docker mode");
   return {
     kind,
     ...optionalField("path", optionalString(record, "path")),
@@ -809,18 +809,18 @@ function parseOmpWebStatusMessage(value: unknown): OmpWebStatusMessage {
 }
 
 function parseOmpWebServiceComponent(value: unknown): OmpWebServiceComponent {
-  if (value !== "web" && value !== "sessiond") throw new Error("Invalid OMP service component");
+  if (value !== "web" && value !== "sessiond") throw new Error("Invalid PI WEB service component");
   return value;
 }
 
 function parseOmpWebCapabilities(value: unknown): OmpWebCapability[] {
   const capabilities = parseKnownOmpWebCapabilities(value);
-  if (capabilities === undefined) throw new Error("Invalid OMP capabilities");
+  if (capabilities === undefined) throw new Error("Invalid PI WEB capabilities");
   return capabilities;
 }
 
 function parseOmpWebStatusSeverity(value: unknown): OmpWebStatusSeverity {
-  if (value !== "info" && value !== "warning" && value !== "error") throw new Error("Invalid OMP status severity");
+  if (value !== "info" && value !== "warning" && value !== "error") throw new Error("Invalid PI WEB status severity");
   return value;
 }
 
@@ -917,7 +917,7 @@ export function parseReloaded(value: unknown): { reloaded: true } {
 function optionalBoolean(record: Record<string, unknown>, key: string): boolean | undefined {
   const value = record[key];
   if (value === undefined) return undefined;
-  if (typeof value !== "boolean") throw new Error(`Invalid OMP ${key} field`);
+  if (typeof value !== "boolean") throw new Error(`Invalid PI WEB ${key} field`);
   return value;
 }
 

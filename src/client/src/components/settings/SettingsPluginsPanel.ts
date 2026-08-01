@@ -21,10 +21,10 @@ export class SettingsPluginsPanel extends LitElement {
     const hasPluginResponse = this.pluginsResponse !== undefined;
     return html`
       <settings-panel-frame
-        heading="OMP plugins"
+        heading="PI WEB plugins"
         .description=${pluginsDescription(this.targetLabel)}
         actionLabel="Reload"
-        actionTitle=${`Reload OMP plugins from ${this.targetLabel}`}
+        actionTitle=${`Reload PI WEB plugins from ${this.targetLabel}`}
         .actionDisabled=${this.loading}
         .notices=${this.panelNotices(plugins.length > 0)}
         .onAction=${this.onReload}
@@ -44,7 +44,7 @@ export class SettingsPluginsPanel extends LitElement {
     if (showTrustedCodeWarning) {
       notices.push({
         type: "security",
-        content: html`<strong>Trusted code warning:</strong> OMP plugins and Pi packages can run with your user permissions. Enable plugins only from sources you trust.`,
+        content: html`<strong>Trusted code warning:</strong> PI WEB plugins and Pi packages can run with your user permissions. Enable plugins only from sources you trust.`,
       });
     }
     return notices;
@@ -56,10 +56,10 @@ export class SettingsPluginsPanel extends LitElement {
 
   private renderPanelContent(plugins: OmpWebPluginInfo[], hasPluginResponse: boolean): TemplateResult {
     if (!hasPluginResponse) {
-      return html`<div class="loading-card">${this.loading ? "Loading OMP plugins…" : `OMP plugin list unavailable for ${this.targetLabel}. Use Reload to try again.`}</div>`;
+      return html`<div class="loading-card">${this.loading ? "Loading PI WEB plugins…" : `PI WEB plugin list unavailable for ${this.targetLabel}. Use Reload to try again.`}</div>`;
     }
     if (plugins.length === 0) {
-      return html`<div class="loading-card">No OMP browser plugins discovered on ${this.targetLabel}.</div>`;
+      return html`<div class="loading-card">No PI WEB browser plugins discovered on ${this.targetLabel}.</div>`;
     }
     return html`
       <div class="plugin-note">Config key on ${this.targetLabel}: <code>plugins</code>. Plugins are enabled unless their entry sets <code>enabled</code> to <code>false</code>.</div>
@@ -116,5 +116,5 @@ export class SettingsPluginsPanel extends LitElement {
 }
 
 function pluginsDescription(targetLabel: string): TemplateResult {
-  return html`Enable or disable discovered OMP browser plugins on <strong>${targetLabel}</strong>. This is separate from installing Pi packages. Reload the browser tab to apply plugin runtime changes.`;
+  return html`Enable or disable discovered PI WEB browser plugins on <strong>${targetLabel}</strong>. This is separate from installing Pi packages. Reload the browser tab to apply plugin runtime changes.`;
 }

@@ -325,7 +325,7 @@ describe("PluginRegistry", () => {
     expect(new Set(shortcuts.map(([, shortcut]) => shortcut)).size).toBe(shortcuts.length);
   });
 
-  it("collects built-in OMP themes from an in-app plugin", () => {
+  it("collects built-in PI WEB themes from an in-app plugin", () => {
     const registry = new PluginRegistry();
     registry.register({ id: "themes", plugin: themePackPlugin });
 

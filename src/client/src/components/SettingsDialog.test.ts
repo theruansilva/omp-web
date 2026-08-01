@@ -112,9 +112,9 @@ describe("settings-dialog session daemon machine targeting", () => {
     expect(getDialogProperty(dialog, "sessiondConfigResponse")).toBeUndefined();
     expect(getDialogProperty(dialog, "accessConfigResponse")).toBeUndefined();
     expect(getDialogProperty(dialog, "selectedPluginConfigResponse")).toBeUndefined();
-    expect(getDialogProperty(dialog, "sessiondError")).toBe("Selected-machine settings are not available on Lab Mac. Update and restart OMP on that machine, then try again.");
-    expect(getDialogProperty(dialog, "accessError")).toBe("Selected-machine settings are not available on Lab Mac. Update and restart OMP on that machine, then try again.");
-    expect(getDialogProperty(dialog, "pluginError")).toBe("Selected-machine settings are not available on Lab Mac. Update and restart OMP on that machine, then try again.");
+    expect(getDialogProperty(dialog, "sessiondError")).toBe("Selected-machine settings are not available on Lab Mac. Update and restart PI WEB on that machine, then try again.");
+    expect(getDialogProperty(dialog, "accessError")).toBe("Selected-machine settings are not available on Lab Mac. Update and restart PI WEB on that machine, then try again.");
+    expect(getDialogProperty(dialog, "pluginError")).toBe("Selected-machine settings are not available on Lab Mac. Update and restart PI WEB on that machine, then try again.");
   });
 
   it("does not save remote selected-machine settings when runtime support is missing", async () => {
@@ -129,9 +129,9 @@ describe("settings-dialog session daemon machine targeting", () => {
     await callDialogPromise(dialog, "togglePlugin", "info", false);
 
     expect(saveSpy).not.toHaveBeenCalled();
-    expect(getDialogProperty(dialog, "sessiondError")).toBe("Selected-machine settings are not available on Lab Mac. Update and restart OMP on that machine, then try again.");
-    expect(getDialogProperty(dialog, "accessError")).toBe("Selected-machine settings are not available on Lab Mac. Update and restart OMP on that machine, then try again.");
-    expect(getDialogProperty(dialog, "pluginError")).toBe("Selected-machine settings are not available on Lab Mac. Update and restart OMP on that machine, then try again.");
+    expect(getDialogProperty(dialog, "sessiondError")).toBe("Selected-machine settings are not available on Lab Mac. Update and restart PI WEB on that machine, then try again.");
+    expect(getDialogProperty(dialog, "accessError")).toBe("Selected-machine settings are not available on Lab Mac. Update and restart PI WEB on that machine, then try again.");
+    expect(getDialogProperty(dialog, "pluginError")).toBe("Selected-machine settings are not available on Lab Mac. Update and restart PI WEB on that machine, then try again.");
   });
 
   it("shows selected-machine settings errors with the selected target name", async () => {
@@ -349,7 +349,7 @@ describe("settings-dialog plugin settings machine targeting", () => {
 
     expect(getDialogProperty(dialog, "selectedPluginConfigResponse")).toBe(config);
     expect(getDialogProperty(dialog, "selectedPluginsResponse")).toBeUndefined();
-    expect(getDialogProperty(dialog, "pluginError")).toBe("Failed to load OMP plugin settings from Lab Mac (remote machine): OMP plugins: Selected-machine settings are not available on Lab Mac. Update and restart OMP on that machine, then try again.");
+    expect(getDialogProperty(dialog, "pluginError")).toBe("Failed to load PI WEB plugin settings from Lab Mac (remote machine): PI WEB plugins: Selected-machine settings are not available on Lab Mac. Update and restart PI WEB on that machine, then try again.");
     expect(getDialogProperty(dialog, "pluginLoading")).toBe(false);
   });
 

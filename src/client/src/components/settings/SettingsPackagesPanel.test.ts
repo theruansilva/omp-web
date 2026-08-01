@@ -63,12 +63,12 @@ describe("settings-packages-panel layout", () => {
     const panel = new SettingsPackagesPanel();
     panel.targetMachine = remoteTarget;
     panel.packagesResponse = { packages: [packageInfo("npm:@acme/tools")] };
-    panel.error = "Failed to refresh gateway OMP plugins after updating packages.";
+    panel.error = "Failed to refresh gateway PI WEB plugins after updating packages.";
 
     const rendered = flattenTemplateContent(panel.render());
 
     expectTextOrder(rendered, [
-      "Failed to refresh gateway OMP plugins after updating packages.",
+      "Failed to refresh gateway PI WEB plugins after updating packages.",
       "Trusted code warning:",
       "Pi package source",
       "Configured Pi packages",

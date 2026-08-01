@@ -41,9 +41,9 @@ const tokens = {
 } satisfies ThemeTokens;
 
 const themes = [
-  theme("omp-web-dark", "OMP Dark", "dark"),
-  theme("omp-web-light", "OMP Light", "light"),
-  theme("classic", "OMP Classic", "dark"),
+  theme("omp-web-dark", "PI WEB Dark", "dark"),
+  theme("omp-web-light", "PI WEB Light", "light"),
+  theme("classic", "PI WEB Classic", "dark"),
 ];
 
 const themePairs: QualifiedThemePairContribution[] = [
@@ -51,7 +51,7 @@ const themePairs: QualifiedThemePairContribution[] = [
     id: "themes:omp-web",
     pluginId: "themes",
     localId: "omp-web",
-    name: "OMP",
+    name: "PI WEB",
     light: "themes:omp-web-light",
     dark: "themes:omp-web-dark",
   },
