@@ -18,6 +18,13 @@ export function Sendbox({ disabled, sending, isStreaming, onSend, onStop, placeh
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const hasContent = value.trim().length > 0;
 
+  // Auto-focus input when enabled / session changes
+  useEffect(() => {
+    if (!disabled && textareaRef.current) {
+      textareaRef.current.focus();
+    }
+  }, [disabled]);
+
   // Auto-resize textarea
   useEffect(() => {
     const el = textareaRef.current;
@@ -58,6 +65,7 @@ export function Sendbox({ disabled, sending, isStreaming, onSend, onStop, placeh
         onKeyDown={handleKeyDown}
         placeholder={placeholder}
         disabled={disabled}
+        autoFocus
       />
       <div className="sendbox-toolbar">
         <button className="sendbox-attach-btn" title="Attach file" disabled={disabled}>
