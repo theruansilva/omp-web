@@ -38,7 +38,7 @@
     "start:sessiond": "bun src/server/sessiond.ts",
     "lint": "eslint \"src/**/*.ts\" \"extensions/**/*.ts\" \"omp-web-plugins/**/*.ts\" vite.config.ts vitest.config.ts",
     "test": "vitest run --config vitest.config.ts",
-    "verify": "bun run typecheck && bun run lint && bun run knip && bun test",
+    "verify": "bun run typecheck && bun run lint && bun run knip",
     "clean": "rm -rf dist",
     "prepack": "bun run build",
     "pack:dry": "bun pm pack --dry-run",

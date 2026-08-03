@@ -10,11 +10,7 @@ interface TaskSubagent {
   assignment?: string | undefined;
 }
 
-interface TodoArgs {
-  op?: string;
-  task?: string;
-  phase?: string;
-}
+
 
 @customElement("workspace-tasks-panel")
 export class WorkspaceTasksPanel extends LitElement {
@@ -23,7 +19,7 @@ export class WorkspaceTasksPanel extends LitElement {
   private get executions(): ToolExecutionPart[] {
     if (!this.context) return [];
     const messages = this.context.state.messages;
-    if (!messages) return [];
+    if (messages.length === 0) return [];
 
     const result: ToolExecutionPart[] = [];
     for (const msg of messages) {
@@ -78,22 +74,21 @@ export class WorkspaceTasksPanel extends LitElement {
         <div class="task-body">
           ${this.renderTaskContext(task)}
           ${subagents?.map((agent) => this.renderSubagent(agent))}
-          ${task.resultText ? html`<pre class="task-result">${task.resultText}</pre>` : ""}
+          ${typeof task.resultText === "string" && task.resultText.length > 0 ? html`<pre class="task-result">${task.resultText}</pre>` : ""}
         </div>
       </details>
     `;
   }
 
   private renderTodo(exec: ToolExecutionPart) {
-    const args = (exec.args ?? {}) as Record<string, unknown>;
-    const op = String(args["op"] ?? "");
-    const task = String(args["task"] ?? "");
-    const phase = String(args["phase"] ?? "");
+    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+    const args = typeof exec.args === "object" && exec.args !== null ? (exec.args as Record<string, unknown>) : {};
+    const op = typeof args["op"] === "string" ? args["op"] : "";
+    const task = typeof args["task"] === "string" ? args["task"] : "";
+    const phase = typeof args["phase"] === "string" ? args["phase"] : "";
 
-    const opLabel = op
-      ? ({ init: "Initialized", start: "Started", done: "Completed", append: "Added", drop: "Removed" } as Record<string, string>)[op] ?? op
-      : "";
-
+    const opMap: Record<string, string> = { init: "Initialized", start: "Started", done: "Completed", append: "Added", drop: "Removed" };
+    const opLabel = op !== "" ? opMap[op] ?? op : "";
     return html`
       <details class="todo-card ${exec.status}">
         <summary class="task-header">
@@ -108,15 +103,16 @@ export class WorkspaceTasksPanel extends LitElement {
         <div class="task-body">
           ${phase ? html`<div class="todo-phase">Phase: ${phase}</div>` : ""}
           ${task ? html`<div class="todo-task">${task}</div>` : ""}
-          ${exec.resultText ? html`<pre class="task-result">${exec.resultText}</pre>` : ""}
+          ${typeof exec.resultText === "string" && exec.resultText.length > 0 ? html`<pre class="task-result">${exec.resultText}</pre>` : ""}
         </div>
       </details>
     `;
   }
 
   private renderTaskContext(task: ToolExecutionPart) {
-    const args = task.args as Record<string, unknown> | undefined;
-    if (!args) return null;
+    if (typeof task.args !== "object" || task.args === null) return null;
+    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+    const args = task.args as Record<string, unknown>;
     const context = args["context"];
     if (typeof context !== "string" || context === "") return null;
     return html`
@@ -134,51 +130,50 @@ export class WorkspaceTasksPanel extends LitElement {
         <span class="subagent-icon">◈</span>
         <div class="subagent-info">
           <div class="subagent-label">${label}</div>
-          ${agent.assignment ? html`<div class="subagent-assignment">${agent.assignment}</div>` : ""}
+          ${typeof agent.assignment === "string" && agent.assignment.length > 0 ? html`<div class="subagent-assignment">${agent.assignment}</div>` : ""}
         </div>
       </div>
     `;
   }
-
   static override styles = [
     workspacePanelStyles,
     css`
-      .task-list { padding: 8px; display: grid; gap: 8px; }
-      .task-card, .todo-card { border: 1px solid var(--pi-border); border-radius: 8px; background: var(--pi-surface); }
-      .task-card[open], .todo-card[open] { border-color: var(--pi-accent); }
-      .task-card.error, .todo-card.error { border-color: var(--pi-danger-border); }
-      .task-card.success, .todo-card.success { border-color: var(--pi-success-border); }
-      .task-header { display: flex; align-items: center; gap: 6px; padding: 8px 10px; cursor: pointer; user-select: none; }
-      .task-header::-webkit-details-marker { display: none; }
-      .status-icon { flex: 0 0 auto; width: 18px; text-align: center; font-size: 14px; }
-      .task-card.running .status-icon, .todo-card.running .status-icon { color: var(--pi-accent); }
-      .task-card.success .status-icon, .todo-card.success .status-icon { color: var(--pi-success); }
-      .task-card.error .status-icon, .todo-card.error .status-icon { color: var(--pi-danger); }
-      .tool-badge { font-size: 10px; padding: 1px 4px; border-radius: 3px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.3px; flex: 0 0 auto; }
-      .task-badge { background: color-mix(in srgb, var(--pi-accent) 14%, transparent); color: var(--pi-accent); }
-      .todo-badge { background: color-mix(in srgb, var(--pi-success) 14%, transparent); color: var(--pi-success); }
-      .task-summary { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; font-size: 13px; }
-      .task-meta { flex: 0 0 auto; display: flex; align-items: center; gap: 6px; }
-      .subagent-count { color: var(--pi-muted); font-size: 11px; white-space: nowrap; }
-      .todo-op { color: var(--pi-muted); font-size: 11px; white-space: nowrap; }
-      .status-badge { font-size: 11px; padding: 1px 5px; border-radius: 4px; white-space: nowrap; }
-      .status-badge.running { background: color-mix(in srgb, var(--pi-accent) 14%, transparent); color: var(--pi-accent); }
-      .status-badge.success { background: color-mix(in srgb, var(--pi-success) 14%, transparent); color: var(--pi-success); }
-      .status-badge.error { background: color-mix(in srgb, var(--pi-danger) 14%, transparent); color: var(--pi-danger); }
-      .status-badge.pending { background: color-mix(in srgb, var(--pi-muted) 14%, transparent); color: var(--pi-muted); }
-      .task-body { padding: 0 10px 10px; display: grid; gap: 6px; }
-      .context-section { border: 1px solid var(--pi-border-muted); border-radius: 5px; }
-      .context-header { padding: 5px 8px; cursor: pointer; user-select: none; font-size: 11px; font-weight: 600; color: var(--pi-muted); }
-      .context-header::-webkit-details-marker { display: none; }
-      .context-body { padding: 0 8px 8px; color: var(--pi-muted); font-size: 12px; line-height: 1.4; white-space: pre-wrap; overflow-wrap: anywhere; max-height: 120px; overflow: auto; }
-      .todo-phase { font-size: 11px; color: var(--pi-muted); }
-      .todo-task { font-size: 12px; font-weight: 600; padding: 4px 0; }
-      .subagent { display: flex; gap: 6px; padding: 6px 8px; border: 1px solid var(--pi-border-muted); border-radius: 5px; background: var(--pi-bg); align-items: flex-start; }
-      .subagent-icon { flex: 0 0 auto; color: var(--pi-accent); font-size: 12px; margin-top: 1px; }
-      .subagent-info { flex: 1 1 auto; min-width: 0; }
-      .subagent-label { font-weight: 600; font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-      .subagent-assignment { color: var(--pi-muted); font-size: 11px; margin-top: 2px; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
-      .task-result { margin: 0; padding: 8px; background: var(--pi-bg); border: 1px solid var(--pi-border-muted); border-radius: 5px; font: 12px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; line-height: 1.4; white-space: pre-wrap; overflow-wrap: anywhere; max-height: 200px; overflow: auto; }
+        .task - list { padding: 8px; display: grid; gap: 8px; }
+      .task - card, .todo - card { border: 1px solid var(--pi - border); border - radius: 8px; background: var(--pi - surface); }
+      .task - card[open], .todo - card[open] { border - color: var(--pi - accent); }
+      .task - card.error, .todo - card.error { border - color: var(--pi - danger - border); }
+      .task - card.success, .todo - card.success { border - color: var(--pi - success - border); }
+      .task - header { display: flex; align - items: center; gap: 6px; padding: 8px 10px; cursor: pointer; user - select: none; }
+      .task - header:: -webkit - details - marker { display: none; }
+      .status - icon { flex: 0 0 auto; width: 18px; text - align: center; font - size: 14px; }
+      .task - card.running.status - icon, .todo - card.running.status - icon { color: var(--pi - accent); }
+      .task - card.success.status - icon, .todo - card.success.status - icon { color: var(--pi - success); }
+      .task - card.error.status - icon, .todo - card.error.status - icon { color: var(--pi - danger); }
+      .tool - badge { font - size: 10px; padding: 1px 4px; border - radius: 3px; font - weight: 600; text - transform: uppercase; letter - spacing: 0.3px; flex: 0 0 auto; }
+      .task - badge { background: color - mix(in srgb, var(--pi - accent) 14 %, transparent); color: var(--pi - accent); }
+      .todo - badge { background: color - mix(in srgb, var(--pi - success) 14 %, transparent); color: var(--pi - success); }
+      .task - summary { flex: 1 1 auto; min - width: 0; overflow: hidden; text - overflow: ellipsis; white - space: nowrap; font - weight: 600; font - size: 13px; }
+      .task - meta { flex: 0 0 auto; display: flex; align - items: center; gap: 6px; }
+      .subagent - count { color: var(--pi - muted); font - size: 11px; white - space: nowrap; }
+      .todo - op { color: var(--pi - muted); font - size: 11px; white - space: nowrap; }
+      .status - badge { font - size: 11px; padding: 1px 5px; border - radius: 4px; white - space: nowrap; }
+      .status - badge.running { background: color - mix(in srgb, var(--pi - accent) 14 %, transparent); color: var(--pi - accent); }
+      .status - badge.success { background: color - mix(in srgb, var(--pi - success) 14 %, transparent); color: var(--pi - success); }
+      .status - badge.error { background: color - mix(in srgb, var(--pi - danger) 14 %, transparent); color: var(--pi - danger); }
+      .status - badge.pending { background: color - mix(in srgb, var(--pi - muted) 14 %, transparent); color: var(--pi - muted); }
+      .task - body { padding: 0 10px 10px; display: grid; gap: 6px; }
+      .context - section { border: 1px solid var(--pi - border - muted); border - radius: 5px; }
+      .context - header { padding: 5px 8px; cursor: pointer; user - select: none; font - size: 11px; font - weight: 600; color: var(--pi - muted); }
+      .context - header:: -webkit - details - marker { display: none; }
+      .context - body { padding: 0 8px 8px; color: var(--pi - muted); font - size: 12px; line - height: 1.4; white - space: pre - wrap; overflow - wrap: anywhere; max - height: 120px; overflow: auto; }
+      .todo - phase { font - size: 11px; color: var(--pi - muted); }
+      .todo - task { font - size: 12px; font - weight: 600; padding: 4px 0; }
+      .subagent { display: flex; gap: 6px; padding: 6px 8px; border: 1px solid var(--pi - border - muted); border - radius: 5px; background: var(--pi - bg); align - items: flex - start; }
+      .subagent - icon { flex: 0 0 auto; color: var(--pi - accent); font - size: 12px; margin - top: 1px; }
+      .subagent - info { flex: 1 1 auto; min - width: 0; }
+      .subagent - label { font - weight: 600; font - size: 12px; overflow: hidden; text - overflow: ellipsis; white - space: nowrap; }
+      .subagent - assignment { color: var(--pi - muted); font - size: 11px; margin - top: 2px; display: -webkit - box; -webkit - line - clamp: 3; -webkit - box - orient: vertical; overflow: hidden; }
+      .task - result { margin: 0; padding: 8px; background: var(--pi - bg); border: 1px solid var(--pi - border - muted); border - radius: 5px; font: 12px ui - monospace, SFMono - Regular, Menlo, Consolas, monospace; line - height: 1.4; white - space: pre - wrap; overflow - wrap: anywhere; max - height: 200px; overflow: auto; }
     `,
   ];
 }
@@ -198,12 +193,14 @@ function statusLabel(status: ToolExecutionPart["status"]): string {
 }
 
 function parseTaskArgs(args: unknown): TaskSubagent[] | undefined {
-  if (!args || typeof args !== "object") return undefined;
+  if (typeof args !== "object" || args === null) return undefined;
+  // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
   const record = args as Record<string, unknown>;
   const tasks = record["tasks"];
   if (!Array.isArray(tasks)) return undefined;
   return tasks.map((t: unknown): TaskSubagent => {
-    if (!t || typeof t !== "object") return {};
+    if (typeof t !== "object" || t === null) return {};
+    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
     const item = t as Record<string, unknown>;
     return {
       ...(typeof item["id"] === "string" ? { id: item["id"] } : {}),

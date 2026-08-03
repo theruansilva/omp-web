@@ -842,7 +842,7 @@ async function uninstall(): Promise<void> {
   console.log(`PI WEB ${backend.label} removed. Production and development service files were removed; config and data were left in place.`);
 }
 
-async function update(): Promise<void> {
+function update(): void {
   const backend = requireServiceBackend("omp-web update");
   const mode = serviceInstallMode(backend);
   if (mode === "not installed") throw new Error("PI WEB is not installed. Run `omp-web install` first.");
@@ -1091,7 +1091,7 @@ Usage:
   omp-web uninstall
   omp-web start|stop|restart|status|logs
   omp-web doctor
-  omp-web version
+  else if (command === "update") update();
 
 Recommended install:
   bun add -g @ProgmRuanSilva/omp-web
@@ -1105,7 +1105,7 @@ Development service install from a checkout:
 async function main(): Promise<void> {
   const [command = "help", ...args] = process.argv.slice(2);
   if (command === "install") await install(args);
-  else if (command === "update") await update();
+  else if (command === "update") update();
   else if (command === "uninstall") await uninstall();
   else if (command === "start" || command === "stop" || command === "restart" || command === "status") serviceAction(command);
   else if (command === "logs") logs();
