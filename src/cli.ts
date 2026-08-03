@@ -312,19 +312,27 @@ function commandExecutable(command: string, backend: ServiceBackend): ServiceExe
   return { command, checks };
 }
 
-function bundledExecutable(command: string, entrypointPath: string, backend: ServiceBackend): ServiceExecutable {
+function bundledExecutable(command: string, entrypointPath: string, backend: ServiceBackend, runtime: "node" | "bun" = "node"): ServiceExecutable {
   const shell = serviceShellLabel();
   const check = readableFileCheck(entrypointPath);
   const checks: Check[] = [[`${shell} can access bundled ${command} entrypoint`, serviceShellCommand(check)]];
   if (backend.kind === "systemd") {
     checks.push([`systemd user ${shell} can access bundled ${command} entrypoint`, systemdUserServiceShellCommand(check)]);
   }
-  return { command: `node ${serviceShellQuote(entrypointPath)}`, checks };
+  return { command: `${runtime} ${serviceShellQuote(entrypointPath)}`, checks };
 }
 
 function serviceExecutable(envName: "OMP_WEB_SERVER_EXEC" | "OMP_WEB_SESSIOND_EXEC", command: string, entrypointPath: string, backend: ServiceBackend): ServiceExecutable {
   const configured = process.env[envName]?.trim();
   if (configured !== undefined && configured !== "") return { command: configured, checks: [] };
+  // Dependencies (e.g. @oh-my-pi/pi-coding-agent) ship raw TypeScript that Node
+  // refuses to type-strip under node_modules, so prefer running the bundled
+  // entrypoints with Bun when the service shell has it; the node bin is the fallback.
+  if (serviceShellCanFindCommand("bun", backend)) {
+    const executable = bundledExecutable(command, entrypointPath, backend, "bun");
+    executable.checks.unshift([`${serviceShellLabel()} can find bun`, serviceShellCommand(commandCheck("bun"))]);
+    return executable;
+  }
   if (serviceShellCanFindCommand(command, backend)) return commandExecutable(command, backend);
   if (existsSync(entrypointPath)) return bundledExecutable(command, entrypointPath, backend);
   return commandExecutable(command, backend);
@@ -834,6 +842,25 @@ async function uninstall(): Promise<void> {
   console.log(`PI WEB ${backend.label} removed. Production and development service files were removed; config and data were left in place.`);
 }
 
+async function update(): Promise<void> {
+  const backend = requireServiceBackend("omp-web update");
+  const mode = serviceInstallMode(backend);
+  if (mode === "not installed") throw new Error("PI WEB is not installed. Run `omp-web install` first.");
+  if (mode === "development" || mode === "mixed") {
+    throw new Error("A development install is updated from its checkout (git pull, then `omp-web install --dev`). `omp-web update` only refreshes a production install.");
+  }
+
+  console.log("Updating PI WEB package...");
+  run("bun", ["add", "-g", `${OMP_WEB_PACKAGE_NAME}@latest`], { check: true });
+
+  console.log("Refreshing installed services...");
+  // Re-exec the updated CLI so service units point at the newly installed package path.
+  const result = spawnSync("omp-web", ["install"], { stdio: "inherit" });
+  if (result.status !== 0) process.exit(result.status ?? 1);
+
+  serviceAction("status");
+}
+
 function systemdServiceAction(action: "start" | "stop" | "restart", refs: ServiceRef[]): void {
   const orderedRefs = action === "stop" ? stopOrder(refs) : action === "restart" ? restartOrder(refs) : startOrder(refs);
   run("systemctl", ["--user", action, ...orderedRefs.map((ref) => ref.systemdName)], { check: true });
@@ -1060,6 +1087,7 @@ function help(): void {
 
 Usage:
   omp-web install [--dev] [--host 127.0.0.1] [--port 8504] [--config ~/.config/omp-web/config.json]
+  omp-web update
   omp-web uninstall
   omp-web start|stop|restart|status|logs
   omp-web doctor
@@ -1077,6 +1105,7 @@ Development service install from a checkout:
 async function main(): Promise<void> {
   const [command = "help", ...args] = process.argv.slice(2);
   if (command === "install") await install(args);
+  else if (command === "update") await update();
   else if (command === "uninstall") await uninstall();
   else if (command === "start" || command === "stop" || command === "restart" || command === "status") serviceAction(command);
   else if (command === "logs") logs();
