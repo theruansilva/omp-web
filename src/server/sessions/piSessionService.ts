@@ -284,7 +284,7 @@ class DefaultPiAgentSession implements PiAgentSession {
 
  get modelRegistry(): ModelRegistryInstance { return this.ompSession.modelRegistry; }
  get sessionManager(): PiSessionManager { return this.piSessionManager; }
- get scopedModels(): readonly { model: AgentModel; thinkingLevel?: ClientThinkingLevel }[] {
+ get scopedModels() {
   return this.ompSession.scopedModels;
  }
  get sessionId(): string { return this.ompSession.sessionId; }

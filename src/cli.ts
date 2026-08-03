@@ -10,7 +10,7 @@ import { packageVersion, printOmpWebVersionReport } from "./ompWebVersionReport.
 import { checkNodePtyDarwinSpawnHelper, formatNodePtyDarwinSpawnHelperCheck } from "./server/diagnostics/nodePtySpawnHelper.js";
 import { isRecord } from "./server/utils.js";
 
-const OMP_WEB_PACKAGE_NAME = "@ProgmRuanSilva/omp-web";
+const OMP_WEB_PACKAGE_NAME = "@progmruansilva/omp-web";
 
 const systemdServiceDir = join(homedir(), ".config", "systemd", "user");
 const launchdServiceDir = join(homedir(), "Library", "LaunchAgents");
@@ -1094,7 +1094,7 @@ Usage:
   else if (command === "update") update();
 
 Recommended install:
-  bun add -g @ProgmRuanSilva/omp-web
+  bun add -g @progmruansilva/omp-web
   omp-web install
 
 Development service install from a checkout:

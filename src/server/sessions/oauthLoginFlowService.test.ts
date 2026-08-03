@@ -9,7 +9,7 @@ interface OAuthLoginCallbacks {
  onPrompt: (prompt: { message: string; placeholder?: string }) => Promise<string>;
 }
 
-type LoginHandler = (providerId: string, callbacks: OAuthLoginCallbacks) => Promise<void>;
+type LoginHandler = (providerId: string, callbacks: OAuthLoginCallbacks) => ReturnType<AuthStorage["login"]>;
 
 afterEach(() => {
  vi.useRealTimers();
@@ -122,8 +122,7 @@ function fakeAuthStorage(login: LoginHandler): Pick<AuthStorage, "login"> {
  return {
   login: (providerId, ctrl) => login(providerId, {
    ...(ctrl.signal !== undefined ? { signal: ctrl.signal } : {}),
-   // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
-   onAuth: (info) => { ctrl.onAuth(info as unknown as Parameters<typeof ctrl.onAuth>[0]); },
+   onAuth: (info) => { ctrl.onAuth({ url: info.url ?? "", ...(info.instructions !== undefined ? { instructions: info.instructions } : {}) }); },
    onPrompt: (prompt) => ctrl.onPrompt(prompt),
   }),
  };

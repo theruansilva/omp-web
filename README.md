@@ -1,8 +1,8 @@
 # OMP WEB
 
 [![CI](https://github.com/ProgmRuanSilva/omp-web/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/ProgmRuanSilva/omp-web/actions/workflows/ci.yml)
-[![npm version](https://img.shields.io/npm/v/@ProgmRuanSilva/omp-web)](https://www.npmjs.com/package/@ProgmRuanSilva/omp-web)
-[![Node.js](https://img.shields.io/node/v/@ProgmRuanSilva/omp-web)](package.json)
+[![npm version](https://img.shields.io/npm/v/@progmruansilva/omp-web)](https://www.npmjs.com/package/@progmruansilva/omp-web)
+[![Node.js](https://img.shields.io/node/v/@progmruansilva/omp-web)](package.json)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 **OMP WEB is a web UI for [Pi Coding Agent](https://github.com/earendil-works/pi/tree/main/packages/coding-agent) that keeps agent sessions running in real workspaces on your machine or server.**
@@ -41,7 +41,7 @@ Requirements:
 Install and start OMP WEB as per-user services:
 
 ```bash
-bun install -g @ProgmRuanSilva/omp-web
+bun install -g @progmruansilva/omp-web
 omp-web install
 omp-web doctor
 ```
