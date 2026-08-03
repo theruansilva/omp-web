@@ -285,8 +285,7 @@ class DefaultPiAgentSession implements PiAgentSession {
  get modelRegistry(): ModelRegistryInstance { return this.ompSession.modelRegistry; }
  get sessionManager(): PiSessionManager { return this.piSessionManager; }
  get scopedModels(): readonly { model: AgentModel; thinkingLevel?: ClientThinkingLevel }[] {
-  // eslint-disable-next-line @typescript-eslint/consistent-type-assertions, @typescript-eslint/no-unnecessary-type-assertion
-  return (this.ompSession.scopedModels as unknown) as readonly { model: AgentModel; thinkingLevel?: ClientThinkingLevel }[];
+  return this.ompSession.scopedModels;
  }
  get sessionId(): string { return this.ompSession.sessionId; }
  get sessionFile(): string | undefined { return this.ompSession.sessionFile; }
