@@ -3,6 +3,7 @@
   "entry": ["src/cli.ts", "src/plugin-api.ts", "src/plugin-api/unstable.ts", "extensions/**/*.ts", "omp-web-plugins/**/*.ts"],
   "project": ["src/**/*.ts", "extensions/**/*.ts", "omp-web-plugins/**/*.ts"],
   "ignore": ["src/client-react/**"],
+  "ignoreDependencies": ["@vitejs/plugin-react"],
   "rules": {
     "exports": "off",
     "types": "off",

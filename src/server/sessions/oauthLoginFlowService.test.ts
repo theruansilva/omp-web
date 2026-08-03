@@ -120,9 +120,7 @@ describe("OAuthLoginFlowService", () => {
 
 function fakeAuthStorage(login: LoginHandler): Pick<AuthStorage, "login"> {
  return {
-  login(providerId: string, ctrl: { signal?: AbortSignal; onAuth: (info: { url?: string; instructions?: string }) => void; onPrompt: (prompt: { message: string; placeholder?: string }) => Promise<string> }): Promise<void> {
-   return login(providerId, ctrl);
-  },
+  login: (providerId: string, ctrl: { signal?: AbortSignal; onAuth: (info: { url?: string; instructions?: string }) => void; onPrompt: (prompt: { message: string; placeholder?: string }) => Promise<string> }) => login(providerId, ctrl),
  };
 }
 

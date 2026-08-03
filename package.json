@@ -84,6 +84,7 @@
     "@types/node": "^24.10.1",
     "@types/web-push": "^3.6.4",
     "@types/ws": "^8.18.1",
+    "@vitejs/plugin-react": "^6.0.5",
     "eslint": "^10.3.0",
     "globals": "^17.6.0",
     "knip": "^6.16.1",
