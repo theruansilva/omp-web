@@ -371,8 +371,17 @@ export const formattedTextStyles = css`
   code { border: 1px solid var(--pi-border); border-radius: 4px; background: var(--pi-bg); padding: 1px 4px; font: 13px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; direction: ltr; text-align: left; unicode-bidi: isolate; }
   .code-block-wrapper { position: relative; }
   .code-block-wrapper pre { margin: 0; padding-right: 40px; }
-  pre { border: 1px solid var(--pi-border); border-radius: 8px; background: var(--pi-bg); padding: 10px; overflow-x: auto; overflow-y: hidden; direction: ltr; text-align: left; unicode-bidi: isolate; }
-  pre code { border: 0; padding: 0; background: transparent; }
+  pre { border: 1px solid var(--pi-border); border-radius: 8px; background: var(--pi-bg); padding: 10px; overflow-x: auto; overflow-y: hidden; direction: ltr; text-align: left; unicode-bidi: isolate; font: 13px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  pre code { border: 0; padding: 0; background: transparent; font: inherit; }
+  pre.ascii-diagram, .mermaid-diagram-wrapper pre.ascii-diagram { font-family: ui-monospace, SFMono-Regular, "Cascadia Code", "DejaVu Sans Mono", Menlo, Consolas, monospace; font-size: 12.5px; line-height: 1.18; letter-spacing: 0; font-variant-ligatures: none; white-space: pre; overflow-x: auto; }
+  .mermaid-diagram-wrapper { position: relative; border: 1px solid var(--pi-border); border-radius: 8px; background: var(--pi-bg); margin: 0 0 10px; overflow: hidden; }
+  .mermaid-diagram-wrapper pre { border: none; border-radius: 0; margin: 0; padding: 12px 14px; }
+  .diagram-header { display: flex; align-items: center; justify-content: space-between; padding: 6px 12px; border-bottom: 1px solid var(--pi-border); background: var(--pi-surface); font-size: 11px; color: var(--pi-muted); }
+  .diagram-badge { font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--pi-accent); }
+  .diagram-actions { display: flex; align-items: center; gap: 6px; }
+  .diagram-toggle-button { border: 1px solid var(--pi-border); border-radius: 4px; background: var(--pi-bg); color: var(--pi-muted); padding: 2px 8px; font-size: 11px; cursor: pointer; font-family: inherit; }
+  .diagram-toggle-button:hover { color: var(--pi-text); border-color: var(--pi-accent); }
+  .mermaid-diagram-wrapper .code-copy-button { position: static; }
   .code-copy-button { position: absolute; top: 6px; right: 6px; z-index: 1; display: inline-grid; place-items: center; width: 24px; height: 24px; border: 1px solid var(--pi-border); border-radius: 6px; background: var(--pi-surface); color: var(--pi-muted); padding: 0; font: 14px system-ui, sans-serif; line-height: 1; cursor: pointer; }
   .code-copy-button:hover, .code-copy-button:focus { color: var(--pi-text); border-color: var(--pi-accent); }
   blockquote { border-left: 3px solid var(--pi-border); padding-left: 10px; color: var(--pi-muted); }

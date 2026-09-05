@@ -1,8 +1,35 @@
 import { marked } from "marked";
+import { renderMermaidAsciiSafe } from "@oh-my-pi/pi-utils/mermaid-ascii";
+
+const BOX_CHARS_REGEX = /[─│┌┐└┘├┤┬┴┼═║╔╗╚╝╠╣╦╩╬╭╮╰╯▼▲▶◀►◄]/;
 
 const renderer = new marked.Renderer();
 renderer.html = ({ text }) => escapeHtml(text);
 
+renderer.code = ({ text, lang }: { text: string; lang?: string }): string => {
+  const language = (lang ?? "").trim().toLowerCase();
+  if (language === "mermaid") {
+    const ascii = renderMermaidAsciiSafe(text);
+    if (ascii !== null && ascii.trim().length > 0) {
+      return `<div class="code-block-wrapper mermaid-diagram-wrapper">` +
+        `<div class="diagram-header">` +
+        `<span class="diagram-badge">Mermaid Diagram</span>` +
+        `<div class="diagram-actions">` +
+        `<button type="button" class="diagram-toggle-button" aria-label="Toggle diagram source">Source</button>` +
+        `<button type="button" class="code-copy-button" title="Copy diagram" aria-label="Copy diagram"><span aria-hidden="true">⧉</span></button>` +
+        `</div>` +
+        `</div>` +
+        `<pre class="ascii-diagram"><code class="diagram-rendered">${escapeHtml(ascii)}</code></pre>` +
+        `<pre class="mermaid-source" style="display: none;"><code class="language-mermaid">${escapeHtml(text)}</code></pre>` +
+        `</div>`;
+    }
+  }
+
+  const isAsciiDiagram = language === "ascii" || language === "diagram" || BOX_CHARS_REGEX.test(text);
+  const preClass = isAsciiDiagram ? ' class="ascii-diagram"' : "";
+  const codeClass = language ? ` class="language-${escapeHtml(language)}"` : "";
+  return `<pre${preClass}><code${codeClass}>${escapeHtml(text)}</code></pre>`;
+};
 const MAX_MARKDOWN_CACHE_ENTRIES = 300;
 const markdownHtmlCache = new Map<string, string>();
 

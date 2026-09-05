@@ -39,15 +39,41 @@ export class FormattedText extends LitElement {
 
   private readonly onFormattedClick = (event: MouseEvent): void => {
     if (!(event.target instanceof Element)) return;
+    const toggleButton = event.target.closest(".diagram-toggle-button");
+    if (toggleButton instanceof HTMLButtonElement) {
+      const wrapper = toggleButton.closest(".mermaid-diagram-wrapper");
+      if (wrapper instanceof HTMLElement) {
+        const asciiPre = wrapper.querySelector<HTMLElement>("pre.ascii-diagram");
+        const sourcePre = wrapper.querySelector<HTMLElement>("pre.mermaid-source");
+        if (asciiPre !== null && sourcePre !== null) {
+          const showingSource = sourcePre.style.display !== "none";
+          if (showingSource) {
+            sourcePre.style.display = "none";
+            asciiPre.style.display = "";
+            toggleButton.textContent = "Source";
+          } else {
+            asciiPre.style.display = "none";
+            sourcePre.style.display = "";
+            toggleButton.textContent = "Diagram";
+          }
+        }
+      }
+      return;
+    }
     const button = event.target.closest(".code-copy-button");
     if (!(button instanceof HTMLButtonElement)) return;
     const wrapper = button.closest(".code-block-wrapper");
     if (!(wrapper instanceof HTMLElement)) return;
-    const code = wrapper.querySelector("pre code");
-    if (!(code instanceof HTMLElement)) return;
-    void this.copyCode(code.textContent, button);
+    let codeText = "";
+    if (wrapper.classList.contains("mermaid-diagram-wrapper")) {
+      const visiblePre = Array.from(wrapper.querySelectorAll<HTMLElement>("pre")).find((pre) => pre.style.display !== "none");
+      codeText = visiblePre?.querySelector("code")?.textContent ?? "";
+    } else {
+      const code = wrapper.querySelector("pre code");
+      if (code instanceof HTMLElement) codeText = code.textContent ?? "";
+    }
+    void this.copyCode(codeText, button);
   };
-
   private async copyCode(text: string, button: HTMLButtonElement): Promise<void> {
     const ok = await writeClipboard(text);
     this.setCopyButtonState(button, ok ? "copied" : "failed");
