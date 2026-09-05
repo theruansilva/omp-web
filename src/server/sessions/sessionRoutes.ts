@@ -106,10 +106,20 @@ export function registerSessionRoutes(app: FastifyInstance, sessions: PiSessionS
     }
   });
 
-  app.post<{ Params: { sessionId: string }; Body: { cwd?: unknown; provider?: unknown; modelId?: unknown } | undefined }>(`${prefix}/sessions/:sessionId/model`, async (request, reply) => {
+  app.post<{ Params: { sessionId: string }; Body: { cwd?: unknown; provider?: unknown; modelId?: unknown; persist?: unknown; role?: unknown } | undefined }>(`${prefix}/sessions/:sessionId/model`, async (request, reply) => {
     try {
       const body = optionalRecord(request.body);
-      return await sessions.setModel(sessionLookupFromBody(request.params.sessionId, body), requireString(body, "provider"), requireString(body, "modelId"));
+      const persist = typeof body["persist"] === "boolean" ? body["persist"] : undefined;
+      const role = typeof body["role"] === "string" ? body["role"] : undefined;
+      const modelOptions: { persist?: boolean; role?: string } = {};
+      if (persist !== undefined) modelOptions.persist = persist;
+      if (role !== undefined) modelOptions.role = role;
+      return await sessions.setModel(
+        sessionLookupFromBody(request.params.sessionId, body),
+        requireString(body, "provider"),
+        requireString(body, "modelId"),
+        modelOptions,
+      );
     } catch (error) {
       return reply.code(mutationErrorStatus(error)).send({ error: errorMessage(error) });
     }

@@ -1732,11 +1732,36 @@ export class OmpWebApp extends LitElement {
     });
   }
 
-  private async pickModel(value: string) {
+  private pickModel(value: string) {
     this.setState({ modelDialog: undefined });
     const slash = value.indexOf("/");
     if (slash <= 0) return;
-    await this.sessions.setModel(value.slice(0, slash), value.slice(slash + 1));
+    const provider = value.slice(0, slash);
+    const modelId = value.slice(slash + 1);
+    this.setState({
+      modelActionDialog: {
+        title: `${provider}/${modelId}`,
+        selectedValue: `default:${provider}/${modelId}`,
+        options: [
+          { value: `default:${provider}/${modelId}`, label: "Definir como padrão", description: "Salva como modelo padrão para todas as novas sessões (config.yml)" },
+          { value: `session:${provider}/${modelId}`, label: "Apenas nesta sessão", description: "Altera o modelo somente na conversa atual" },
+        ],
+      },
+    });
+  }
+
+  private async pickModelAction(value: string) {
+    this.setState({ modelActionDialog: undefined });
+    const colon = value.indexOf(":");
+    if (colon <= 0) return;
+    const action = value.slice(0, colon);
+    const rest = value.slice(colon + 1);
+    const slash = rest.indexOf("/");
+    if (slash <= 0) return;
+    const provider = rest.slice(0, slash);
+    const modelId = rest.slice(slash + 1);
+    const persist = action === "default";
+    await this.sessions.setModel(provider, modelId, persist);
   }
 
   private openThemeDialog() {
@@ -1932,7 +1957,8 @@ export class OmpWebApp extends LitElement {
             <prompt-editor .sessionId=${state.selectedSession.id} .cwd=${state.selectedWorkspace?.path} .machineId=${selectedMachineId(state)} .projectId=${state.selectedWorkspace?.projectId} .workspaceId=${state.selectedWorkspace?.id} .workspaceScopedFileSuggestions=${this.supportsWorkspaceFileSuggestions()} .disabled=${state.selectedSession.archived === true} .canSteer=${state.status?.isStreaming === true} .isCompacting=${state.status?.isCompacting === true} .canStop=${state.status?.isStreaming === true || state.status?.isBashRunning === true || state.status?.isCompacting === true || (state.status?.pendingMessageCount ?? 0) > 0} .status=${state.status} .availableThinkingLevels=${state.availableThinkingLevels} .sending=${state.sendingPrompts[state.selectedSession.id] === true} .onSend=${this.handleSendPrompt} .onStop=${this.handleStopActiveWork} .onSelectModel=${this.handleSelectModel} .onSelectThinking=${this.handleSelectThinking}></prompt-editor>
             <status-bar .status=${state.status}></status-bar>
             ${state.commandDialog !== undefined ? html`<command-picker .title=${state.commandDialog.title} .options=${state.commandDialog.options} .onPick=${(value: string) => this.sessions.respondToCommand(state.commandDialog?.requestId ?? "", value)} .onCancel=${() => { this.sessions.cancelCommand(); }}></command-picker>` : null}
-            ${state.modelDialog !== undefined ? html`<command-picker title=${state.modelDialog.title} .searchable=${true} .options=${state.modelDialog.options} .selectedValue=${state.modelDialog.selectedValue} .onPick=${(value: string) => { void this.pickModel(value); }} .onCancel=${() => { this.setState({ modelDialog: undefined }); }}></command-picker>` : null}
+            ${state.modelDialog !== undefined ? html`<command-picker title=${state.modelDialog.title} .searchable=${true} .options=${state.modelDialog.options} .selectedValue=${state.modelDialog.selectedValue} .onPick=${(value: string) => { this.pickModel(value); }} .onCancel=${() => { this.setState({ modelDialog: undefined }); }}></command-picker>` : null}
+            ${state.modelActionDialog !== undefined ? html`<command-picker title=${state.modelActionDialog.title} .options=${state.modelActionDialog.options} .selectedValue=${state.modelActionDialog.selectedValue} .onPick=${(value: string) => { void this.pickModelAction(value); }} .onCancel=${() => { this.setState({ modelActionDialog: undefined }); }}></command-picker>` : null}
             ${state.thinkingDialog !== undefined ? html`<command-picker title=${state.thinkingDialog.title} .options=${state.thinkingDialog.options} .selectedValue=${state.thinkingDialog.selectedValue} .onPick=${(value: string) => { void this.pickThinking(value); }} .onCancel=${() => { this.setState({ thinkingDialog: undefined }); }}></command-picker>` : null}
             ${state.authDialog !== undefined ? html`<auth-dialog .state=${state.authDialog} .onChooseMethod=${(authType: "oauth" | "api_key") => { void this.auth.chooseLoginMethod(authType); }} .onSelectProvider=${(providerId: string, authType: "oauth" | "api_key") => { void this.auth.selectLoginProvider(providerId, authType); }} .onApiKeyInput=${(value: string) => { this.auth.updateApiKey(value); }} .onSaveApiKey=${() => { void this.auth.saveApiKey(); }} .onLogoutProvider=${(providerId: string) => { void this.auth.logoutProvider(providerId); }} .onOAuthInput=${(value: string) => { this.auth.updateOAuthInput(value); }} .onOAuthRespond=${(value?: string) => { void this.auth.respondOAuth(value); }} .onOAuthCancel=${() => { void this.auth.cancelOAuth(); }} .onCancel=${() => { this.auth.closeDialog(); }}></auth-dialog>` : null}
           ` : html`<div class="empty">${this.sessionEmptyMessage()}</div>`}

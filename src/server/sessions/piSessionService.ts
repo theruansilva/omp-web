@@ -234,7 +234,7 @@ export interface PiAgentSession {
  clearQueue(): { steering: string[]; followUp: string[] };
  getSteeringMessages(): readonly string[];
  getFollowUpMessages(): readonly string[];
- setModel(model: AgentModel): Promise<void>;
+ setModel(model: AgentModel, role?: string, options?: { persist?: boolean }): Promise<void>;
  cycleModel(direction?: "forward" | "backward"): Promise<{ model: AgentModel } | undefined>;
  getAvailableThinkingLevels(): ClientThinkingLevel[];
  setThinkingLevel(level: ClientThinkingLevel): void;
@@ -440,8 +440,8 @@ class DefaultPiAgentSession implements PiAgentSession {
   return this.ompSession.getQueuedMessages().followUp;
  }
 
- async setModel(model: AgentModel): Promise<void> {
-  await this.ompSession.setModel(model);
+ async setModel(model: AgentModel, role = "default", options: { persist?: boolean } = {}): Promise<void> {
+  await this.ompSession.setModel(model, role, options);
  }
  setThinkingLevel(level: ClientThinkingLevel): void {
   const setLevel = Reflect.get(this.ompSession, "setThinkingLevel");
@@ -1245,7 +1245,7 @@ export class PiSessionService {
   return models.map(modelToClientModel);
  }
 
- async setModel(ref: PiSessionLookup, provider: string, modelId: string): Promise<ClientSessionStatus> {
+ async setModel(ref: PiSessionLookup, provider: string, modelId: string, options: { persist?: boolean; role?: string } = {}): Promise<ClientSessionStatus> {
   await this.assertWritable(ref);
   const session = await this.getOrOpen(ref);
   await session.modelRegistry.refresh();
@@ -1255,7 +1255,7 @@ export class PiSessionService {
   const model = candidates.find((candidate) => candidate.provider === provider && candidate.id === modelId)
    ?? session.modelRegistry.find(provider, modelId);
   if (model === undefined) throw new Error(`Model not found: ${provider}/${modelId}`);
-  await session.setModel(model);
+  await session.setModel(model, options.role ?? "default", options.persist === undefined ? {} : { persist: options.persist });
   this.publishActivity(session, `model: ${model.id}`, "idle", model.provider);
   this.publishStatus(session);
   return this.statusFromSession(session);

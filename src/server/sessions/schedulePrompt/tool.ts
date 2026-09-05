@@ -1,5 +1,5 @@
 import { isRecord } from "../../utils.js";
-import { Type } from "@oh-my-pi/pi-coding-agent/extensibility/typebox";
+import { Type } from "@sinclair/typebox";
 import type { ToolDefinition } from "@oh-my-pi/pi-coding-agent";
 import { nanoid } from "nanoid";
 import { CronScheduler } from "./scheduler.js";

@@ -205,7 +205,11 @@ export const sessionsApi = {
   messages: (session: SessionLookup, options?: { limit?: number; before?: number }, machineId = "local") => request(messageUrl(session, options, machineId), parseMessagePage),
   status: (session: SessionLookup, machineId = "local") => request(sessionQueryUrl(session, "status", machineId), parseSessionStatus),
   models: (session: SessionLookup, machineId = "local") => request(sessionQueryUrl(session, "models", machineId), parseModelSelectionResponse),
-  setModel: (session: SessionLookup, provider: string, modelId: string, machineId = "local") => request(sessionUrl(session, "model", machineId), parseSessionStatus, { method: "POST", body: sessionBody(session, { provider, modelId }) }),
+  setModel: (session: SessionLookup, provider: string, modelId: string, persistOrMachineId?: boolean | string, machineId?: string) => {
+    const persist = typeof persistOrMachineId === "boolean" ? persistOrMachineId : undefined;
+    const effectiveMachineId = typeof persistOrMachineId === "string" ? persistOrMachineId : (machineId ?? "local");
+    return request(sessionUrl(session, "model", effectiveMachineId), parseSessionStatus, { method: "POST", body: sessionBody(session, { provider, modelId, ...(persist ? { persist: true } : {}) }) });
+  },
   cycleModel: (session: SessionLookup, direction: "forward" | "backward", machineId = "local") => request(sessionUrl(session, "model/cycle", machineId), parseSessionStatus, { method: "POST", body: sessionBody(session, { direction }) }),
   thinkingLevels: (session: SessionLookup, machineId = "local") => request(sessionQueryUrl(session, "thinking-levels", machineId), parseThinkingLevelsResponse),
   setThinkingLevel: (session: SessionLookup, level: string, machineId = "local") => request(sessionUrl(session, "thinking-level", machineId), parseSessionStatus, { method: "POST", body: sessionBody(session, { level }) }),

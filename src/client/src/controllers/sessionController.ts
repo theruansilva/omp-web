@@ -647,11 +647,11 @@ export class SessionController {
     }
   }
 
-  async setModel(provider: string, modelId: string) {
+  async setModel(provider: string, modelId: string, persist?: boolean) {
     const session = this.getState().selectedSession;
     if (!session || session.archived === true) return;
     try {
-      this.applyStatus(await this.api.setModel(session, provider, modelId, selectedMachineId(this.getState())));
+      this.applyStatus(await this.api.setModel(session, provider, modelId, persist, selectedMachineId(this.getState())));
       await this.refreshAvailableThinkingLevels();
     } catch (error) {
       this.setState({ error: String(error) });

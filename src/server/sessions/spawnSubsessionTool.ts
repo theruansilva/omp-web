@@ -1,5 +1,5 @@
 import { isRecord } from "../utils.js";
-import { Type } from "@oh-my-pi/pi-coding-agent/extensibility/typebox";
+import { Type } from "@sinclair/typebox";
 import type { ExtensionContext, ToolDefinition } from "@oh-my-pi/pi-coding-agent";
 import type { AgentToolUpdateCallback } from "@oh-my-pi/pi-coding-agent/extensibility/extensions/types";
 import type { TranscriptContentKind, TranscriptEntry, TranscriptRole, TranscriptView } from "./subsessionTranscript.js";

@@ -14,6 +14,7 @@ function fakeModel(): Model {
   reasoning: false,
   input: ["text"],
   compat: undefined,
+  identity: { class: "unknown" },
   cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
   contextWindow: 1000,
   maxTokens: 100,

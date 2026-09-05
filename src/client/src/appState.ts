@@ -41,6 +41,7 @@ export interface AppState {
   workspaceDeletionRuns: Record<string, TerminalCommandRun>;
   commandDialog: Extract<CommandResult, { type: "select" }> | undefined;
   modelDialog: { title: string; options: CommandOption[]; selectedValue?: string } | undefined;
+  modelActionDialog: { title: string; options: CommandOption[]; selectedValue?: string } | undefined;
   thinkingDialog: { title: string; options: CommandOption[]; selectedValue?: string } | undefined;
   themeDialog: { title: string; options: CommandOption[]; selectedValue?: string } | undefined;
   authDialog: AuthDialogState | undefined;
@@ -147,6 +148,7 @@ export function initialAppState(): AppState {
     workspaceDeletionRuns: {},
     commandDialog: undefined,
     modelDialog: undefined,
+    modelActionDialog: undefined,
     thinkingDialog: undefined,
     themeDialog: undefined,
     authDialog: undefined,

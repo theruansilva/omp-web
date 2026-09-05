@@ -221,6 +221,34 @@ describe("session routes", () => {
       await routeApp.close();
     }
   });
+  it("forwards model selection payload including persist option to session service", async () => {
+    const routeApp = Fastify({ logger: false });
+    await routeApp.register(fastifyWebsocket);
+    const eventHub = new SessionEventHub();
+    const routeService = new CapturingRouteSessionService(eventHub);
+    registerSessionRoutes(routeApp, routeService, eventHub);
+
+    try {
+      const response = await routeApp.inject({
+        method: "POST",
+        url: "/sessions/session-1/model",
+        payload: { provider: "google-antigravity", modelId: "gemini-3.8-flash", persist: true },
+      });
+
+      expect(response.statusCode).toBe(200);
+      expect(routeService.setModelCalls).toEqual([
+        {
+          lookup: "session-1",
+          provider: "google-antigravity",
+          modelId: "gemini-3.8-flash",
+          options: { persist: true },
+        },
+      ]);
+    } finally {
+      await routeService.dispose();
+      await routeApp.close();
+    }
+  });
 });
 
 class CapturingRouteSessionService extends PiSessionService {
@@ -231,6 +259,7 @@ class CapturingRouteSessionService extends PiSessionService {
   readonly bulkArchiveCalls: SessionBulkMutationRef[][] = [];
   readonly bulkDeleteCalls: SessionBulkMutationRef[][] = [];
   reloadError: Error | undefined;
+  readonly setModelCalls: Array<{ lookup: string | PiSessionRef; provider: string; modelId: string; options?: { persist?: boolean; role?: string } }> = [];
 
   constructor(eventHub: SessionEventHub) {
     super(eventHub, { sessionManager: new RejectingSessionManager(), heartbeatIntervalMs: 60_000 });
@@ -262,6 +291,10 @@ class CapturingRouteSessionService extends PiSessionService {
     return Promise.resolve();
   }
 
+  override setModel(lookup: string | PiSessionRef, provider: string, modelId: string, options?: { persist?: boolean; role?: string }) {
+    this.setModelCalls.push({ lookup, provider, modelId, ...(options === undefined ? {} : { options }) });
+    return this.status(lookup);
+  }
   override status(lookup: string | PiSessionRef) {
     this.calls.push(lookup);
     return Promise.resolve({
