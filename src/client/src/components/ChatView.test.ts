@@ -89,4 +89,17 @@ describe("ChatView display preferences", () => {
     view.chatPreferences.showAgentStatus = true;
     expect(view.renderActivityDock()).not.toBeNull();
   });
+
+  it("does not render activity dock when agent is idle", () => {
+    const view = createTestChatView();
+    view.isSendingPrompt = false;
+    view.chatPreferences = {
+      showThinking: true,
+      showEvents: true,
+      showToolExecutions: true,
+      showAgentStatus: true,
+    };
+
+    expect(view.renderActivityDock()).toBeNull();
+  });
 });

@@ -275,7 +275,7 @@ export const chatStyles = css`
   .chat-wrap { position: relative; flex: 1 1 auto; min-height: 0; overflow: hidden; }
   .chat { height: 100%; min-height: 0; overflow: auto; overflow-anchor: none; padding: 26px 16px 64px; box-sizing: border-box; max-width: 800px; margin: 0 auto; width: 100%; }
   .scroll-marker { display: block; height: 0; overflow: hidden; pointer-events: none; }
-  .activity-dock { position: absolute; left: 16px; right: 16px; bottom: 12px; z-index: 20; display: flex; align-items: center; gap: 8px; min-width: 0; box-sizing: border-box; border: 1px solid var(--pi-border); border-radius: 999px; background: var(--pi-bg-overlay); color: var(--pi-muted); padding: 8px 12px; font-size: 13px; pointer-events: none; box-shadow: 0 8px 28px var(--pi-shadow); backdrop-filter: blur(6px); }
+  .activity-dock { position: absolute; left: 50%; transform: translateX(-50%); right: auto; bottom: 16px; z-index: 20; display: flex; align-items: center; gap: 8px; max-width: min(90%, 600px); box-sizing: border-box; border: 1px solid var(--pi-border); border-radius: 999px; background: var(--pi-surface); color: var(--pi-text); padding: 7px 14px; font-size: 13px; pointer-events: none; box-shadow: 0 4px 20px var(--pi-shadow); backdrop-filter: blur(8px); }
   .activity-dock.active { border-color: var(--pi-border); color: var(--pi-text); background: var(--pi-surface); }
   .activity-text { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; opacity: .45; flex: 0 0 auto; }
@@ -460,25 +460,32 @@ export const actionPaletteStyles = css`
 
 export const promptEditorStyles = css`
   :host { position: relative; z-index: 5; display: block; color: var(--pi-text); font: 14px system-ui, sans-serif; }
-  footer { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; padding: 12px; border-top: 1px solid var(--pi-border); }
-  footer.shell-mode { border-top-color: var(--pi-success); background: var(--pi-success-bg); }
+  footer { display: flex; justify-content: center; width: 100%; box-sizing: border-box; padding: 10px 24px 18px; border-top: 0; background: transparent; }
+  footer.shell-mode { border-top: 0; background: transparent; }
   .input-card {
     position: relative;
     display: flex;
     flex-direction: column;
+    width: 100%;
+    max-width: 800px;
+    margin: 0 auto;
     border: 1px solid var(--pi-border);
-    border-radius: 12px;
-    background: var(--pi-bg);
+    border-radius: 18px;
+    background: var(--pi-surface);
+    box-shadow: 0 4px 24px var(--pi-shadow-soft);
     overflow: hidden;
     transition: border-color 0.15s ease, box-shadow 0.15s ease;
   }
+  .input-card:hover {
+    border-color: var(--pi-border-hover, color-mix(in srgb, var(--pi-border) 85%, var(--pi-text)));
+  }
   .input-card:focus-within {
-    border-color: var(--pi-accent, var(--pi-border));
-    box-shadow: 0 0 0 1px var(--pi-accent-border, var(--pi-accent));
+    border-color: var(--pi-accent);
+    box-shadow: 0 4px 24px var(--pi-shadow-soft), 0 0 0 1px var(--pi-accent-border, var(--pi-accent));
   }
   .shell-mode .input-card {
     border-color: var(--pi-success);
-    box-shadow: 0 0 0 1px var(--pi-success-ring);
+    box-shadow: 0 4px 24px var(--pi-shadow-soft), 0 0 0 1px var(--pi-success-ring);
   }
   .agent-status-strip {
     display: flex;
@@ -611,7 +618,8 @@ export const promptEditorStyles = css`
   button { border: 1px solid var(--pi-border); border-radius: 8px; background: var(--pi-surface); color: var(--pi-text); padding: 7px 9px; cursor: pointer; }
   button:disabled, textarea:disabled, .markdown-editor-disabled .cm-editor { opacity: .5; cursor: not-allowed; }
   @media (max-width: 640px) {
-    footer { gap: 8px; padding: 8px; }
+    footer { padding: 6px 12px 12px; }
+    .input-card { border-radius: 14px; }
     .select-model { max-width: min(58vw, 220px); }
   }
   @media (max-width: 430px) {
