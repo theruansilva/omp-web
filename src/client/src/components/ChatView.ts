@@ -13,6 +13,12 @@ import "./ConversationMeter";
 import "./FormattedText";
 import "./ToolExecutionView";
 
+import {
+  CHAT_PREFERENCES_CHANGED_EVENT,
+  loadChatPreferences,
+  preferencesEventTarget,
+  type ChatPreferences,
+} from "../chatPreferences";
 const shortTimestampFormatter = new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
 const fullTimestampFormatter = new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "medium" });
 
@@ -94,6 +100,11 @@ export class ChatView extends LitElement {
   private restoreScrollFrame: number | undefined;
   private prependRestoreToken = 0;
   @state() private loadMoreRequested = false;
+  @state() private chatPreferences: ChatPreferences = loadChatPreferences();
+  private readonly handleChatPreferencesChanged = (event: Event): void => {
+    this.chatPreferences = (event as CustomEvent<ChatPreferences>).detail ?? loadChatPreferences();
+    this.requestUpdate();
+  };
   private readonly onViewportResize = () => {
     if (this.pinnedToBottom) this.scrollToBottom();
     else this.lastClientHeight = this.chat?.clientHeight ?? 0;
@@ -107,6 +118,7 @@ export class ChatView extends LitElement {
     window.addEventListener("resize", this.onViewportResize);
     window.addEventListener("pagehide", this.onPageHide);
     window.visualViewport?.addEventListener("resize", this.onViewportResize);
+    preferencesEventTarget()?.addEventListener(CHAT_PREFERENCES_CHANGED_EVENT, this.handleChatPreferencesChanged);
   }
 
   protected override firstUpdated(): void {
@@ -124,6 +136,7 @@ export class ChatView extends LitElement {
     window.removeEventListener("resize", this.onViewportResize);
     window.removeEventListener("pagehide", this.onPageHide);
     window.visualViewport?.removeEventListener("resize", this.onViewportResize);
+    preferencesEventTarget()?.removeEventListener(CHAT_PREFERENCES_CHANGED_EVENT, this.handleChatPreferencesChanged);
     super.disconnectedCallback();
   }
 
@@ -179,12 +192,19 @@ export class ChatView extends LitElement {
         <div class="chat" @scroll=${() => { this.onScroll(); }} @wheel=${(event: WheelEvent) => { this.onWheel(event); }} @touchstart=${(event: TouchEvent) => { this.onTouchStart(event); }} @touchmove=${(event: TouchEvent) => { this.onTouchMove(event); }}>
           ${this.renderHistoryBoundary()}
           ${repeat(
-            groups,
-            (group) => group.kind === "message" ? this.messageAnchorKey(group.index) : this.groupRenderKey(group.startIndex),
-            (group, index) => group.kind === "message"
-              ? this.renderMessage(group.message, group.index)
-              : this.renderMessageGroup(group.messages, group.startIndex, group.endIndex, this.isLiveTailGroup(groups, index)),
-          )}
+      groups,
+      (group) => group.kind === "message" ? this.messageAnchorKey(group.index) : this.groupRenderKey(group.startIndex),
+      (group, index) => {
+        if (group.kind === "group") {
+          return this.chatPreferences.showEvents
+            ? this.renderMessageGroup(group.messages, group.startIndex, group.endIndex, this.isLiveTailGroup(groups, index))
+            : null;
+        }
+        return this.isMessageVisible(group.message)
+          ? this.renderMessage(group.message, group.index)
+          : null;
+      },
+    )}
           ${this.renderQueuedMessages()}
           ${this.renderSessionActivity()}
         </div>
@@ -214,6 +234,7 @@ export class ChatView extends LitElement {
   }
 
   private renderActivityDock() {
+    if (!this.chatPreferences.showAgentStatus) return null;
     if (this.isSendingPrompt) {
       return html`
         <div class="activity-dock active" aria-live="polite">
@@ -358,6 +379,16 @@ export class ChatView extends LitElement {
   private isToolExecutionOnlyMessage(message: ChatLine): boolean {
     return message.role === "tool" && message.parts.length > 0 && message.parts.every((part) => part.type === "toolExecution");
   }
+  private isMessageVisible(message: ChatLine): boolean {
+    if (!message.parts.length) return true;
+    const allThinking = message.parts.every((part) => part.type === "thinking");
+    if (allThinking && !this.chatPreferences.showThinking) return false;
+    const allTools = message.parts.every((part) => part.type === "toolCall" || part.type === "toolExecution" || part.type === "toolResult");
+    if (allTools && !this.chatPreferences.showToolExecutions) return false;
+    if (message.role === "tool" && !this.chatPreferences.showToolExecutions) return false;
+    return true;
+  }
+
 
   private renderMessageGroup(messages: ChatLine[], startIndex: number, endIndex: number, defaultOpen: boolean) {
     const disclosureKey = this.groupDisclosureKey(startIndex, endIndex, defaultOpen);
@@ -371,14 +402,14 @@ export class ChatView extends LitElement {
         </summary>
         <div class="group-body">
           ${messages.map((message, offset) => {
-            const toolOnly = this.isToolExecutionOnlyMessage(message);
-            return html`
+      const toolOnly = this.isToolExecutionOnlyMessage(message);
+      return html`
               <section class=${toolOnly ? "group-msg tool-execution-shell" : `group-msg ${message.role}`} data-index=${startIndex + offset} data-scroll-anchor-id=${this.eventAnchorKey(startIndex + offset)}>
                 ${toolOnly ? null : this.renderMessageHeader(message, `${String(startIndex)}:${String(offset)}`)}
                 ${message.parts.map((part) => this.renderPart(part, message))}
               </section>
             `;
-          })}
+    })}
         </div>
       </details>
     `;
@@ -490,7 +521,10 @@ export class ChatView extends LitElement {
   private renderPart(part: ChatPart, message?: ChatLine) {
     if (part.type === "text" && message?.role === "bash") return html`<pre class="part shell-output">${part.text}</pre>`;
     if (part.type === "text") return html`<formatted-text class="part" .text=${part.text}></formatted-text>`;
-    if (part.type === "thinking") return html`<details class="part"><summary>thinking</summary><formatted-text .text=${part.text}></formatted-text></details>`;
+    if (part.type === "thinking") {
+      if (!this.chatPreferences.showThinking) return null;
+      return html`<details class="part thinking-block"><summary><span class="thinking-label">thinking</span></summary><formatted-text .text=${part.text}></formatted-text></details>`;
+    }
     if (part.type === "skillInvocation") return html`
       <details class="part skill-invocation">
         <summary><b>[skill]</b> ${part.name}</summary>
@@ -505,14 +539,23 @@ export class ChatView extends LitElement {
       </div>
     `;
     if (part.type === "image") return html`<img class="part chat-image" src=${`data:${part.mimeType};base64,${part.data}`} alt="attached image" loading="lazy" />`;
-    if (part.type === "toolCall") return html`<div class="part tool-line">▶ ${part.toolName}<span class="summary">${part.summary}</span></div>`;
-    if (part.type === "toolExecution") return html`<tool-execution-view class="part" .execution=${part}></tool-execution-view>`;
-    if (part.type === "toolResult") return html`
-      <details class="part" ?open=${part.isError}>
-        <summary>${part.isError ? "✖" : "✓"} ${part.toolName} result</summary>
-        <formatted-text .text=${part.text}></formatted-text>
-      </details>
-    `;
+    if (part.type === "toolCall") {
+      if (!this.chatPreferences.showToolExecutions) return null;
+      return html`<div class="part tool-line">▶ ${part.toolName}<span class="summary">${part.summary}</span></div>`;
+    }
+    if (part.type === "toolExecution") {
+      if (!this.chatPreferences.showToolExecutions) return null;
+      return html`<tool-execution-view class="part" .execution=${part}></tool-execution-view>`;
+    }
+    if (part.type === "toolResult") {
+      if (!this.chatPreferences.showToolExecutions) return null;
+      return html`
+        <details class="part" ?open=${part.isError}>
+          <summary>${part.isError ? "✖" : "✓"} ${part.toolName} result</summary>
+          <formatted-text .text=${part.text}></formatted-text>
+        </details>
+      `;
+    }
     return null;
   }
 

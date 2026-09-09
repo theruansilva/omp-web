@@ -14,6 +14,13 @@ import {
   type GatewayServerConfigDraft,
   type MachineAccessConfigDraft,
 } from "./settingsConfigDraft";
+import {
+  CHAT_PREFERENCES_CHANGED_EVENT,
+  loadChatPreferences,
+  preferencesEventTarget,
+  saveChatPreferences,
+  type ChatPreferences,
+} from "../../chatPreferences";
 
 function generalDescription(targetLabel: string): TemplateResult {
   return html`Gateway server fields edit this local gateway. File access and upload defaults edit ${targetLabel}.`;
@@ -38,6 +45,21 @@ export class SettingsGeneralPanel extends LitElement {
   @state() private machineDraft: MachineAccessConfigDraft = emptyMachineAccessConfigDraft();
   @state() private gatewayLocalError = "";
   @state() private machineLocalError = "";
+  @state() private chatPrefs: ChatPreferences = loadChatPreferences();
+  private readonly handleChatPrefsChange = (event: Event): void => {
+    this.chatPrefs = (event as CustomEvent<ChatPreferences>).detail ?? loadChatPreferences();
+  };
+
+  override connectedCallback(): void {
+    super.connectedCallback();
+    this.chatPrefs = loadChatPreferences();
+    preferencesEventTarget()?.addEventListener(CHAT_PREFERENCES_CHANGED_EVENT, this.handleChatPrefsChange);
+  }
+
+  override disconnectedCallback(): void {
+    preferencesEventTarget()?.removeEventListener(CHAT_PREFERENCES_CHANGED_EVENT, this.handleChatPrefsChange);
+    super.disconnectedCallback();
+  }
 
   protected override willUpdate(changed: PropertyValues<this>): void {
     if (changed.has("configResponse") && this.configResponse !== undefined) {
@@ -61,6 +83,7 @@ export class SettingsGeneralPanel extends LitElement {
         .onAction=${() => { this.reloadAll(); }}
       >
         <div class="settings-sections">
+          ${this.renderChatDisplaySettings()}
           ${this.renderGatewayServerSettings()}
           ${this.renderSelectedMachineAccessSettings()}
         </div>
@@ -123,6 +146,54 @@ export class SettingsGeneralPanel extends LitElement {
         `}
       </section>
     `;
+  }
+  private renderChatDisplaySettings(): TemplateResult {
+    return html`
+      <section class="settings-card" aria-label="Chat display settings">
+        <div class="card-heading">
+          <h3>Chat display</h3>
+          <p>Configure which elements are visible in the chat transcript and agent status.</p>
+        </div>
+        <div class="chat-display-options">
+          <label class="toggle-row">
+            <input type="checkbox" .checked=${this.chatPrefs.showThinking} @change=${(e: Event) => { this.updateChatPref("showThinking", e); }} />
+            <div class="toggle-copy">
+              <strong>Show thinking</strong>
+              <small>Display model reasoning and thinking blocks</small>
+            </div>
+          </label>
+          <label class="toggle-row">
+            <input type="checkbox" .checked=${this.chatPrefs.showEvents} @change=${(e: Event) => { this.updateChatPref("showEvents", e); }} />
+            <div class="toggle-copy">
+              <strong>Show events</strong>
+              <small>Display group event logs and session timeline</small>
+            </div>
+          </label>
+          <label class="toggle-row">
+            <input type="checkbox" .checked=${this.chatPrefs.showToolExecutions} @change=${(e: Event) => { this.updateChatPref("showToolExecutions", e); }} />
+            <div class="toggle-copy">
+              <strong>Show tool calls</strong>
+              <small>Display tool executions, inputs, diffs, and results</small>
+            </div>
+          </label>
+          <label class="toggle-row">
+            <input type="checkbox" .checked=${this.chatPrefs.showAgentStatus} @change=${(e: Event) => { this.updateChatPref("showAgentStatus", e); }} />
+            <div class="toggle-copy">
+              <strong>Show agent status</strong>
+              <small>Display the neutral agent activity indicator</small>
+            </div>
+          </label>
+        </div>
+      </section>
+    `;
+  }
+
+  private updateChatPref(key: keyof ChatPreferences, event: Event): void {
+    const input = event.target;
+    if (!(input instanceof HTMLInputElement)) return;
+    const next = { ...this.chatPrefs, [key]: input.checked };
+    this.chatPrefs = next;
+    saveChatPreferences(next);
   }
 
   private renderSelectedMachineAccessSettings(): TemplateResult {
@@ -285,6 +356,12 @@ export class SettingsGeneralPanel extends LitElement {
     .form-actions { display: flex; justify-content: flex-end; gap: 8px; padding-top: 2px; }
     .primary { border-color: var(--pi-accent); background: var(--pi-selection-bg); color: var(--pi-text-bright); }
 
+    .chat-display-options { display: grid; gap: 10px; }
+    .toggle-row { display: flex; align-items: flex-start; gap: 10px; cursor: pointer; }
+    .toggle-row input[type="checkbox"] { width: 18px; height: 18px; margin-top: 2px; accent-color: var(--pi-accent); flex: 0 0 auto; }
+    .toggle-copy { display: grid; gap: 2px; }
+    .toggle-copy strong { font-size: 13px; color: var(--pi-text); font-weight: 600; }
+    .toggle-copy small { color: var(--pi-muted); line-height: 1.35; }
     @media (max-width: 760px) {
       .effective-card dl > div { grid-template-columns: minmax(0, 1fr); gap: 3px; }
     }

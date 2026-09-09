@@ -52,6 +52,17 @@ describe("settings-general-panel copy", () => {
     ]);
     expect(values).toContain("Selected-machine failed");
   });
+  it("renders chat display settings card with toggles", () => {
+    const panel = new SettingsGeneralPanel();
+    const template = panel.render();
+    const strings = collectTemplateStrings(template).join("");
+
+    expect(strings).toContain("Chat display");
+    expect(strings).toContain("Show thinking");
+    expect(strings).toContain("Show events");
+    expect(strings).toContain("Show tool calls");
+    expect(strings).toContain("Show agent status");
+  });
 });
 
 describe("settings-general-panel save payloads", () => {
