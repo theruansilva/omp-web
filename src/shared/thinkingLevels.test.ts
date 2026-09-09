@@ -11,7 +11,6 @@ import { KNOWN_THINKING_LEVELS, isKnownThinkingLevel, thinkingGauge, thinkingLev
 // meta-level meaning "defer to parent", not a user-facing intensity.
 type Extra = Exclude<Exclude<ThinkingLevel, "inherit">, (typeof KNOWN_THINKING_LEVELS)[number]>;
 const _noUnknownLevels: Extra extends never ? true : never = true;
-void _noUnknownLevels;
 
 describe("thinkingLevels", () => {
   it("recognizes all known levels and rejects others", () => {

@@ -74,8 +74,7 @@ class FakeTerminals implements TerminalRouteService {
   readonly filters: TerminalCommandRunFilter[] = [];
   private readonly commandRuns = new Map<string, TerminalCommandRun>();
 
-  list(cwd: string): TerminalInfo[] {
-    void cwd;
+  list(_cwd: string): TerminalInfo[] {
     return [];
   }
 

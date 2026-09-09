@@ -23,9 +23,7 @@ class ScrollWhenSelectedDirective extends Directive {
     return undefined;
   }
 
-  override render(selected: boolean, key?: unknown) {
-    void selected;
-    void key;
+  override render(_selected: boolean, _key?: unknown) {
     return undefined;
   }
 }

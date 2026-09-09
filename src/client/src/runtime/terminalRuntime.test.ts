@@ -35,9 +35,7 @@ describe("terminal runtime", () => {
   it("starts commands with the assigned origin and opens the returned terminal when requested", async () => {
     const openTerminal = vi.fn();
     const api = {
-      runTerminalCommand: vi.fn((origin: string, input: RunTerminalCommandInput) => {
-        void origin;
-        void input;
+      runTerminalCommand: vi.fn((_origin: string, _input: RunTerminalCommandInput) => {
         return Promise.resolve(succeededRun);
       }),
       listCommandRuns: vi.fn(),

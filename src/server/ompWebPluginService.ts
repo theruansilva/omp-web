@@ -70,7 +70,7 @@ interface OmpWebPluginEntry {
 type ArraylessPluginRecord = Omit<PluginRecord, "source" | "scope">;
 
 export class DefaultPiPackageProvider implements PiPackageProvider {
-  // eslint-disable-next-line @typescript-eslint/no-useless-constructor, @typescript-eslint/no-unused-vars
+  // eslint-disable-next-line @typescript-eslint/no-useless-constructor
   constructor(_cwd?: string, _agentDir?: string) { /* no-op */ }
 
   listPackages(): ConfiguredPiPackage[] {
