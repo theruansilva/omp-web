@@ -18,6 +18,12 @@ import { promptEditorStyles, type CompletionItem } from "./shared";
 import { renderAttachIcon, renderSendIcon, renderQueueIcon, renderSteerIcon, renderStopIcon, renderThinkingGauge } from "./promptEditorIcons";
 import { thinkingGauge, thinkingLevelLabel } from "../../../shared/thinkingLevels";
 import "./AutocompleteMenu";
+import {
+  CHAT_PREFERENCES_CHANGED_EVENT,
+  loadChatPreferences,
+  preferencesEventTarget,
+  type ChatPreferences,
+} from "../chatPreferences";
 
 type PendingAttachment = CapturedAttachment & { id: string };
 
@@ -50,6 +56,12 @@ export class PromptEditor extends LitElement {
   // is reactive, since that is the only draft-derived value the template shows.
   private draft = "";
   @state() private currentInputMode: InputMode = { kind: "normal" };
+  @state() private hasContent = false;
+  @state() private chatPreferences: ChatPreferences = loadChatPreferences();
+  private readonly handleChatPreferencesChanged = (event: Event): void => {
+    this.chatPreferences = (event as CustomEvent<ChatPreferences>).detail ?? loadChatPreferences();
+    this.requestUpdate();
+  };
   @state() private completions: CompletionItem[] = [];
   @state() private selectedIndex = 0;
   @state() private attachments: PendingAttachment[] = [];
@@ -62,6 +74,12 @@ export class PromptEditor extends LitElement {
   private readonly readOnlyCompartment = new Compartment();
   private readonly mobilePromptEnterMedia = createMobilePromptEnterMedia();
   private explicitShiftKeyActive = false;
+  override connectedCallback(): void {
+    super.connectedCallback();
+    this.chatPreferences = loadChatPreferences();
+    preferencesEventTarget()?.addEventListener(CHAT_PREFERENCES_CHANGED_EVENT, this.handleChatPreferencesChanged);
+  }
+
 
   protected override willUpdate(changed: PropertyValues<this>) {
     if (!changed.has("sessionId") && !changed.has("machineId")) return;
@@ -74,6 +92,7 @@ export class PromptEditor extends LitElement {
     this.currentInputMode = inputModeForDraft(this.draft);
     this.completions = [];
     this.selectedIndex = 0;
+    this.hasContent = this.draft.trim().length > 0 || this.attachments.length > 0;
   }
 
   protected override shouldUpdate(changed: PropertyValues<this>): boolean {
@@ -97,32 +116,39 @@ export class PromptEditor extends LitElement {
   }
 
   override disconnectedCallback(): void {
+    preferencesEventTarget()?.removeEventListener(CHAT_PREFERENCES_CHANGED_EVENT, this.handleChatPreferencesChanged);
     this.editor?.destroy();
     this.editor = undefined;
     super.disconnectedCallback();
   }
-
   override render() {
     const shellInputMode = this.currentInputMode.kind === "shell" ? this.currentInputMode : undefined;
     const shellMode = shellInputMode !== undefined;
-    const queuesInput = this.canSteer || this.isCompacting;
     const busy = this.disabled || this.sending;
     return html`
       <footer class=${shellMode ? "shell-mode" : ""} @paste=${(event: ClipboardEvent) => { void this.handlePaste(event); }} @dragover=${(event: DragEvent) => { this.handleDragOver(event); }} @drop=${(event: DragEvent) => { void this.handleDrop(event); }}>
-        <div class="editor-wrap">
-          <div class=${`markdown-editor${this.disabled ? " markdown-editor-disabled" : ""}`} aria-label="Message pi" aria-disabled=${this.disabled ? "true" : "false"}></div>
-          <input class="attachment-input" type="file" multiple hidden @change=${(event: Event) => { void this.handleFileInput(event); }} />
-          <button class="editor-attach icon-button" ?disabled=${busy} title="Attach files" aria-label="Attach files" @click=${() => { this.attachmentInput?.click(); }}>${renderAttachIcon()}</button>
+        <div class="input-card">
+          ${this.renderAgentStatusStrip()}
           ${shellMode ? html`<div class="mode-hint">Shell command${shellInputMode.excludeFromContext ? " · excluded from context" : ""}</div>` : null}
           ${this.isCompacting && !shellMode ? html`<div class="mode-hint">Compacting history · message will be queued</div>` : null}
+          <div class="editor-wrap">
+            <div class=${`markdown-editor${this.disabled ? " markdown-editor-disabled" : ""}`} aria-label="Message pi" aria-disabled=${this.disabled ? "true" : "false"}></div>
+            <autocomplete-menu .items=${this.completions} .selectedIndex=${this.selectedIndex} .onPick=${(item: CompletionItem) => { this.pick(item); }}></autocomplete-menu>
+          </div>
           ${this.renderAttachments()}
-          <autocomplete-menu .items=${this.completions} .selectedIndex=${this.selectedIndex} .onPick=${(item: CompletionItem) => { this.pick(item); }}></autocomplete-menu>
-        </div>
-        <div class="actions">
-          ${this.renderCompactStatus()}
-          <button class="icon-button send-button" ?disabled=${busy} title=${queuesInput ? "Queue until the current activity finishes" : "Send message"} aria-label=${queuesInput ? "Queue message" : "Send message"} @click=${() => { this.send("followUp"); }}>${queuesInput ? renderQueueIcon() : renderSendIcon()}</button>
-          ${this.canSteer && !this.isCompacting ? html`<button class="icon-button steer-button" ?disabled=${busy} title="Steer the current response before the next model call" aria-label="Steer current response" @click=${() => { this.send("steer"); }}>${renderSteerIcon()}</button>` : null}
-          <button class="icon-button stop-button" ?disabled=${this.disabled || !this.canStop} title=${this.canStop ? "Stop current work and clear queued messages" : "Nothing running"} aria-label="Stop current work" @click=${() => this.onStop?.()}>${renderStopIcon()}</button>
+          <div class="input-toolbar">
+            <div class="toolbar-left">
+              <input class="attachment-input" type="file" multiple hidden @change=${(event: Event) => { void this.handleFileInput(event); }} />
+              <button class="icon-button attach-button" ?disabled=${busy} title="Attach files" aria-label="Attach files" @click=${() => { this.attachmentInput?.click(); }}>${renderAttachIcon()}</button>
+              ${this.renderCompactStatus()}
+            </div>
+            <div class="toolbar-right">
+              ${this.canSteer && !this.isCompacting && this.hasContent ? html`
+                <button class="icon-button steer-button" ?disabled=${busy} title="Steer the current response before the next model call" aria-label="Steer current response" @click=${() => { this.send("steer"); }}>${renderSteerIcon()}</button>
+              ` : null}
+              ${this.renderActionButton()}
+            </div>
+          </div>
         </div>
       </footer>
     `;
@@ -137,6 +163,82 @@ export class PromptEditor extends LitElement {
     return this.editor;
   }
 
+  private isAgentWorking(): boolean {
+    return this.canStop || this.status?.isStreaming === true || this.status?.isBashRunning === true || this.status?.isCompacting === true;
+  }
+
+  private renderAgentStatusStrip() {
+    if (!this.chatPreferences.showAgentStatus || !this.isAgentWorking()) return null;
+    const text = this.status?.isCompacting
+      ? "Compacting history..."
+      : (this.status?.isBashRunning ? "Running command..." : "Processing...");
+    return html`
+      <div class="agent-status-strip" aria-live="polite">
+        <span class="status-spinner" aria-hidden="true"></span>
+        <span class="status-text">${text}</span>
+      </div>
+    `;
+  }
+
+  private renderActionButton() {
+    const isWorking = this.isAgentWorking();
+    const hasContent = this.hasContent;
+    const busy = this.disabled || this.sending;
+
+    if (isWorking && hasContent) {
+      return html`
+        <button
+          class="icon-button action-button enqueue-button"
+          ?disabled=${busy}
+          title="Queue message (agent is working)"
+          aria-label="Queue message"
+          @click=${() => { this.send("followUp"); }}
+        >
+          ${renderQueueIcon()}
+        </button>
+      `;
+    }
+
+    if (isWorking && !hasContent) {
+      return html`
+        <button
+          class="icon-button action-button stop-button"
+          ?disabled=${this.disabled || !this.canStop}
+          title="Stop current work"
+          aria-label="Stop current work"
+          @click=${() => { this.onStop?.(); }}
+        >
+          ${renderStopIcon()}
+        </button>
+      `;
+    }
+
+    if (!isWorking && !hasContent) {
+      return html`
+        <button
+          class="icon-button action-button send-button"
+          disabled
+          title="Type a message to send"
+          aria-label="Send message (empty input)"
+        >
+          ${renderSendIcon()}
+        </button>
+      `;
+    }
+
+    return html`
+      <button
+        class="icon-button action-button send-button"
+        ?disabled=${busy}
+        title="Send message"
+        aria-label="Send message"
+        @click=${() => { this.send(); }}
+      >
+        ${renderSendIcon()}
+      </button>
+    `;
+  }
+
   private renderCompactStatus() {
     const status = this.status;
     if (status === undefined) return null;
@@ -144,8 +246,13 @@ export class PromptEditor extends LitElement {
     const provider = status.model?.provider !== undefined && status.model.provider !== "" ? `${status.model.provider}/` : "";
     return html`
       <div class="compact-status" aria-label="Session status">
-        <button class="select-model" title="Select model" @click=${() => this.onSelectModel?.()}>${provider}${model}</button>
-        <button class="select-thinking icon-button" title=${`Thinking level: ${thinkingLevelLabel(status.thinkingLevel)}`} aria-label=${`Thinking level: ${thinkingLevelLabel(status.thinkingLevel)}`} @click=${() => this.onSelectThinking?.()}>${renderThinkingGauge(thinkingGauge(status.thinkingLevel, this.availableThinkingLevels))}</button>
+        <button class="select-model" title="Select model" @click=${() => this.onSelectModel?.()}>
+          <span class="model-name">${provider}${model}</span>
+          <span class="model-chevron" aria-hidden="true">▾</span>
+        </button>
+        ${this.availableThinkingLevels.length > 0 ? html`
+          <button class="select-thinking icon-button" title=${`Thinking level: ${thinkingLevelLabel(status.thinkingLevel)}`} aria-label=${`Thinking level: ${thinkingLevelLabel(status.thinkingLevel)}`} @click=${() => this.onSelectThinking?.()}>${renderThinkingGauge(thinkingGauge(status.thinkingLevel, this.availableThinkingLevels))}</button>
+        ` : null}
       </div>
     `;
   }
@@ -198,8 +305,8 @@ export class PromptEditor extends LitElement {
 
   private removeAttachment(id: string) {
     this.attachments = this.attachments.filter((attachment) => attachment.id !== id);
+    this.hasContent = this.draft.trim().length > 0 || this.attachments.length > 0;
   }
-
   private async handlePaste(event: ClipboardEvent) {
     const files = filesFromDataTransfer(event.clipboardData);
     if (files.length === 0) return;
@@ -232,6 +339,7 @@ export class PromptEditor extends LitElement {
     if (attachments.length > 0) {
       this.attachments = [...this.attachments, ...attachments.map((attachment) => ({ id: `attachment-${String(++this.attachmentSeq)}`, ...attachment }))];
     }
+    this.hasContent = true;
     if (error !== undefined) this.attachmentError = error;
   }
 
@@ -261,7 +369,7 @@ export class PromptEditor extends LitElement {
             keyup: (event) => this.handleEditorKeyUp(event),
             blur: () => this.resetEditorModifierState(),
           }),
-          placeholder("Message pi... Use / for commands, @ for tracked files, @ space for all files"),
+          placeholder("Message Oh My Pi... Use / for commands, @ for files, ↑/↓ for history"),
           this.editableCompartment.of(EditorView.editable.of(!this.disabled)),
           this.readOnlyCompartment.of(EditorState.readOnly.of(this.disabled)),
           EditorView.updateListener.of((update) => {
@@ -309,6 +417,8 @@ export class PromptEditor extends LitElement {
     if (key !== undefined) saveDraft(key, this.draft);
     const nextInputMode = inputModeForDraft(this.draft);
     if (!inputModesEqual(nextInputMode, this.currentInputMode)) this.currentInputMode = nextInputMode;
+    const nextHasContent = this.draft.trim().length > 0 || this.attachments.length > 0;
+    if (nextHasContent !== this.hasContent) this.hasContent = nextHasContent;
     void this.refreshCompletions();
   }
 
@@ -460,6 +570,7 @@ export class PromptEditor extends LitElement {
     this.attachments = [];
     this.attachmentError = undefined;
     // `draft` is not reactive, so the cleared text will not flow to CodeMirror
+    this.hasContent = false;
     // via `updated()`; push it to the editor document explicitly.
     this.syncEditorDoc();
   }
@@ -477,9 +588,11 @@ function sessionStatusRenderEqual(a: SessionStatus | undefined, b: SessionStatus
   if (a === undefined || b === undefined) return false;
   return a.model?.id === b.model?.id
     && a.model?.provider === b.model?.provider
-    && a.thinkingLevel === b.thinkingLevel;
+    && a.thinkingLevel === b.thinkingLevel
+    && a.isStreaming === b.isStreaming
+    && a.isCompacting === b.isCompacting
+    && a.isBashRunning === b.isBashRunning;
 }
-
 function draftStorageKey(machineId: unknown, sessionId: unknown): string | undefined {
   if (typeof machineId !== "string" || machineId === "") return undefined;
   if (typeof sessionId !== "string" || sessionId === "") return undefined;
