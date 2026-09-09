@@ -104,6 +104,10 @@ export class OmpWebApp extends LitElement {
   @state() private chatPreferences: ChatPreferences = loadChatPreferences();
   private readonly handleChatPreferencesChanged = (event: Event): void => {
     this.chatPreferences = (event as CustomEvent<ChatPreferences>).detail ?? loadChatPreferences();
+    if (this.chatPreferences.hideWorkspaces && this.state.workspaces.length > 0 && this.state.selectedWorkspace?.id !== this.state.workspaces[0]?.id) {
+      const first = this.state.workspaces[0];
+      if (first) void this.workspaces.selectWorkspace(first);
+    }
     this.requestUpdate();
   };
   @query("app-navigation-panel") private navigationPanel?: AppNavigationPanel;
@@ -1146,6 +1150,7 @@ export class OmpWebApp extends LitElement {
         .compact=${this.appShell.isMobileNavigationLayout}
         .projectsCollapsed=${this.navigationSections.isCollapsed("projects")}
         .workspacesCollapsed=${this.navigationSections.isCollapsed("workspaces")}
+        .hideWorkspaces=${this.chatPreferences.hideWorkspaces}
         .sessionsCollapsed=${this.navigationSections.isCollapsed("sessions")}
         .workspaceLabelItems=${(workspace: Workspace) => this.workspaceLabelItems(workspace)}
         .refreshControl=${this.appShell.shouldShowAppRefreshInHeader() ? this.renderAppRefresh() : undefined}
@@ -1929,6 +1934,63 @@ export class OmpWebApp extends LitElement {
   private readonly handleSelectThinking = (): void => {
     void this.openThinkingDialog();
   };
+  private shellTouchStartX = 0;
+  private shellTouchStartY = 0;
+  private shellTouchCurrentX = 0;
+  private shellTouchCurrentY = 0;
+  private shellTouchStartTime = 0;
+  private shellTouchIgnored = false;
+
+  private handleShellTouchStart(event: TouchEvent): void {
+    if (!this.appShell.isMobileNavigationLayout) {
+      this.shellTouchIgnored = true;
+      return;
+    }
+    const target = event.target;
+    if (typeof HTMLElement !== "undefined" && target instanceof HTMLElement && target.closest("input, textarea, select, button, a, .cm-editor, .xterm, app-mobile-main-tabs, .mobile-tabs")) {
+      this.shellTouchIgnored = true;
+      return;
+    }
+    const touch = event.touches[0];
+    if (!touch) {
+      this.shellTouchIgnored = true;
+      return;
+    }
+    this.shellTouchIgnored = false;
+    this.shellTouchStartX = touch.clientX;
+    this.shellTouchStartY = touch.clientY;
+    this.shellTouchCurrentX = touch.clientX;
+    this.shellTouchCurrentY = touch.clientY;
+    this.shellTouchStartTime = Date.now();
+  }
+
+  private handleShellTouchMove(event: TouchEvent): void {
+    if (this.shellTouchIgnored) return;
+    const touch = event.touches[0];
+    if (!touch) return;
+    this.shellTouchCurrentX = touch.clientX;
+    this.shellTouchCurrentY = touch.clientY;
+  }
+
+  private handleShellTouchEnd(): void {
+    if (this.shellTouchIgnored) return;
+    if (!this.appShell.isMobileNavigationLayout) return;
+    const deltaX = this.shellTouchCurrentX - this.shellTouchStartX;
+    const deltaY = this.shellTouchCurrentY - this.shellTouchStartY;
+    const elapsed = Date.now() - this.shellTouchStartTime;
+    if (elapsed < 500 && Math.abs(deltaX) > 50 && Math.abs(deltaX) > Math.abs(deltaY) * 1.4) {
+      if (deltaX < -50) {
+        if (this.state.mainView !== "navigation") {
+          this.selectMainView("navigation");
+        }
+      } else if (deltaX > 50) {
+        if (this.state.mainView === "navigation") {
+          this.selectMainView("chat");
+        }
+      }
+    }
+    this.shellTouchIgnored = true;
+  }
 
   private renderContextBar() {
     if (!this.appShell.isMobileNavigationLayout) return null;
@@ -1949,6 +2011,7 @@ export class OmpWebApp extends LitElement {
   private renderMobileMainTabs() {
     return html`
       <app-mobile-main-tabs
+        ?bottom=${this.chatPreferences.bottomMobileNav === true}
         .tabs=${this.mobileMainTabs()}
         .selectedView=${this.state.mainView}
         .onSelect=${(view: AppState["mainView"]) => { this.selectMainView(view); }}
@@ -1979,7 +2042,14 @@ export class OmpWebApp extends LitElement {
   override render() {
     const state = this.state;
     return html`
-      <div class=${this.panelCollapse.shellClass(state.mainView)} style=${this.panelResize.shellStyle({ navigation: this.resizablePanelConstraints("navigation"), workspace: this.resizablePanelConstraints("workspace") })}>
+      <div
+        class=${this.panelCollapse.shellClass(state.mainView, this.chatPreferences.bottomMobileNav === true)}
+        style=${this.panelResize.shellStyle({ navigation: this.resizablePanelConstraints("navigation"), workspace: this.resizablePanelConstraints("workspace") })}
+        @touchstart=${(event: TouchEvent) => { this.handleShellTouchStart(event); }}
+        @touchmove=${(event: TouchEvent) => { this.handleShellTouchMove(event); }}
+        @touchend=${() => { this.handleShellTouchEnd(); }}
+        @touchcancel=${() => { this.handleShellTouchEnd(); }}
+      >
         <aside id="navigation-panel">${this.appShell.isMobileNavigationLayout ? null : this.renderNavigationPanel()}</aside>
         ${this.renderNavigationPanelEdgeControl()}
         <main class=${mainViewClass(state.mainView)}>

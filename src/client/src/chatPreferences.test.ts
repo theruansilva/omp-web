@@ -45,6 +45,8 @@ describe("chatPreferences", () => {
       showToolExecutions: true,
       showAgentStatus: false,
       showStatusBar: true,
+      hideWorkspaces: true,
+      bottomMobileNav: true,
     };
     saveChatPreferences(custom);
     expect(loadChatPreferences()).toEqual(custom);
@@ -58,6 +60,8 @@ describe("chatPreferences", () => {
     expect(loaded.showToolExecutions).toBe(true);
     expect(loaded.showAgentStatus).toBe(true);
     expect(loaded.showStatusBar).toBe(false);
+    expect(loaded.hideWorkspaces).toBe(false);
+    expect(loaded.bottomMobileNav).toBe(false);
   });
 
   it("dispatches custom event on save", () => {
@@ -73,6 +77,8 @@ describe("chatPreferences", () => {
       showToolExecutions: false,
       showAgentStatus: true,
       showStatusBar: true,
+      hideWorkspaces: true,
+      bottomMobileNav: true,
     };
     saveChatPreferences(next);
     testTarget.removeEventListener(CHAT_PREFERENCES_CHANGED_EVENT, handler);

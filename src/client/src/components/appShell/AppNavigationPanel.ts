@@ -39,6 +39,7 @@ export class AppNavigationPanel extends LitElement {
   @property({ type: Boolean }) projectsCollapsed = false;
   @property({ type: Boolean }) workspacesCollapsed = false;
   @property({ type: Boolean }) sessionsCollapsed = false;
+  @property({ type: Boolean }) hideWorkspaces = false;
   @property({ type: Number }) startingSessionCount = 0;
   @property({ type: Boolean }) canStartSession = false;
   @property({ type: Boolean }) canDeleteArchivedSessions = false;
@@ -84,7 +85,7 @@ export class AppNavigationPanel extends LitElement {
     switch (section) {
       case "machines": return await this.focusNavigableSection(this.compact ? this.machineList : this.machineSwitcher);
       case "projects": return await this.focusNavigableSection(this.projectList);
-      case "workspaces": return await this.focusNavigableSection(this.workspaceList);
+      case "workspaces": return this.hideWorkspaces ? await this.focusNavigableSection(this.sessionList) : await this.focusNavigableSection(this.workspaceList);
       case "sessions": return await this.focusNavigableSection(this.sessionList);
     }
   }
@@ -136,24 +137,26 @@ export class AppNavigationPanel extends LitElement {
         .onSelect=${(project: Project) => this.onSelectProject?.(project)}
         .onClose=${(project: Project) => this.onCloseProject?.(project)}
         .onFocusPreviousSection=${() => { this.focusPreviousFrom("projects"); }}
-        .onFocusNextSection=${() => { this.focusNextFrom("projects"); }}
+        .onFocusNextSection=${() => { if (this.hideWorkspaces) this.focusNextFrom("workspaces"); else this.focusNextFrom("projects"); }}
         .onCancelKeyboardNavigation=${() => { this.cancelKeyboardNavigation(); }}
       ></project-list>
-      <workspace-list
-        .workspaces=${this.workspaces}
-        .selected=${this.selectedWorkspace}
-        .activities=${this.workspaceActivities}
-        .deletingWorkspaceIds=${this.deletingWorkspaceIds}
-        .collapsible=${this.collapsible}
-        .collapsed=${this.workspacesCollapsed}
-        .workspaceLabelItems=${this.workspaceLabelItems}
-        .onToggleCollapsed=${() => { this.onToggleWorkspaces?.(); }}
-        .onSelect=${(workspace: Workspace) => this.onSelectWorkspace?.(workspace)}
-        .onDelete=${(workspace: Workspace) => this.onDeleteWorkspace?.(workspace)}
-        .onFocusPreviousSection=${() => { this.focusPreviousFrom("workspaces"); }}
-        .onFocusNextSection=${() => { this.focusNextFrom("workspaces"); }}
-        .onCancelKeyboardNavigation=${() => { this.cancelKeyboardNavigation(); }}
-      ></workspace-list>
+      ${this.hideWorkspaces ? null : html`
+        <workspace-list
+          .workspaces=${this.workspaces}
+          .selected=${this.selectedWorkspace}
+          .activities=${this.workspaceActivities}
+          .deletingWorkspaceIds=${this.deletingWorkspaceIds}
+          .collapsible=${this.collapsible}
+          .collapsed=${this.workspacesCollapsed}
+          .workspaceLabelItems=${this.workspaceLabelItems}
+          .onToggleCollapsed=${() => { this.onToggleWorkspaces?.(); }}
+          .onSelect=${(workspace: Workspace) => this.onSelectWorkspace?.(workspace)}
+          .onDelete=${(workspace: Workspace) => this.onDeleteWorkspace?.(workspace)}
+          .onFocusPreviousSection=${() => { this.focusPreviousFrom("workspaces"); }}
+          .onFocusNextSection=${() => { this.focusNextFrom("workspaces"); }}
+          .onCancelKeyboardNavigation=${() => { this.cancelKeyboardNavigation(); }}
+        ></workspace-list>
+      `}
       <session-list
         .sessions=${this.sessions}
         .statuses=${this.sessionStatuses}
@@ -183,7 +186,7 @@ export class AppNavigationPanel extends LitElement {
         .onDetachParent=${(session: SessionInfo) => this.onDetachParentSession?.(session)}
         .onReload=${(session: SessionInfo) => this.onReloadSession?.(session)}
         .onCleanup=${() => this.onCleanupSessions?.()}
-        .onFocusPreviousSection=${() => { this.focusPreviousFrom("sessions"); }}
+        .onFocusPreviousSection=${() => { if (this.hideWorkspaces) this.focusPreviousFrom("workspaces"); else this.focusPreviousFrom("sessions"); }}
         .onFocusNextSection=${() => { this.focusNextFrom("sessions"); }}
         .onCancelKeyboardNavigation=${() => { this.cancelKeyboardNavigation(); }}
       ></session-list>

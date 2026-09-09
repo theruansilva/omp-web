@@ -190,6 +190,20 @@ export class SettingsGeneralPanel extends LitElement {
               <small>Display the bottom bar with tokens, context usage, and cost</small>
             </div>
           </label>
+          <label class="toggle-row">
+            <input type="checkbox" .checked=${this.chatPrefs.hideWorkspaces} @change=${(e: Event) => { this.updateChatPref("hideWorkspaces", e); }} />
+            <div class="toggle-copy">
+              <strong>Hide workspaces</strong>
+              <small>Hide the workspaces section in the sidebar and automatically select the first workspace</small>
+            </div>
+          </label>
+          <label class="toggle-row">
+            <input type="checkbox" .checked=${this.chatPrefs.bottomMobileNav} @change=${(e: Event) => { this.updateChatPref("bottomMobileNav", e); }} />
+            <div class="toggle-copy">
+              <strong>Bottom navigation on mobile</strong>
+              <small>Place the tabs bar (Menu, Chat, Files, etc.) at the bottom on mobile devices</small>
+            </div>
+          </label>
         </div>
       </section>
     `;

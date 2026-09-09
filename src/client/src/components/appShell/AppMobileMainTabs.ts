@@ -19,6 +19,7 @@ export class AppMobileMainTabs extends LitElement {
   @property({ attribute: false }) tabs: AppMobileMainTab[] = [];
   @property({ attribute: false }) selectedView: AppState["mainView"] = "chat";
   @property({ attribute: false }) onSelect?: (view: AppState["mainView"]) => void;
+  @property({ type: Boolean, reflect: true }) bottom = false;
   @query(".mobile-tabs") private mobileTabs?: HTMLElement | null;
   @state() private canScrollLeft = false;
   @state() private canScrollRight = false;
@@ -48,15 +49,15 @@ export class AppMobileMainTabs extends LitElement {
       <div class=${this.frameClass()}>
         <div class="mobile-tabs" @scroll=${this.onMobileTabsScroll}>
           ${this.tabs.map((tab) => {
-            const selected = this.selectedView === tab.id;
-            return html`
+      const selected = this.selectedView === tab.id;
+      return html`
               <button class=${this.tabClass(tab)} title=${tab.label} aria-label=${this.tabAriaLabel(tab)} aria-pressed=${String(selected)} @click=${() => { this.onSelect?.(tab.id); }}>
                 ${this.renderTabMark(tab, fallbackLabels)}
                 <span class="tab-label">${tab.label}</span>
                 ${this.isEmptyBadge(tab.badge) ? null : html`<span class="tab-badge">${tab.badge}</span>`}
               </button>
             `;
-          })}
+    })}
         </div>
       </div>
     `;
@@ -150,6 +151,7 @@ export class AppMobileMainTabs extends LitElement {
   static override styles = css`
     :host { flex: 0 0 auto; min-width: 0; }
     .mobile-tabs-frame { position: relative; display: flex; flex: 0 0 auto; min-width: 0; border-bottom: 1px solid var(--pi-border); background: var(--pi-bg); }
+    :host([bottom]) .mobile-tabs-frame { border-bottom: 0; border-top: 1px solid var(--pi-border); padding-bottom: max(0px, env(safe-area-inset-bottom)); }
     .mobile-tabs-frame::before, .mobile-tabs-frame::after { content: ""; position: absolute; top: 0; bottom: 0; z-index: 2; width: 20px; opacity: 0; pointer-events: none; transition: opacity .15s ease; }
     .mobile-tabs-frame::before { left: 0; background: linear-gradient(90deg, color-mix(in srgb, var(--pi-shadow-strong) 55%, transparent) 0%, transparent 100%); }
     .mobile-tabs-frame::after { right: 0; background: linear-gradient(270deg, color-mix(in srgb, var(--pi-shadow-strong) 55%, transparent) 0%, transparent 100%); }
