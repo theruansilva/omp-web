@@ -183,6 +183,13 @@ export class SettingsGeneralPanel extends LitElement {
               <small>Display the neutral agent activity indicator</small>
             </div>
           </label>
+          <label class="toggle-row">
+            <input type="checkbox" .checked=${this.chatPrefs.showStatusBar} @change=${(e: Event) => { this.updateChatPref("showStatusBar", e); }} />
+            <div class="toggle-copy">
+              <strong>Show status bar</strong>
+              <small>Display the bottom bar with tokens, context usage, and cost</small>
+            </div>
+          </label>
         </div>
       </section>
     `;

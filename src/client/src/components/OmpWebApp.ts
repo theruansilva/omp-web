@@ -45,6 +45,12 @@ import "./SessionList";
 import "./SessionCleanupDialog";
 import "./ChatView";
 import type { ChatView } from "./ChatView";
+import {
+  CHAT_PREFERENCES_CHANGED_EVENT,
+  loadChatPreferences,
+  preferencesEventTarget,
+  type ChatPreferences,
+} from "../chatPreferences";
 import "./PromptEditor";
 import type { PromptEditor } from "./PromptEditor";
 import "./StatusBar";
@@ -94,6 +100,11 @@ export class OmpWebApp extends LitElement {
   @state() private state: AppState = initialAppState();
   @query("chat-view") private chatView?: ChatView;
   @query("prompt-editor") private promptEditor?: PromptEditor;
+  @state() private chatPreferences: ChatPreferences = loadChatPreferences();
+  private readonly handleChatPreferencesChanged = (event: Event): void => {
+    this.chatPreferences = (event as CustomEvent<ChatPreferences>).detail ?? loadChatPreferences();
+    this.requestUpdate();
+  };
   @query("app-navigation-panel") private navigationPanel?: AppNavigationPanel;
   @query("#navigation-panel") private navigationPanelFrame?: HTMLElement;
   @query("#workspace-panel") private workspacePanelFrame?: HTMLElement;
@@ -230,6 +241,8 @@ export class OmpWebApp extends LitElement {
 
   override connectedCallback(): void {
     super.connectedCallback();
+    this.chatPreferences = loadChatPreferences();
+    preferencesEventTarget()?.addEventListener(CHAT_PREFERENCES_CHANGED_EVENT, this.handleChatPreferencesChanged);
     window.addEventListener("popstate", this.onPopState);
     window.addEventListener("pageshow", this.onPageShow);
     window.addEventListener("focus", this.onFocus);
@@ -252,6 +265,7 @@ export class OmpWebApp extends LitElement {
     document.removeEventListener("visibilitychange", this.onVisibilityChange);
     window.removeEventListener("keydown", this.onKeyDown, GLOBAL_SHORTCUT_LISTENER_OPTIONS);
     this.systemLightThemeMedia?.removeEventListener("change", this.onSystemLightThemeChange);
+    preferencesEventTarget()?.removeEventListener(CHAT_PREFERENCES_CHANGED_EVENT, this.handleChatPreferencesChanged);
     this.keyboard.reset();
     this.auth.dispose();
     this.sessions.dispose();
@@ -602,7 +616,7 @@ export class OmpWebApp extends LitElement {
     await nextFrame();
     if (!shouldComplete()) return;
     this.chatView?.restoreScrollPosition();
-    if (this.shouldAutoFocusPrompt()) this.promptEditor?.focusInput();
+    this.chatView?.focusConversation();
   }
 
   private shouldAutoFocusPrompt(): boolean {
@@ -1955,7 +1969,7 @@ export class OmpWebApp extends LitElement {
           ${state.selectedSession ? html`
             <chat-view .sessionId=${state.selectedSession.id} .messages=${state.messages} .messageStart=${state.messagePageStart} .messageEnd=${state.messagePageEnd} .messageTotal=${state.messagePageTotal} .hasMore=${state.messagePageStart > 0} .loadingMore=${state.isLoadingEarlierMessages} .isReceivingPartialStream=${state.isReceivingPartialStream} .isSendingPrompt=${state.sendingPrompts[state.selectedSession.id] === true} .isCompacting=${state.status?.isCompacting === true} .pendingMessageCount=${state.status?.pendingMessageCount ?? 0} .clientQueuedMessages=${state.clientQueuedSessionMessages[state.selectedSession.id] ?? []} .status=${state.status} .activity=${state.activity} .onLoadMore=${() => this.withChatPrependTransition(() => this.sessions.loadEarlierMessages())}></chat-view>
             <prompt-editor .sessionId=${state.selectedSession.id} .cwd=${state.selectedWorkspace?.path} .machineId=${selectedMachineId(state)} .projectId=${state.selectedWorkspace?.projectId} .workspaceId=${state.selectedWorkspace?.id} .workspaceScopedFileSuggestions=${this.supportsWorkspaceFileSuggestions()} .disabled=${state.selectedSession.archived === true} .canSteer=${state.status?.isStreaming === true} .isCompacting=${state.status?.isCompacting === true} .canStop=${state.status?.isStreaming === true || state.status?.isBashRunning === true || state.status?.isCompacting === true || (state.status?.pendingMessageCount ?? 0) > 0} .status=${state.status} .availableThinkingLevels=${state.availableThinkingLevels} .sending=${state.sendingPrompts[state.selectedSession.id] === true} .onSend=${this.handleSendPrompt} .onStop=${this.handleStopActiveWork} .onSelectModel=${this.handleSelectModel} .onSelectThinking=${this.handleSelectThinking}></prompt-editor>
-            <status-bar .status=${state.status}></status-bar>
+            ${this.chatPreferences.showStatusBar ? html`<status-bar .status=${state.status}></status-bar>` : null}
             ${state.commandDialog !== undefined ? html`<command-picker .title=${state.commandDialog.title} .options=${state.commandDialog.options} .onPick=${(value: string) => this.sessions.respondToCommand(state.commandDialog?.requestId ?? "", value)} .onCancel=${() => { this.sessions.cancelCommand(); }}></command-picker>` : null}
             ${state.modelDialog !== undefined ? html`<command-picker title=${state.modelDialog.title} .searchable=${true} .options=${state.modelDialog.options} .selectedValue=${state.modelDialog.selectedValue} .onPick=${(value: string) => { this.pickModel(value); }} .onCancel=${() => { this.setState({ modelDialog: undefined }); }}></command-picker>` : null}
             ${state.modelActionDialog !== undefined ? html`<command-picker title=${state.modelActionDialog.title} .options=${state.modelActionDialog.options} .selectedValue=${state.modelActionDialog.selectedValue} .onPick=${(value: string) => { void this.pickModelAction(value); }} .onCancel=${() => { this.setState({ modelActionDialog: undefined }); }}></command-picker>` : null}

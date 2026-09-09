@@ -3,6 +3,7 @@ export interface ChatPreferences {
   showEvents: boolean;
   showToolExecutions: boolean;
   showAgentStatus: boolean;
+  showStatusBar: boolean;
 }
 
 export const DEFAULT_CHAT_PREFERENCES: ChatPreferences = {
@@ -10,6 +11,7 @@ export const DEFAULT_CHAT_PREFERENCES: ChatPreferences = {
   showEvents: true,
   showToolExecutions: true,
   showAgentStatus: true,
+  showStatusBar: false,
 };
 
 export const CHAT_PREFERENCES_CHANGED_EVENT = "omp-web-chat-preferences-changed";
@@ -39,6 +41,7 @@ export function loadChatPreferences(): ChatPreferences {
       showEvents: typeof parsed.showEvents === "boolean" ? parsed.showEvents : DEFAULT_CHAT_PREFERENCES.showEvents,
       showToolExecutions: typeof parsed.showToolExecutions === "boolean" ? parsed.showToolExecutions : DEFAULT_CHAT_PREFERENCES.showToolExecutions,
       showAgentStatus: typeof parsed.showAgentStatus === "boolean" ? parsed.showAgentStatus : DEFAULT_CHAT_PREFERENCES.showAgentStatus,
+      showStatusBar: typeof parsed.showStatusBar === "boolean" ? parsed.showStatusBar : DEFAULT_CHAT_PREFERENCES.showStatusBar,
     };
   } catch {
     return { ...DEFAULT_CHAT_PREFERENCES };

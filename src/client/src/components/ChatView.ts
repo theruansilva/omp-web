@@ -189,7 +189,7 @@ export class ChatView extends LitElement {
     return html`
       <div class="chat-wrap">
         ${this.renderConversationRail()}
-        <div class="chat" @scroll=${() => { this.onScroll(); }} @wheel=${(event: WheelEvent) => { this.onWheel(event); }} @touchstart=${(event: TouchEvent) => { this.onTouchStart(event); }} @touchmove=${(event: TouchEvent) => { this.onTouchMove(event); }}>
+        <div class="chat" tabindex="-1" role="region" aria-label="Conversation" @scroll=${() => { this.onScroll(); }} @wheel=${(event: WheelEvent) => { this.onWheel(event); }} @touchstart=${(event: TouchEvent) => { this.onTouchStart(event); }} @touchmove=${(event: TouchEvent) => { this.onTouchMove(event); }}>
           ${this.renderHistoryBoundary()}
           ${repeat(
       groups,
@@ -682,6 +682,11 @@ export class ChatView extends LitElement {
       });
     });
   }
+  focusConversation(): void {
+    const chat = this.renderRoot.querySelector<HTMLElement>(".chat");
+    chat?.focus({ preventScroll: true });
+  }
+
 
   private continuePendingScrollRestore(): void {
     const sessionId = this.pendingScrollRestoreSessionId;

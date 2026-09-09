@@ -62,6 +62,7 @@ describe("settings-general-panel copy", () => {
     expect(strings).toContain("Show events");
     expect(strings).toContain("Show tool calls");
     expect(strings).toContain("Show agent status");
+    expect(strings).toContain("Show status bar");
   });
 });
 

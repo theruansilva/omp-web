@@ -274,6 +274,7 @@ export const chatStyles = css`
   :host { position: relative; z-index: 0; display: flex; flex-direction: column; min-height: 0; overflow: hidden; color: var(--pi-text); font: 14px system-ui, sans-serif; }
   .chat-wrap { position: relative; flex: 1 1 auto; min-height: 0; overflow: hidden; }
   .chat { height: 100%; min-height: 0; overflow: auto; overflow-anchor: none; padding: 26px 16px 64px; box-sizing: border-box; max-width: 800px; margin: 0 auto; width: 100%; }
+  .chat:focus { outline: none; }
   .scroll-marker { display: block; height: 0; overflow: hidden; pointer-events: none; }
   .activity-dock { position: absolute; left: 50%; transform: translateX(-50%); right: auto; bottom: 16px; z-index: 20; display: flex; align-items: center; gap: 8px; max-width: min(90%, 600px); box-sizing: border-box; border: 1px solid var(--pi-border); border-radius: 999px; background: var(--pi-surface); color: var(--pi-text); padding: 7px 14px; font-size: 13px; pointer-events: none; box-shadow: 0 4px 20px var(--pi-shadow); backdrop-filter: blur(8px); }
   .activity-dock.active { border-color: var(--pi-border); color: var(--pi-text); background: var(--pi-surface); }
