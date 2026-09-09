@@ -371,8 +371,10 @@ export class ChatView extends LitElement {
     return html`
       ${this.renderScrollMarker(this.messageScrollMarkerId(index))}
       <article class=${toolOnly ? "msg tool-execution-shell" : `msg ${message.role}`} data-index=${index} data-scroll-anchor-id=${this.messageAnchorKey(index)}>
-        ${toolOnly ? null : this.renderMessageHeader(message, String(index))}
-        ${message.parts.map((part) => this.renderPart(part, message))}
+        ${!toolOnly && message.role !== "user" ? this.renderMessageHeader(message, String(index)) : null}
+        <div class="msg-content">
+          ${message.parts.map((part) => this.renderPart(part, message))}
+        </div>
       </article>
     `;
   }
@@ -421,32 +423,16 @@ export class ChatView extends LitElement {
   }
 
   private renderMessageHeader(message: ChatLine, key: string) {
+    if (message.role === "user") return null;
     const meta = this.messageMetaLabel(message);
     const expanded = this.expandedMetaKey === key;
-    const isUser = message.role === "user";
     const isAssistant = message.role === "assistant";
-    const model = isAssistant ? (this.modelLabel(message) ?? this.status?.model?.id) : undefined;
-    const showRole = !isUser && !isAssistant;
-
-    if (isUser) {
-      return html`
-        <div class="msg-header">
-          <div class="msg-header-trailing">
-            ${this.renderMessageActions(message, key)}
-          </div>
-        </div>
-      `;
-    }
+    const showRole = !isAssistant;
 
     return html`
       <div class="msg-header">
         <div class="msg-header-leading">
-          ${isAssistant && model !== undefined ? html`
-            <span class="assistant-model-indicator" title=${model}>
-              <span class="assistant-model-icon" aria-hidden="true">✦</span>
-              <strong class="assistant-model-name">${model}</strong>
-            </span>
-          ` : (showRole ? html`<b class="label">${message.role}</b>` : null)}
+          ${showRole ? html`<b class="label">${message.role}</b>` : null}
           <span
             class=${expanded ? "msg-meta expanded" : "msg-meta"}
             role="button"
@@ -457,9 +443,6 @@ export class ChatView extends LitElement {
             @click=${() => { this.expandedMetaKey = expanded ? undefined : key; }}
             @keydown=${(event: KeyboardEvent) => { this.onMetaKeydown(event, key, expanded); }}
           >${meta.short}</span>
-        </div>
-        <div class="msg-header-trailing">
-          ${this.renderMessageActions(message, key)}
         </div>
       </div>
     `;

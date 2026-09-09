@@ -324,13 +324,8 @@ export const chatStyles = css`
   .session-activity.receiving strong { color: var(--pi-success); }
   .session-activity span, .session-activity small { color: var(--pi-muted); }
   .history-boundary small { color: var(--pi-dim); }
-  .assistant-model-indicator { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; color: var(--pi-text); }
-  .assistant-model-icon { font-size: 12px; color: var(--pi-accent, #58a6ff); }
-  .assistant-model-name { font-weight: 600; letter-spacing: -0.01em; }
-  .msg-header { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 20px; margin-bottom: 6px; }
-  .msg > .msg-header { position: static; margin: 0 0 6px; padding: 0; border: 0; border-radius: 0; background: transparent; box-shadow: none; }
-  .msg.user > .msg-header { position: absolute; top: 4px; right: 6px; margin: 0; padding: 0; min-height: 0; background: transparent; border: 0; z-index: 2; }
-  .msg.user > .msg-header .label, .msg.assistant > .msg-header .label { display: none; }
+  .msg-header { display: flex; align-items: center; min-height: 18px; margin-bottom: 4px; }
+  .msg > .msg-header { position: static; margin: 0 0 4px; padding: 0; border: 0; border-radius: 0; background: transparent; box-shadow: none; }
   .msg-header-leading { display: inline-flex; align-items: baseline; gap: 8px; min-width: 0; }
   .msg-header-trailing { min-width: 0; display: inline-flex; align-items: center; justify-content: flex-end; gap: 8px; margin-left: auto; }
   .msg-actions { display: inline-flex; gap: 4px; opacity: 0; transition: opacity .15s ease; }
