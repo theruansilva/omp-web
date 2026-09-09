@@ -124,11 +124,20 @@ export const appStyles = css`
     main.workspace-view chat-view, main.workspace-view prompt-editor, main.workspace-view status-bar,
     main.workspace-view .empty { display: none; }
     main.workspace-view { overflow: hidden; }
+    .shell.bottom-mobile-nav app-mobile-main-tabs { order: 99; margin-top: auto; }
+    .shell.workspace-view.bottom-mobile-nav { grid-template-rows: auto minmax(0, 1fr) auto; }
+    .shell.workspace-view.bottom-mobile-nav main { display: contents; }
+    .shell.workspace-view.bottom-mobile-nav .context-bar { grid-row: 1; grid-column: 3; }
+    .shell.workspace-view.bottom-mobile-nav > workspace-panel { grid-row: 2; grid-column: 3; }
+    .shell.workspace-view.bottom-mobile-nav app-mobile-main-tabs { grid-row: 3; grid-column: 3; }
   }
   @media (max-width: 760px) {
     .shell { grid-template-columns: minmax(0, 1fr); }
     aside, .navigation-panel-edge { display: none; }
     main, .shell.workspace-view > workspace-panel { grid-column: 1; }
+    .shell.workspace-view.bottom-mobile-nav .context-bar,
+    .shell.workspace-view.bottom-mobile-nav > workspace-panel,
+    .shell.workspace-view.bottom-mobile-nav app-mobile-main-tabs { grid-column: 1; }
     .context-bar { display: flex; }
     .mobile-navigation-tab { display: block; }
     main.navigation-view chat-view, main.navigation-view prompt-editor, main.navigation-view status-bar,
@@ -222,15 +231,16 @@ export const listStyles = css`
   .section-toggle .section-selected { display: block; color: var(--pi-text); font-size: 12px; font-weight: 600; line-height: 1.25; text-transform: none; }
   .section-toggle .section-count { flex: 0 0 auto; display: inline; color: var(--pi-muted); font-size: inherit; }
   .section-toggle small { display: inline; color: inherit; font-size: inherit; }
-  .action-row { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) auto; margin: 6px 0; cursor: pointer; }
+  .action-row { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) auto; margin: 6px 0; cursor: pointer; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
   .action-row:focus-visible { outline: 2px solid var(--pi-accent); outline-offset: 2px; border-radius: 8px; }
   .action-row.selected .action-main, .action-row.selected .action-menu-toggle { border-color: var(--pi-accent); background: var(--pi-selection-bg); }
   .action-row.archived .action-main { color: var(--pi-muted); }
-  .action-main { position: relative; box-sizing: border-box; min-width: 0; width: 100%; border: 1px solid var(--pi-border); border-top-right-radius: 0; border-bottom-right-radius: 0; border-top-left-radius: 8px; border-bottom-left-radius: 8px; background: var(--pi-surface); color: var(--pi-text); padding: 7px 22px 7px calc(9px + var(--depth, 0) * 16px); text-align: left; }
+  .action-main { position: relative; box-sizing: border-box; min-width: 0; width: 100%; border: 1px solid var(--pi-border); border-radius: 8px; background: var(--pi-surface); color: var(--pi-text); padding: 7px 22px 7px calc(9px + var(--depth, 0) * 16px); text-align: left; transition: border-radius .1s ease; }
   .action-name { display: -webkit-box; max-height: 2.5em; overflow: hidden; overflow-wrap: anywhere; line-height: 1.25; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
   .action-row:not(.selected):hover .action-main { background: var(--pi-surface-hover); }
-  .workspace-row .action-main { border-radius: 8px 0 0 8px; }
-  .workspace-primary { min-width: 0; display: flex; align-items: baseline; gap: 6px; }
+  .action-row:hover .action-main, .action-row:focus-within .action-main, .action-row.menu-open .action-main { border-top-right-radius: 0; border-bottom-right-radius: 0; }
+  .workspace-row .action-main { border-radius: 8px; }
+  .workspace-row:hover .action-main, .workspace-row:focus-within .action-main, .workspace-row.menu-open .action-main { border-radius: 8px 0 0 8px; }
   .workspace-primary-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .workspace-status { flex: 0 0 auto; color: var(--pi-warning); font-size: 12px; }
   .workspace-secondary { margin-top: 3px; }
@@ -252,7 +262,8 @@ export const listStyles = css`
   /* Client-side sending (upload in flight); distinct from server activity, which propagates to workspace/machine rows. */
   .activity-indicator.sending { border-radius: 50%; background: var(--pi-warning); }
   .action-menu { position: relative; align-self: stretch; }
-  .action-menu-toggle { display: grid; place-items: center; height: 100%; min-width: 32px; padding: 0; color: var(--pi-muted); border-left: 0; border-top-left-radius: 0; border-bottom-left-radius: 0; }
+  .action-menu-toggle { display: grid; place-items: center; height: 100%; min-width: 32px; padding: 0; color: var(--pi-muted); border-left: 0; border-top-left-radius: 0; border-bottom-left-radius: 0; opacity: 0; pointer-events: none; transition: opacity .15s ease; }
+  .action-row:hover .action-menu-toggle, .action-row:focus-within .action-menu-toggle, .action-menu-toggle[aria-expanded="true"], .action-row.menu-open .action-menu-toggle { opacity: 1; pointer-events: auto; }
   .action-menu-toggle:hover { color: var(--pi-text); background: var(--pi-surface-hover); }
   .action-menu-panel { position: fixed; z-index: 50; box-sizing: border-box; min-width: min(120px, calc(100vw - 16px)); overflow: auto; padding: 4px; border: 1px solid var(--pi-border); border-radius: 8px; background: var(--pi-surface); box-shadow: 0 8px 24px var(--pi-shadow); overflow-wrap: anywhere; }
   .action-menu-panel button { display: block; width: 100%; text-align: left; white-space: normal; overflow-wrap: anywhere; border: 0; background: transparent; color: var(--pi-text); }
@@ -267,6 +278,11 @@ export const listStyles = css`
   .workspace-label-link:hover, .workspace-label-link:focus { text-decoration: underline; }
   .workspace-detail-row .workspace-label { overflow: visible; white-space: normal; flex-wrap: wrap; }
   .workspace-detail-row .workspace-label-base, .workspace-detail-row .workspace-label-item, .workspace-detail-row .workspace-label-render { overflow: visible; text-overflow: clip; overflow-wrap: anywhere; white-space: normal; }
+  @media (max-width: 760px) {
+    .action-menu-toggle { display: none; }
+    .action-row:hover .action-main, .action-row:focus-within .action-main, .action-row.menu-open .action-main,
+    .workspace-row:hover .action-main, .workspace-row:focus-within .action-main, .workspace-row.menu-open .action-main { border-radius: 8px; }
+  }
   @keyframes pulse { 0%, 100% { transform: scale(.75); opacity: .55; } 50% { transform: scale(1.2); opacity: 1; } }
 `;
 

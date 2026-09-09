@@ -6,7 +6,7 @@ import { workspaceActivityFor, workspaceActivityIndicator } from "../workspaceAc
 import { actionMenuPanelStyle } from "./actionMenu";
 import { renderActionActivityIndicator } from "./activityBadge";
 import type { KeyboardNavigableSection } from "./navigationFocus";
-import { activateSelectableRow, focusSelectedOrFirstSelectableRow, handleSelectableRowKeyboard } from "./selectableRow";
+import { activateSelectableRow, focusSelectedOrFirstSelectableRow, handleRowTouchEnd, handleRowTouchMove, handleRowTouchStart, handleSelectableRowKeyboard } from "./selectableRow";
 import { listStyles } from "./shared";
 import { renderWorkspaceLabelInlineItems } from "./workspaceLabel";
 
@@ -61,14 +61,18 @@ export class WorkspaceList extends LitElement implements KeyboardNavigableSectio
         ${this.collapsed ? null : html`
           <div class="list-body">
             ${this.workspaces.map((workspace) => {
-              const label = workspacePrimaryLabel(workspace);
-              const items = this.workspaceLabelItems(workspace);
-              return html`
+      const label = workspacePrimaryLabel(workspace);
+      const items = this.workspaceLabelItems(workspace);
+      return html`
                 <div
-                  class=${`action-row workspace-row ${this.selected?.id === workspace.id ? "selected" : ""}`}
+                  class=${`action-row workspace-row ${this.selected?.id === workspace.id ? "selected" : ""} ${this.openMenuWorkspaceId === workspace.id ? "menu-open" : ""}`}
                   tabindex="0"
                   title=${label}
                   @click=${(event: MouseEvent) => { activateSelectableRow(event, () => this.onSelect?.(workspace)); }}
+                  @touchstart=${(event: TouchEvent) => { handleRowTouchStart(event, (target) => this.toggleMenu(workspace.id, target)); }}
+                  @touchmove=${(event: TouchEvent) => { handleRowTouchMove(event); }}
+                  @touchend=${() => { handleRowTouchEnd(); }}
+                  @touchcancel=${() => { handleRowTouchEnd(); }}
                   @keydown=${(event: KeyboardEvent) => { this.handleWorkspaceKeydown(event, workspace); }}
                 >
                   <div class="action-main">
@@ -77,7 +81,7 @@ export class WorkspaceList extends LitElement implements KeyboardNavigableSectio
                   ${this.renderWorkspaceMenu(label, items, workspace)}
                 </div>
               `;
-            })}
+    })}
           </div>
         `}
       </section>

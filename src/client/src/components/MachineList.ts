@@ -5,7 +5,7 @@ import { machineActivityIndicator } from "../workspaceActivity";
 import { actionMenuPanelStyle } from "./actionMenu";
 import { renderActionActivityIndicator } from "./activityBadge";
 import type { KeyboardNavigableSection } from "./navigationFocus";
-import { activateSelectableRow, focusSelectedOrFirstSelectableRow, handleSelectableRowKeyboard } from "./selectableRow";
+import { activateSelectableRow, focusSelectedOrFirstSelectableRow, handleRowTouchEnd, handleRowTouchMove, handleRowTouchStart, handleSelectableRowKeyboard } from "./selectableRow";
 import { listStyles } from "./shared";
 
 @customElement("machine-list")
@@ -68,10 +68,14 @@ export class MachineList extends LitElement implements KeyboardNavigableSection 
     const hasRemoveAction = canRemoveMachine(machine) && this.onRemove !== undefined;
     return html`
       <div
-        class=${`action-row machine-row ${this.selected?.id === machine.id ? "selected" : ""} ${hasRemoveAction ? "" : "no-actions"}`}
+        class=${`action-row machine-row ${this.selected?.id === machine.id ? "selected" : ""} ${hasRemoveAction ? "" : "no-actions"} ${this.openMenuMachineId === machine.id ? "menu-open" : ""}`}
         tabindex="0"
         title=${machine.baseUrl ?? machine.name}
         @click=${(event: MouseEvent) => { activateSelectableRow(event, () => this.onSelect?.(machine)); }}
+        @touchstart=${(event: TouchEvent) => { if (hasRemoveAction) handleRowTouchStart(event, (target) => this.toggleMenu(machine.id, target)); }}
+        @touchmove=${(event: TouchEvent) => { if (hasRemoveAction) handleRowTouchMove(event); }}
+        @touchend=${() => { if (hasRemoveAction) handleRowTouchEnd(); }}
+        @touchcancel=${() => { if (hasRemoveAction) handleRowTouchEnd(); }}
         @keydown=${(event: KeyboardEvent) => { this.handleMachineKeydown(event, machine); }}
       >
         <div class="action-main">

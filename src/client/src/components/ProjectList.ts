@@ -5,7 +5,7 @@ import { projectActivityIndicator } from "../workspaceActivity";
 import { actionMenuPanelStyle } from "./actionMenu";
 import { renderActionActivityIndicator } from "./activityBadge";
 import type { KeyboardNavigableSection } from "./navigationFocus";
-import { activateSelectableRow, focusSelectedOrFirstSelectableRow, handleSelectableRowKeyboard } from "./selectableRow";
+import { activateSelectableRow, focusSelectedOrFirstSelectableRow, handleRowTouchEnd, handleRowTouchMove, handleRowTouchStart, handleSelectableRowKeyboard } from "./selectableRow";
 import { listStyles } from "./shared";
 
 @customElement("project-list")
@@ -57,10 +57,14 @@ export class ProjectList extends LitElement implements KeyboardNavigableSection 
           <div class="list-body">
             ${this.projects.map((project) => html`
               <div
-                class=${`action-row ${this.selected?.id === project.id ? "selected" : ""}`}
+                class=${`action-row ${this.selected?.id === project.id ? "selected" : ""} ${this.openMenuProjectId === project.id ? "menu-open" : ""}`}
                 tabindex="0"
                 title=${project.path}
                 @click=${(event: MouseEvent) => { activateSelectableRow(event, () => this.onSelect?.(project)); }}
+                @touchstart=${(event: TouchEvent) => { handleRowTouchStart(event, (target) => this.toggleMenu(project.id, target)); }}
+                @touchmove=${(event: TouchEvent) => { handleRowTouchMove(event); }}
+                @touchend=${() => { handleRowTouchEnd(); }}
+                @touchcancel=${() => { handleRowTouchEnd(); }}
                 @keydown=${(event: KeyboardEvent) => { this.handleProjectKeydown(event, project); }}
               >
                 <div class="action-main">

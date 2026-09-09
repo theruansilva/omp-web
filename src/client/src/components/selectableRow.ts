@@ -32,7 +32,56 @@ function targetMatches(target: EventTarget, selector: string): boolean {
   return typeof matches === "function" && matches.call(target, selector) === true;
 }
 
+type TimerId = number | NodeJS.Timeout;
+let recentLongPress = false;
+let longPressTimeout: TimerId | undefined;
+let touchStartX = 0;
+let touchStartY = 0;
+export function handleRowTouchStart(event: TouchEvent, onLongPress: (target: HTMLElement) => void): void {
+  if (isFromInteractiveElement(event)) return;
+  const touch = event.touches[0];
+  if (!touch) return;
+  touchStartX = touch.clientX;
+  touchStartY = touch.clientY;
+  clearTimeout(longPressTimeout);
+  const currentTarget = event.currentTarget;
+  const target = (typeof HTMLElement !== "undefined" && currentTarget instanceof HTMLElement)
+    ? currentTarget
+    : (currentTarget as HTMLElement | undefined);
+  if (!target) return;
+  longPressTimeout = setTimeout(() => {
+    recentLongPress = true;
+    setTimeout(() => { recentLongPress = false; }, 400);
+    try {
+      if (typeof navigator !== "undefined" && "vibrate" in navigator) {
+        navigator.vibrate(40);
+      }
+    } catch {
+      // Ignore vibration errors
+    }
+    onLongPress(target);
+  }, 500);
+}
+
+export function handleRowTouchMove(event: TouchEvent): void {
+  const touch = event.touches[0];
+  if (!touch) return;
+  if (Math.abs(touch.clientX - touchStartX) > 10 || Math.abs(touch.clientY - touchStartY) > 10) {
+    clearTimeout(longPressTimeout);
+  }
+}
+
+export function handleRowTouchEnd(): void {
+  clearTimeout(longPressTimeout);
+}
+
+export function resetLongPressForTests(): void {
+  recentLongPress = false;
+  clearTimeout(longPressTimeout);
+}
+
 export function activateSelectableRow(event: ComposedPathEvent, action: () => void): void {
+  if (recentLongPress) return;
   if (isFromInteractiveElement(event)) return;
   action();
 }

@@ -1,5 +1,5 @@
-import { describe, expect, it, vi } from "vitest";
-import { activateSelectableRow, activateSelectableRowFromKeyboard, handleSelectableRowKeyboard } from "./selectableRow";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { activateSelectableRow, activateSelectableRowFromKeyboard, handleRowTouchEnd, handleRowTouchMove, handleRowTouchStart, handleSelectableRowKeyboard, resetLongPressForTests } from "./selectableRow";
 
 describe("selectable row activation", () => {
   it("activates rows from non-interactive click targets", () => {
@@ -59,6 +59,73 @@ describe("selectable row activation", () => {
     expect(cancel).toHaveBeenCalledOnce();
     expect(event.preventDefault).toHaveBeenCalledOnce();
     expect(event.stopPropagation).toHaveBeenCalledOnce();
+  });
+
+  describe("long press handling", () => {
+    beforeEach(() => {
+      vi.useFakeTimers();
+      resetLongPressForTests();
+    });
+
+    afterEach(() => {
+      resetLongPressForTests();
+      vi.useRealTimers();
+    });
+
+    it("triggers long press on touch hold", () => {
+      const onLongPress = vi.fn();
+      const target = matchTarget(() => false) as unknown as HTMLElement;
+      const touchEvent = {
+        composedPath: () => [target],
+        currentTarget: target,
+        touches: [{ clientX: 100, clientY: 100 }],
+      } as unknown as TouchEvent;
+
+      handleRowTouchStart(touchEvent, onLongPress);
+      vi.advanceTimersByTime(500);
+
+      expect(onLongPress).toHaveBeenCalledWith(target);
+
+      // Click after long press is suppressed
+      const action = vi.fn();
+      activateSelectableRow(eventWithPath(matchTarget(() => false)), action);
+      expect(action).not.toHaveBeenCalled();
+    });
+
+    it("cancels long press on finger move", () => {
+      const onLongPress = vi.fn();
+      const target = matchTarget(() => false) as unknown as HTMLElement;
+      const startEvent = {
+        composedPath: () => [target],
+        currentTarget: target,
+        touches: [{ clientX: 100, clientY: 100 }],
+      } as unknown as TouchEvent;
+      const moveEvent = {
+        touches: [{ clientX: 100, clientY: 130 }],
+      } as unknown as TouchEvent;
+
+      handleRowTouchStart(startEvent, onLongPress);
+      handleRowTouchMove(moveEvent);
+      vi.advanceTimersByTime(500);
+
+      expect(onLongPress).not.toHaveBeenCalled();
+    });
+
+    it("cancels long press on touch end before duration", () => {
+      const onLongPress = vi.fn();
+      const target = matchTarget(() => false) as unknown as HTMLElement;
+      const startEvent = {
+        composedPath: () => [target],
+        currentTarget: target,
+        touches: [{ clientX: 100, clientY: 100 }],
+      } as unknown as TouchEvent;
+      handleRowTouchStart(startEvent, onLongPress);
+      vi.advanceTimersByTime(200);
+      handleRowTouchEnd();
+      vi.advanceTimersByTime(300);
+
+      expect(onLongPress).not.toHaveBeenCalled();
+    });
   });
 });
 
