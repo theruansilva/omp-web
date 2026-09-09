@@ -41,6 +41,7 @@ interface TestableChatView {
 
 function createTestChatView(): TestableChatView {
   const view = new ChatView();
+  /* eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- test fixture access */
   return view as unknown as TestableChatView;
 }
 

@@ -47,6 +47,7 @@ import "./ChatView";
 import type { ChatView } from "./ChatView";
 import {
   CHAT_PREFERENCES_CHANGED_EVENT,
+  isChatPreferences,
   loadChatPreferences,
   preferencesEventTarget,
   type ChatPreferences,
@@ -103,10 +104,14 @@ export class OmpWebApp extends LitElement {
   @query("prompt-editor") private promptEditor?: PromptEditor;
   @state() private chatPreferences: ChatPreferences = loadChatPreferences();
   private readonly handleChatPreferencesChanged = (event: Event): void => {
-    this.chatPreferences = (event as CustomEvent<ChatPreferences>).detail ?? loadChatPreferences();
+    if (event instanceof CustomEvent && isChatPreferences(event.detail)) {
+      this.chatPreferences = event.detail;
+    } else {
+      this.chatPreferences = loadChatPreferences();
+    }
     if (this.chatPreferences.hideWorkspaces && this.state.workspaces.length > 0 && this.state.selectedWorkspace?.id !== this.state.workspaces[0]?.id) {
       const first = this.state.workspaces[0];
-      if (first) void this.workspaces.selectWorkspace(first);
+      if (first !== undefined) void this.workspaces.selectWorkspace(first);
     }
     this.requestUpdate();
   };
@@ -2011,7 +2016,7 @@ export class OmpWebApp extends LitElement {
   private renderMobileMainTabs() {
     return html`
       <app-mobile-main-tabs
-        ?bottom=${this.chatPreferences.bottomMobileNav === true}
+        ?bottom=${this.chatPreferences.bottomMobileNav}
         .tabs=${this.mobileMainTabs()}
         .selectedView=${this.state.mainView}
         .onSelect=${(view: AppState["mainView"]) => { this.selectMainView(view); }}
@@ -2043,7 +2048,7 @@ export class OmpWebApp extends LitElement {
     const state = this.state;
     return html`
       <div
-        class=${this.panelCollapse.shellClass(state.mainView, this.chatPreferences.bottomMobileNav === true)}
+        class=${this.panelCollapse.shellClass(state.mainView, this.chatPreferences.bottomMobileNav)}
         style=${this.panelResize.shellStyle({ navigation: this.resizablePanelConstraints("navigation"), workspace: this.resizablePanelConstraints("workspace") })}
         @touchstart=${(event: TouchEvent) => { this.handleShellTouchStart(event); }}
         @touchmove=${(event: TouchEvent) => { this.handleShellTouchMove(event); }}

@@ -70,7 +70,7 @@ export class FormattedText extends LitElement {
       codeText = visiblePre?.querySelector("code")?.textContent ?? "";
     } else {
       const code = wrapper.querySelector("pre code");
-      if (code instanceof HTMLElement) codeText = code.textContent ?? "";
+      if (code instanceof HTMLElement) codeText = code.textContent;
     }
     void this.copyCode(codeText, button);
   };

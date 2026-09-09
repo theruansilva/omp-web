@@ -33,21 +33,36 @@ export function preferencesEventTarget(): EventTarget | undefined {
   return undefined;
 }
 
+export function isChatPreferences(value: unknown): value is ChatPreferences {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) return false;
+  const candidate: Record<string, unknown> = { ...value };
+  return (
+    typeof candidate["showThinking"] === "boolean" &&
+    typeof candidate["showEvents"] === "boolean" &&
+    typeof candidate["showToolExecutions"] === "boolean" &&
+    typeof candidate["showAgentStatus"] === "boolean" &&
+    typeof candidate["showStatusBar"] === "boolean" &&
+    typeof candidate["hideWorkspaces"] === "boolean" &&
+    typeof candidate["bottomMobileNav"] === "boolean"
+  );
+}
+
 export function loadChatPreferences(): ChatPreferences {
   try {
     if (typeof localStorage === "undefined") return { ...DEFAULT_CHAT_PREFERENCES };
     const raw = localStorage.getItem(CHAT_PREFERENCES_STORAGE_KEY);
     if (raw === null || raw === "") return { ...DEFAULT_CHAT_PREFERENCES };
-    const parsed = JSON.parse(raw);
-    if (typeof parsed !== "object" || parsed === null) return { ...DEFAULT_CHAT_PREFERENCES };
+    const parsed: unknown = JSON.parse(raw);
+    if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) return { ...DEFAULT_CHAT_PREFERENCES };
+    const record: Record<string, unknown> = { ...parsed };
     return {
-      showThinking: typeof parsed.showThinking === "boolean" ? parsed.showThinking : DEFAULT_CHAT_PREFERENCES.showThinking,
-      showEvents: typeof parsed.showEvents === "boolean" ? parsed.showEvents : DEFAULT_CHAT_PREFERENCES.showEvents,
-      showToolExecutions: typeof parsed.showToolExecutions === "boolean" ? parsed.showToolExecutions : DEFAULT_CHAT_PREFERENCES.showToolExecutions,
-      showAgentStatus: typeof parsed.showAgentStatus === "boolean" ? parsed.showAgentStatus : DEFAULT_CHAT_PREFERENCES.showAgentStatus,
-      showStatusBar: typeof parsed.showStatusBar === "boolean" ? parsed.showStatusBar : DEFAULT_CHAT_PREFERENCES.showStatusBar,
-      hideWorkspaces: typeof parsed.hideWorkspaces === "boolean" ? parsed.hideWorkspaces : DEFAULT_CHAT_PREFERENCES.hideWorkspaces,
-      bottomMobileNav: typeof parsed.bottomMobileNav === "boolean" ? parsed.bottomMobileNav : DEFAULT_CHAT_PREFERENCES.bottomMobileNav,
+      showThinking: typeof record["showThinking"] === "boolean" ? record["showThinking"] : DEFAULT_CHAT_PREFERENCES.showThinking,
+      showEvents: typeof record["showEvents"] === "boolean" ? record["showEvents"] : DEFAULT_CHAT_PREFERENCES.showEvents,
+      showToolExecutions: typeof record["showToolExecutions"] === "boolean" ? record["showToolExecutions"] : DEFAULT_CHAT_PREFERENCES.showToolExecutions,
+      showAgentStatus: typeof record["showAgentStatus"] === "boolean" ? record["showAgentStatus"] : DEFAULT_CHAT_PREFERENCES.showAgentStatus,
+      showStatusBar: typeof record["showStatusBar"] === "boolean" ? record["showStatusBar"] : DEFAULT_CHAT_PREFERENCES.showStatusBar,
+      hideWorkspaces: typeof record["hideWorkspaces"] === "boolean" ? record["hideWorkspaces"] : DEFAULT_CHAT_PREFERENCES.hideWorkspaces,
+      bottomMobileNav: typeof record["bottomMobileNav"] === "boolean" ? record["bottomMobileNav"] : DEFAULT_CHAT_PREFERENCES.bottomMobileNav,
     };
   } catch {
     return { ...DEFAULT_CHAT_PREFERENCES };

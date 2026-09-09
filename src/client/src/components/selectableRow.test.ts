@@ -71,6 +71,7 @@ describe("selectable row activation", () => {
       resetLongPressForTests();
       vi.useRealTimers();
     });
+    /* eslint-disable @typescript-eslint/consistent-type-assertions */
 
     it("triggers long press on touch hold", () => {
       const onLongPress = vi.fn();
@@ -127,6 +128,7 @@ describe("selectable row activation", () => {
       expect(onLongPress).not.toHaveBeenCalled();
     });
   });
+  /* eslint-enable @typescript-eslint/consistent-type-assertions */
 });
 
 type EventWithPath = Pick<Event, "composedPath">;

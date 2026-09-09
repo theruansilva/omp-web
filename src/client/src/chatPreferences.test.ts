@@ -2,8 +2,8 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
   CHAT_PREFERENCES_CHANGED_EVENT,
   DEFAULT_CHAT_PREFERENCES,
+  isChatPreferences,
   loadChatPreferences,
-  preferencesEventTarget,
   saveChatPreferences,
   setPreferencesEventTarget,
   type ChatPreferences,
@@ -18,7 +18,7 @@ describe("chatPreferences", () => {
     const mockLocalStorage = {
       getItem: (key: string) => storage[key] ?? null,
       setItem: (key: string, value: string) => { storage[key] = value; },
-      removeItem: (key: string) => { delete storage[key]; },
+      removeItem: (key: string) => { Reflect.deleteProperty(storage, key); },
       clear: () => { storage = {}; },
     };
     Object.defineProperty(globalThis, "localStorage", {
@@ -67,7 +67,9 @@ describe("chatPreferences", () => {
   it("dispatches custom event on save", () => {
     let received: ChatPreferences | undefined;
     const handler = (event: Event) => {
-      received = (event as CustomEvent<ChatPreferences>).detail;
+      if (event instanceof CustomEvent && isChatPreferences(event.detail)) {
+        received = event.detail;
+      }
     };
     testTarget.addEventListener(CHAT_PREFERENCES_CHANGED_EVENT, handler);
 

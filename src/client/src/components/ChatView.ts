@@ -15,6 +15,7 @@ import "./ToolExecutionView";
 
 import {
   CHAT_PREFERENCES_CHANGED_EVENT,
+  isChatPreferences,
   loadChatPreferences,
   preferencesEventTarget,
   type ChatPreferences,
@@ -102,7 +103,11 @@ export class ChatView extends LitElement {
   @state() private loadMoreRequested = false;
   @state() private chatPreferences: ChatPreferences = loadChatPreferences();
   private readonly handleChatPreferencesChanged = (event: Event): void => {
-    this.chatPreferences = (event as CustomEvent<ChatPreferences>).detail ?? loadChatPreferences();
+    if (event instanceof CustomEvent && isChatPreferences(event.detail)) {
+      this.chatPreferences = event.detail;
+    } else {
+      this.chatPreferences = loadChatPreferences();
+    }
     this.requestUpdate();
   };
   private readonly onViewportResize = () => {

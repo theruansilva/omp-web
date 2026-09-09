@@ -208,7 +208,7 @@ export const sessionsApi = {
   setModel: (session: SessionLookup, provider: string, modelId: string, persistOrMachineId?: boolean | string, machineId?: string) => {
     const persist = typeof persistOrMachineId === "boolean" ? persistOrMachineId : undefined;
     const effectiveMachineId = typeof persistOrMachineId === "string" ? persistOrMachineId : (machineId ?? "local");
-    return request(sessionUrl(session, "model", effectiveMachineId), parseSessionStatus, { method: "POST", body: sessionBody(session, { provider, modelId, ...(persist ? { persist: true } : {}) }) });
+    return request(sessionUrl(session, "model", effectiveMachineId), parseSessionStatus, { method: "POST", body: sessionBody(session, { provider, modelId, ...(persist === true ? { persist: true } : {}) }) });
   },
   cycleModel: (session: SessionLookup, direction: "forward" | "backward", machineId = "local") => request(sessionUrl(session, "model/cycle", machineId), parseSessionStatus, { method: "POST", body: sessionBody(session, { direction }) }),
   thinkingLevels: (session: SessionLookup, machineId = "local") => request(sessionQueryUrl(session, "thinking-levels", machineId), parseThinkingLevelsResponse),

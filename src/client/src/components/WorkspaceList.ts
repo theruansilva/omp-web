@@ -69,7 +69,7 @@ export class WorkspaceList extends LitElement implements KeyboardNavigableSectio
                   tabindex="0"
                   title=${label}
                   @click=${(event: MouseEvent) => { activateSelectableRow(event, () => this.onSelect?.(workspace)); }}
-                  @touchstart=${(event: TouchEvent) => { handleRowTouchStart(event, (target) => this.toggleMenu(workspace.id, target)); }}
+                  @touchstart=${(event: TouchEvent) => { handleRowTouchStart(event, (target) => { this.toggleMenu(workspace.id, target); }); }}
                   @touchmove=${(event: TouchEvent) => { handleRowTouchMove(event); }}
                   @touchend=${() => { handleRowTouchEnd(); }}
                   @touchcancel=${() => { handleRowTouchEnd(); }}

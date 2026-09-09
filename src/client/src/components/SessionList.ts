@@ -244,7 +244,7 @@ export class SessionList extends LitElement implements KeyboardNavigableSection 
         tabindex="0"
         title=${session.path}
         @click=${(event: MouseEvent) => { activateSelectableRow(event, () => { this.activateSessionRow(session, scope); }); }}
-        @touchstart=${(event: TouchEvent) => { handleRowTouchStart(event, (target) => this.toggleMenu(session.id, target)); }}
+        @touchstart=${(event: TouchEvent) => { handleRowTouchStart(event, (target) => { this.toggleMenu(session.id, target); }); }}
         @touchmove=${(event: TouchEvent) => { handleRowTouchMove(event); }}
         @touchend=${() => { handleRowTouchEnd(); }}
         @touchcancel=${() => { handleRowTouchEnd(); }}

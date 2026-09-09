@@ -20,6 +20,7 @@ import { thinkingGauge, thinkingLevelLabel } from "../../../shared/thinkingLevel
 import "./AutocompleteMenu";
 import {
   CHAT_PREFERENCES_CHANGED_EVENT,
+  isChatPreferences,
   loadChatPreferences,
   preferencesEventTarget,
   type ChatPreferences,
@@ -59,7 +60,11 @@ export class PromptEditor extends LitElement {
   @state() private hasContent = false;
   @state() private chatPreferences: ChatPreferences = loadChatPreferences();
   private readonly handleChatPreferencesChanged = (event: Event): void => {
-    this.chatPreferences = (event as CustomEvent<ChatPreferences>).detail ?? loadChatPreferences();
+    if (event instanceof CustomEvent && isChatPreferences(event.detail)) {
+      this.chatPreferences = event.detail;
+    } else {
+      this.chatPreferences = loadChatPreferences();
+    }
     this.requestUpdate();
   };
   @state() private completions: CompletionItem[] = [];
@@ -169,9 +174,9 @@ export class PromptEditor extends LitElement {
 
   private renderAgentStatusStrip() {
     if (!this.chatPreferences.showAgentStatus || !this.isAgentWorking()) return null;
-    const text = this.status?.isCompacting
+    const text = this.status?.isCompacting === true
       ? "Compacting history..."
-      : (this.status?.isBashRunning ? "Running command..." : "Processing...");
+      : (this.status?.isBashRunning === true ? "Running command..." : "Processing...");
     return html`
       <div class="agent-status-strip" aria-live="polite">
         <span class="status-spinner" aria-hidden="true"></span>

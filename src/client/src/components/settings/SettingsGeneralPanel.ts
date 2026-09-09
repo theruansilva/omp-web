@@ -16,6 +16,7 @@ import {
 } from "./settingsConfigDraft";
 import {
   CHAT_PREFERENCES_CHANGED_EVENT,
+  isChatPreferences,
   loadChatPreferences,
   preferencesEventTarget,
   saveChatPreferences,
@@ -47,7 +48,11 @@ export class SettingsGeneralPanel extends LitElement {
   @state() private machineLocalError = "";
   @state() private chatPrefs: ChatPreferences = loadChatPreferences();
   private readonly handleChatPrefsChange = (event: Event): void => {
-    this.chatPrefs = (event as CustomEvent<ChatPreferences>).detail ?? loadChatPreferences();
+    if (event instanceof CustomEvent && isChatPreferences(event.detail)) {
+      this.chatPrefs = event.detail;
+    } else {
+      this.chatPrefs = loadChatPreferences();
+    }
   };
 
   override connectedCallback(): void {

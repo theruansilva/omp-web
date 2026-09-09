@@ -45,10 +45,8 @@ export function handleRowTouchStart(event: TouchEvent, onLongPress: (target: HTM
   touchStartY = touch.clientY;
   clearTimeout(longPressTimeout);
   const currentTarget = event.currentTarget;
-  const target = (typeof HTMLElement !== "undefined" && currentTarget instanceof HTMLElement)
-    ? currentTarget
-    : (currentTarget as HTMLElement | undefined);
-  if (!target) return;
+  if (!(typeof HTMLElement !== "undefined" && currentTarget instanceof HTMLElement)) return;
+  const target = currentTarget;
   longPressTimeout = setTimeout(() => {
     recentLongPress = true;
     setTimeout(() => { recentLongPress = false; }, 400);

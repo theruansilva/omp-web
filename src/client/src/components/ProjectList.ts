@@ -61,7 +61,7 @@ export class ProjectList extends LitElement implements KeyboardNavigableSection 
                 tabindex="0"
                 title=${project.path}
                 @click=${(event: MouseEvent) => { activateSelectableRow(event, () => this.onSelect?.(project)); }}
-                @touchstart=${(event: TouchEvent) => { handleRowTouchStart(event, (target) => this.toggleMenu(project.id, target)); }}
+                @touchstart=${(event: TouchEvent) => { handleRowTouchStart(event, (target) => { this.toggleMenu(project.id, target); }); }}
                 @touchmove=${(event: TouchEvent) => { handleRowTouchMove(event); }}
                 @touchend=${() => { handleRowTouchEnd(); }}
                 @touchcancel=${() => { handleRowTouchEnd(); }}

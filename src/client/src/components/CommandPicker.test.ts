@@ -104,6 +104,7 @@ describe("CommandPicker with categories and icons", () => {
       },
     ];
 
+    /* eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- test access to private methods */
     const target = picker as unknown as { query: string; filteredOptions: () => CommandOption[] };
     target.query = "antigravity";
 

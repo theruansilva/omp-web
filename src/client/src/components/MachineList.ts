@@ -72,7 +72,7 @@ export class MachineList extends LitElement implements KeyboardNavigableSection 
         tabindex="0"
         title=${machine.baseUrl ?? machine.name}
         @click=${(event: MouseEvent) => { activateSelectableRow(event, () => this.onSelect?.(machine)); }}
-        @touchstart=${(event: TouchEvent) => { if (hasRemoveAction) handleRowTouchStart(event, (target) => this.toggleMenu(machine.id, target)); }}
+        @touchstart=${(event: TouchEvent) => { if (hasRemoveAction) handleRowTouchStart(event, (target) => { this.toggleMenu(machine.id, target); }); }}
         @touchmove=${(event: TouchEvent) => { if (hasRemoveAction) handleRowTouchMove(event); }}
         @touchend=${() => { if (hasRemoveAction) handleRowTouchEnd(); }}
         @touchcancel=${() => { if (hasRemoveAction) handleRowTouchEnd(); }}

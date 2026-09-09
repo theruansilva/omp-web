@@ -94,13 +94,13 @@ function renderOptionList(
     return html`
       ${showCategory ? html`
         <div class="category-header">
-          ${option.icon ? html`<span class="category-icon">${option.icon}</span>` : null}
+          ${option.icon !== undefined && option.icon !== "" ? html`<span class="category-icon">${option.icon}</span>` : null}
           <span>${option.category}</span>
         </div>
       ` : null}
       <button class=${index === selectedIndex ? "selected" : ""} ${scrollWhenSelected(index === selectedIndex, option.value)} @click=${() => onPick?.(option.value)}>
         <div class="option-title">
-          ${option.icon ? html`<span class="option-icon">${option.icon}</span>` : null}
+          ${option.icon !== undefined && option.icon !== "" ? html`<span class="option-icon">${option.icon}</span>` : null}
           <span>${option.label}</span>
         </div>
         ${option.description !== undefined && option.description !== "" ? html`<small>${option.description}</small>` : null}
