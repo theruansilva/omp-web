@@ -283,20 +283,25 @@ export const chatStyles = css`
   .activity-dock.active .dot { animation: pulse 1.2s ease-in-out infinite; opacity: 1; }
   .msg { position: relative; max-width: 100%; min-width: 0; box-sizing: border-box; margin: 0 0 24px; padding: 0; border: none; border-radius: 0; background: transparent; overflow: visible; }
   .msg.assistant { align-self: flex-start; width: 100%; max-width: 100%; padding: 2px 0 8px; background: transparent; color: var(--pi-text); }
-  .msg.user { align-self: flex-end; margin-left: auto; max-width: min(85%, 640px); padding: 12px 18px; border: 1px solid var(--pi-border); border-radius: 18px 18px 4px 18px; background: var(--pi-surface); color: var(--pi-text); }
+  .msg.user { align-self: flex-end; margin-left: auto; max-width: min(85%, 640px); padding: 12px 18px; border: 1px solid var(--pi-border); border-radius: 18px; clip-path: var(--clip-path-squircle-16, none); background: var(--pi-surface); color: var(--pi-text); }
   .msg.tool { align-self: flex-start; width: 100%; border: 0; background: transparent; color: var(--pi-text); }
   .msg.tool-execution-shell { padding: 0; border: 0; background: transparent; color: var(--pi-text); }
   .msg.system { align-self: center; max-width: 90%; padding: 8px 14px; border: 1px solid var(--pi-border); border-radius: 10px; background: var(--pi-surface); color: var(--pi-danger); }
   .msg.bash { align-self: flex-start; width: 100%; padding: 10px 14px; border: 1px solid var(--pi-border); border-radius: 10px; background: var(--pi-bg); color: var(--pi-text); }
   .msg.skill { align-self: flex-start; width: 100%; padding: 10px 14px; border: 1px solid var(--pi-border); border-radius: 10px; background: var(--pi-surface); }
-  .msg.event-group { align-self: flex-start; width: 100%; padding: 0; border: 1px solid var(--pi-border-muted); border-radius: 10px; background: var(--pi-surface); color: var(--pi-muted); }
-  .msg.event-group.live { border-color: var(--pi-border); background: var(--pi-surface); }
-  .msg.event-group > summary { position: sticky; top: -26px; z-index: 5; display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 9px 9px 0 0; border-bottom: 1px solid var(--pi-border-muted); background: var(--pi-surface); color: var(--pi-muted); }
-  .msg.event-group.live > summary { border-bottom-color: var(--pi-border); background: var(--pi-surface); color: var(--pi-text); }
-  .msg.event-group > summary .label { margin: 0; }
-  .group-body { padding: 0 12px 12px; }
+  .msg.event-group { align-self: flex-start; width: 100%; margin: 4px 0 16px; padding: 0; border: none; background: transparent; color: var(--pi-muted); }
+  .msg.event-group > summary { display: inline-flex; align-items: center; gap: 8px; padding: 6px 0; border: none; background: transparent; color: var(--pi-muted); font-size: 13px; cursor: pointer; user-select: none; list-style: none; }
+  .msg.event-group > summary::-webkit-details-marker { display: none; }
+  .msg.event-group > summary:hover { color: var(--pi-text); }
+  .msg.event-group .timeline-toggle-icon { display: inline-block; font-size: 10px; transition: transform 0.15s ease; }
+  .msg.event-group[open] .timeline-toggle-icon { transform: rotate(90deg); }
+  .msg.event-group .timeline-summary-text { font-weight: 500; }
+  .group-body { position: relative; margin: 6px 0 12px 6px; padding: 2px 0 2px 18px; border-left: 2px solid var(--pi-border-muted); display: flex; flex-direction: column; gap: 6px; }
+  .msg.event-group.live .group-body { border-left-color: var(--pi-border); }
+  .group-msg { position: relative; max-width: 100%; min-width: 0; box-sizing: border-box; padding: 4px 0; border: none; color: var(--pi-text); overflow: visible; }
+  .group-msg::before { content: ""; position: absolute; left: -23px; top: 10px; width: 8px; height: 8px; border-radius: 50%; background: var(--pi-border); border: 2px solid var(--pi-bg); }
+  .group-msg:hover::before { background: var(--pi-accent); }
   .chat-image { display: block; max-width: 100%; max-height: 320px; margin: 8px 0 0; border: 1px solid var(--pi-border-muted); border-radius: 8px; object-fit: contain; }
-  .group-msg { max-width: 100%; min-width: 0; box-sizing: border-box; padding: 10px 0; border-top: 1px solid var(--pi-border-muted); color: var(--pi-text); overflow: visible; }
   .group-msg.tool { color: var(--pi-warning); }
   .group-msg.tool-execution-shell { color: var(--pi-text); }
   .group-msg.system { color: var(--pi-danger); }
@@ -319,6 +324,9 @@ export const chatStyles = css`
   .session-activity.receiving strong { color: var(--pi-success); }
   .session-activity span, .session-activity small { color: var(--pi-muted); }
   .history-boundary small { color: var(--pi-dim); }
+  .assistant-model-indicator { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; color: var(--pi-text); }
+  .assistant-model-icon { font-size: 12px; color: var(--pi-accent, #58a6ff); }
+  .assistant-model-name { font-weight: 600; letter-spacing: -0.01em; }
   .msg-header { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 20px; margin-bottom: 6px; }
   .msg > .msg-header { position: static; margin: 0 0 6px; padding: 0; border: 0; border-radius: 0; background: transparent; box-shadow: none; }
   .msg.user > .msg-header { margin-bottom: 4px; background: transparent; border: 0; }
@@ -471,8 +479,8 @@ export const promptEditorStyles = css`
     width: 100%;
     max-width: 800px;
     margin: 0 auto;
-    border: 1px solid var(--pi-border);
     border-radius: 18px;
+    clip-path: var(--clip-path-squircle-24, none);
     background: var(--pi-surface);
     box-shadow: 0 4px 24px var(--pi-shadow-soft);
     overflow: hidden;

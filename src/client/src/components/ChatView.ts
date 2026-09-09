@@ -398,8 +398,8 @@ export class ChatView extends LitElement {
       ${this.renderScrollMarker(this.groupScrollMarkerId(endIndex))}
       <details class=${defaultOpen ? "msg event-group live" : "msg event-group"} data-index=${startIndex} data-scroll-anchor-id=${this.groupAnchorKey(startIndex)} ?open=${open} @toggle=${(event: Event) => { this.onGroupToggle(disclosureKey, event, defaultOpen); }}>
         <summary>
-          <b class="label">${defaultOpen ? "live events" : "events"}</b>
-          <span>${summarizeChatGroup(messages)}</span>
+          <span class="timeline-toggle-icon" aria-hidden="true">▶</span>
+          <span class="timeline-summary-text">${summarizeChatGroup(messages)}</span>
         </summary>
         <div class="group-body">
           ${messages.map((message, offset) => {
@@ -423,13 +423,24 @@ export class ChatView extends LitElement {
   private renderMessageHeader(message: ChatLine, key: string) {
     const meta = this.messageMetaLabel(message);
     const expanded = this.expandedMetaKey === key;
-    const showRole = message.role !== "user" && message.role !== "assistant";
+    const isUser = message.role === "user";
+    const isAssistant = message.role === "assistant";
+    const model = isAssistant ? (this.modelLabel(message) ?? this.status?.model?.id) : undefined;
+    const showRole = !isUser && !isAssistant;
+
     return html`
       <div class="msg-header">
-        ${showRole ? html`<b class="label">${message.role}</b>` : html`<span></span>`}
+        ${isAssistant && model !== undefined ? html`
+          <span class="assistant-model-indicator" title=${model}>
+            <span class="assistant-model-icon" aria-hidden="true">✦</span>
+            <strong class="assistant-model-name">${model}</strong>
+          </span>
+        ` : (isUser ? html`<span></span>` : (showRole ? html`<b class="label">${message.role}</b>` : html`<span></span>`))}
         <div class="msg-header-trailing">
           ${this.renderMessageActions(message, key)}
-          <span class=${expanded ? "msg-meta expanded" : "msg-meta"} role="button" tabindex="0" title=${meta.full} aria-label=${meta.full} aria-expanded=${String(expanded)} @click=${() => { this.expandedMetaKey = expanded ? undefined : key; }} @keydown=${(event: KeyboardEvent) => { this.onMetaKeydown(event, key, expanded); }}>${meta.short}</span>
+          ${!isUser ? html`
+            <span class=${expanded ? "msg-meta expanded" : "msg-meta"} role="button" tabindex="0" title=${meta.full} aria-label=${meta.full} aria-expanded=${String(expanded)} @click=${() => { this.expandedMetaKey = expanded ? undefined : key; }} @keydown=${(event: KeyboardEvent) => { this.onMetaKeydown(event, key, expanded); }}>${meta.short}</span>
+          ` : null}
         </div>
       </div>
     `;

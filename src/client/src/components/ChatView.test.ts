@@ -26,11 +26,14 @@ describe("chatQueuedMessageSections", () => {
 interface TestableChatView {
   renderPart(part: unknown): unknown;
   renderActivityDock(): unknown;
+  renderMessageHeader(message: unknown, key: string): unknown;
+  renderMessageGroup(messages: unknown[], startIndex: number, endIndex: number, defaultOpen: boolean): unknown;
   chatPreferences: {
     showThinking: boolean;
     showEvents: boolean;
     showToolExecutions: boolean;
     showAgentStatus: boolean;
+    showStatusBar: boolean;
   };
   isSendingPrompt: boolean;
 }
@@ -101,5 +104,42 @@ describe("ChatView display preferences", () => {
     };
 
     expect(view.renderActivityDock()).toBeNull();
+  });
+});
+
+describe("ChatView message header and timeline", () => {
+  it("omits timestamp for user messages", () => {
+    const view = createTestChatView();
+    const userMessage = { role: "user", parts: [{ type: "text", text: "hello" }] };
+    const header = view.renderMessageHeader(userMessage, "0");
+    const headerJson = JSON.stringify(header);
+    expect(headerJson).not.toContain("msg-meta");
+  });
+
+  it("renders model indicator on assistant message header", () => {
+    const view = createTestChatView();
+    const assistantMessage = {
+      role: "assistant",
+      parts: [{ type: "text", text: "world" }],
+      meta: {
+        model: { id: "claude-3.7-sonnet", provider: "anthropic" },
+      },
+    };
+    const header = view.renderMessageHeader(assistantMessage, "1");
+    const headerJson = JSON.stringify(header);
+    expect(headerJson).toContain("assistant-model-indicator");
+    expect(headerJson).toContain("anthropic/claude-3.7-sonnet");
+  });
+
+  it("renders event group as timeline summary", () => {
+    const view = createTestChatView();
+    const messages = [
+      { role: "tool", parts: [{ type: "toolCall", toolName: "read", summary: "foo" }] },
+    ];
+    const group = view.renderMessageGroup(messages, 0, 1, false);
+    const groupJson = JSON.stringify(group);
+    expect(groupJson).toContain("timeline-toggle-icon");
+    expect(groupJson).toContain("timeline-summary-text");
+    expect(groupJson).toContain("group-body");
   });
 });
