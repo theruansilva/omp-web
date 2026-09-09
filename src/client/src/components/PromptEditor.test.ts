@@ -37,6 +37,7 @@ function collectTemplateStrings(template: TemplateResult): string[] {
 
 function dummyStatus(isStreaming = false): SessionStatus {
   return {
+    sessionId: "test-session",
     model: { id: "gemini-2.5-flash", provider: "google" },
     thinkingLevel: "medium",
     isStreaming,

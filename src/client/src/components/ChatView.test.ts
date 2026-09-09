@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { DEFAULT_CHAT_PREFERENCES } from "../chatPreferences";
 import { ChatView, chatQueuedMessageSections } from "./ChatView";
 
 describe("chatQueuedMessageSections", () => {
@@ -47,10 +48,8 @@ describe("ChatView display preferences", () => {
   it("filters out thinking parts when showThinking is false", () => {
     const view = createTestChatView();
     view.chatPreferences = {
+      ...DEFAULT_CHAT_PREFERENCES,
       showThinking: false,
-      showEvents: true,
-      showToolExecutions: true,
-      showAgentStatus: true,
     };
 
     const rendered = view.renderPart({ type: "thinking", text: "internal thoughts" });
@@ -64,10 +63,8 @@ describe("ChatView display preferences", () => {
   it("filters out tool execution parts when showToolExecutions is false", () => {
     const view = createTestChatView();
     view.chatPreferences = {
-      showThinking: true,
-      showEvents: true,
+      ...DEFAULT_CHAT_PREFERENCES,
       showToolExecutions: false,
-      showAgentStatus: true,
     };
 
     expect(view.renderPart({ type: "toolCall", toolName: "read", summary: "read file" })).toBeNull();
@@ -81,9 +78,7 @@ describe("ChatView display preferences", () => {
     const view = createTestChatView();
     view.isSendingPrompt = true;
     view.chatPreferences = {
-      showThinking: true,
-      showEvents: true,
-      showToolExecutions: true,
+      ...DEFAULT_CHAT_PREFERENCES,
       showAgentStatus: false,
     };
 
@@ -97,10 +92,7 @@ describe("ChatView display preferences", () => {
     const view = createTestChatView();
     view.isSendingPrompt = false;
     view.chatPreferences = {
-      showThinking: true,
-      showEvents: true,
-      showToolExecutions: true,
-      showAgentStatus: true,
+      ...DEFAULT_CHAT_PREFERENCES,
     };
 
     expect(view.renderActivityDock()).toBeNull();
