@@ -423,9 +423,10 @@ export class ChatView extends LitElement {
   private renderMessageHeader(message: ChatLine, key: string) {
     const meta = this.messageMetaLabel(message);
     const expanded = this.expandedMetaKey === key;
+    const showRole = message.role !== "user" && message.role !== "assistant";
     return html`
       <div class="msg-header">
-        <b class="label">${message.role}</b>
+        ${showRole ? html`<b class="label">${message.role}</b>` : html`<span></span>`}
         <div class="msg-header-trailing">
           ${this.renderMessageActions(message, key)}
           <span class=${expanded ? "msg-meta expanded" : "msg-meta"} role="button" tabindex="0" title=${meta.full} aria-label=${meta.full} aria-expanded=${String(expanded)} @click=${() => { this.expandedMetaKey = expanded ? undefined : key; }} @keydown=${(event: KeyboardEvent) => { this.onMetaKeydown(event, key, expanded); }}>${meta.short}</span>
