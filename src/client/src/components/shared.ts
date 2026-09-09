@@ -283,7 +283,7 @@ export const chatStyles = css`
   .activity-dock.active .dot { animation: pulse 1.2s ease-in-out infinite; opacity: 1; }
   .msg { position: relative; max-width: 100%; min-width: 0; box-sizing: border-box; margin: 0 0 24px; padding: 0; border: none; border-radius: 0; background: transparent; overflow: visible; }
   .msg.assistant { align-self: flex-start; width: 100%; max-width: 100%; padding: 2px 0 8px; background: transparent; color: var(--pi-text); }
-  .msg.user { align-self: flex-end; margin-left: auto; max-width: min(85%, 640px); padding: 12px 18px; border: 1px solid var(--pi-border); border-radius: 18px; clip-path: var(--clip-path-squircle-16, none); background: var(--pi-surface); color: var(--pi-text); }
+  .msg.user { align-self: flex-end; margin-left: auto; max-width: min(85%, 640px); padding: 10px 14px; border: 1px solid var(--pi-border); border-radius: 18px; background: var(--pi-surface); color: var(--pi-text); }
   .msg.tool { align-self: flex-start; width: 100%; border: 0; background: transparent; color: var(--pi-text); }
   .msg.tool-execution-shell { padding: 0; border: 0; background: transparent; color: var(--pi-text); }
   .msg.system { align-self: center; max-width: 90%; padding: 8px 14px; border: 1px solid var(--pi-border); border-radius: 10px; background: var(--pi-surface); color: var(--pi-danger); }
@@ -329,9 +329,9 @@ export const chatStyles = css`
   .assistant-model-name { font-weight: 600; letter-spacing: -0.01em; }
   .msg-header { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 20px; margin-bottom: 6px; }
   .msg > .msg-header { position: static; margin: 0 0 6px; padding: 0; border: 0; border-radius: 0; background: transparent; box-shadow: none; }
-  .msg.user > .msg-header { margin-bottom: 4px; background: transparent; border: 0; }
+  .msg.user > .msg-header { position: absolute; top: 4px; right: 6px; margin: 0; padding: 0; min-height: 0; background: transparent; border: 0; z-index: 2; }
   .msg.user > .msg-header .label, .msg.assistant > .msg-header .label { display: none; }
-  .group-msg > .msg-header { position: static; margin: 0 0 6px; padding: 0; border-bottom: 0; background: transparent; }
+  .msg-header-leading { display: inline-flex; align-items: baseline; gap: 8px; min-width: 0; }
   .msg-header-trailing { min-width: 0; display: inline-flex; align-items: center; justify-content: flex-end; gap: 8px; margin-left: auto; }
   .msg-actions { display: inline-flex; gap: 4px; opacity: 0; transition: opacity .15s ease; }
   .msg-action { display: inline-grid; place-items: center; width: 22px; height: 22px; border: 1px solid var(--pi-border); border-radius: 6px; background: var(--pi-surface); color: var(--pi-muted); padding: 0; font: 12px system-ui, sans-serif; line-height: 1; cursor: pointer; transition: color 0.15s ease, border-color 0.15s ease; }
@@ -339,7 +339,7 @@ export const chatStyles = css`
   .msg:hover .msg-actions, .msg:focus-within .msg-actions, .group-msg:hover .msg-actions, .group-msg:focus-within .msg-actions { opacity: 1; }
   .label { display: block; color: var(--pi-muted); font-size: 12px; text-transform: uppercase; }
   .msg-header .label { margin: 0; }
-  .msg-meta { min-width: 0; opacity: .28; border: 0; background: transparent; color: var(--pi-dim); padding: 0; font: 11px system-ui, sans-serif; text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transition: opacity .12s ease, max-width .12s ease; cursor: pointer; user-select: text; -webkit-user-select: text; }
+  .msg-meta { min-width: 0; opacity: .45; border: 0; background: transparent; color: var(--pi-dim); padding: 0; font: 11px system-ui, sans-serif; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transition: opacity .12s ease; cursor: pointer; user-select: text; -webkit-user-select: text; }
   .msg:hover > .msg-header .msg-meta, .msg:focus-within > .msg-header .msg-meta, .group-msg:hover > .msg-header .msg-meta, .group-msg:focus-within > .msg-header .msg-meta, .msg-meta:focus, .msg-meta.expanded { opacity: 1; }
   .msg-meta:focus { outline: 1px solid var(--pi-border); outline-offset: 3px; border-radius: 4px; }
   @media (hover: none) {
@@ -479,8 +479,8 @@ export const promptEditorStyles = css`
     width: 100%;
     max-width: 800px;
     margin: 0 auto;
+    border: 1px solid var(--pi-border);
     border-radius: 18px;
-    clip-path: var(--clip-path-squircle-24, none);
     background: var(--pi-surface);
     box-shadow: 0 4px 24px var(--pi-shadow-soft);
     overflow: hidden;

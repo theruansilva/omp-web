@@ -428,19 +428,38 @@ export class ChatView extends LitElement {
     const model = isAssistant ? (this.modelLabel(message) ?? this.status?.model?.id) : undefined;
     const showRole = !isUser && !isAssistant;
 
+    if (isUser) {
+      return html`
+        <div class="msg-header">
+          <div class="msg-header-trailing">
+            ${this.renderMessageActions(message, key)}
+          </div>
+        </div>
+      `;
+    }
+
     return html`
       <div class="msg-header">
-        ${isAssistant && model !== undefined ? html`
-          <span class="assistant-model-indicator" title=${model}>
-            <span class="assistant-model-icon" aria-hidden="true">✦</span>
-            <strong class="assistant-model-name">${model}</strong>
-          </span>
-        ` : (isUser ? html`<span></span>` : (showRole ? html`<b class="label">${message.role}</b>` : html`<span></span>`))}
+        <div class="msg-header-leading">
+          ${isAssistant && model !== undefined ? html`
+            <span class="assistant-model-indicator" title=${model}>
+              <span class="assistant-model-icon" aria-hidden="true">✦</span>
+              <strong class="assistant-model-name">${model}</strong>
+            </span>
+          ` : (showRole ? html`<b class="label">${message.role}</b>` : null)}
+          <span
+            class=${expanded ? "msg-meta expanded" : "msg-meta"}
+            role="button"
+            tabindex="0"
+            title=${meta.full}
+            aria-label=${meta.full}
+            aria-expanded=${String(expanded)}
+            @click=${() => { this.expandedMetaKey = expanded ? undefined : key; }}
+            @keydown=${(event: KeyboardEvent) => { this.onMetaKeydown(event, key, expanded); }}
+          >${meta.short}</span>
+        </div>
         <div class="msg-header-trailing">
           ${this.renderMessageActions(message, key)}
-          ${!isUser ? html`
-            <span class=${expanded ? "msg-meta expanded" : "msg-meta"} role="button" tabindex="0" title=${meta.full} aria-label=${meta.full} aria-expanded=${String(expanded)} @click=${() => { this.expandedMetaKey = expanded ? undefined : key; }} @keydown=${(event: KeyboardEvent) => { this.onMetaKeydown(event, key, expanded); }}>${meta.short}</span>
-          ` : null}
         </div>
       </div>
     `;
