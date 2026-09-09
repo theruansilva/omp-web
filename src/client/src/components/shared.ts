@@ -326,12 +326,12 @@ export const chatStyles = css`
   .history-boundary small { color: var(--pi-dim); }
   .msg-header { display: flex; align-items: center; min-height: 18px; margin-bottom: 4px; }
   .msg > .msg-header { position: static; margin: 0 0 4px; padding: 0; border: 0; border-radius: 0; background: transparent; box-shadow: none; }
-  .msg-header-leading { display: inline-flex; align-items: baseline; gap: 8px; min-width: 0; }
+  .msg-header-leading { display: inline-flex; align-items: center; gap: 6px; min-width: 0; }
   .msg-header-trailing { min-width: 0; display: inline-flex; align-items: center; justify-content: flex-end; gap: 8px; margin-left: auto; }
   .msg-actions { display: inline-flex; gap: 4px; opacity: 0; transition: opacity .15s ease; }
   .msg-action { display: inline-grid; place-items: center; width: 22px; height: 22px; border: 1px solid var(--pi-border); border-radius: 6px; background: var(--pi-surface); color: var(--pi-muted); padding: 0; font: 12px system-ui, sans-serif; line-height: 1; cursor: pointer; transition: color 0.15s ease, border-color 0.15s ease; }
   .msg-action:hover, .msg-action:focus { color: var(--pi-text); border-color: var(--pi-accent); }
-  .msg:hover .msg-actions, .msg:focus-within .msg-actions, .group-msg:hover .msg-actions, .group-msg:focus-within .msg-actions { opacity: 1; }
+  .msg:hover .msg-actions, .msg:focus-within .msg-actions, .msg-header:hover .msg-actions, .group-msg:hover .msg-actions, .group-msg:focus-within .msg-actions { opacity: 1; }
   .label { display: block; color: var(--pi-muted); font-size: 12px; text-transform: uppercase; }
   .msg-header .label { margin: 0; }
   .msg-meta { min-width: 0; opacity: .45; border: 0; background: transparent; color: var(--pi-dim); padding: 0; font: 11px system-ui, sans-serif; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transition: opacity .12s ease; cursor: pointer; user-select: text; -webkit-user-select: text; }
@@ -427,16 +427,20 @@ export const autocompleteStyles = css`
 export const commandPickerStyles = css`
   :host { position: fixed; inset: 0; z-index: 10; color: var(--pi-text); font: 14px system-ui, sans-serif; }
   .backdrop { display: grid; place-items: center; width: 100%; height: 100%; background: var(--pi-overlay); }
-  section { width: min(720px, calc(100vw - 40px)); max-height: min(640px, calc(100vh - 40px)); display: flex; flex-direction: column; border: 1px solid var(--pi-border); border-radius: 12px; background: var(--pi-bg); box-shadow: 0 20px 60px var(--pi-shadow-strong); overflow: hidden; }
+  section { width: min(720px, calc(100vw - 40px)); max-height: min(640px, calc(100vh - 40px)); display: flex; flex-direction: column; border: 1px solid var(--pi-border); border-radius: 16px; background: var(--pi-bg); box-shadow: 0 20px 60px var(--pi-shadow-strong); overflow: hidden; }
   header { display: flex; align-items: center; justify-content: space-between; padding: 12px; border-bottom: 1px solid var(--pi-border); }
   .options { min-height: 0; overflow: auto; outline: none; }
   button { border: 0; background: transparent; color: var(--pi-text); cursor: pointer; }
   header button { font-size: 20px; color: var(--pi-muted); }
-  input { margin: 10px 12px; border: 1px solid var(--pi-border); border-radius: 8px; background: var(--pi-bg); color: var(--pi-text); font: var(--pi-control-font-size, 16px) var(--pi-control-font-family, system-ui, sans-serif); padding: 8px 10px; outline: none; }
+  input { margin: 10px 12px; border: 1px solid var(--pi-border); border-radius: 8px; background: var(--pi-surface); color: var(--pi-text); font: var(--pi-control-font-size, 16px) var(--pi-control-font-family, system-ui, sans-serif); padding: 8px 12px; outline: none; }
   input:focus { border-color: var(--pi-accent); }
-  .options button { display: block; width: 100%; padding: 10px 12px; border-bottom: 1px solid var(--pi-border-muted); text-align: left; }
+  .category-header { display: flex; align-items: center; gap: 8px; padding: 8px 14px 6px; background: var(--pi-surface); color: var(--pi-muted); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; border-bottom: 1px solid var(--pi-border-muted); position: sticky; top: 0; z-index: 2; }
+  .category-icon { font-size: 13px; }
+  .option-title { display: flex; align-items: center; gap: 8px; font-weight: 500; }
+  .option-icon { font-size: 14px; flex: 0 0 auto; }
+  .options button { display: block; width: 100%; padding: 10px 14px; border-bottom: 1px solid var(--pi-border-muted); text-align: left; }
   .options button.selected, .options button:hover { background: var(--pi-selection-bg); }
-  small { display: block; margin-top: 4px; color: var(--pi-muted); }
+  small { display: block; margin-top: 4px; color: var(--pi-muted); font-size: 12px; }
   .empty { padding: 24px; color: var(--pi-muted); text-align: center; }
 `;
 

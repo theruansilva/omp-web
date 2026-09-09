@@ -26,12 +26,7 @@ export class CommandPicker extends LitElement {
           </header>
           ${this.searchable ? html`<input placeholder="Search" .value=${this.query} @input=${(event: Event) => { this.handleSearchInput(event); }} @keydown=${(event: KeyboardEvent) => { this.handleKeyDown(event); }}>` : null}
           <div class="options" @keydown=${(event: KeyboardEvent) => { this.handleKeyDown(event); }} tabindex="0">
-            ${options.map((option, index) => html`
-              <button class=${index === this.selectedIndex ? "selected" : ""} ${scrollWhenSelected(index === this.selectedIndex, option.value)} @click=${() => this.onPick?.(option.value)}>
-                <span>${option.label}</span>
-                ${option.description !== undefined && option.description !== "" ? html`<small>${option.description}</small>` : null}
-              </button>
-            `)}
+            ${renderOptionList(options, this.selectedIndex, this.onPick)}
             ${options.length === 0 ? html`<div class="empty">No matching options</div>` : null}
           </div>
         </section>
@@ -57,10 +52,11 @@ export class CommandPicker extends LitElement {
     }
   }
 
+
   private filteredOptions(): CommandOption[] {
     const query = this.query.trim().toLowerCase();
     if (query === "") return this.options;
-    return this.options.filter((option) => `${option.label} ${option.description ?? ""} ${option.value}`.toLowerCase().includes(query));
+    return this.options.filter((option) => `${option.label} ${option.description ?? ""} ${option.category ?? ""} ${option.value}`.toLowerCase().includes(query));
   }
 
   private handleKeyDown(event: KeyboardEvent) {
@@ -82,4 +78,33 @@ export class CommandPicker extends LitElement {
   }
 
   static override styles = commandPickerStyles;
+}
+
+function renderOptionList(
+  options: CommandOption[],
+  selectedIndex: number,
+  onPick?: (value: string) => void,
+) {
+  let lastCategory: string | undefined = undefined;
+  return options.map((option, index) => {
+    const showCategory = option.category !== undefined && option.category !== "" && option.category !== lastCategory;
+    if (showCategory) {
+      lastCategory = option.category;
+    }
+    return html`
+      ${showCategory ? html`
+        <div class="category-header">
+          ${option.icon ? html`<span class="category-icon">${option.icon}</span>` : null}
+          <span>${option.category}</span>
+        </div>
+      ` : null}
+      <button class=${index === selectedIndex ? "selected" : ""} ${scrollWhenSelected(index === selectedIndex, option.value)} @click=${() => onPick?.(option.value)}>
+        <div class="option-title">
+          ${option.icon ? html`<span class="option-icon">${option.icon}</span>` : null}
+          <span>${option.label}</span>
+        </div>
+        ${option.description !== undefined && option.description !== "" ? html`<small>${option.description}</small>` : null}
+      </button>
+    `;
+  });
 }

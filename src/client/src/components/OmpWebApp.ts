@@ -51,6 +51,7 @@ import {
   preferencesEventTarget,
   type ChatPreferences,
 } from "../chatPreferences";
+import { classifyModelSource } from "../modelCategories";
 import "./PromptEditor";
 import type { PromptEditor } from "./PromptEditor";
 import "./StatusBar";
@@ -1736,12 +1737,32 @@ export class OmpWebApp extends LitElement {
       modelDialog: {
         title: "Select Model",
         ...(currentProvider !== undefined && currentId !== undefined ? { selectedValue: `${currentProvider}/${currentId}` } : {}),
-        options: models.map((model) => {
-          const provider = model.provider ?? "";
-          const id = model.id ?? "";
-          const isCurrent = provider === currentProvider && id === currentId;
-          return { value: `${provider}/${id}`, label: `${id}${isCurrent ? " ✓ current" : ""}`, description: provider };
-        }),
+        options: (() => {
+          const classified = models.map((model) => {
+            const provider = model.provider ?? "";
+            const id = model.id ?? "";
+            const info = classifyModelSource(provider, id);
+            const isCurrent = provider === currentProvider && id === currentId;
+            return {
+              provider,
+              id,
+              info,
+              option: {
+                value: `${provider}/${id}`,
+                label: `${id}${isCurrent ? " ✓ current" : ""}`,
+                description: provider,
+                category: info.category,
+                icon: info.icon,
+              },
+            };
+          });
+          classified.sort((a, b) => {
+            if (a.info.priority !== b.info.priority) return a.info.priority - b.info.priority;
+            if (a.info.category !== b.info.category) return a.info.category.localeCompare(b.info.category);
+            return a.id.localeCompare(b.id);
+          });
+          return classified.map((m) => m.option);
+        })(),
       },
     });
   }
