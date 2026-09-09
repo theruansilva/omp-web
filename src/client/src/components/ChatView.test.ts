@@ -116,7 +116,7 @@ describe("ChatView message header and timeline", () => {
     expect(headerJson).not.toContain("msg-meta");
   });
 
-  it("renders only faded meta on assistant message header without copy icon or bold model indicator", () => {
+  it("renders faded meta and copy action on assistant message header without bold model indicator", () => {
     const view = createTestChatView();
     const assistantMessage = {
       role: "assistant",
@@ -129,8 +129,8 @@ describe("ChatView message header and timeline", () => {
     const headerJson = JSON.stringify(header);
     expect(headerJson).toContain("msg-meta");
     expect(headerJson).toContain("anthropic/claude-3.7-sonnet");
+    expect(headerJson).toContain("msg-actions");
     expect(headerJson).not.toContain("assistant-model-indicator");
-    expect(headerJson).not.toContain("msg-actions");
   });
 
   it("renders event group as timeline summary", () => {

@@ -443,7 +443,7 @@ export class ChatView extends LitElement {
             @click=${() => { this.expandedMetaKey = expanded ? undefined : key; }}
             @keydown=${(event: KeyboardEvent) => { this.onMetaKeydown(event, key, expanded); }}
           >${meta.short}</span>
-        </div>
+          ${this.renderMessageActions(message, key)}
       </div>
     `;
   }
