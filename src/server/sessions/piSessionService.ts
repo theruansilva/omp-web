@@ -285,9 +285,9 @@ class DefaultPiAgentSession implements PiAgentSession {
  get modelRegistry(): ModelRegistryInstance { return this.ompSession.modelRegistry; }
  get sessionManager(): PiSessionManager { return this.piSessionManager; }
  get scopedModels(): readonly { model: AgentModel; thinkingLevel?: ClientThinkingLevel }[] {
-  /* eslint-disable @typescript-eslint/consistent-type-assertions, @typescript-eslint/no-unnecessary-type-assertion */
+  /* eslint-disable @typescript-eslint/consistent-type-assertions */
   return (this.ompSession.scopedModels as unknown) as readonly { model: AgentModel; thinkingLevel?: ClientThinkingLevel }[];
-  /* eslint-enable @typescript-eslint/consistent-type-assertions, @typescript-eslint/no-unnecessary-type-assertion */
+  /* eslint-enable @typescript-eslint/consistent-type-assertions */
  }
  get sessionId(): string { return this.ompSession.sessionId; }
  get sessionFile(): string | undefined { return this.ompSession.sessionFile; }
@@ -584,8 +584,8 @@ function createOmpWebEditToolDefinition(cwd: string): ToolDefinition {
   name: editTool.name,
   label: editTool.label,
   description: editTool.description,
-  /* eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- Safe cast to match ToolDefinition parameters */
-  parameters: (editTool.parameters as unknown) as ToolDefinition["parameters"],
+   
+  parameters: editTool.parameters,
   async execute(toolCallId, params, signal, onUpdate) {
    if (isRecord(params) && typeof params["path"] === "string" && params["path"].length > 0) {
     const path = params["path"];

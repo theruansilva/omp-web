@@ -259,7 +259,7 @@ class CapturingRouteSessionService extends PiSessionService {
   readonly bulkArchiveCalls: SessionBulkMutationRef[][] = [];
   readonly bulkDeleteCalls: SessionBulkMutationRef[][] = [];
   reloadError: Error | undefined;
-  readonly setModelCalls: Array<{ lookup: string | PiSessionRef; provider: string; modelId: string; options?: { persist?: boolean; role?: string } }> = [];
+  readonly setModelCalls: { lookup: string | PiSessionRef; provider: string; modelId: string; options?: { persist?: boolean; role?: string } }[] = [];
 
   constructor(eventHub: SessionEventHub) {
     super(eventHub, { sessionManager: new RejectingSessionManager(), heartbeatIntervalMs: 60_000 });
