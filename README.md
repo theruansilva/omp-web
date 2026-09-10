@@ -1,6 +1,6 @@
 # OMP WEB
 
-[![CI](https://github.com/ProgmRuanSilva/omp-web/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/ProgmRuanSilva/omp-web/actions/workflows/ci.yml)
+[![CI](https://github.com/theruansilva/omp-web/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/theruansilva/omp-web/actions/workflows/ci.yml)
 [![npm version](https://img.shields.io/npm/v/@progmruansilva/omp-web)](https://www.npmjs.com/package/@progmruansilva/omp-web)
 [![Node.js](https://img.shields.io/node/v/@progmruansilva/omp-web)](package.json)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
