@@ -3,7 +3,7 @@
   "version": "1.202609.0",
   "description": "Web UI for Oh My Pi Coding Agent",
   "license": "MIT",
-  "author": "ProgmRuanSilva",
+  "author": "theruansilva",
   "type": "module",
   "bin": {
     "omp-web": "dist/cli.js",
@@ -139,6 +139,6 @@
     "extensions": [
       "./extensions"
     ],
-    "image": "https://raw.githubusercontent.com/ProgmRuanSilva/omp-web/main/docs/assets/omp-web-banner.png"
+    "image": "https://raw.githubusercontent.com/theruansilva/omp-web/main/docs/assets/omp-web-banner.png"
   }
 }
