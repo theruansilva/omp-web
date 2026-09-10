@@ -2,7 +2,7 @@ import { mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from "node
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
-import { commandWithVersionCheck, isCliEntrypoint } from "./cli.js";
+import { codingAgentCommandWithVersionCheck, commandWithVersionCheck, isCliEntrypoint } from "./cli.js";
 
 const originalShell = process.env["SHELL"];
 
@@ -30,6 +30,22 @@ describe("commandWithVersionCheck", () => {
     const command = commandWithVersionCheck("npm");
     expect(command).toBe("command -v npm && begin; npm --version 2>&1 || true; end");
     expect(command).not.toContain("(");
+  });
+});
+
+describe("codingAgentCommandWithVersionCheck", () => {
+  it("emits fallback check for bash and zsh", () => {
+    process.env["SHELL"] = "/bin/bash";
+    expect(codingAgentCommandWithVersionCheck()).toBe(
+      "(command -v omp >/dev/null 2>&1 && (command -v omp && (omp --version 2>&1 || true))) || (command -v pi && (pi --version 2>&1 || true))",
+    );
+  });
+
+  it("emits fish syntax when fish shell is detected", () => {
+    process.env["SHELL"] = "/usr/local/bin/fish";
+    expect(codingAgentCommandWithVersionCheck()).toBe(
+      "if command -v omp >/dev/null 2>&1; command -v omp; and omp --version 2>&1 || true; else; command -v pi; and pi --version 2>&1 || true; end",
+    );
   });
 });
 

@@ -424,8 +424,8 @@ function validateDevCheckout(root: string): void {
   }
 
   const parsed: unknown = JSON.parse(readFileSync(packageJsonPath, "utf8"));
-  if (!isRecord(parsed) || parsed["name"] !== OMP_WEB_PACKAGE_NAME) {
-    throw new Error(`Development mode must be installed from a PI WEB checkout. ${packageJsonPath} is not ${OMP_WEB_PACKAGE_NAME}.`);
+  if (!isRecord(parsed) || (parsed["name"] !== "@progmruansilva/omp-web" && parsed["name"] !== "@theruansilva/omp-web")) {
+    throw new Error(`Development mode must be installed from an OMP WEB checkout. ${packageJsonPath} is not @progmruansilva/omp-web or @theruansilva/omp-web.`);
   }
 
   const scripts = parsed["scripts"];
@@ -935,6 +935,13 @@ export function commandWithVersionCheck(command: string): string {
   return `${found} && (${command} --version 2>&1 || true)`;
 }
 
+export function codingAgentCommandWithVersionCheck(): string {
+  if (detectServiceShell().name === "fish") {
+    return "if command -v omp >/dev/null 2>&1; command -v omp; and omp --version 2>&1 || true; else; command -v pi; and pi --version 2>&1 || true; end";
+  }
+  return "(command -v omp >/dev/null 2>&1 && (command -v omp && (omp --version 2>&1 || true))) || (command -v pi && (pi --version 2>&1 || true))";
+}
+
 function nodeVersionCheck(): string {
   return [
     commandCheck("node"),
@@ -949,7 +956,7 @@ function doctorChecks(): Check[] {
     return [
       [`${shell} can find node >= 22`, serviceShellCommand(nodeVersionCheck())],
       [`${shell} can find bun`, serviceShellCommand(commandWithVersionCheck("bun"))],
-      [`${shell} can find pi`, serviceShellCommand(commandWithVersionCheck("pi"))],
+      [`${shell} can find omp or pi`, serviceShellCommand(codingAgentCommandWithVersionCheck())],
     ];
   }
 
@@ -957,12 +964,12 @@ function doctorChecks(): Check[] {
     ...backendAvailabilityChecks(backend),
     ...baseShellChecks(backend),
     [`${shell} can find bun`, serviceShellCommand(commandWithVersionCheck("bun"))],
-    [`${shell} can find pi`, serviceShellCommand(commandWithVersionCheck("pi"))],
+    [`${shell} can find omp or pi`, serviceShellCommand(codingAgentCommandWithVersionCheck())],
   ];
   const executables = resolveServiceExecutables(backend);
   checks.push(...executables.web.checks, ...executables.sessiond.checks);
   if (backend.kind === "systemd") {
-    checks.push([`systemd user ${shell} can find pi`, systemdUserServiceShellCommand(commandWithVersionCheck("pi"))]);
+    checks.push([`systemd user ${shell} can find omp or pi`, systemdUserServiceShellCommand(codingAgentCommandWithVersionCheck())]);
   }
   return checks;
 }

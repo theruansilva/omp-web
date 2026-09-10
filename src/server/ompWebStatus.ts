@@ -456,8 +456,9 @@ function restartCommandFor(installation: OmpWebInstallationInfo | undefined, ser
 async function updateCommandFor(installation: OmpWebInstallationInfo | undefined, restartCommand: string | undefined): Promise<string | undefined> {
   if (restartCommand === undefined) return undefined;
   if (installation?.kind === "pi-package") {
-    if (!(await hasCommand("pi"))) return undefined;
-    return `pi update ${installation.source ?? OMP_WEB_NPM_SOURCE} && ${restartCommand}`;
+    const pkgManager = (await hasCommand("omp")) ? "omp" : (await hasCommand("pi")) ? "pi" : undefined;
+    if (!pkgManager) return undefined;
+    return `${pkgManager} update ${installation.source ?? OMP_WEB_NPM_SOURCE} && ${restartCommand}`;
   }
   if (installation?.kind === "local" && installation.path !== undefined) {
     if (!(await hasCommand("bun")) || !(await isGitCheckoutWithUpstream(installation.path))) return undefined;
