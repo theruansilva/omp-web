@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 import { OMP_WEB_DOCKER_USER_COMMANDS } from "./ompWebDockerCommandPlan.js";
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..");
-const dockerOneLine = "curl -fsSL https://raw.githubusercontent.com/ProgmRuanSilva/omp-web/main/docker/install.sh | sh";
+const dockerOneLine = "curl -fsSL https://raw.githubusercontent.com/theruansilva/omp-web/main/docker/install.sh | sh";
 
 describe("omp-web-docker documentation", () => {
   it("documents the Docker one-line install in the Docker guide", async () => {

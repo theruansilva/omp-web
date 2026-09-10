@@ -300,7 +300,7 @@ install_dir=$(absolute_dir "$install_dir_input") || die "could not create instal
 env_file=$install_dir/.env
 
 asset_ref=$(value_from_env_or_existing_or_default OMP_WEB_DOCKER_REF main)
-asset_base=${OMP_WEB_DOCKER_ASSET_BASE:-https://raw.githubusercontent.com/ProgmRuanSilva/omp-web/$asset_ref/docker}
+asset_base=${OMP_WEB_DOCKER_ASSET_BASE:-https://raw.githubusercontent.com/theruansilva/omp-web/$asset_ref/docker}
 use_local_asset_dir=1
 if [ "${OMP_WEB_DOCKER_REFRESH_ASSETS:-0}" = 1 ] || [ "${OMP_WEB_DOCKER_REF+x}" = x ] || [ "${OMP_WEB_DOCKER_ASSET_BASE+x}" = x ]; then
   use_local_asset_dir=0

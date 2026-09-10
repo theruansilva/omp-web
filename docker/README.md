@@ -45,7 +45,7 @@ The Docker bootstrap does not require Bun or Node.js on the host. It only needs 
 Install with the bootstrap one-liner:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/ProgmRuanSilva/omp-web/main/docker/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/theruansilva/omp-web/main/docker/install.sh | sh
 ```
 
 The one-liner is idempotent. Each run refreshes Docker assets from the requested Git ref, writes host-specific `.env` values, rebuilds the local image from registry packages with `--pull --no-cache`, and recreates the split services without deleting persistent data. After installation, use the canonical runtime command in the install directory, for example `~/.local/share/omp-web-docker/omp-web-docker update`.
@@ -87,7 +87,7 @@ Do not run `docker compose down -v` unless you intentionally want to remove Comp
 The installer accepts flags and equivalent environment variables:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/ProgmRuanSilva/omp-web/main/docker/install.sh \
+curl -fsSL https://raw.githubusercontent.com/theruansilva/omp-web/main/docker/install.sh \
   | sh -s -- \
       --install-dir ~/.local/share/omp-web-docker \
       --data-dir ~/.local/share/omp-web-docker/data \
@@ -131,7 +131,7 @@ Install extra distro packages without writing a hook by setting a whitespace-del
 
 ```bash
 OMP_WEB_EXTRA_ZYPPER_PACKAGES="go rustup kubernetes-client" \
-  curl -fsSL https://raw.githubusercontent.com/ProgmRuanSilva/omp-web/main/docker/install.sh | sh
+  curl -fsSL https://raw.githubusercontent.com/theruansilva/omp-web/main/docker/install.sh | sh
 ```
 
 You can also pass installer flags such as `--opensuse-image`, `--nodejs-major`, `--nodejs-repo`, and `--extra-zypper-packages`, or edit the generated `.env` and rerun the installer.
@@ -158,7 +158,7 @@ zypper --non-interactive install --no-recommends glab kubernetes-client
 zypper clean --all
 EOF
 chmod +x ~/.local/share/omp-web-docker/custom-image.d/10-extra-tools.sh
-curl -fsSL https://raw.githubusercontent.com/ProgmRuanSilva/omp-web/main/docker/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/theruansilva/omp-web/main/docker/install.sh | sh
 ```
 
 Keep credentials out of these scripts. Authenticate tools after the container starts so secrets live in the persistent `/data` mount, for example through `/data/home` and `/data/config`.
@@ -176,7 +176,7 @@ Files in that development hook directory are ignored by Git except for the place
 Pin package versions when you want repeatable rebuilds:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/ProgmRuanSilva/omp-web/main/docker/install.sh \
+curl -fsSL https://raw.githubusercontent.com/theruansilva/omp-web/main/docker/install.sh \
   | sh -s -- --omp-web-version 1.202606.4 --pi-version 0.79.1
 ```
 
@@ -193,7 +193,7 @@ To pin the Docker asset templates themselves, fetch the installer from a specifi
 
 ```bash
 ref=<git-ref>
-curl -fsSL "https://raw.githubusercontent.com/ProgmRuanSilva/omp-web/$ref/docker/install.sh" \
+curl -fsSL "https://raw.githubusercontent.com/theruansilva/omp-web/$ref/docker/install.sh" \
   | sh -s -- --asset-ref "$ref"
 ```
 
@@ -211,7 +211,7 @@ ssh -L 8504:127.0.0.1:8504 user@server
 For a trusted VPN/private interface, bind to that private address:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/ProgmRuanSilva/omp-web/main/docker/install.sh \
+curl -fsSL https://raw.githubusercontent.com/theruansilva/omp-web/main/docker/install.sh \
   | sh -s -- --bind-address 100.x.y.z --port 8504
 ```
 
