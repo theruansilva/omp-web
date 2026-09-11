@@ -105,6 +105,13 @@ describe("Pi session manager gateway", () => {
 
     await expect(gateway.list(cwd)).resolves.toMatchObject([{ id: "session-elsewhere", cwd }]);
   });
+
+  it("maps session title from Pi session files to entry name", async () => {
+    await writeSessionFile(defaultPiSessionDir(cwd, agentDir), "session-with-title", cwd, "My Cool Session");
+    const gateway = createPiSessionManagerGateway({ agentDir, env: {} });
+
+    await expect(gateway.list(cwd)).resolves.toMatchObject([{ id: "session-with-title", cwd, name: "My Cool Session" }]);
+  });
 });
 
 describe("filterSessionsForCwd", () => {
@@ -143,7 +150,7 @@ function sessionEntry(id: string, sessionCwd: string): PiSessionListEntry {
   return { path: join(tempDir, `${id}.jsonl`), id, cwd: sessionCwd, created: new Date(), modified: new Date(), messageCount: 0, firstMessage: "", allMessagesText: "" };
 }
 
-async function writeSessionFile(dir: string, id: string, sessionCwd: string): Promise<void> {
+async function writeSessionFile(dir: string, id: string, sessionCwd: string, title?: string): Promise<void> {
   await mkdir(dir, { recursive: true });
-  await writeFile(join(dir, `${id}.jsonl`), `${JSON.stringify({ type: "session", version: 3, id, timestamp: "2026-01-01T00:00:00.000Z", cwd: sessionCwd })}\n`, "utf8");
+  await writeFile(join(dir, `${id}.jsonl`), `${JSON.stringify({ type: "session", version: 3, id, timestamp: "2026-01-01T00:00:00.000Z", cwd: sessionCwd, ...(title !== undefined ? { title } : {}) })}\n`, "utf8");
 }

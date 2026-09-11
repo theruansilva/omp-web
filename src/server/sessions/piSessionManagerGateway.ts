@@ -83,7 +83,15 @@ export async function listSessionsInDir(sessionDir: string): Promise<PiSessionLi
  // Use SessionManager.list() which lists by cwd but also accepts an explicit
  // sessionDir so we only discover sessions stored in the given directory.
  const sessions = await SessionManager.list("", sessionDir);
- return sessions.map((session) => ({ ...session, cwd: canonicalizeStoredCwd(session.cwd) }));
+ return sessions.map((session) => {
+  const rawTitle = session.title?.trim();
+  const name = rawTitle !== undefined && rawTitle !== "" ? rawTitle : undefined;
+  return {
+   ...session,
+   cwd: canonicalizeStoredCwd(session.cwd),
+   ...(name !== undefined ? { name } : {}),
+  };
+ });
 }
 
 export async function listSessionsInDefaultPiStore(storeRoot = defaultPiSessionsRoot()): Promise<PiSessionListEntry[]> {

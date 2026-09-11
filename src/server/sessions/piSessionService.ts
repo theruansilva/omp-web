@@ -145,6 +145,7 @@ export interface PiSessionListEntry {
  firstMessage: string;
  allMessagesText: string;
  name?: string;
+ title?: string;
  parentSessionPath?: string;
 }
 
@@ -808,7 +809,15 @@ export class PiSessionService {
     .map((record) => this.ensureArchivedSessionMoved(record, sessionsById.get(record.sessionId))),
   );
   const archivedById = new Map(archivedForCwd.map((record) => [record.sessionId, record]));
-  const unarchivedSessions = sessions.filter((session) => !archivedById.has(session.id)).map(clientSessionFromListEntry);
+  const unarchivedSessions = sessions.filter((session) => !archivedById.has(session.id)).map((session) => {
+   const clientSession = clientSessionFromListEntry(session);
+   const active = this.active.get(session.id);
+   const activeName = active?.runtime.session.sessionName;
+   if (activeName !== undefined && activeName !== "") {
+    clientSession.name = activeName;
+   }
+   return clientSession;
+  });
   this.workspaceActivity?.reconcileSessionActivity(cwd, this.reconcilableSessionIds(cwd, unarchivedSessions.map((session) => session.id), archivedById));
   const archivedSessions = archivedForCwd
    .sort(compareArchivedRecords)
@@ -1462,6 +1471,11 @@ export class PiSessionService {
    const listed = findListedSessionForBulkRef(sessionContext, ref);
    const resolvedSessionId = active?.runtime.session.sessionId ?? listed?.id ?? ref.id;
 
+   if (active !== undefined && this.hasActiveWork(active.runtime.session)) {
+    failures.push({ sessionId: resolvedSessionId, error: "Stop current session activity before archiving" });
+    continue;
+   }
+
    try {
     if (listed !== undefined) {
      planItems.push({ input: archiveInputFromListEntry(listed) });
@@ -1808,7 +1822,7 @@ export class PiSessionService {
  private async listSessionNames(cwd: string): Promise<string[]> {
   const [sessions, archivedRecords] = await Promise.all([this.sessionManager.list(cwd), this.archiveStore.list()]);
   const names = new Set<string>();
-  for (const session of sessions) addSessionName(names, session.name);
+  for (const session of sessions) addSessionName(names, session.name ?? session.title);
   for (const record of archivedRecords) {
    if (record.cwd === cwd) addSessionName(names, record.name);
   }
@@ -2266,12 +2280,13 @@ function modelToClientModel(model: PiAgentSession["model"]): ClientSessionModel 
 }
 
 function clientSessionFromListEntry(session: PiSessionListEntry): ClientSession {
+ const name = session.name ?? session.title;
  return {
   id: session.id,
   path: session.path,
   cwd: session.cwd,
   persisted: true,
-  ...(session.name === undefined ? {} : { name: session.name }),
+  ...(name === undefined || name === "" ? {} : { name }),
   created: session.created.toISOString(),
   modified: session.modified.toISOString(),
   messageCount: session.messageCount,
@@ -2281,6 +2296,7 @@ function clientSessionFromListEntry(session: PiSessionListEntry): ClientSession 
 }
 
 function archiveInputFromListEntry(session: PiSessionListEntry): ArchiveSessionInput {
+ const name = session.name ?? session.title;
  return {
   sessionId: session.id,
   cwd: session.cwd,
@@ -2289,7 +2305,7 @@ function archiveInputFromListEntry(session: PiSessionListEntry): ArchiveSessionI
   modified: session.modified.toISOString(),
   messageCount: session.messageCount,
   firstMessage: session.firstMessage,
-  ...(session.name === undefined ? {} : { name: session.name }),
+  ...(name === undefined || name === "" ? {} : { name }),
   ...(session.parentSessionPath === undefined ? {} : { parentSessionPath: session.parentSessionPath }),
  };
 }
@@ -2367,7 +2383,7 @@ function clientSessionFromArchivedRecord(record: ArchivedSessionRecord, fallback
  const messageCount = record.messageCount ?? fallback?.messageCount;
  const firstMessage = record.firstMessage ?? fallback?.firstMessage;
  if (path === undefined || created === undefined || modified === undefined || messageCount === undefined || firstMessage === undefined) return undefined;
- const name = record.name ?? fallback?.name;
+ const name = record.name ?? fallback?.name ?? fallback?.title;
  const parentSessionPath = record.parentSessionPath ?? fallback?.parentSessionPath;
  return {
   id: record.sessionId,

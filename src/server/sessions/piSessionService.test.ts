@@ -436,6 +436,30 @@ describe("PiSessionService", () => {
     await service.dispose();
   });
 
+  it("preserves session name and title when listing sessions and overlays active session names", async () => {
+    const fake = fakeRuntime("active-session");
+    fake.session.sessionName = "Renamed in memory";
+    const service = new PiSessionService(new CapturingSessionEventHub(), {
+      createAgentRuntime: runtimeCreator(fake.runtime),
+      sessionManager: {
+        create: () => fakeSessionManager(),
+        list: () => Promise.resolve([
+          { ...sessionRecord("titled-session"), title: "Session from disk", messageCount: 1, firstMessage: "hi", allMessagesText: "hi" },
+          { ...sessionRecord("active-session"), name: "Old name on disk", messageCount: 2, firstMessage: "hello", allMessagesText: "hello" },
+        ]),
+        open: () => Promise.resolve(fakeSessionManager()),
+      },
+      heartbeatIntervalMs: 60_000,
+    });
+
+    await service.status(sessionRef("active-session"));
+    const sessions = await service.list("/workspace");
+    expect(sessions.find((s) => s.id === "titled-session")?.name).toBe("Session from disk");
+    expect(sessions.find((s) => s.id === "active-session")?.name).toBe("Renamed in memory");
+
+    await service.dispose();
+  });
+
   it("archives a session subtree within the root workspace", async () => {
     const archivedInputs: string[] = [];
     const root = sessionRecord("root");
