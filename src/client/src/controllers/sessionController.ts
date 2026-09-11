@@ -1060,6 +1060,8 @@ export class SessionController {
       activity: state.selectedSession?.id === status.sessionId && clearsStaleActivity ? undefined : state.activity,
       ...(state.selectedSession?.id === status.sessionId && status.pendingAsk ? { askDialog: status.pendingAsk } : {}),
       ...(state.selectedSession?.id === status.sessionId && !status.isStreaming && !status.pendingAsk && state.askDialog ? { askDialog: undefined } : {}),
+      ...(state.selectedSession?.id === status.sessionId && status.planMode?.proposedPlan && !state.planReviewDialog ? { planReviewDialog: status.planMode.proposedPlan } : {}),
+      ...(state.selectedSession?.id === status.sessionId && !status.planMode?.proposedPlan && state.planReviewDialog ? { planReviewDialog: undefined } : {}),
     });
     if (!status.isStreaming) this.finishStreamCatchup(status.sessionId);
   }

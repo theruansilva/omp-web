@@ -46,6 +46,7 @@ export class PromptEditor extends LitElement {
   @property({ attribute: false }) onStop?: () => void;
   @property({ attribute: false }) onSelectModel?: () => void;
   @property({ attribute: false }) onSelectThinking?: () => void;
+  @property({ attribute: false }) onOpenPlanReview?: () => void;
   @property({ attribute: false }) availableThinkingLevels: readonly string[] = [];
   @query(".markdown-editor") private editorHost?: HTMLDivElement;
   @query(".attachment-input") private attachmentInput?: HTMLInputElement;
@@ -258,6 +259,16 @@ export class PromptEditor extends LitElement {
         </button>
         ${this.availableThinkingLevels.length > 0 ? html`
           <button class="select-thinking icon-button" title=${`Thinking level: ${thinkingLevelLabel(status.thinkingLevel)}`} aria-label=${`Thinking level: ${thinkingLevelLabel(status.thinkingLevel)}`} @click=${() => this.onSelectThinking?.()}>${renderThinkingGauge(thinkingGauge(status.thinkingLevel, this.availableThinkingLevels))}</button>
+        ` : null}
+        ${status.planMode?.enabled ? html`
+          <button
+            type="button"
+            class="extension-status-chip plan-mode-chip ${status.planMode.proposedPlan ? "plan-proposed" : ""}"
+            title=${status.planMode.proposedPlan ? "Plan proposed: click to review" : "Plan mode active"}
+            @click=${() => { this.onOpenPlanReview?.(); }}
+          >
+            📋 ${status.planMode.proposedPlan ? "Review Plan" : "Plan Mode"}
+          </button>
         ` : null}
         ${Object.entries(status.extensionStatuses ?? {}).map(([key, text]) => html`
           <span class="extension-status-chip" title=${`${key}: ${text}`}>${text}</span>
@@ -608,7 +619,8 @@ function sessionStatusRenderEqual(a: SessionStatus | undefined, b: SessionStatus
     && a.isStreaming === b.isStreaming
     && a.isCompacting === b.isCompacting
     && a.isBashRunning === b.isBashRunning
-    && JSON.stringify(a.extensionStatuses) === JSON.stringify(b.extensionStatuses);
+    && JSON.stringify(a.extensionStatuses) === JSON.stringify(b.extensionStatuses)
+    && JSON.stringify(a.planMode) === JSON.stringify(b.planMode);
 }
 function draftStorageKey(machineId: unknown, sessionId: unknown): string | undefined {
   if (typeof machineId !== "string" || machineId === "") return undefined;

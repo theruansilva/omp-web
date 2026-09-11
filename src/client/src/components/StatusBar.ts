@@ -23,6 +23,11 @@ export class StatusBar extends LitElement {
     return html`
       <div class="bar">
         <div class="left">
+          ${status.planMode?.enabled ? html`
+            <span class="ext-status plan-mode-status ${status.planMode.proposedPlan ? "plan-proposed" : ""}" title=${status.planMode.proposedPlan ? "Plan proposed: click chip above to review" : "Plan mode active"}>
+              📋 ${status.planMode.proposedPlan ? `Plan: ${status.planMode.proposedPlan.title}` : "Plan Mode"}
+            </span>
+          ` : null}
           ${extensionStatuses.map(([key, text]) => html`
             <span class="ext-status" title=${`${key}: ${text}`}>${text}</span>
           `)}
