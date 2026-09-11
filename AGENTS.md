@@ -11,6 +11,12 @@ If you make changes that affect `src/server/sessiond.ts`, session runtime owners
 
 Changes to the web/API/UI side generally only require the `omp-web-ui-dev.service` autoreload/restart path.
 
+## Production Services vs Dev Mode
+
+- Production systemd user services (`omp-web.service` and `omp-web-sessiond.service`) run the compiled artifacts from `dist/`.
+- Always run `bun run build` after modifying features or fixes before restarting production services, otherwise the services will continue running stale bundles from `dist/`.
+- In dev mode (`bun run dev`), files are executed directly from `src/` with autoreload.
+
 ## Configuration conventions
 
 - `$OMP_WEB_DATA_DIR` (`~/.omp-web` by default) contains PI WEB-managed state such as `projects.json` and `machines.json`; do not treat it as the user-editable config API.
