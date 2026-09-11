@@ -416,6 +416,7 @@ export const formattedTextStyles = css`
   table { border-collapse: collapse; display: block; overflow-x: auto; overflow-y: hidden; }
   th, td { border: 1px solid var(--pi-border); padding: 4px 8px; }
   th { background: var(--pi-surface); }
+  img { max-width: 100%; height: auto; border-radius: 8px; margin: 6px 0; }
 `;
 
 export const statusBarStyles = css`

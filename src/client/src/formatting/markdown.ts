@@ -30,6 +30,36 @@ renderer.code = ({ text, lang }: { text: string; lang?: string }): string => {
   const codeClass = language ? ` class="language-${escapeHtml(language)}"` : "";
   return `<pre${preClass}><code${codeClass}>${escapeHtml(text)}</code></pre>`;
 };
+
+renderer.image = ({ href, title, text }: { href: string; title?: string | null; text: string }): string => {
+  let altText = text ?? "";
+  let widthAttr = "";
+  let heightAttr = "";
+
+  const pipeIndex = altText.lastIndexOf("|");
+  let dimCandidate = "";
+  if (pipeIndex !== -1) {
+    dimCandidate = altText.slice(pipeIndex + 1).trim();
+    altText = altText.slice(0, pipeIndex).trim();
+  } else if (/^\d+(?:x\d+)?$/.test(altText.trim())) {
+    dimCandidate = altText.trim();
+    altText = "";
+  }
+
+  if (dimCandidate) {
+    const dimMatch = dimCandidate.match(/^(\d+)(?:x(\d+))?$/);
+    if (dimMatch && dimMatch[1] !== undefined) {
+      widthAttr = ` width="${dimMatch[1]}"`;
+      if (dimMatch[2] !== undefined) {
+        heightAttr = ` height="${dimMatch[2]}"`;
+      }
+    }
+  }
+
+  const titleAttr = title ? ` title="${escapeHtml(title)}"` : "";
+  return `<img src="${href}" alt="${escapeHtml(altText)}"${widthAttr}${heightAttr}${titleAttr} />`;
+};
+
 const MAX_MARKDOWN_CACHE_ENTRIES = 300;
 const markdownHtmlCache = new Map<string, string>();
 
