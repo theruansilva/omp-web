@@ -235,4 +235,89 @@ describe("SessionCommandService", () => {
     });
     expect(active.runtime.fork).not.toHaveBeenCalled();
   });
+  it("handles /plan commands (toggle, approve, reject)", async () => {
+    let planState: { enabled: boolean; planFilePath: string } | undefined;
+    const approvePlan = vi.fn(() => { planState = undefined; return Promise.resolve(); });
+    const rejectPlan = vi.fn((_feedback?: string) => Promise.resolve());
+    let proposedPlan: { planFilePath: string; title: string; planContent: string } | undefined = undefined;
+
+    const active = activeSession({
+      getPlanModeState: () => planState,
+      setPlanModeState: (state) => { planState = state; },
+      getProposedPlan: () => proposedPlan,
+      approvePlan,
+      rejectPlan,
+    });
+    const service = new SessionCommandService(() => getActive(active), vi.fn(), eventPublisher());
+
+    // Toggle on
+    await expect(service.run("s1", "/plan")).resolves.toEqual({ type: "done", message: "Plan mode enabled." });
+    expect(planState).toEqual({ enabled: true, planFilePath: "PLAN.md" });
+
+    // Toggle off
+    await expect(service.run("s1", "/plan")).resolves.toEqual({ type: "done", message: "Plan mode disabled." });
+    expect(planState).toBeUndefined();
+
+    // Approve with no plan
+    await expect(service.run("s1", "/plan approve")).resolves.toEqual({ type: "unsupported", message: "No plan is currently awaiting approval." });
+
+    // Set proposed plan and approve
+    proposedPlan = { planFilePath: "local://auth-plan.md", title: "Auth Plan", planContent: "# Auth" };
+    await expect(service.run("s1", "/plan approve")).resolves.toEqual({ type: "done", message: "Plan approved. Executing plan…" });
+    expect(approvePlan).toHaveBeenCalledTimes(1);
+
+    // Reject with feedback
+    await expect(service.run("s1", "/plan reject add more details")).resolves.toEqual({ type: "done", message: "Plan rejected. Requested refinement." });
+    expect(rejectPlan).toHaveBeenCalledWith("add more details");
+  });
+
+  it("handles /plan-review command", async () => {
+    const events = eventPublisher();
+    const proposedPlan = { planFilePath: "local://test.md", title: "Test", planContent: "# Test" };
+    const active = activeSession({
+      getProposedPlan: () => proposedPlan,
+    });
+    const service = new SessionCommandService(() => getActive(active), vi.fn(), events);
+
+    await expect(service.run("s1", "/plan-review")).resolves.toEqual({ type: "done", message: "Plan review opened." });
+    expect(events.publish).toHaveBeenCalledWith("s1", { type: "plan.proposed", plan: proposedPlan });
+  });
+
+  it("handles /btw command and branching", async () => {
+    const events = eventPublisher();
+    const runEphemeralTurn = vi.fn(({ onTextDelta }: { onTextDelta?: (delta: string) => void }) => {
+      onTextDelta?.("chunk 1");
+      return Promise.resolve({ replyText: "answer text", assistantMessage: { role: "assistant" } });
+    });
+    const branchBtw = vi.fn(() => Promise.resolve({ cancelled: false }));
+
+    const active = activeSession({
+      runEphemeralTurn,
+    });
+    active.runtime.branchBtw = branchBtw;
+    const service = new SessionCommandService(() => getActive(active), vi.fn(), events);
+
+    // Run btw
+    await expect(service.run("s1", "/btw what is this?")).resolves.toEqual({ type: "done", message: "Ephemeral question asked." });
+    expect(events.publish).toHaveBeenCalledWith("s1", { type: "btw.start", question: "what is this?" });
+
+    await vi.waitFor(() => {
+      expect(runEphemeralTurn).toHaveBeenCalledTimes(1);
+      expect(events.publish).toHaveBeenCalledWith("s1", { type: "btw.delta", delta: "chunk 1" });
+      expect(events.publish).toHaveBeenCalledWith("s1", {
+        type: "btw.end",
+        question: "what is this?",
+        answer: "answer text",
+        canBranch: true,
+      });
+    });
+
+    // Branch from btw
+    await expect(service.run("s1", "/btw branch")).resolves.toMatchObject({
+      type: "done",
+      message: "Session branched from /btw",
+    });
+    expect(branchBtw).toHaveBeenCalledTimes(1);
+    expect(events.publish).toHaveBeenCalledWith("s1", { type: "btw.cleared" });
+  });
 });

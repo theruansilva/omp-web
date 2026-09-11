@@ -31,6 +31,12 @@ export interface CommandSession {
   getUserMessagesForForking: () => readonly { entryId: string; text: string }[];
   getPlanModeState: () => { enabled: boolean; planFilePath: string } | undefined;
   setPlanModeState: (state: { enabled: boolean; planFilePath: string } | undefined) => void;
+  getProposedPlan?: () => { planFilePath: string; title: string; planContent: string } | undefined;
+  approvePlan?: () => Promise<void>;
+  rejectPlan?: (feedback?: string) => Promise<void>;
+  loadPlanForReview?: () => Promise<{ planFilePath: string; title: string; planContent: string } | undefined>;
+  runEphemeralTurn?: (args: { promptText: string; onTextDelta?: (delta: string) => void; signal?: AbortSignal }) => Promise<{ replyText: string; assistantMessage: unknown }>;
+  getLastBtw?: () => { question: string; answer?: string | undefined; assistantMessage?: unknown; leafId?: string | undefined } | undefined;
   toggleAdvisorEnabled: () => boolean;
   setAdvisorEnabled: (enabled: boolean) => boolean;
 }
@@ -39,6 +45,7 @@ export interface CommandRuntime<TSession extends CommandSession = CommandSession
   cwd: string;
   session: TSession;
   fork: (entryId: string, options?: { position?: "before" | "at" }) => Promise<{ cancelled: boolean; selectedText?: string }>;
+  branchBtw?: () => Promise<{ cancelled: boolean }>;
 }
 
 export interface CommandActiveSession<TSession extends CommandSession = CommandSession> {
@@ -98,7 +105,9 @@ export class SessionCommandService<TSession extends CommandSession = CommandSess
       return { type: "unsupported", message: `Unknown command: /${name}` };
     }
 
-    if (name === "plan") { session.setPlanModeState(session.getPlanModeState()?.enabled === true ? undefined : { enabled: true, planFilePath: "PLAN.md" }); return { type: "done", message: "Plan mode toggled." }; }
+    if (name === "plan") return this.plan(active, rest);
+    if (name === "plan-review") return this.planReview(active);
+    if (name === "btw") return this.btw(active, rest);
 
     if (name === "advisor") { session.toggleAdvisorEnabled(); return { type: "done", message: "Advisor toggled." }; }
 
@@ -124,6 +133,97 @@ export class SessionCommandService<TSession extends CommandSession = CommandSess
     if (result.cancelled) return { type: "done", message: "Fork cancelled" };
     this.tryNameRelatedSession(active.runtime.session, relatedName);
     return { type: "done", message: "Session forked", session: clientSessionFromRuntime(active.runtime), ...promptDraft(result.selectedText) };
+  }
+
+  private async plan(active: CommandActiveSession<TSession>, rest: string): Promise<ClientCommandResult> {
+    const session = active.runtime.session;
+    if (rest === "approve") {
+      if (!session.getProposedPlan?.()) return { type: "unsupported", message: "No plan is currently awaiting approval." };
+      await session.approvePlan?.();
+      return { type: "done", message: "Plan approved. Executing plan…" };
+    }
+    if (rest.startsWith("reject")) {
+      if (!session.getProposedPlan?.()) return { type: "unsupported", message: "No plan is currently awaiting approval." };
+      const feedback = rest.replace(/^reject\s*/, "").trim();
+      await session.rejectPlan?.(feedback === "" ? undefined : feedback);
+      return { type: "done", message: "Plan rejected. Requested refinement." };
+    }
+    const wasEnabled = session.getPlanModeState()?.enabled === true;
+    session.setPlanModeState(wasEnabled ? undefined : { enabled: true, planFilePath: "PLAN.md" });
+    return { type: "done", message: wasEnabled ? "Plan mode disabled." : "Plan mode enabled." };
+  }
+
+  private async planReview(active: CommandActiveSession<TSession>): Promise<ClientCommandResult> {
+    const session = active.runtime.session;
+    const proposed = session.getProposedPlan?.();
+    if (proposed) {
+      this.events.publish(session.sessionId, { type: "plan.proposed", plan: proposed });
+      return { type: "done", message: "Plan review opened." };
+    }
+    const state = session.getPlanModeState();
+    if (state?.enabled === true) {
+      const loaded = await session.loadPlanForReview?.();
+      if (loaded) {
+        this.events.publish(session.sessionId, { type: "plan.proposed", plan: loaded });
+        return { type: "done", message: "Plan review opened." };
+      }
+      return { type: "unsupported", message: "No plan file found to review." };
+    }
+    return { type: "unsupported", message: "Plan mode is not active." };
+  }
+
+  private async btw(active: CommandActiveSession<TSession>, rest: string): Promise<ClientCommandResult> {
+    if (rest === "branch") {
+      return this.branchBtw(active);
+    }
+    if (rest === "") {
+      return { type: "unsupported", message: "Usage: /btw <question>" };
+    }
+    return this.runBtw(active, rest);
+  }
+
+  private runBtw(active: CommandActiveSession<TSession>, question: string): ClientCommandResult {
+    const session = active.runtime.session;
+    if (typeof session.runEphemeralTurn !== "function") {
+      return { type: "unsupported", message: "/btw is not available for this session runtime." };
+    }
+    const promptText = `<btw>\nEphemeral side question for current interactive session.\nAnswer briefly, directly; use conversation context already provided.\nNEVER use tools.\n\nQuestion:\n\${question}\n</btw>`;
+
+    this.events.publish(session.sessionId, { type: "btw.start", question });
+
+    void session.runEphemeralTurn({
+      promptText,
+      onTextDelta: (delta: string) => {
+        this.events.publish(session.sessionId, { type: "btw.delta", delta });
+      },
+    }).then((result) => {
+      const canBranch = session.sessionFile !== undefined && session.sessionFile !== "";
+      this.events.publish(session.sessionId, {
+        type: "btw.end",
+        question,
+        answer: result.replyText,
+        canBranch,
+      });
+    }).catch((error: unknown) => {
+      const message = error instanceof Error ? error.message : String(error);
+      this.events.publish(session.sessionId, { type: "btw.error", error: message });
+    });
+
+    return { type: "done", message: "Ephemeral question asked." };
+  }
+
+  private async branchBtw(active: CommandActiveSession<TSession>): Promise<ClientCommandResult> {
+    const session = active.runtime.session;
+    if (sessionHasActiveWork(session)) return forkActiveUnsupported("fork");
+    if (typeof active.runtime.branchBtw !== "function") {
+      return { type: "unsupported", message: "Branching from /btw is not supported." };
+    }
+    const relatedName = await this.nextRelatedSessionName(active, "fork");
+    const result = await active.runtime.branchBtw();
+    if (result.cancelled) return { type: "done", message: "Branch cancelled" };
+    this.tryNameRelatedSession(session, relatedName);
+    this.events.publish(session.sessionId, { type: "btw.cleared" });
+    return { type: "done", message: "Session branched from /btw", session: clientSessionFromRuntime(active.runtime) };
   }
 
   private nameSession(active: CommandActiveSession<TSession>, name: string): ClientCommandResult {

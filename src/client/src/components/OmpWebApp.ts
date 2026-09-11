@@ -44,6 +44,8 @@ import "./WorkspaceList";
 import "./SessionList";
 import "./SessionCleanupDialog";
 import "./ChatView";
+import "./PlanReviewDialog";
+import "./BtwPanel";
 import type { ChatView } from "./ChatView";
 import {
   CHAT_PREFERENCES_CHANGED_EVENT,
@@ -2032,8 +2034,23 @@ export class OmpWebApp extends LitElement {
           <div class="mobile-navigation-panel">${this.appShell.isMobileNavigationLayout ? this.renderNavigationPanel() : null}</div>
           ${state.selectedSession ? html`
             <chat-view .sessionId=${state.selectedSession.id} .messages=${state.messages} .messageStart=${state.messagePageStart} .messageEnd=${state.messagePageEnd} .messageTotal=${state.messagePageTotal} .hasMore=${state.messagePageStart > 0} .loadingMore=${state.isLoadingEarlierMessages} .isReceivingPartialStream=${state.isReceivingPartialStream} .isSendingPrompt=${state.sendingPrompts[state.selectedSession.id] === true} .isCompacting=${state.status?.isCompacting === true} .pendingMessageCount=${state.status?.pendingMessageCount ?? 0} .clientQueuedMessages=${state.clientQueuedSessionMessages[state.selectedSession.id] ?? []} .status=${state.status} .activity=${state.activity} .onLoadMore=${() => this.withChatPrependTransition(() => this.sessions.loadEarlierMessages())}></chat-view>
-            <prompt-editor .sessionId=${state.selectedSession.id} .cwd=${state.selectedWorkspace?.path} .machineId=${selectedMachineId(state)} .projectId=${state.selectedWorkspace?.projectId} .workspaceId=${state.selectedWorkspace?.id} .workspaceScopedFileSuggestions=${this.supportsWorkspaceFileSuggestions()} .disabled=${state.selectedSession.archived === true} .canSteer=${state.status?.isStreaming === true} .isCompacting=${state.status?.isCompacting === true} .canStop=${state.status?.isStreaming === true || state.status?.isBashRunning === true || state.status?.isCompacting === true || (state.status?.pendingMessageCount ?? 0) > 0} .status=${state.status} .availableThinkingLevels=${state.availableThinkingLevels} .sending=${state.sendingPrompts[state.selectedSession.id] === true} .onSend=${this.handleSendPrompt} .onStop=${this.handleStopActiveWork} .onSelectModel=${this.handleSelectModel} .onSelectThinking=${this.handleSelectThinking}></prompt-editor>
+            <prompt-editor .sessionId=${state.selectedSession.id} .cwd=${state.selectedWorkspace?.path} .machineId=${selectedMachineId(state)} .projectId=${state.selectedWorkspace?.projectId} .workspaceId=${state.selectedWorkspace?.id} .workspaceScopedFileSuggestions=${this.supportsWorkspaceFileSuggestions()} .disabled=${state.selectedSession.archived === true} .canSteer=${state.status?.isStreaming === true} .isCompacting=${state.status?.isCompacting === true} .canStop=${state.status?.isStreaming === true || state.status?.isBashRunning === true || state.status?.isCompacting === true || (state.status?.pendingMessageCount ?? 0) > 0} .status=${state.status} .availableThinkingLevels=${state.availableThinkingLevels} .sending=${state.sendingPrompts[state.selectedSession.id] === true} .onTogglePlanMode=${() => { this.sessions.togglePlanMode(); }} .onOpenPlanReview=${() => { this.sessions.openPlanReview(); }} .onSend=${this.handleSendPrompt} .onStop=${this.handleStopActiveWork} .onSelectModel=${this.handleSelectModel} .onSelectThinking=${this.handleSelectThinking}></prompt-editor>
             ${this.chatPreferences.showStatusBar ? html`<status-bar .status=${state.status}></status-bar>` : null}
+            ${state.planReviewDialog !== undefined ? html`
+              <plan-review-dialog
+                .plan=${state.planReviewDialog}
+                .onApprove=${() => { void this.sessions.approvePlan(); }}
+                .onReject=${(feedback?: string) => { void this.sessions.rejectPlan(feedback); }}
+                .onCancel=${() => { this.sessions.closePlanReview(); }}
+              ></plan-review-dialog>
+            ` : null}
+            ${state.btwState !== undefined ? html`
+              <btw-panel
+                .state=${state.btwState}
+                .onBranch=${() => { void this.sessions.branchBtw(); }}
+                .onClose=${() => { this.sessions.closeBtw(); }}
+              ></btw-panel>
+            ` : null}
             ${state.commandDialog !== undefined ? html`<command-picker .title=${state.commandDialog.title} .options=${state.commandDialog.options} .onPick=${(value: string) => this.sessions.respondToCommand(state.commandDialog?.requestId ?? "", value)} .onCancel=${() => { this.sessions.cancelCommand(); }}></command-picker>` : null}
             ${state.modelDialog !== undefined ? html`<command-picker title=${state.modelDialog.title} .searchable=${true} .options=${state.modelDialog.options} .selectedValue=${state.modelDialog.selectedValue} .onPick=${(value: string) => { this.pickModel(value); }} .onCancel=${() => { this.setState({ modelDialog: undefined }); }}></command-picker>` : null}
             ${state.modelActionDialog !== undefined ? html`<command-picker title=${state.modelActionDialog.title} .options=${state.modelActionDialog.options} .selectedValue=${state.modelActionDialog.selectedValue} .onPick=${(value: string) => { void this.pickModelAction(value); }} .onCancel=${() => { this.setState({ modelActionDialog: undefined }); }}></command-picker>` : null}

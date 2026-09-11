@@ -18,13 +18,22 @@ export class StatusBar extends LitElement {
         : `${context.percent.toFixed(1)}%/${formatTokenCount(context.contextWindow)}`
       : "context unknown";
     const tokens = status.tokens;
+    const extensionStatuses = Object.entries(status.extensionStatuses ?? {});
+
     return html`
       <div class="bar">
-        <span>↑${formatTokenCount(tokens.input)}</span>
-        <span>↓${formatTokenCount(tokens.output)}</span>
-        <span class="context">${contextText}</span>
-        <span>${formatCost(status.cost)}</span>
-        ${status.pendingMessageCount > 0 ? html`<span>${String(status.pendingMessageCount)} queued</span>` : null}
+        <div class="left">
+          ${extensionStatuses.map(([key, text]) => html`
+            <span class="ext-status" title=${`${key}: ${text}`}>${text}</span>
+          `)}
+        </div>
+        <div class="right">
+          <span>↑${formatTokenCount(tokens.input)}</span>
+          <span>↓${formatTokenCount(tokens.output)}</span>
+          <span class="context">${contextText}</span>
+          <span>${formatCost(status.cost)}</span>
+          ${status.pendingMessageCount > 0 ? html`<span>${String(status.pendingMessageCount)} queued</span>` : null}
+        </div>
       </div>
     `;
   }

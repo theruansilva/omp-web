@@ -190,6 +190,7 @@ export function parseSessionStatus(value: unknown): SessionStatus {
     ...optionalModel(record["model"]),
     ...optionalContextUsage(record["contextUsage"]),
     ...optionalField("thinkingLevel", optionalString(record, "thinkingLevel")),
+    ...optionalField("extensionStatuses", optionalExtensionStatuses(record["extensionStatuses"])),
   };
 }
 
@@ -937,4 +938,14 @@ function numberOrNull(record: Record<string, unknown>, key: string): number | nu
 
 function optionalField(key: string, value: unknown): object {
   return value === undefined ? {} : { [key]: value };
+}
+
+function optionalExtensionStatuses(value: unknown): Record<string, string> | undefined {
+  if (value === undefined) return undefined;
+  if (!isRecord(value) || Array.isArray(value)) return undefined;
+  const result: Record<string, string> = {};
+  for (const [k, v] of Object.entries(value)) {
+    if (typeof v === "string") result[k] = v;
+  }
+  return Object.keys(result).length > 0 ? result : undefined;
 }

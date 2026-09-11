@@ -259,6 +259,9 @@ export class PromptEditor extends LitElement {
         ${this.availableThinkingLevels.length > 0 ? html`
           <button class="select-thinking icon-button" title=${`Thinking level: ${thinkingLevelLabel(status.thinkingLevel)}`} aria-label=${`Thinking level: ${thinkingLevelLabel(status.thinkingLevel)}`} @click=${() => this.onSelectThinking?.()}>${renderThinkingGauge(thinkingGauge(status.thinkingLevel, this.availableThinkingLevels))}</button>
         ` : null}
+        ${Object.entries(status.extensionStatuses ?? {}).map(([key, text]) => html`
+          <span class="extension-status-chip" title=${`${key}: ${text}`}>${text}</span>
+        `)}
       </div>
     `;
   }
@@ -604,7 +607,8 @@ function sessionStatusRenderEqual(a: SessionStatus | undefined, b: SessionStatus
     && a.thinkingLevel === b.thinkingLevel
     && a.isStreaming === b.isStreaming
     && a.isCompacting === b.isCompacting
-    && a.isBashRunning === b.isBashRunning;
+    && a.isBashRunning === b.isBashRunning
+    && JSON.stringify(a.extensionStatuses) === JSON.stringify(b.extensionStatuses);
 }
 function draftStorageKey(machineId: unknown, sessionId: unknown): string | undefined {
   if (typeof machineId !== "string" || machineId === "") return undefined;

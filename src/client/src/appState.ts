@@ -40,6 +40,14 @@ export interface AppState {
   workspacesByProjectId: Record<string, Workspace[]>;
   workspaceDeletionRuns: Record<string, TerminalCommandRun>;
   commandDialog: Extract<CommandResult, { type: "select" }> | undefined;
+  planReviewDialog: { planFilePath: string; title: string; planContent: string } | undefined;
+  btwState: {
+    status: "running" | "complete" | "error";
+    question: string;
+    answer: string;
+    canBranch?: boolean | undefined;
+    error?: string | undefined;
+  } | undefined;
   modelDialog: { title: string; options: CommandOption[]; selectedValue?: string } | undefined;
   modelActionDialog: { title: string; options: CommandOption[]; selectedValue?: string } | undefined;
   thinkingDialog: { title: string; options: CommandOption[]; selectedValue?: string } | undefined;
@@ -147,6 +155,8 @@ export function initialAppState(): AppState {
     workspacesByProjectId: {},
     workspaceDeletionRuns: {},
     commandDialog: undefined,
+    planReviewDialog: undefined,
+    btwState: undefined,
     modelDialog: undefined,
     modelActionDialog: undefined,
     thinkingDialog: undefined,

@@ -12,7 +12,7 @@ import {
  Settings,
 } from "@oh-my-pi/pi-coding-agent";
 import { EditTool } from "@oh-my-pi/pi-coding-agent/edit";
-import type { ToolDefinition } from "@oh-my-pi/pi-coding-agent/extensibility/extensions/types";
+import type { ExtensionUIContext, ToolDefinition } from "@oh-my-pi/pi-coding-agent/extensibility/extensions/types";
 import type { ClientArchiveSessionsResponse, ClientCommand, ClientCommandResult, ClientMessagePage, ClientSession, ClientSessionCleanupExecuteResponse, ClientSessionCleanupPreviewResponse, ClientSessionModel, ClientSessionRef, ClientSessionStatus, ClientThinkingLevel, SessionUiEvent } from "../types.js";
 import { pageMessagesAtSafeBoundary } from "./messagePaging.js";
 import type { SessionEventHub } from "../realtime/sessionEventHub.js";
@@ -228,6 +228,8 @@ export interface PiAgentSession {
  getSessionStats(): { sessionId: string; totalMessages: number; userMessages: number; assistantMessages: number; toolCalls: number; tokens: ClientSessionStatus["tokens"]; cost: number };
  reload(): Promise<void>;
  getContextUsage(): ClientSessionStatus["contextUsage"] | undefined;
+ getExtensionStatuses?(): Record<string, string> | undefined;
+ onExtensionStatusChange?: () => void;
  prompt(text: string, options?: { streamingBehavior?: "steer" | "followUp"; images?: ImageContent[] }): Promise<void>;
  sendCustomMessage(message: { customType: string; content: string; display: boolean; details?: unknown }, options?: { triggerTurn?: boolean; deliverAs?: "steer" | "followUp" | "nextTurn" }): Promise<void>;
  executeBash(command: string, onChunk?: (chunk: string) => void, options?: { excludeFromContext?: boolean }): Promise<{ output: string; exitCode: number | undefined; cancelled: boolean; truncated: boolean }>;
@@ -277,6 +279,8 @@ type CreateAgentRuntime = (createRuntime: OmpWebCreateAgentSessionRuntimeFactory
 
 class DefaultPiAgentSession implements PiAgentSession {
  private _isBashRunning = false;
+ private readonly _extensionStatuses = new Map<string, string>();
+ onExtensionStatusChange?: () => void;
 
  constructor(
   private readonly ompSession: AgentSession,
@@ -347,9 +351,112 @@ class DefaultPiAgentSession implements PiAgentSession {
   return this.ompSession.subscribe(listener);
  }
 
- bindExtensions(): Promise<void> {
-  // Handled via onExtensionError in createAgentSession options
-  return Promise.resolve();
+ getExtensionStatuses(): Record<string, string> | undefined {
+  if (this._extensionStatuses.size === 0) return undefined;
+  return Object.fromEntries(this._extensionStatuses);
+ }
+
+ async bindExtensions(bindings?: PiExtensionBindings): Promise<void> {
+  const runner = this.ompSession.extensionRunner;
+  if (!runner) return Promise.resolve();
+
+  if (bindings?.onError) {
+   runner.onError((err: { extensionPath: string; event: string; error: string }) => {
+    bindings.onError?.(err);
+   });
+  }
+
+  // eslint-disable-next-line no-control-regex -- ANSI escape sequences contain ASCII 0x1B
+  const ANSI_ESCAPE = /\x1b\[[0-9;]*m/g;
+  const cleanStatusText = (text: string): string => text.replace(ANSI_ESCAPE, "").trim();
+
+  const theme = {
+   fg: (_color: string, text: string) => text,
+   bg: (_color: string, text: string) => text,
+  };
+
+  /* eslint-disable @typescript-eslint/require-await, @typescript-eslint/no-empty-function, @typescript-eslint/consistent-type-assertions */
+  const uiContext: ExtensionUIContext = {
+   theme: theme as never,
+   setStatus: (key: string, text: string | undefined): void => {
+    if (text === undefined || text.trim() === "") {
+     this._extensionStatuses.delete(key);
+    } else {
+     this._extensionStatuses.set(key, cleanStatusText(text));
+    }
+    this.onExtensionStatusChange?.();
+   },
+   notify: (_message: string, _type?: "info" | "warning" | "error"): void => {},
+   onTerminalInput: () => () => {},
+   select: async () => undefined,
+   confirm: async () => false,
+   input: async () => undefined,
+   setWorkingMessage: (): void => {},
+   setWidget: (): void => {},
+   setFooter: (): void => {},
+   setHeader: (): void => {},
+   setTitle: (): void => {},
+   custom: async () => undefined as never,
+   setEditorComponent: (): void => {},
+   setEditorText: (): void => {},
+   pasteToEditor: (): void => {},
+   getEditorText: (): string => "",
+   editor: async () => "",
+   addAutocompleteProvider: () => () => {},
+   getAllThemes: async () => [],
+   getTheme: async () => undefined,
+   setTheme: async () => ({ success: false }),
+   getToolsExpanded: () => false,
+   setToolsExpanded: (): void => {},
+  };
+
+  try {
+   runner.initialize(
+    {
+     sendMessage: (msg, opts) => { void this.ompSession.sendCustomMessage(msg, opts); },
+     sendUserMessage: (c, opts) => { void this.ompSession.sendUserMessage(c, opts); },
+     appendEntry: (t, d) => { this.ompSession.sessionManager.appendCustomEntry(t, d); },
+     setLabel: (targetId, label) => { this.ompSession.sessionManager.appendLabelChange(targetId, label); },
+     getActiveTools: () => this.ompSession.getEnabledToolNames(),
+     getAllTools: () => this.ompSession.getAllToolInfos(),
+     setActiveTools: async (tools) => { await this.ompSession.setActiveToolsByName(tools); },
+     getCommands: () => [],
+     setModel: async (m) => { const res = await this.ompSession.setModel(m); return res.switched; },
+     getThinkingLevel: () => this.ompSession.thinkingLevel,
+     setThinkingLevel: (l) => { this.ompSession.setThinkingLevel(l); },
+     getSessionName: () => this.ompSession.sessionManager.getSessionName(),
+     setSessionName: async (n) => { await this.ompSession.sessionManager.setSessionName(n, "user"); },
+    },
+    {
+     getModel: () => this.ompSession.model,
+     isIdle: () => !this.ompSession.isStreaming,
+     abort: () => { void this.ompSession.abort(); },
+     hasPendingMessages: () => this.ompSession.queuedMessageCount > 0,
+     shutdown: () => {},
+     getContextUsage: () => this.ompSession.getContextUsage(),
+     getSystemPrompt: () => this.ompSession.systemPrompt,
+     compact: async (opts) => { await this.ompSession.compact(typeof opts === "string" ? opts : undefined); },
+    },
+    {
+     getContextUsage: () => this.ompSession.getContextUsage(),
+     waitForIdle: async () => { await this.ompSession.agent.waitForIdle(); },
+     newSession: async () => ({ cancelled: false }),
+     branch: async () => ({ cancelled: false }),
+     navigateTree: async () => ({ cancelled: false }),
+     switchSession: async () => ({ cancelled: false }),
+     reload: async () => {},
+     compact: async (opts) => { await this.ompSession.compact(typeof opts === "string" ? opts : undefined); },
+    },
+    uiContext,
+    "rpc"
+   );
+   /* eslint-enable @typescript-eslint/require-await, @typescript-eslint/no-empty-function, @typescript-eslint/consistent-type-assertions */
+
+   await runner.emit({ type: "session_start" });
+   return;
+  } catch {
+   return Promise.resolve();
+  }
  }
 
  async compact(instructions?: string): Promise<{ summary: string; tokensBefore: number }> {
@@ -1924,9 +2031,11 @@ export class PiSessionService {
    ...(options.initialModel === undefined ? {} : { initialModel: options.initialModel }),
   });
   const active: ActiveSession<PiSessionRuntime> = { runtime, unsubscribe: noop };
+  runtime.session.onExtensionStatusChange = () => { this.publishStatus(runtime.session); };
   await this.bindSessionExtensions(runtime.session);
   this.bindRuntime(active);
   runtime.setRebindSession(async (session) => {
+   session.onExtensionStatusChange = () => { this.publishStatus(session); };
    await this.bindSessionExtensions(session);
    this.bindRuntime(active);
    await this.recoverSubsessionTrackingForOpenedSession(session);
@@ -2192,6 +2301,7 @@ export class PiSessionService {
   const stats = session.getSessionStats();
   const model = session.model === undefined ? undefined : modelToClientModel(session.model);
   const contextUsage = session.getContextUsage();
+  const extensionStatuses = session.getExtensionStatuses?.();
   return {
    sessionId: session.sessionId,
    persisted: sessionFileExists(session.sessionFile),
@@ -2206,6 +2316,7 @@ export class PiSessionService {
    tokens: stats.tokens,
    cost: stats.cost,
    ...(contextUsage === undefined ? {} : { contextUsage }),
+   ...(extensionStatuses !== undefined ? { extensionStatuses } : {}),
   };
  }
 

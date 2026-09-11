@@ -22,7 +22,9 @@ export const BUILTIN_COMMANDS: ClientCommand[] = [
   { name: "resume", description: "Resume a different session", source: "builtin" },
   { name: "reload", description: "Reload Pi runtime resources for this session", source: "builtin" },
   { name: "quit", description: "Quit pi", source: "builtin" },
-  { name: "plan", description: "Toggle plan mode", source: "builtin" },
+  { name: "plan", description: "Toggle plan mode (agent plans before executing)", source: "builtin" },
+  { name: "plan-review", description: "Review proposed plan or re-open plan review", source: "builtin" },
+  { name: "btw", description: "Ask an ephemeral side question using the current session context", source: "builtin" },
   { name: "advisor", description: "Toggle advisor", source: "builtin" },
 ];
 

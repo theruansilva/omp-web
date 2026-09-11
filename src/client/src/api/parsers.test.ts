@@ -179,6 +179,7 @@ describe("API parsers", () => {
       model: { provider: "p", id: "m", contextWindow: 100, reasoning: { effort: "low" } },
       contextUsage: { tokens: null, contextWindow: 100, percent: 0.5 },
       thinkingLevel: "medium",
+      extensionStatuses: { ponytail: "⚡ FULL" },
     })).toEqual({
       sessionId: "s1",
       persisted: true,
@@ -193,6 +194,7 @@ describe("API parsers", () => {
       model: { provider: "p", id: "m", contextWindow: 100, reasoning: { effort: "low" } },
       contextUsage: { tokens: null, contextWindow: 100, percent: 0.5 },
       thinkingLevel: "medium",
+      extensionStatuses: { ponytail: "⚡ FULL" },
     });
   });
 

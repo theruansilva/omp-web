@@ -267,6 +267,40 @@ export class SessionController {
     await this.deliverCommandToSession(session, text, selectedMachineId(this.getState()), { applyResult: true });
   }
 
+  async approvePlan(): Promise<void> {
+    await this.runCommand("/plan approve");
+  }
+
+  async rejectPlan(feedback?: string): Promise<void> {
+    const cmd = feedback !== undefined && feedback.trim() !== "" ? `/plan reject ${feedback.trim()}` : "/plan reject";
+    await this.runCommand(cmd);
+  }
+
+  closePlanReview(): void {
+    this.setState({ planReviewDialog: undefined });
+  }
+
+  openPlanReview(): void {
+    const proposed = this.getState().status?.planMode?.proposedPlan;
+    if (proposed !== undefined) {
+      this.setState({ planReviewDialog: proposed });
+    } else {
+      void this.runCommand("/plan-review");
+    }
+  }
+
+  togglePlanMode(): void {
+    void this.runCommand("/plan");
+  }
+
+  closeBtw(): void {
+    this.setState({ btwState: undefined });
+  }
+
+  async branchBtw(): Promise<void> {
+    await this.runCommand("/btw branch");
+  }
+
   private enqueuePendingSessionSend(session: ClientPendingStartSessionInfo, input: QueuedPendingSessionSendInput): void {
     const pending = this.pendingSessionStarts.get(session.id);
     if (pending === undefined || pending.discarded) {
@@ -1047,6 +1081,38 @@ export class SessionController {
     }
     if (isHighFrequencyTranscriptEvent(event)) {
       this.queueTranscriptEvent(event);
+      return;
+    }
+
+    if (event.type === "plan.proposed") {
+      this.setState({ planReviewDialog: event.plan });
+      return;
+    }
+    if (event.type === "plan.cleared") {
+      this.setState({ planReviewDialog: undefined });
+      return;
+    }
+    if (event.type === "btw.start") {
+      this.setState({ btwState: { status: "running", question: event.question, answer: "" } });
+      return;
+    }
+    if (event.type === "btw.delta") {
+      const prev = this.getState().btwState;
+      if (prev?.status === "running") {
+        this.setState({ btwState: { ...prev, answer: prev.answer + event.delta } });
+      }
+      return;
+    }
+    if (event.type === "btw.end") {
+      this.setState({ btwState: { status: "complete", question: event.question, answer: event.answer, canBranch: event.canBranch } });
+      return;
+    }
+    if (event.type === "btw.error") {
+      this.setState({ btwState: { status: "error", question: this.getState().btwState?.question ?? "", answer: "", error: event.error } });
+      return;
+    }
+    if (event.type === "btw.cleared") {
+      this.setState({ btwState: undefined });
       return;
     }
 

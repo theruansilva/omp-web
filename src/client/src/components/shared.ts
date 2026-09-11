@@ -421,7 +421,10 @@ export const formattedTextStyles = css`
 
 export const statusBarStyles = css`
   :host { display: block; color: var(--pi-muted); font: 12px system-ui, sans-serif; }
-  .bar { display: flex; justify-content: flex-end; gap: 12px; align-items: center; min-width: 0; padding: 7px 12px; border-top: 1px solid var(--pi-border); background: var(--pi-bg); white-space: nowrap; overflow: hidden; }
+  .bar { display: flex; justify-content: space-between; gap: 12px; align-items: center; min-width: 0; padding: 7px 12px; border-top: 1px solid var(--pi-border); background: var(--pi-bg); white-space: nowrap; overflow: hidden; }
+  .left { display: flex; align-items: center; gap: 10px; min-width: 0; overflow: hidden; }
+  .right { display: flex; align-items: center; gap: 12px; min-width: 0; margin-left: auto; }
+  .ext-status { display: inline-flex; align-items: center; gap: 4px; padding: 1px 6px; border-radius: 4px; background: color-mix(in srgb, var(--pi-border) 40%, transparent); color: var(--pi-text); font-size: 11px; max-width: 250px; overflow: hidden; text-overflow: ellipsis; }
   span { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
   .activity { display: inline-flex; align-items: center; gap: 6px; color: var(--pi-muted); }
   .activity.active { color: var(--pi-success); }
@@ -563,6 +566,7 @@ export const promptEditorStyles = css`
   }
   .compact-status { display: flex; min-width: 0; align-items: center; gap: 6px; color: var(--pi-muted); font-size: 12px; }
   .compact-status > button { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+  .extension-status-chip { display: inline-flex; align-items: center; gap: 4px; padding: 2px 7px; border-radius: 6px; border: 1px solid color-mix(in srgb, var(--pi-border) 60%, transparent); background: color-mix(in srgb, var(--pi-surface) 60%, var(--pi-bg)); color: var(--pi-text); font-size: 11px; font-weight: 500; max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .select-model {
     display: inline-flex;
     align-items: center;
@@ -634,6 +638,11 @@ export const promptEditorStyles = css`
   .markdown-editor .cm-focused { outline: none; }
   .markdown-editor-disabled .cm-editor { opacity: .5; cursor: not-allowed; }
   .mode-hint { margin: 6px 12px 0; align-self: flex-start; border: 1px solid var(--pi-success-border); border-radius: 999px; background: var(--pi-success-surface); color: var(--pi-success); padding: 2px 8px; font-size: 12px; pointer-events: none; }
+  .plan-mode-hint { pointer-events: auto; border-color: var(--pi-accent, #3b82f6); background: var(--pi-accent-subtle, rgba(59, 130, 246, 0.1)); color: var(--pi-accent, #3b82f6); display: flex; align-items: center; gap: 6px; }
+  .plan-review-inline-btn { border: 0; background: transparent; color: inherit; font: inherit; text-decoration: underline; cursor: pointer; padding: 0; }
+  .plan-toggle-button { border: 1px solid var(--pi-border); border-radius: 6px; background: transparent; color: var(--pi-text-muted); font-size: 12px; padding: 3px 8px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; }
+  .plan-toggle-button.active { border-color: var(--pi-accent, #3b82f6); color: var(--pi-accent, #3b82f6); background: var(--pi-accent-subtle, rgba(59, 130, 246, 0.1)); font-weight: 500; }
+  .plan-review-badge-button { border: 1px solid var(--pi-accent, #3b82f6); border-radius: 6px; background: var(--pi-accent, #2563eb); color: white; font-size: 12px; font-weight: 500; padding: 3px 8px; cursor: pointer; }
   .attachments { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 0 12px 6px; }
   .attachment-chip { position: relative; width: 56px; height: 56px; border: 1px solid var(--pi-border); border-radius: 8px; overflow: hidden; background: var(--pi-bg); }
   .attachment-chip img { width: 100%; height: 100%; object-fit: cover; display: block; }

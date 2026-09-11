@@ -380,6 +380,16 @@ export interface ThinkingLevelsResponse {
  levels: string[];
 }
 
+export interface PlanModeStatus {
+ enabled: boolean;
+ planFilePath?: string | undefined;
+ proposedPlan?: {
+  planFilePath: string;
+  title: string;
+  planContent: string;
+ } | undefined;
+}
+
 export interface SessionStatus {
  sessionId: string;
  /** True when the server has verified a backing session file exists; false when known transient. */
@@ -395,6 +405,9 @@ export interface SessionStatus {
  tokens: { input: number; output: number; cacheRead: number; cacheWrite: number; total: number };
  cost: number;
  contextUsage?: { tokens: number | null; contextWindow: number; percent: number | null };
+ /** Active extension status indicators (keyed by extension key, e.g. "ponytail"). */
+ planMode?: PlanModeStatus | undefined;
+ extensionStatuses?: Record<string, string> | undefined;
 }
 
 export interface WorkspaceActivity {
@@ -685,7 +698,14 @@ export type SessionUiEvent =
  | { type: "session.error"; message: string }
  | { type: "session.name"; sessionId: string; name?: string }
  | { type: "session.created"; session: SessionInfo }
- | { type: "pi.event"; eventType: string };
+ | { type: "pi.event"; eventType: string }
+ | { type: "plan.proposed"; plan: { planFilePath: string; title: string; planContent: string } }
+ | { type: "plan.cleared" }
+ | { type: "btw.start"; question: string }
+ | { type: "btw.delta"; delta: string }
+ | { type: "btw.end"; question: string; answer: string; canBranch: boolean }
+ | { type: "btw.error"; error: string }
+ | { type: "btw.cleared" };
 
 export type GlobalSessionEvent = Extract<SessionUiEvent, { type: "status.update" | "activity.update" | "session.name" | "session.created" }>;
 export type RealtimeEvent = GlobalSessionEvent | TerminalUiEvent | WorkspaceActivityUiEvent;
