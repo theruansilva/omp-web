@@ -68,6 +68,7 @@ export class PromptEditor extends LitElement {
     this.requestUpdate();
   };
   @state() private completions: CompletionItem[] = [];
+  private cachedCommands: SlashCommand[] = DEFAULT_SLASH_COMMANDS;
   @state() private selectedIndex = 0;
   @state() private attachments: PendingAttachment[] = [];
   @state() private attachmentDelivery: PromptAttachmentDelivery = loadAttachmentDelivery();
@@ -435,12 +436,19 @@ export class PromptEditor extends LitElement {
       this.completions = [];
       return;
     }
-    if (trigger.kind === "command" && this.sessionId !== undefined && this.sessionId !== "" && this.cwd !== undefined && this.cwd !== "") {
-      const commands = await api.commands({ id: this.sessionId, cwd: this.cwd }, this.machineId).catch(emptySlashCommands);
+    if (trigger.kind === "command") {
+      let commands = this.cachedCommands;
+      if (this.sessionId !== undefined && this.sessionId !== "" && this.cwd !== undefined && this.cwd !== "") {
+        const fetched = await api.commands({ id: this.sessionId, cwd: this.cwd }, this.machineId).catch(emptySlashCommands);
+        if (fetched.length > 0) {
+          commands = fetched;
+          this.cachedCommands = fetched;
+        }
+      }
       if (version !== this.requestVersion) return;
       this.completions = commands
         .filter((command) => command.name.toLowerCase().includes(trigger.query.toLowerCase()))
-        .slice(0, 12)
+        .slice(0, 20)
         .map((command) => ({
           kind: "command",
           replaceFrom: trigger.from,
@@ -449,7 +457,7 @@ export class PromptEditor extends LitElement {
           detail: command.source,
           ...(command.description === undefined ? {} : { description: command.description }),
         }));
-    } else if (trigger.kind === "file" && this.cwd !== undefined && this.cwd !== "") {
+    } else if (this.cwd !== undefined && this.cwd !== "") {
       const files = await api.files(this.cwd, trigger.query, { scope: trigger.fileScope, machineId: this.machineId, projectId: this.projectId, workspaceId: this.workspaceId, workspaceScoped: this.workspaceScopedFileSuggestions }).catch(emptyFileSuggestions);
       if (version !== this.requestVersion) return;
       this.completions = files
@@ -603,6 +611,24 @@ function draftStorageKey(machineId: unknown, sessionId: unknown): string | undef
   if (typeof sessionId !== "string" || sessionId === "") return undefined;
   return machineSessionKey(machineId, sessionId);
 }
+
+const DEFAULT_SLASH_COMMANDS: SlashCommand[] = [
+  { name: "help", description: "Show available commands", source: "builtin" },
+  { name: "model", description: "Select model", source: "builtin" },
+  { name: "settings", description: "Open settings menu", source: "builtin" },
+  { name: "theme", description: "Select theme", source: "builtin" },
+  { name: "plan", description: "Toggle plan mode", source: "builtin" },
+  { name: "advisor", description: "Toggle advisor", source: "builtin" },
+  { name: "compact", description: "Manually compact session context", source: "builtin" },
+  { name: "session", description: "Show session info and stats", source: "builtin" },
+  { name: "new", description: "Start a new session", source: "builtin" },
+  { name: "reload", description: "Reload Pi runtime resources", source: "builtin" },
+  { name: "hotkeys", description: "Show keyboard shortcuts", source: "builtin" },
+  { name: "fork", description: "Fork from a previous user message", source: "builtin" },
+  { name: "clone", description: "Duplicate current session", source: "builtin" },
+  { name: "login", description: "Configure provider authentication", source: "builtin" },
+  { name: "logout", description: "Remove provider authentication", source: "builtin" },
+];
 
 function emptySlashCommands(): SlashCommand[] {
   return [];

@@ -1915,9 +1915,38 @@ export class OmpWebApp extends LitElement {
     if (value !== "") await this.sessions.setThinkingLevel(value);
   }
 
+  private handleClientSlashCommand(text: string): boolean {
+    if (this.auth.handleSlashCommand(text)) return true;
+    const trimmed = text.trim();
+    if (!trimmed.startsWith("/")) return false;
+    const [command = ""] = trimmed.slice(1).split(/\s+/);
+    const cmd = command.toLowerCase();
+    if (cmd === "model") {
+      void this.openModelDialog();
+      return true;
+    }
+    if (cmd === "settings") {
+      this.openSettings("general");
+      return true;
+    }
+    if (cmd === "theme") {
+      this.openThemeDialog();
+      return true;
+    }
+    if (cmd === "new") {
+      void this.startSessionAndOpenChat();
+      return true;
+    }
+    if (cmd === "hotkeys") {
+      this.openSettings("shortcuts");
+      return true;
+    }
+    return false;
+  }
+
   private sendPrompt(text: string, streamingBehavior?: "steer" | "followUp", attachments?: import("../api").PromptAttachment[], delivery?: import("../../../shared/apiTypes").PromptAttachmentDelivery): void {
     const hasAttachments = attachments !== undefined && attachments.length > 0;
-    if (!hasAttachments && streamingBehavior === undefined && this.auth.handleSlashCommand(text)) return;
+    if (!hasAttachments && streamingBehavior === undefined && this.handleClientSlashCommand(text)) return;
     void this.sessions.send(text, streamingBehavior, attachments, delivery);
   }
 

@@ -14,7 +14,7 @@ export function detectPromptCompletionTrigger(draft: string, cursor = draft.leng
   const token = beforeCursor.slice(tokenStart);
   const beforeToken = beforeCursor.slice(0, tokenStart);
   if (beforeToken.endsWith("@ ")) return { kind: "file", query: token, from: tokenStart - 2, to: cursor, fileScope: "all", allPrefix: "@ " };
-  if (token.startsWith("/") && tokenStart === 0) return { kind: "command", query: token.slice(1), from: tokenStart, to: cursor };
+  if (token.startsWith("/") && beforeCursor.slice(0, tokenStart).trim() === "") return { kind: "command", query: token.slice(1), from: tokenStart, to: cursor };
   if (token.startsWith("!@")) return { kind: "file", query: token.slice(2), from: tokenStart, to: cursor, fileScope: "all", allPrefix: "!@" };
   if (token.startsWith("@")) return { kind: "file", query: token.slice(1), from: tokenStart, to: cursor, fileScope: "tracked" };
   return undefined;

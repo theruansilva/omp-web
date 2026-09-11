@@ -45,6 +45,8 @@ export function appendThinking(messages: ChatLine[], text: string): ChatLine[] {
 export function normalizeMessage(message: unknown): ChatLine[] {
   if (isChatLine(message)) return [message];
   if (getString(message, "role") === "bashExecution") return [withMessageMeta(normalizeBashExecution(message), message)];
+  const customSkill = normalizeCustomSkillMessage(message);
+  if (customSkill !== undefined) return customSkill.map((line) => withMessageMeta(line, message));
   const role = normalizeRole(getString(message, "role"));
   const parts = normalizeContent(getProperty(message, "content"), message);
   const skillLines = role === "user" ? normalizeSkillInvocation(parts) : undefined;
@@ -82,16 +84,46 @@ function normalizeSkillInvocation(parts: ChatPart[]): ChatLine[] | undefined {
   ];
 }
 
+function normalizeCustomSkillMessage(message: unknown): ChatLine[] | undefined {
+  if (!isRecord(message) || message["customType"] !== "skill-prompt") return undefined;
+  const details = isRecord(message["details"]) ? message["details"] : undefined;
+  const name = typeof details?.["name"] === "string" ? details["name"] : "skill";
+  const location = typeof details?.["path"] === "string" ? details["path"] : "";
+  const content = typeof message["content"] === "string" ? message["content"] : "";
+  const userArgs = typeof details?.["args"] === "string" && details["args"].trim() !== "" ? details["args"].trim() : undefined;
+  return [
+    {
+      role: "user",
+      parts: [
+        { type: "skillInvocation", name, location, content },
+        ...(userArgs !== undefined ? [{ type: "text" as const, text: userArgs }] : []),
+      ],
+    },
+  ];
+}
+
 function parseSkillBlock(text: string): { name: string; location: string; content: string; userMessage?: string } | undefined {
   const match = /^<skill name="([^"]+)" location="([^"]+)">\n([\s\S]*?)\n<\/skill>(?:\n\n([\s\S]+))?$/.exec(text);
-  if (match === null) return undefined;
-  const userMessage = match[4]?.trim();
-  return {
-    name: match[1] ?? "skill",
-    location: match[2] ?? "",
-    content: match[3] ?? "",
-    ...(userMessage === undefined || userMessage === "" ? {} : { userMessage }),
-  };
+  if (match !== null) {
+    const userMessage = match[4]?.trim();
+    return {
+      name: match[1] ?? "skill",
+      location: match[2] ?? "",
+      content: match[3] ?? "",
+      ...(userMessage === undefined || userMessage === "" ? {} : { userMessage }),
+    };
+  }
+  const promptMatch = /^\[IMPORTANT: User invoked the "([^"]+)" skill; follow its instructions\. Full skill below\.\]\n\n([\s\S]*?)(?:\n\n---\n\n\[Skill directory: ([^\]]+)\][\s\S]*?(?:\nUser: ([\s\S]+))?)?$/.exec(text);
+  if (promptMatch !== null) {
+    const userMessage = promptMatch[4]?.trim();
+    return {
+      name: promptMatch[1] ?? "skill",
+      location: promptMatch[3] ?? "",
+      content: promptMatch[2] ?? "",
+      ...(userMessage === undefined || userMessage === "" ? {} : { userMessage }),
+    };
+  }
+  return undefined;
 }
 
 function normalizeSource(message: unknown): ChatLine["source"] | undefined {

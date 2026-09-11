@@ -433,7 +433,7 @@ export const statusBarStyles = css`
 
 export const autocompleteStyles = css`
   :host { display: block; }
-  .menu { position: absolute; left: 0; right: 0; bottom: calc(100% + 6px); z-index: 10; max-height: 260px; overflow: auto; border: 1px solid var(--pi-border); border-radius: 8px; background: var(--pi-surface); box-shadow: 0 10px 30px var(--pi-shadow); }
+  .menu { position: absolute; left: 0; right: 0; bottom: calc(100% + 6px); z-index: 100; max-height: 260px; overflow: auto; border: 1px solid var(--pi-border); border-radius: 8px; background: var(--pi-surface); box-shadow: 0 10px 30px var(--pi-shadow); }
   button { display: grid; grid-template-columns: minmax(120px, 1fr) auto; gap: 4px 10px; width: 100%; border: 0; border-bottom: 1px solid var(--pi-border); border-radius: 0; background: transparent; color: var(--pi-text); padding: 8px 10px; text-align: left; cursor: pointer; }
   button:last-child { border-bottom: 0; }
   button.selected, button:hover { background: var(--pi-selection-bg); }
@@ -499,7 +499,7 @@ export const promptEditorStyles = css`
     border-radius: 18px;
     background: var(--pi-surface);
     box-shadow: 0 4px 24px var(--pi-shadow-soft);
-    overflow: hidden;
+    overflow: visible;
     transition: border-color 0.15s ease, box-shadow 0.15s ease;
   }
   .input-card:hover {
@@ -521,6 +521,8 @@ export const promptEditorStyles = css`
     font-size: 12px;
     color: var(--pi-muted);
     border-bottom: 1px solid var(--pi-border-muted);
+    border-top-left-radius: 17px;
+    border-top-right-radius: 17px;
     background: var(--pi-surface);
   }
   .status-spinner {
