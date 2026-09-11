@@ -4,6 +4,7 @@ import { RemoteMachineRequestError } from "./machineClient.js";
 export const SAFE_RESPONSE_HEADERS = new Set([
   "content-type",
   "content-length",
+  "content-disposition",
   "cache-control",
   "last-modified",
   "etag",

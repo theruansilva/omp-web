@@ -1,12 +1,16 @@
 import { css, html, LitElement, type PropertyValues, type TemplateResult } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import type { FileContentResponse, FileTreeEntry } from "../api";
-import { workspaceImagePreviewUrl } from "../api/urls";
+import { workspaceFileRawUrl, workspaceImagePreviewUrl } from "../api/urls";
 import { workspaceUploadPath } from "../api/workspaceUploads";
 import type { WorkspaceUploadBatchState, WorkspaceUploadFileState } from "../workspaceUploadState";
 import { MAX_IMAGE_PREVIEW_BYTES, MAX_IMAGE_PREVIEW_LABEL } from "../../../shared/workspaceFiles";
 import type { WorkspacePanelContext } from "../plugins/types";
 import { workspacePanelStyles } from "./shared";
+
+function filenameForPath(path: string): string {
+  return path.split("/").pop() ?? path;
+}
 
 interface PendingWorkspaceUploadReview {
   files: File[];
@@ -79,12 +83,30 @@ export class WorkspaceFilesPanel extends LitElement {
   private renderTreeEntry(context: WorkspacePanelContext, entry: FileTreeEntry, depth: number): TemplateResult {
     const children = context.expandedDirs[entry.path];
     const hasChildren = children !== undefined;
-    const selected = entry.type !== "directory" && context.selectedFilePath === entry.path;
+    const isFile = entry.type !== "directory";
+    const selected = isFile && context.selectedFilePath === entry.path;
+    const downloadUrl = isFile
+      ? workspaceFileRawUrl(context.workspace.projectId, context.workspace.id, entry.path, { machineId: context.machine.id })
+      : undefined;
     return html`
-      <button class=${selected ? "row selected" : "row"} style=${`--depth:${String(depth)}`} @click=${() => { this.selectTreeEntry(context, entry); }}>
-        <span>${entry.type === "directory" ? (hasChildren ? "▾" : "▸") : "·"}</span>
-        <span>${entry.name}</span>
-      </button>
+      <div class=${selected ? "tree-row selected" : "tree-row"}>
+        <button class="row" style=${`--depth:${String(depth)}`} @click=${() => { this.selectTreeEntry(context, entry); }}>
+          <span>${entry.type === "directory" ? (hasChildren ? "▾" : "▸") : "·"}</span>
+          <span>${entry.name}</span>
+        </button>
+        ${isFile && downloadUrl !== undefined ? html`
+          <a
+            class="tree-download-link"
+            href=${downloadUrl}
+            download=${entry.name}
+            title=${`Download ${entry.name}`}
+            aria-label=${`Download ${entry.name}`}
+            target="_blank"
+            rel="noopener"
+            @click=${(event: MouseEvent) => { event.stopPropagation(); }}
+          >⤓</a>
+        ` : null}
+      </div>
       ${hasChildren ? children.map((child) => this.renderTreeEntry(context, child, depth + 1)) : null}
     `;
   }
@@ -102,26 +124,62 @@ export class WorkspaceFilesPanel extends LitElement {
       <p class="muted dialog-error" style="margin: 16px;">${context.state.error}</p>
     `;
     if (file === undefined) return html`<p class="muted">Loading ${context.selectedFilePath}…</p>`;
-    if (file.mediaType === "image") return this.renderImageViewer(context, file);
-    if (file.binary) return html`<p class="muted">Binary file: ${file.path} · ${formatFileSize(file.size)}</p>`;
+    const downloadUrl = workspaceFileRawUrl(context.workspace.projectId, context.workspace.id, file.path, { machineId: context.machine.id });
+    const filename = filenameForPath(file.path);
+
+    if (file.mediaType === "image") return this.renderImageViewer(context, file, downloadUrl, filename);
+    if (file.binary) return html`
+      <div class="viewer-header">
+        <strong>${file.path}</strong>
+        <div class="viewer-actions">
+          <small>binary · ${formatFileSize(file.size)}</small>
+          <a class="download-button" href=${downloadUrl} download=${filename} target="_blank" rel="noopener">Download</a>
+        </div>
+      </div>
+      <div class="binary-file-view">
+        <p class="muted">Binary file: ${file.path} · ${formatFileSize(file.size)}</p>
+        <a class="download-button primary" href=${downloadUrl} download=${filename} target="_blank" rel="noopener">Download ${filename}</a>
+      </div>
+    `;
     loadCodeViewer();
     return html`
-      <div class="viewer-header"><strong>${file.path}</strong><small>${file.language ?? "text"}${file.truncated ? " · truncated" : ""}</small></div>
+      <div class="viewer-header">
+        <strong>${file.path}</strong>
+        <div class="viewer-actions">
+          <small>${file.language ?? "text"}${file.truncated ? " · truncated" : ""}</small>
+          <a class="download-button" href=${downloadUrl} download=${filename} target="_blank" rel="noopener">Download</a>
+        </div>
+      </div>
       <code-viewer .content=${file.content} .language=${file.language}></code-viewer>
     `;
   }
 
-  private renderImageViewer(context: WorkspacePanelContext, file: FileContentResponse): TemplateResult {
+  private renderImageViewer(context: WorkspacePanelContext, file: FileContentResponse, downloadUrl: string, filename: string): TemplateResult {
     const metadata = `${file.mimeType ?? "image"} · ${formatFileSize(file.size)}`;
     if (file.size > MAX_IMAGE_PREVIEW_BYTES) {
       return html`
-        <div class="viewer-header"><strong>${file.path}</strong><small>${metadata}</small></div>
-        <p class="muted">Image too large to preview: ${formatFileSize(file.size)} · limit ${MAX_IMAGE_PREVIEW_LABEL}</p>
+        <div class="viewer-header">
+          <strong>${file.path}</strong>
+          <div class="viewer-actions">
+            <small>${metadata}</small>
+            <a class="download-button" href=${downloadUrl} download=${filename} target="_blank" rel="noopener">Download</a>
+          </div>
+        </div>
+        <div class="binary-file-view">
+          <p class="muted">Image too large to preview: ${formatFileSize(file.size)} · limit ${MAX_IMAGE_PREVIEW_LABEL}</p>
+          <a class="download-button primary" href=${downloadUrl} download=${filename} target="_blank" rel="noopener">Download ${filename}</a>
+        </div>
       `;
     }
     const src = workspaceImagePreviewUrl(context.workspace.projectId, context.workspace.id, file.path, { modifiedAt: file.modifiedAt, machineId: context.machine.id });
     return html`
-      <div class="viewer-header"><strong>${file.path}</strong><small>${metadata}</small></div>
+      <div class="viewer-header">
+        <strong>${file.path}</strong>
+        <div class="viewer-actions">
+          <small>${metadata}</small>
+          <a class="download-button" href=${downloadUrl} download=${filename} target="_blank" rel="noopener">Download</a>
+        </div>
+      </div>
       <div class="image-preview">
         <img src=${src} alt=${file.path} decoding="async" />
       </div>
@@ -377,6 +435,79 @@ export class WorkspaceFilesPanel extends LitElement {
       .review-file span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
       .dialog-error { border: 1px solid var(--pi-danger); border-radius: 8px; background: color-mix(in srgb, var(--pi-danger) 10%, transparent); color: var(--pi-danger); padding: 9px; line-height: 1.35; overflow-wrap: anywhere; }
       footer { display: flex; justify-content: flex-end; gap: 8px; padding-top: 4px; }
+      .tree-row { position: relative; display: flex; align-items: center; width: 100%; border-radius: 5px; }
+      .tree-row:hover, .tree-row.selected { background: var(--pi-selection-bg); }
+      .tree-row .row { flex: 1 1 auto; min-width: 0; border-radius: 5px; }
+      .tree-row:hover .row, .tree-row.selected .row { background: transparent; }
+      .tree-download-link {
+        flex: 0 0 auto;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 26px;
+        height: 24px;
+        margin-right: 4px;
+        border-radius: 4px;
+        color: var(--pi-muted);
+        text-decoration: none;
+        font-size: 14px;
+        line-height: 1;
+        opacity: 0.5;
+        transition: opacity .15s, color .15s, background .15s;
+      }
+      .tree-row:hover .tree-download-link,
+      .tree-download-link:focus-visible {
+        opacity: 1;
+        color: var(--pi-text);
+      }
+      .tree-download-link:hover {
+        opacity: 1;
+        color: var(--pi-text);
+        background: color-mix(in srgb, var(--pi-surface) 80%, transparent);
+      }
+      @media (hover: none) {
+        .tree-download-link {
+          opacity: 0.8;
+          min-width: 32px;
+          min-height: 32px;
+        }
+      }
+      .viewer-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+      .download-button {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 2px 8px;
+        font-size: 12px;
+        color: var(--pi-text);
+        background: var(--pi-surface);
+        border: 1px solid var(--pi-border);
+        border-radius: 6px;
+        text-decoration: none;
+        cursor: pointer;
+      }
+      .download-button:hover, .download-button:focus-visible {
+        background: var(--pi-surface-hover);
+        border-color: var(--pi-accent);
+      }
+      .download-button.primary {
+        padding: 6px 12px;
+        font-size: 13px;
+        background: var(--pi-accent);
+        color: var(--pi-accent-contrast, #fff);
+        border-color: var(--pi-accent);
+      }
+      .download-button.primary:hover {
+        filter: brightness(1.1);
+      }
+      .binary-file-view {
+        padding: 16px;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+      }
+      .binary-file-view p { margin: 0; }
     `,
   ];
 }

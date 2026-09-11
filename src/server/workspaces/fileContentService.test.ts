@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import { MAX_IMAGE_PREVIEW_BYTES } from "../../shared/workspaceFiles.js";
-import { readWorkspaceFile, writeWorkspaceFile } from "./fileContentService.js";
+import { readWorkspaceFile, readWorkspaceFileRaw, writeWorkspaceFile } from "./fileContentService.js";
 import { deleteWorkspaceFile, moveWorkspaceFile } from "./fileContentService.js";
 import { readWorkspaceImagePreview } from "./imagePreviewService.js";
 
@@ -112,6 +112,52 @@ describe("readWorkspaceFile", () => {
     expect(file.content).toHaveLength(512 * 1024);
     expect(file.truncated).toBe(true);
     expect(file.binary).toBe(false);
+  });
+});
+
+
+describe("readWorkspaceFileRaw", () => {
+  it("streams raw files with filename, mimeType, and size metadata", async () => {
+    const root = await tempWorkspace();
+    await mkdir(join(root, "docs"));
+    await writeFile(join(root, "docs", "manual.pdf"), Buffer.from("%PDF-1.4 test content"));
+
+    const raw = await readWorkspaceFileRaw(root, "./docs//manual.pdf");
+
+    expect(raw.path).toBe("docs/manual.pdf");
+    expect(raw.filename).toBe("manual.pdf");
+    expect(raw.size).toBe(21);
+    expect(raw.mimeType).toBe("application/octet-stream");
+    expect(Date.parse(raw.modifiedAt)).not.toBeNaN();
+
+    // Stream content check
+    const chunks: Buffer[] = [];
+    for await (const chunk of raw.stream) {
+      if (Buffer.isBuffer(chunk)) chunks.push(chunk);
+      else chunks.push(Buffer.from(String(chunk)));
+    }
+    expect(Buffer.concat(chunks).toString("utf8")).toBe("%PDF-1.4 test content");
+  });
+
+  it("recognizes image mime types for download preview", async () => {
+    const root = await tempWorkspace();
+    await writeFile(join(root, "logo.png"), Buffer.from([0x89, 0x50, 0x4e, 0x47]));
+
+    const raw = await readWorkspaceFileRaw(root, "logo.png");
+    expect(raw.filename).toBe("logo.png");
+    expect(raw.mimeType).toBe("image/png");
+    expect(raw.size).toBe(4);
+    raw.stream.destroy();
+  });
+
+  it("rejects missing paths, directories, and traversal", async () => {
+    const root = await tempWorkspace();
+    await mkdir(join(root, "dir"));
+
+    await expect(readWorkspaceFileRaw(root, undefined)).rejects.toThrow("path query parameter is required");
+    await expect(readWorkspaceFileRaw(root, "dir")).rejects.toThrow("Path is not a file");
+    await expect(readWorkspaceFileRaw(root, "missing.bin")).rejects.toThrow("Path does not exist");
+    await expect(readWorkspaceFileRaw(root, "../secret.txt")).rejects.toThrow("Path traversal is not allowed");
   });
 });
 

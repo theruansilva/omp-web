@@ -43,3 +43,9 @@ export function workspaceImagePreviewUrl(projectId: string, workspaceId: string,
   const prefix = `/api/machines/${encodeURIComponent(options?.machineId ?? "local")}`;
   return `${prefix}/projects/${encodeURIComponent(projectId)}/workspaces/${encodeURIComponent(workspaceId)}/file/preview?${params.toString()}`;
 }
+
+export function workspaceFileRawUrl(projectId: string, workspaceId: string, path: string, options?: { machineId?: string }): string {
+  const params = new URLSearchParams({ path });
+  const prefix = `/api/machines/${encodeURIComponent(options?.machineId ?? "local")}`;
+  return `${prefix}/projects/${encodeURIComponent(projectId)}/workspaces/${encodeURIComponent(workspaceId)}/file/raw?${params.toString()}`;
+}

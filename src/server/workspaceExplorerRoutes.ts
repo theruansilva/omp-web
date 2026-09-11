@@ -2,7 +2,7 @@ import type { FastifyInstance } from "fastify";
 import type { WriteWorkspaceFileOptions } from "../shared/apiTypes.js";
 import type { OmpWebConfigService } from "./configRoutes.js";
 import type { ProjectService } from "./projects/projectService.js";
-import { deleteWorkspaceFile, moveWorkspaceFile, readWorkspaceFile, writeWorkspaceFile } from "./workspaces/fileContentService.js";
+import { deleteWorkspaceFile, moveWorkspaceFile, readWorkspaceFile, readWorkspaceFileRaw, writeWorkspaceFile } from "./workspaces/fileContentService.js";
 import { isAbsoluteishFileSuggestionQuery, listFileSuggestions, listPathSuggestions } from "./workspaces/fileSuggestions.js";
 import { listWorkspaceTree } from "./workspaces/fileTreeService.js";
 import { readWorkspaceImagePreview } from "./workspaces/imagePreviewService.js";
@@ -64,6 +64,27 @@ export function registerWorkspaceExplorerRoutes(app: FastifyInstance, projects: 
         createDirs: request.query.createDirs !== "false",
         overwrite: request.query.overwrite === "true",
       });
+    } catch (error) {
+      return reply.code(400).send({ error: error instanceof Error ? error.message : String(error) });
+    }
+  });
+
+  
+  app.get<{ Params: { projectId: string; workspaceId: string }; Querystring: { path?: string } }>(`${prefix}/projects/:projectId/workspaces/:workspaceId/file/raw`, async (request, reply) => {
+    try {
+      const context = await resolveWorkspaceContext(projects, workspaces, request.params.projectId, request.params.workspaceId);
+      const file = await readWorkspaceFileRaw(context.root, request.query.path, await pathAccessForWorkspaceContext(context, options.config));
+      const fallbackName = file.filename.replace(/[^\x20-\x7E]|["\\]/g, "_");
+      const utf8Name = encodeURIComponent(file.filename);
+      return await reply
+        .type(file.mimeType)
+        .header("Cache-Control", "private, no-cache")
+        .header("Content-Length", String(file.size))
+        .header("Content-Disposition", `attachment; filename="${fallbackName}"; filename*=UTF-8''${utf8Name}`)
+        .header("Content-Security-Policy", "sandbox; default-src 'none'")
+        .header("Last-Modified", new Date(file.modifiedAt).toUTCString())
+        .header("X-Content-Type-Options", "nosniff")
+        .send(file.stream);
     } catch (error) {
       return reply.code(400).send({ error: error instanceof Error ? error.message : String(error) });
     }

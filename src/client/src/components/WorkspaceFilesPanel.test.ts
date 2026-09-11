@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
+import { workspaceFileRawUrl } from "../api/urls";
 import type { WorkspaceUploadBatchState } from "../workspaceUploadState";
 import { startDirectWorkspaceUpload, uploadBatchProgressValue, uploadBatchStatusLabel, workspaceUploadBatchesForScope, workspaceUploadReviewDefaults, workspaceUploadReviewError } from "./WorkspaceFilesPanel";
 
@@ -100,3 +101,13 @@ function uploadBatch(patch: Partial<WorkspaceUploadBatchState> = {}): WorkspaceU
     ...(patch.error === undefined ? {} : { error: patch.error }),
   };
 }
+
+describe("workspaceFileRawUrl", () => {
+  it("formats local workspace raw file download URLs", () => {
+    expect(workspaceFileRawUrl("p1", "w1", "src/main.ts")).toBe("/api/machines/local/projects/p1/workspaces/w1/file/raw?path=src%2Fmain.ts");
+  });
+
+  it("formats remote machine workspace raw file download URLs", () => {
+    expect(workspaceFileRawUrl("p1", "w1", "build/out.zip", { machineId: "remote-worker" })).toBe("/api/machines/remote-worker/projects/p1/workspaces/w1/file/raw?path=build%2Fout.zip");
+  });
+});

@@ -1,3 +1,4 @@
+import { createReadStream, type ReadStream } from "node:fs";
 import { lstat, mkdir, open, realpath, rename, stat, unlink, writeFile } from "node:fs/promises";
 import { basename, dirname, join } from "node:path";
 import type { DeleteWorkspaceFileResponse, FileContentResponse, MoveWorkspaceFileOptions, MoveWorkspaceFileResponse, OmpWebPathAccessConfig, WriteWorkspaceFileOptions, WriteWorkspaceFileResponse } from "../../shared/apiTypes.js";
@@ -39,6 +40,32 @@ async function readFilePrefix(target: string, bytesToRead: number): Promise<Buff
   } finally {
     await handle.close();
   }
+}
+
+export interface WorkspaceFileRaw {
+  path: string;
+  filename: string;
+  mimeType: string;
+  size: number;
+  modifiedAt: string;
+  stream: ReadStream;
+}
+
+export async function readWorkspaceFileRaw(rootPath: string, path: string | undefined, pathAccess?: OmpWebPathAccessConfig): Promise<WorkspaceFileRaw> {
+  if (path === undefined || path === "") throw new Error("path query parameter is required");
+  const { target, displayPath } = await resolveWorkspacePathAccessTarget(rootPath, path, pathAccess);
+  const s = await stat(target);
+  if (!s.isFile()) throw new Error("Path is not a file");
+  const filename = basename(displayPath);
+  const mimeType = imageMimeTypeForPath(displayPath) ?? "application/octet-stream";
+  return {
+    path: displayPath,
+    filename,
+    mimeType,
+    size: s.size,
+    modifiedAt: s.mtime.toISOString(),
+    stream: createReadStream(target),
+  };
 }
 
 export async function writeWorkspaceFile(rootPath: string, path: string | undefined, content: Buffer, options: WriteWorkspaceFileOptions = {}): Promise<WriteWorkspaceFileResponse> {
