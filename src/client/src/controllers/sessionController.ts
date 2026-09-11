@@ -1,4 +1,4 @@
-import { api as defaultApi, type CommandResult, type PromptAttachment, type QueuedSessionMessage, type SessionActivity, type SessionBulkFailure, type SessionCleanupExecuteResponse, type SessionInfo, type SessionRef, type SessionStatus, type Workspace } from "../api";
+import { api as defaultApi, type AskDialogResult, type CommandResult, type PromptAttachment, type QueuedSessionMessage, type SessionActivity, type SessionBulkFailure, type SessionCleanupExecuteResponse, type SessionInfo, type SessionRef, type SessionStatus, type Workspace } from "../api";
 import type { AppState } from "../appState";
 import { errorMessage } from "../utils.js";
 import { forgetCachedNewSession, isCachedNewSessionInfo, markCachedNewSessionInfo, mergeCachedNewSessions, rememberCachedNewSession, stripCachedNewSessionMarker } from "../cachedNewSessions";
@@ -295,6 +295,28 @@ export class SessionController {
 
   closeBtw(): void {
     this.setState({ btwState: undefined });
+  }
+
+  async submitAsk(requestId: string, result: AskDialogResult): Promise<void> {
+    const session = this.getState().selectedSession;
+    this.setState({ askDialog: undefined });
+    if (!session) return;
+    try {
+      await this.api.respondToAsk(session, requestId, result, selectedMachineId(this.getState()));
+    } catch (error) {
+      this.setState({ error: String(error) });
+    }
+  }
+
+  async cancelAsk(requestId: string): Promise<void> {
+    const session = this.getState().selectedSession;
+    this.setState({ askDialog: undefined });
+    if (!session) return;
+    try {
+      await this.api.respondToAsk(session, requestId, undefined, selectedMachineId(this.getState()));
+    } catch (error) {
+      this.setState({ error: String(error) });
+    }
   }
 
   async branchBtw(): Promise<void> {
@@ -1036,6 +1058,8 @@ export class SessionController {
       ...(clearsStaleActivity ? { sessionActivities: omitSessionActivity(state.sessionActivities, status.sessionId) } : {}),
       status: state.selectedSession?.id === status.sessionId ? status : state.status,
       activity: state.selectedSession?.id === status.sessionId && clearsStaleActivity ? undefined : state.activity,
+      ...(state.selectedSession?.id === status.sessionId && status.pendingAsk ? { askDialog: status.pendingAsk } : {}),
+      ...(state.selectedSession?.id === status.sessionId && !status.isStreaming && !status.pendingAsk && state.askDialog ? { askDialog: undefined } : {}),
     });
     if (!status.isStreaming) this.finishStreamCatchup(status.sessionId);
   }
@@ -1090,6 +1114,16 @@ export class SessionController {
     }
     if (event.type === "plan.cleared") {
       this.setState({ planReviewDialog: undefined });
+      return;
+    }
+    if (event.type === "ask.requested") {
+      this.setState({ askDialog: { requestId: event.requestId, questions: event.questions } });
+      return;
+    }
+    if (event.type === "ask.cleared") {
+      if (this.getState().askDialog?.requestId === event.requestId) {
+        this.setState({ askDialog: undefined });
+      }
       return;
     }
     if (event.type === "btw.start") {

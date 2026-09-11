@@ -390,6 +390,44 @@ export interface PlanModeStatus {
  } | undefined;
 }
 
+export interface AskDialogOption {
+ label: string;
+ description?: string;
+ preview?: string;
+}
+
+export interface AskDialogQuestion {
+ id: string;
+ question: string;
+ header?: string;
+ options: AskDialogOption[];
+ multi?: boolean;
+ recommended?: number;
+}
+
+export interface AskDialogResultItem {
+ id: string;
+ question: string;
+ options: string[];
+ multi: boolean;
+ selectedOptions: string[];
+ customInput?: string;
+ note?: string;
+ timedOut?: boolean;
+}
+
+export interface AskDialogSubmitResult {
+ kind: "submit";
+ results: AskDialogResultItem[];
+}
+
+export interface AskDialogChatResult {
+ kind: "chat";
+}
+
+export type AskDialogResult = AskDialogSubmitResult | AskDialogChatResult;
+
+
 export interface SessionStatus {
  sessionId: string;
  /** True when the server has verified a backing session file exists; false when known transient. */
@@ -408,6 +446,10 @@ export interface SessionStatus {
  /** Active extension status indicators (keyed by extension key, e.g. "ponytail"). */
  planMode?: PlanModeStatus | undefined;
  extensionStatuses?: Record<string, string> | undefined;
+ pendingAsk?: {
+  requestId: string;
+  questions: AskDialogQuestion[];
+ } | undefined;
 }
 
 export interface WorkspaceActivity {
@@ -705,7 +747,9 @@ export type SessionUiEvent =
  | { type: "btw.delta"; delta: string }
  | { type: "btw.end"; question: string; answer: string; canBranch: boolean }
  | { type: "btw.error"; error: string }
- | { type: "btw.cleared" };
+ | { type: "btw.cleared" }
+ | { type: "ask.requested"; requestId: string; questions: AskDialogQuestion[] }
+ | { type: "ask.cleared"; requestId: string };
 
 export type GlobalSessionEvent = Extract<SessionUiEvent, { type: "status.update" | "activity.update" | "session.name" | "session.created" }>;
 export type RealtimeEvent = GlobalSessionEvent | TerminalUiEvent | WorkspaceActivityUiEvent;

@@ -1,4 +1,4 @@
-import type { DeleteWorkspaceFileResponse, FileSuggestion, MoveWorkspaceFileOptions, PiPackageInstallRequest, PiPackageRemoveRequest, PiPackageScope, PiPackageUpdateRequest, OmpWebConfigValues, PromptAttachment, RunTerminalCommandInput, SessionBulkMutationRef, SessionCleanupRequest, SessionRef, TerminalCommandRun, TerminalCommandRunFilter, WriteWorkspaceFileOptions } from "../../../shared/apiTypes";
+import type { AskDialogResult, DeleteWorkspaceFileResponse, FileSuggestion, MoveWorkspaceFileOptions, PiPackageInstallRequest, PiPackageRemoveRequest, PiPackageScope, PiPackageUpdateRequest, OmpWebConfigValues, PromptAttachment, RunTerminalCommandInput, SessionBulkMutationRef, SessionCleanupRequest, SessionRef, TerminalCommandRun, TerminalCommandRunFilter, WriteWorkspaceFileOptions } from "../../../shared/apiTypes";
 import { request } from "./http";
 import {
   arrayOf,
@@ -8,6 +8,7 @@ import {
   parseAuthProvidersResponse,
   parseClosed,
   parseCommandResult,
+  parseSuccessResponse,
   parseDeleted,
   parseDeleteWorkspaceFileResponse,
   parseDetached,
@@ -220,6 +221,7 @@ export const sessionsApi = {
   shell: (session: SessionLookup, text: string, machineId = "local") => request(sessionUrl(session, "shell", machineId), parseAccepted, { method: "POST", body: sessionBody(session, { text }) }),
   runCommand: (session: SessionLookup, text: string, machineId = "local") => request(sessionUrl(session, "commands/run", machineId), parseCommandResult, { method: "POST", body: sessionBody(session, { text }) }),
   respondToCommand: (session: SessionLookup, requestId: string, value: string, machineId = "local") => request(sessionUrl(session, "commands/respond", machineId), parseCommandResult, { method: "POST", body: sessionBody(session, { requestId, value }) }),
+  respondToAsk: (session: SessionLookup, requestId: string, result: AskDialogResult | undefined, machineId = "local") => request(sessionUrl(session, "ask/respond", machineId), parseSuccessResponse, { method: "POST", body: sessionBody(session, { requestId, result }) }),
   abort: (session: SessionLookup, machineId = "local") => request(sessionUrl(session, "abort", machineId), parseAborted, { method: "POST", body: sessionBody(session) }),
   stop: (session: SessionLookup, machineId = "local") => request(sessionUrl(session, "stop", machineId), parseStopped, { method: "POST", body: sessionBody(session) }),
   archive: (session: SessionLookup, machineId = "local") => request(sessionUrl(session, "archive", machineId), parseArchived, { method: "POST", body: sessionBody(session) }),

@@ -1,7 +1,7 @@
 import { LitElement, html } from "lit";
 import { errorMessage } from "../utils.js";
 import { customElement, query, state } from "lit/decorators.js";
-import { configApi, effectiveWorkspaceUploadFolder, ompWebApi, sessionsApi, terminalsApi, workspacesApi, workspaceEffectiveUploadFolder, type Machine, type MachineHealth, type OmpWebConfigValues, type OmpWebShortcutConfig, type Project, type RealtimeEvent, type SessionCleanupExecuteResponse, type SessionCleanupPreviewResponse, type SessionCleanupRequest, type SessionInfo, type TerminalCommandRun, type TerminalUiEvent, type Workspace } from "../api";
+import { configApi, effectiveWorkspaceUploadFolder, type AskDialogSubmitResult, ompWebApi, sessionsApi, terminalsApi, workspacesApi, workspaceEffectiveUploadFolder, type Machine, type MachineHealth, type OmpWebConfigValues, type OmpWebShortcutConfig, type Project, type RealtimeEvent, type SessionCleanupExecuteResponse, type SessionCleanupPreviewResponse, type SessionCleanupRequest, type SessionInfo, type TerminalCommandRun, type TerminalUiEvent, type Workspace } from "../api";
 import type { AppAction } from "../actions";
 import { initialAppState, type AppState } from "../appState";
 import { isSessionActive } from "../../../shared/activity";
@@ -46,6 +46,7 @@ import "./SessionCleanupDialog";
 import "./ChatView";
 import "./PlanReviewDialog";
 import "./BtwPanel";
+import "./AskDialog";
 import type { ChatView } from "./ChatView";
 import {
   CHAT_PREFERENCES_CHANGED_EVENT,
@@ -2043,6 +2044,15 @@ export class OmpWebApp extends LitElement {
                 .onReject=${(feedback?: string) => { void this.sessions.rejectPlan(feedback); }}
                 .onCancel=${() => { this.sessions.closePlanReview(); }}
               ></plan-review-dialog>
+            ` : null}
+            ${state.askDialog !== undefined ? html`
+              <ask-dialog
+                .requestId=${state.askDialog.requestId}
+                .questions=${state.askDialog.questions}
+                .onSubmit=${(result: AskDialogSubmitResult) => { void this.sessions.submitAsk(state.askDialog!.requestId, result); }}
+                .onChat=${() => { void this.sessions.submitAsk(state.askDialog!.requestId, { kind: "chat" }); }}
+                .onCancel=${() => { void this.sessions.cancelAsk(state.askDialog!.requestId); }}
+              ></ask-dialog>
             ` : null}
             ${state.btwState !== undefined ? html`
               <btw-panel

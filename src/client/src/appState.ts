@@ -1,4 +1,4 @@
-import type { AuthProviderOption, CommandOption, CommandResult, FileContentResponse, FileTreeEntry, GitDiffResponse, GitStatusResponse, Machine, MachineHealth, MachineRuntime, OAuthFlowState, OmpWebStatusResponse, Project, QueuedSessionMessage, SessionActivity, SessionInfo, SessionStatus, TerminalCommandRun, Workspace, WorkspaceActivity } from "./api";
+import type { AskDialogQuestion, AuthProviderOption, CommandOption, CommandResult, FileContentResponse, FileTreeEntry, GitDiffResponse, GitStatusResponse, Machine, MachineHealth, MachineRuntime, OAuthFlowState, OmpWebStatusResponse, Project, QueuedSessionMessage, SessionActivity, SessionInfo, SessionStatus, TerminalCommandRun, Workspace, WorkspaceActivity } from "./api";
 import type { ChatLine } from "./components/shared";
 import type { QualifiedContributionId } from "./plugins/ids";
 import type { WorkspaceUploadBatchState } from "./workspaceUploadState";
@@ -41,6 +41,7 @@ export interface AppState {
   workspaceDeletionRuns: Record<string, TerminalCommandRun>;
   commandDialog: Extract<CommandResult, { type: "select" }> | undefined;
   planReviewDialog: { planFilePath: string; title: string; planContent: string } | undefined;
+  askDialog: { requestId: string; questions: AskDialogQuestion[] } | undefined;
   btwState: {
     status: "running" | "complete" | "error";
     question: string;
@@ -156,6 +157,7 @@ export function initialAppState(): AppState {
     workspaceDeletionRuns: {},
     commandDialog: undefined,
     planReviewDialog: undefined,
+    askDialog: undefined,
     btwState: undefined,
     modelDialog: undefined,
     modelActionDialog: undefined,

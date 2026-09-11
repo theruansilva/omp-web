@@ -191,6 +191,8 @@ export function parseSessionStatus(value: unknown): SessionStatus {
     ...optionalContextUsage(record["contextUsage"]),
     ...optionalField("thinkingLevel", optionalString(record, "thinkingLevel")),
     ...optionalField("extensionStatuses", optionalExtensionStatuses(record["extensionStatuses"])),
+    ...optionalField("planMode", record["planMode"]),
+    ...optionalField("pendingAsk", record["pendingAsk"]),
   };
 }
 
@@ -948,4 +950,9 @@ function optionalExtensionStatuses(value: unknown): Record<string, string> | und
     if (typeof v === "string") result[k] = v;
   }
   return Object.keys(result).length > 0 ? result : undefined;
+}
+
+export function parseSuccessResponse(value: unknown): { success: boolean } {
+  const record = requireRecord(value);
+  return { success: requireBoolean(record, "success") };
 }

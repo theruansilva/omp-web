@@ -1,5 +1,5 @@
 import type { FastifyInstance } from "fastify";
-import type { SessionBulkMutationRequest, SessionBulkMutationRef, SessionCleanupRequest } from "../../shared/apiTypes.js";
+import type { SessionBulkMutationRequest, SessionBulkMutationRef, SessionCleanupRequest, AskDialogResult } from "../../shared/apiTypes.js";
 import { normalizeRequestCwd } from "../workingDirectory.js";
 import type { SessionEventHub } from "../realtime/sessionEventHub.js";
 import type { PiSessionRef, PiSessionService } from "./piSessionService.js";
@@ -217,6 +217,18 @@ export function registerSessionRoutes(app: FastifyInstance, sessions: PiSessionS
     try {
       const body = optionalRecord(request.body);
       return await sessions.respondToCommand(sessionLookupFromBody(request.params.sessionId, body), requireString(body, "requestId"), requireString(body, "value"));
+    } catch (error) {
+      return reply.code(mutationErrorStatus(error)).send({ error: errorMessage(error) });
+    }
+  });
+
+  app.post<{ Params: { sessionId: string }; Body: { cwd?: unknown; requestId?: unknown; result?: unknown } | undefined }>(`${prefix}/sessions/:sessionId/ask/respond`, async (request, reply) => {
+    try {
+      const body = optionalRecord(request.body);
+      const requestId = requireString(body, "requestId");
+      /* eslint-disable-next-line @typescript-eslint/consistent-type-assertions */
+      const result = body?.["result"] as AskDialogResult | undefined;
+      return await sessions.respondToAsk(sessionLookupFromBody(request.params.sessionId, body), requestId, result);
     } catch (error) {
       return reply.code(mutationErrorStatus(error)).send({ error: errorMessage(error) });
     }

@@ -63,6 +63,7 @@ export const FEDERATED_HTTP_ROUTES = [
   { method: "POST", path: "/sessions/:sessionId/shell" },
   { method: "POST", path: "/sessions/:sessionId/commands/run" },
   { method: "POST", path: "/sessions/:sessionId/commands/respond" },
+  { method: "POST", path: "/sessions/:sessionId/ask/respond" },
   { method: "POST", path: "/sessions/:sessionId/abort" },
   { method: "POST", path: "/sessions/:sessionId/stop" },
   { method: "POST", path: "/sessions/:sessionId/archive" },

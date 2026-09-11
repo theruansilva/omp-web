@@ -12,7 +12,10 @@ import {
  Settings,
 } from "@oh-my-pi/pi-coding-agent";
 import { EditTool } from "@oh-my-pi/pi-coding-agent/edit";
-import type { ExtensionUIContext, ToolDefinition } from "@oh-my-pi/pi-coding-agent/extensibility/extensions/types";
+import { randomUUID } from "node:crypto";
+import { readPlanFile } from "@oh-my-pi/pi-coding-agent/plan-mode/plan-files";
+import type { ExtensionAskDialogQuestion, ExtensionAskDialogResult, ExtensionUIDialogOptions, ExtensionUIContext, ToolDefinition } from "@oh-my-pi/pi-coding-agent/extensibility/extensions/types";
+import type { AskDialogOption, AskDialogQuestion, AskDialogResult, PlanModeStatus } from "../../shared/apiTypes.js";
 import type { ClientArchiveSessionsResponse, ClientCommand, ClientCommandResult, ClientMessagePage, ClientSession, ClientSessionCleanupExecuteResponse, ClientSessionCleanupPreviewResponse, ClientSessionModel, ClientSessionRef, ClientSessionStatus, ClientThinkingLevel, SessionUiEvent } from "../types.js";
 import { pageMessagesAtSafeBoundary } from "./messagePaging.js";
 import type { SessionEventHub } from "../realtime/sessionEventHub.js";
@@ -256,6 +259,16 @@ export interface PiAgentSession {
  setPlanModeState(state: { enabled: boolean; planFilePath: string } | undefined): void;
  toggleAdvisorEnabled(): boolean;
  setAdvisorEnabled(enabled: boolean): boolean;
+ getProposedPlan?(): { planFilePath: string; title: string; planContent: string } | undefined;
+ approvePlan?(): Promise<void>;
+ rejectPlan?(feedback?: string): Promise<void>;
+ loadPlanForReview?(): Promise<{ planFilePath: string; title: string; planContent: string } | undefined>;
+ getPendingAsk?(): { requestId: string; questions: AskDialogQuestion[] } | undefined;
+ resolvePendingAsk?(requestId: string, result: AskDialogResult | undefined): boolean;
+ onPlanProposed?: (plan: { planFilePath: string; title: string; planContent: string }) => void;
+ onPlanCleared?: () => void;
+ onAskRequested?: (ask: { requestId: string; questions: AskDialogQuestion[] }) => void;
+ onAskCleared?: (requestId: string) => void;
 }
 
 export interface PiSessionRuntime {
@@ -281,11 +294,28 @@ class DefaultPiAgentSession implements PiAgentSession {
  private _isBashRunning = false;
  private readonly _extensionStatuses = new Map<string, string>();
  onExtensionStatusChange?: () => void;
+ onPlanProposed?: (plan: { planFilePath: string; title: string; planContent: string }) => void;
+ onPlanCleared?: () => void;
+ onAskRequested?: (ask: { requestId: string; questions: AskDialogQuestion[] }) => void;
+ onAskCleared?: (requestId: string) => void;
+
+ private _proposedPlan: { planFilePath: string; title: string; planContent: string } | undefined;
+ private _pendingAsk: {
+  requestId: string;
+  questions: AskDialogQuestion[];
+  resolve: (result: AskDialogResult | undefined) => void;
+  timer?: ReturnType<typeof setTimeout> | undefined;
+ } | undefined;
+ private readonly uiContext: ExtensionUIContext;
 
  constructor(
   private readonly ompSession: AgentSession,
   private readonly piSessionManager: PiSessionManager,
- ) { }
+  private readonly setToolUIContext?: (uiContext: ExtensionUIContext, hasUI: boolean) => void,
+ ) {
+  this.uiContext = this.buildUIContext();
+  this.setToolUIContext?.(this.uiContext, true);
+ }
 
  get modelRegistry(): ModelRegistryInstance { return this.ompSession.modelRegistry; }
  get sessionManager(): PiSessionManager { return this.piSessionManager; }
@@ -327,9 +357,103 @@ class DefaultPiAgentSession implements PiAgentSession {
    ? { enabled: res.enabled, planFilePath: res.planFilePath }
    : undefined;
  }
+ getProposedPlan(): { planFilePath: string; title: string; planContent: string } | undefined {
+  return this._proposedPlan;
+ }
  setPlanModeState(state: { enabled: boolean; planFilePath: string } | undefined): void {
   const fn = Reflect.get(this.ompSession, "setPlanModeState");
   if (typeof fn === "function") fn.call(this.ompSession, state);
+  if (state?.enabled) {
+   const setHandler = Reflect.get(this.ompSession, "setPlanProposalHandler");
+   if (typeof setHandler === "function") {
+    setHandler.call(this.ompSession, async (title: string) => {
+     const prepareFn = Reflect.get(this.ompSession, "preparePlanForReview");
+     if (typeof prepareFn !== "function") throw new Error("preparePlanForReview unavailable");
+     /* eslint-disable @typescript-eslint/consistent-type-assertions */
+     const result = (await prepareFn.call(this.ompSession, title)) as {
+      content: unknown[];
+      details?: { planFilePath: string; title: string; planExists: boolean };
+     };
+     if (result.details && typeof result.details === "object" && typeof result.details.planFilePath === "string") {
+      const planContent = (await this.readPlanContent(result.details.planFilePath)) ?? "";
+      this._proposedPlan = {
+       planFilePath: result.details.planFilePath,
+       title: result.details.title,
+       planContent,
+      };
+      this.onPlanProposed?.(this._proposedPlan);
+     }
+     return result as never;
+     /* eslint-enable @typescript-eslint/consistent-type-assertions */
+    });
+   }
+  } else {
+   const setHandler = Reflect.get(this.ompSession, "setPlanProposalHandler");
+   if (typeof setHandler === "function") setHandler.call(this.ompSession, null);
+   this._proposedPlan = undefined;
+   this.onPlanCleared?.();
+  }
+ }
+ async loadPlanForReview(): Promise<{ planFilePath: string; title: string; planContent: string } | undefined> {
+  if (this._proposedPlan !== undefined) return this._proposedPlan;
+  try {
+   const prepareFn = Reflect.get(this.ompSession, "preparePlanForReview");
+   if (typeof prepareFn !== "function") return undefined;
+   const result = (await prepareFn.call(this.ompSession, "")) as {
+    content: unknown[];
+    details?: { planFilePath: string; title: string; planExists: boolean };
+   };
+   if (result.details && typeof result.details === "object" && typeof result.details.planFilePath === "string") {
+    const planContent = (await this.readPlanContent(result.details.planFilePath)) ?? "";
+    this._proposedPlan = {
+     planFilePath: result.details.planFilePath,
+     title: result.details.title,
+     planContent,
+    };
+    return this._proposedPlan;
+   }
+  } catch {
+   return undefined;
+  }
+  return undefined;
+ }
+ async approvePlan(): Promise<void> {
+  this.setPlanModeState(undefined);
+  this._proposedPlan = undefined;
+  this.onPlanCleared?.();
+  await this.prompt("Plan approved. Proceed with execution as planned.", { streamingBehavior: "steer" });
+ }
+ async rejectPlan(feedback?: string): Promise<void> {
+  this._proposedPlan = undefined;
+  this.onPlanCleared?.();
+  const text = feedback !== undefined && feedback.trim() !== ""
+   ? `Plan revision requested: ${feedback.trim()}`
+   : "Plan rejected. Please revise the plan based on requirements.";
+  await this.prompt(text, { streamingBehavior: "steer" });
+ }
+ private async readPlanContent(planFilePath: string): Promise<string | null> {
+  const localOptions = {
+   getArtifactsDir: () => this.ompSession.sessionManager?.getArtifactsDir?.() ?? null,
+   getSessionId: () => this.ompSession.sessionManager?.getSessionId?.() ?? null,
+  };
+  return readPlanFile(planFilePath, {
+   localProtocolOptions: localOptions,
+   cwd: this.sessionManager.getCwd(),
+  });
+ }
+ getPendingAsk(): { requestId: string; questions: AskDialogQuestion[] } | undefined {
+  if (this._pendingAsk === undefined) return undefined;
+  return { requestId: this._pendingAsk.requestId, questions: this._pendingAsk.questions };
+ }
+ resolvePendingAsk(requestId: string, result: AskDialogResult | undefined): boolean {
+  if (this._pendingAsk === undefined || this._pendingAsk.requestId !== requestId) return false;
+  const pending = this._pendingAsk;
+  this._pendingAsk = undefined;
+  if (pending.timer !== undefined) clearTimeout(pending.timer);
+  /* eslint-disable-next-line @typescript-eslint/consistent-type-assertions */
+  pending.resolve(result as ExtensionAskDialogResult | undefined);
+  this.onAskCleared?.(requestId);
+  return true;
  }
  toggleAdvisorEnabled(): boolean {
   const fn = Reflect.get(this.ompSession, "toggleAdvisorEnabled");
@@ -356,16 +480,7 @@ class DefaultPiAgentSession implements PiAgentSession {
   return Object.fromEntries(this._extensionStatuses);
  }
 
- async bindExtensions(bindings?: PiExtensionBindings): Promise<void> {
-  const runner = this.ompSession.extensionRunner;
-  if (!runner) return Promise.resolve();
-
-  if (bindings?.onError) {
-   runner.onError((err: { extensionPath: string; event: string; error: string }) => {
-    bindings.onError?.(err);
-   });
-  }
-
+ private buildUIContext(): ExtensionUIContext {
   // eslint-disable-next-line no-control-regex -- ANSI escape sequences contain ASCII 0x1B
   const ANSI_ESCAPE = /\x1b\[[0-9;]*m/g;
   const cleanStatusText = (text: string): string => text.replace(ANSI_ESCAPE, "").trim();
@@ -376,7 +491,7 @@ class DefaultPiAgentSession implements PiAgentSession {
   };
 
   /* eslint-disable @typescript-eslint/require-await, @typescript-eslint/no-empty-function, @typescript-eslint/consistent-type-assertions */
-  const uiContext: ExtensionUIContext = {
+  return {
    theme: theme as never,
    setStatus: (key: string, text: string | undefined): void => {
     if (text === undefined || text.trim() === "") {
@@ -388,9 +503,36 @@ class DefaultPiAgentSession implements PiAgentSession {
    },
    notify: (_message: string, _type?: "info" | "warning" | "error"): void => {},
    onTerminalInput: () => () => {},
-   select: async () => undefined,
-   confirm: async () => false,
-   input: async () => undefined,
+   select: async (prompt, options, dialogOptions) => {
+    const res = await this.askDialog(
+     [{ id: "select", question: prompt, options: options.map((opt) => ({ label: typeof opt === "string" ? opt : opt.label })) }],
+     dialogOptions,
+    );
+    if (res?.kind === "submit" && res.results[0]?.selectedOptions[0]) {
+     return res.results[0].selectedOptions[0];
+    }
+    return undefined;
+   },
+   confirm: async (title, message, dialogOptions) => {
+    const res = await this.askDialog(
+     [{ id: "confirm", question: `${title}\n${message}`.trim(), options: [{ label: "Yes" }, { label: "No" }] }],
+     dialogOptions,
+    );
+    return res?.kind === "submit" && res.results[0]?.selectedOptions[0] === "Yes";
+   },
+   input: async (title, placeholder, dialogOptions) => {
+    const question: ExtensionAskDialogQuestion = {
+     id: "input",
+     question: title,
+     options: [],
+     ...(placeholder !== undefined && placeholder.trim() !== "" ? { header: placeholder } : {}),
+    };
+    const res = await this.askDialog([question], dialogOptions);
+    return res?.kind === "submit" ? res.results[0]?.customInput : undefined;
+   },
+   askDialog: async (questions, dialogOptions) => {
+    return this.askDialog(questions, dialogOptions);
+   },
    setWorkingMessage: (): void => {},
    setWidget: (): void => {},
    setFooter: (): void => {},
@@ -409,6 +551,58 @@ class DefaultPiAgentSession implements PiAgentSession {
    getToolsExpanded: () => false,
    setToolsExpanded: (): void => {},
   };
+  /* eslint-enable @typescript-eslint/require-await, @typescript-eslint/no-empty-function, @typescript-eslint/consistent-type-assertions */
+ }
+
+ private askDialog(
+  questions: ExtensionAskDialogQuestion[],
+  dialogOptions?: ExtensionUIDialogOptions,
+ ): Promise<ExtensionAskDialogResult | undefined> {
+  if (this._pendingAsk !== undefined) {
+   this.resolvePendingAsk(this._pendingAsk.requestId, undefined);
+  }
+  const requestId = randomUUID();
+  return new Promise<ExtensionAskDialogResult | undefined>((resolve) => {
+   let timer: ReturnType<typeof setTimeout> | undefined;
+   if (dialogOptions?.timeout !== undefined && dialogOptions.timeout > 0) {
+    timer = setTimeout(() => {
+     const results = questions.map((q) => {
+      const recIndex = q.recommended ?? 0;
+      const rec = q.options[recIndex]?.label ?? q.options[0]?.label;
+      return {
+       id: q.id,
+       question: q.question,
+       options: q.options.map((o) => o.label),
+       multi: q.multi ?? false,
+       selectedOptions: rec ? [rec] : [],
+       timedOut: true,
+      };
+     });
+     this.resolvePendingAsk(requestId, { kind: "submit", results });
+    }, dialogOptions.timeout);
+   }
+   if (dialogOptions?.signal) {
+    dialogOptions.signal.addEventListener(
+     "abort",
+     () => { this.resolvePendingAsk(requestId, undefined); },
+     { once: true },
+    );
+   }
+   this._pendingAsk = { requestId, questions, resolve, timer };
+   this.onAskRequested?.({ requestId, questions });
+  });
+ }
+
+ async bindExtensions(bindings?: PiExtensionBindings): Promise<void> {
+  this.setToolUIContext?.(this.uiContext, true);
+  const runner = this.ompSession.extensionRunner;
+  if (!runner) return Promise.resolve();
+
+  if (bindings?.onError) {
+   runner.onError((err: { extensionPath: string; event: string; error: string }) => {
+    bindings.onError?.(err);
+   });
+  }
 
   try {
    runner.initialize(
@@ -447,10 +641,9 @@ class DefaultPiAgentSession implements PiAgentSession {
      reload: async () => {},
      compact: async (opts) => { await this.ompSession.compact(typeof opts === "string" ? opts : undefined); },
     },
-    uiContext,
+    this.uiContext,
     "rpc"
    );
-   /* eslint-enable @typescript-eslint/require-await, @typescript-eslint/no-empty-function, @typescript-eslint/consistent-type-assertions */
 
    await runner.emit({ type: "session_start" });
    return;
@@ -661,7 +854,7 @@ function createDefaultRuntimeFactory(authStorage: AuthStorage, modelRegistry: Mo
    customTools,
    ...(model === undefined ? {} : { model }),
   });
-  const piSession = new DefaultPiAgentSession(result.session, sessionManager);
+  const piSession = new DefaultPiAgentSession(result.session, sessionManager, result.setToolUIContext);
   const started = schedulePromptService.startForSession(
    sessionId,
    cwd,
@@ -1534,6 +1727,13 @@ export class PiSessionService {
   return this.commandService.respond(active.runtime.session.sessionId, requestId, value);
  }
 
+ async respondToAsk(ref: PiSessionLookup, requestId: string, result: AskDialogResult | undefined): Promise<{ success: boolean }> {
+  await this.assertWritable(ref);
+  const active = await this.getActive(ref);
+  const success = active.runtime.session.resolvePendingAsk?.(requestId, result) ?? false;
+  return { success };
+ }
+
  private async reloadSessionRuntime(session: PiAgentSession): Promise<void> {
   if (this.hasActiveWork(session)) throw new Error("Stop current session activity before reloading");
   this.publishActivity(session, "reloading resources", "active");
@@ -2031,11 +2231,30 @@ export class PiSessionService {
    ...(options.initialModel === undefined ? {} : { initialModel: options.initialModel }),
   });
   const active: ActiveSession<PiSessionRuntime> = { runtime, unsubscribe: noop };
-  runtime.session.onExtensionStatusChange = () => { this.publishStatus(runtime.session); };
+  const attachSessionListeners = (session: PiAgentSession) => {
+   session.onExtensionStatusChange = () => { this.publishStatus(session); };
+   session.onPlanProposed = (plan) => {
+    this.events.publish(session.sessionId, { type: "plan.proposed", plan });
+    this.publishStatus(session);
+   };
+   session.onPlanCleared = () => {
+    this.events.publish(session.sessionId, { type: "plan.cleared" });
+    this.publishStatus(session);
+   };
+   session.onAskRequested = (ask) => {
+    this.events.publish(session.sessionId, { type: "ask.requested", ...ask });
+    this.publishStatus(session);
+   };
+   session.onAskCleared = (requestId) => {
+    this.events.publish(session.sessionId, { type: "ask.cleared", requestId });
+    this.publishStatus(session);
+   };
+  };
+  attachSessionListeners(runtime.session);
   await this.bindSessionExtensions(runtime.session);
   this.bindRuntime(active);
   runtime.setRebindSession(async (session) => {
-   session.onExtensionStatusChange = () => { this.publishStatus(session); };
+   attachSessionListeners(session);
    await this.bindSessionExtensions(session);
    this.bindRuntime(active);
    await this.recoverSubsessionTrackingForOpenedSession(session);
@@ -2302,6 +2521,12 @@ export class PiSessionService {
   const model = session.model === undefined ? undefined : modelToClientModel(session.model);
   const contextUsage = session.getContextUsage();
   const extensionStatuses = session.getExtensionStatuses?.();
+  const planModeState = session.getPlanModeState();
+  const proposedPlan = session.getProposedPlan?.();
+  const planMode = planModeState?.enabled
+   ? { enabled: true, planFilePath: planModeState.planFilePath, ...(proposedPlan ? { proposedPlan } : {}) }
+   : undefined;
+  const pendingAsk = session.getPendingAsk?.();
   return {
    sessionId: session.sessionId,
    persisted: sessionFileExists(session.sessionFile),
@@ -2316,7 +2541,9 @@ export class PiSessionService {
    tokens: stats.tokens,
    cost: stats.cost,
    ...(contextUsage === undefined ? {} : { contextUsage }),
+   ...(planMode !== undefined ? { planMode } : {}),
    ...(extensionStatuses !== undefined ? { extensionStatuses } : {}),
+   ...(pendingAsk !== undefined ? { pendingAsk } : {}),
   };
  }
 
