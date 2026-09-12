@@ -19,6 +19,8 @@ export class AppMobileMainTabs extends LitElement {
   @property({ attribute: false }) tabs: AppMobileMainTab[] = [];
   @property({ attribute: false }) selectedView: AppState["mainView"] = "chat";
   @property({ attribute: false }) onSelect?: (view: AppState["mainView"]) => void;
+  @property({ attribute: false }) onShowActions?: () => void;
+  @property({ attribute: false }) refreshControl: unknown;
   @property({ type: Boolean, reflect: true }) bottom = false;
   @query(".mobile-tabs") private mobileTabs?: HTMLElement | null;
   @state() private canScrollLeft = false;
@@ -59,12 +61,47 @@ export class AppMobileMainTabs extends LitElement {
             `;
     })}
         </div>
+        ${this.hasActions() ? html`
+          <div class="mobile-tabs-actions">
+            ${this.renderActionsButton()}${this.refreshControl}
+          </div>
+        ` : null}
       </div>
     `;
   }
 
+  private renderActionsButton() {
+    if (this.onShowActions === undefined) return null;
+    return html`
+      <button
+        type="button"
+        class="mobile-action-button"
+        title="Show Actions"
+        aria-label="Show Actions"
+        @click=${(event: MouseEvent) => { event.stopPropagation(); this.onShowActions?.(); }}
+      >
+        <svg class="mobile-action-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <path d="M13 2 4 14h7l-1 8 10-13h-7V2Z"></path>
+        </svg>
+      </button>
+    `;
+  }
+
   private frameClass(): string {
-    return `mobile-tabs-frame${this.canScrollLeft ? " can-scroll-left" : ""}${this.canScrollRight ? " can-scroll-right" : ""}`;
+    const classes = ["mobile-tabs-frame"];
+    if (this.hasActions()) classes.push("has-mobile-actions");
+    if (this.hasDoubleActions()) classes.push("has-mobile-actions-double");
+    if (this.canScrollLeft) classes.push("can-scroll-left");
+    if (this.canScrollRight) classes.push("can-scroll-right");
+    return classes.join(" ");
+  }
+
+  private hasActions(): boolean {
+    return this.onShowActions !== undefined || this.refreshControl !== undefined;
+  }
+
+  private hasDoubleActions(): boolean {
+    return this.onShowActions !== undefined && this.refreshControl !== undefined;
   }
 
   private tabClass(tab: AppMobileMainTab): string {
@@ -156,6 +193,17 @@ export class AppMobileMainTabs extends LitElement {
     .mobile-tabs-frame::before { left: 0; background: linear-gradient(90deg, color-mix(in srgb, var(--pi-shadow-strong) 55%, transparent) 0%, transparent 100%); }
     .mobile-tabs-frame::after { right: 0; background: linear-gradient(270deg, color-mix(in srgb, var(--pi-shadow-strong) 55%, transparent) 0%, transparent 100%); }
     .mobile-tabs-frame.can-scroll-left::before, .mobile-tabs-frame.can-scroll-right::after { opacity: 1; }
+    .mobile-tabs-frame.has-mobile-actions::after { display: none; }
+    .mobile-tabs-frame.has-mobile-actions .mobile-tabs { padding-right: 52px; scroll-padding-inline: 8px 52px; }
+    .mobile-tabs-frame.has-mobile-actions-double .mobile-tabs { padding-right: 96px; scroll-padding-inline: 8px 96px; }
+    .mobile-tabs-actions { position: absolute; top: 0; right: 0; bottom: 0; z-index: 3; display: flex; align-items: center; gap: 6px; padding: 0 8px; background: var(--pi-bg); pointer-events: none; }
+    :host([bottom]) .mobile-tabs-actions { bottom: max(0px, env(safe-area-inset-bottom)); }
+    .mobile-tabs-actions::before { content: ""; position: absolute; top: 0; bottom: 0; left: -24px; z-index: 0; width: 24px; background: linear-gradient(90deg, transparent, var(--pi-bg)); pointer-events: none; opacity: 0; transition: opacity .15s ease; }
+    .mobile-tabs-frame.can-scroll-right .mobile-tabs-actions::before { opacity: 1; }
+    app-refresh-control, .mobile-action-button { position: relative; z-index: 1; pointer-events: auto; }
+    .mobile-action-button { box-sizing: border-box; width: 36px; height: 36px; display: grid; place-items: center; border: 1px solid var(--pi-border); border-radius: 8px; background: var(--pi-surface); color: var(--pi-text); padding: 0; line-height: 1; cursor: pointer; }
+    .mobile-action-button:hover, .mobile-action-button:focus-visible { border-color: var(--pi-accent); background: var(--pi-selection-bg); }
+    .mobile-action-icon { width: 18px; height: 18px; fill: currentColor; pointer-events: none; }
     .mobile-tabs { flex: 1 1 auto; min-width: 0; display: flex; align-items: center; gap: 6px; padding: 8px; overflow-x: auto; overflow-y: hidden; overscroll-behavior-x: contain; scrollbar-width: thin; }
     .mobile-tabs button { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
     .mobile-tabs .navigation-tab { display: none; }

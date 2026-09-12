@@ -1981,9 +1981,7 @@ export class OmpWebApp extends LitElement {
         .project=${this.state.selectedProject}
         .workspace=${this.state.selectedWorkspace}
         .session=${this.state.selectedSession}
-        .refreshControl=${this.appShell.shouldShowAppRefreshInContextBar() ? this.renderAppRefresh() : undefined}
         .onOpenSection=${(section: NavigationSection) => { this.openNavigationSection(section); }}
-        .onShowActions=${() => { this.setState({ actionPaletteOpen: true }); }}
       ></app-context-bar>
     `;
   }
@@ -1994,6 +1992,8 @@ export class OmpWebApp extends LitElement {
         ?bottom=${this.chatPreferences.bottomMobileNav}
         .tabs=${this.mobileMainTabs()}
         .selectedView=${this.state.mainView}
+        .refreshControl=${this.appShell.shouldShowAppRefreshInContextBar() ? this.renderAppRefresh() : undefined}
+        .onShowActions=${() => { this.setState({ actionPaletteOpen: true }); }}
         .onSelect=${(view: AppState["mainView"]) => { this.selectMainView(view); }}
       ></app-mobile-main-tabs>
     `;
