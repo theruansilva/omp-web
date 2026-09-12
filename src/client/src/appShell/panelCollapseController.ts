@@ -35,13 +35,14 @@ export class PanelCollapseController implements ReactiveController {
     this.host.requestUpdate();
   }
 
-  shellClass(mainView: AppState["mainView"], bottomMobileNav = false): string {
+  shellClass(mainView: AppState["mainView"], bottomMobileNav = false, hideBreadcrumbs = false): string {
     return [
       "shell",
       mainViewClass(mainView),
       ...(this.navigationPanelCollapsed ? ["navigation-panel-collapsed"] : []),
       ...(this.workspacePanelCollapsed ? ["workspace-panel-collapsed"] : []),
       ...(bottomMobileNav ? ["bottom-mobile-nav"] : []),
+      ...(hideBreadcrumbs ? ["hide-breadcrumbs"] : []),
     ].join(" ");
   }
 }

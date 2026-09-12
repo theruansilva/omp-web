@@ -130,6 +130,9 @@ export const appStyles = css`
     .shell.workspace-view.bottom-mobile-nav .context-bar { grid-row: 1; grid-column: 3; }
     .shell.workspace-view.bottom-mobile-nav > workspace-panel { grid-row: 2; grid-column: 3; }
     .shell.workspace-view.bottom-mobile-nav app-mobile-main-tabs { grid-row: 3; grid-column: 3; }
+    .shell.hide-breadcrumbs.workspace-view.bottom-mobile-nav { grid-template-rows: minmax(0, 1fr) auto; }
+    .shell.hide-breadcrumbs.workspace-view.bottom-mobile-nav > workspace-panel { grid-row: 1; grid-column: 3; }
+    .shell.hide-breadcrumbs.workspace-view.bottom-mobile-nav app-mobile-main-tabs { grid-row: 2; grid-column: 3; }
   }
   @media (max-width: 760px) {
     .shell { grid-template-columns: minmax(0, 1fr); }
@@ -139,6 +142,7 @@ export const appStyles = css`
     .shell.workspace-view.bottom-mobile-nav > workspace-panel,
     .shell.workspace-view.bottom-mobile-nav app-mobile-main-tabs { grid-column: 1; }
     .context-bar { display: flex; }
+    .shell.hide-breadcrumbs .context-bar { display: none; }
     .mobile-navigation-tab { display: block; }
     main.navigation-view chat-view, main.navigation-view prompt-editor, main.navigation-view status-bar,
     main.navigation-view .empty { display: none; }

@@ -209,6 +209,13 @@ export class SettingsGeneralPanel extends LitElement {
               <small>Place the tabs bar (Menu, Chat, Files, etc.) at the bottom on mobile devices</small>
             </div>
           </label>
+          <label class="toggle-row">
+            <input type="checkbox" .checked=${this.chatPrefs.hideBreadcrumbs} @change=${(e: Event) => { this.updateChatPref("hideBreadcrumbs", e); }} />
+            <div class="toggle-copy">
+              <strong>Hide breadcrumb on mobile</strong>
+              <small>Hide the location path bar (Machine, Project, Workspace, Session) on mobile devices</small>
+            </div>
+          </label>
         </div>
       </section>
     `;

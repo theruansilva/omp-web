@@ -1973,7 +1973,7 @@ export class OmpWebApp extends LitElement {
   };
 
   private renderContextBar() {
-    if (!this.appShell.isMobileNavigationLayout) return null;
+    if (!this.appShell.isMobileNavigationLayout || this.chatPreferences.hideBreadcrumbs) return null;
     return html`
       <app-context-bar
         .machines=${this.state.machines}
@@ -2023,7 +2023,7 @@ export class OmpWebApp extends LitElement {
     const state = this.state;
     return html`
       <div
-        class=${this.panelCollapse.shellClass(state.mainView, this.chatPreferences.bottomMobileNav)}
+        class=${this.panelCollapse.shellClass(state.mainView, this.chatPreferences.bottomMobileNav, this.chatPreferences.hideBreadcrumbs)}
         style=${this.panelResize.shellStyle({ navigation: this.resizablePanelConstraints("navigation"), workspace: this.resizablePanelConstraints("workspace") })}
       >
         <aside id="navigation-panel">${this.appShell.isMobileNavigationLayout ? null : this.renderNavigationPanel()}</aside>

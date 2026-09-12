@@ -13,5 +13,7 @@ describe("PanelCollapseController", () => {
     expect(controller.shellClass("chat", false)).not.toContain("bottom-mobile-nav");
     expect(controller.shellClass("chat", true)).toContain("bottom-mobile-nav");
     expect(controller.shellClass("core:workspace.files", true)).toContain("bottom-mobile-nav");
+    expect(controller.shellClass("chat", false, false)).not.toContain("hide-breadcrumbs");
+    expect(controller.shellClass("chat", false, true)).toContain("hide-breadcrumbs");
   });
 });

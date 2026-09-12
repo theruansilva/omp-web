@@ -6,6 +6,7 @@ export interface ChatPreferences {
   showStatusBar: boolean;
   hideWorkspaces: boolean;
   bottomMobileNav: boolean;
+  hideBreadcrumbs: boolean;
 }
 
 export const DEFAULT_CHAT_PREFERENCES: ChatPreferences = {
@@ -16,6 +17,7 @@ export const DEFAULT_CHAT_PREFERENCES: ChatPreferences = {
   showStatusBar: false,
   hideWorkspaces: false,
   bottomMobileNav: false,
+  hideBreadcrumbs: false,
 };
 
 export const CHAT_PREFERENCES_CHANGED_EVENT = "omp-web-chat-preferences-changed";
@@ -43,7 +45,8 @@ export function isChatPreferences(value: unknown): value is ChatPreferences {
     typeof candidate["showAgentStatus"] === "boolean" &&
     typeof candidate["showStatusBar"] === "boolean" &&
     typeof candidate["hideWorkspaces"] === "boolean" &&
-    typeof candidate["bottomMobileNav"] === "boolean"
+    typeof candidate["bottomMobileNav"] === "boolean" &&
+    typeof candidate["hideBreadcrumbs"] === "boolean"
   );
 }
 
@@ -63,6 +66,7 @@ export function loadChatPreferences(): ChatPreferences {
       showStatusBar: typeof record["showStatusBar"] === "boolean" ? record["showStatusBar"] : DEFAULT_CHAT_PREFERENCES.showStatusBar,
       hideWorkspaces: typeof record["hideWorkspaces"] === "boolean" ? record["hideWorkspaces"] : DEFAULT_CHAT_PREFERENCES.hideWorkspaces,
       bottomMobileNav: typeof record["bottomMobileNav"] === "boolean" ? record["bottomMobileNav"] : DEFAULT_CHAT_PREFERENCES.bottomMobileNav,
+      hideBreadcrumbs: typeof record["hideBreadcrumbs"] === "boolean" ? record["hideBreadcrumbs"] : DEFAULT_CHAT_PREFERENCES.hideBreadcrumbs,
     };
   } catch {
     return { ...DEFAULT_CHAT_PREFERENCES };
