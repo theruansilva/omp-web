@@ -293,7 +293,7 @@ export const listStyles = css`
 export const chatStyles = css`
   :host { position: relative; z-index: 0; display: flex; flex-direction: column; min-height: 0; overflow: hidden; color: var(--pi-text); font: 14px system-ui, sans-serif; }
   .chat-wrap { position: relative; flex: 1 1 auto; min-height: 0; overflow: hidden; }
-  .chat { height: 100%; min-height: 0; overflow: auto; overflow-anchor: none; padding: 26px 16px 64px; box-sizing: border-box; max-width: 800px; margin: 0 auto; width: 100%; }
+  .chat { height: 100%; min-height: 0; overflow: auto; overflow-anchor: none; padding: 20px 16px 24px; box-sizing: border-box; max-width: 800px; margin: 0 auto; width: 100%; }
   .chat:focus { outline: none; }
   .scroll-marker { display: block; height: 0; overflow: hidden; pointer-events: none; }
   .activity-dock { position: absolute; left: 50%; transform: translateX(-50%); right: auto; bottom: 16px; z-index: 20; display: flex; align-items: center; gap: 8px; max-width: min(90%, 600px); box-sizing: border-box; border: 1px solid var(--pi-border); border-radius: 999px; background: var(--pi-surface); color: var(--pi-text); padding: 7px 14px; font-size: 13px; pointer-events: none; box-shadow: 0 4px 20px var(--pi-shadow); backdrop-filter: blur(8px); }
@@ -493,7 +493,7 @@ export const actionPaletteStyles = css`
 
 export const promptEditorStyles = css`
   :host { position: relative; z-index: 5; display: block; color: var(--pi-text); font: 14px system-ui, sans-serif; }
-  footer { display: flex; justify-content: center; width: 100%; box-sizing: border-box; padding: 10px 24px 18px; border-top: 0; background: transparent; }
+  footer { display: flex; justify-content: center; width: 100%; box-sizing: border-box; padding: 6px 24px 12px; border-top: 0; background: transparent; }
   footer.shell-mode { border-top: 0; background: transparent; }
   .input-card {
     position: relative;
@@ -633,10 +633,10 @@ export const promptEditorStyles = css`
   .steer-button:not(:disabled) { color: var(--pi-accent, var(--pi-text)); }
   .select-thinking .prompt-thinking-gauge .gauge-bar { fill: currentColor; stroke: none; opacity: .28; }
   .select-thinking .prompt-thinking-gauge .gauge-bar-active { opacity: 1; }
-  textarea, .markdown-editor .cm-editor { box-sizing: border-box; width: 100%; min-height: 48px; max-height: 220px; resize: none; overflow: hidden; border: 0; background: transparent; color: var(--pi-text); font: var(--pi-control-font-size, 16px)/1.4 var(--pi-control-font-family, system-ui, sans-serif); }
+  textarea, .markdown-editor .cm-editor { box-sizing: border-box; width: 100%; min-height: 44px; max-height: 220px; resize: none; overflow: hidden; border: 0; background: transparent; color: var(--pi-text); font: var(--pi-control-font-size, 16px)/1.4 var(--pi-control-font-family, system-ui, sans-serif); }
   textarea { overflow-y: auto; padding: 10px 12px; }
-  .markdown-editor .cm-scroller { max-height: 220px; overflow-y: auto; font-family: var(--pi-control-font-family, system-ui, sans-serif); line-height: 1.4; }
-  .markdown-editor .cm-content { min-height: 38px; padding: 10px 12px 6px 12px; caret-color: var(--pi-text); text-align: start; unicode-bidi: plaintext; }
+  .markdown-editor .cm-scroller { min-height: 44px; max-height: 220px; overflow-y: auto; font-family: var(--pi-control-font-family, system-ui, sans-serif); line-height: 1.4; }
+  .markdown-editor .cm-content { min-height: 44px; padding: 10px 12px 6px 12px; caret-color: var(--pi-text); text-align: start; unicode-bidi: plaintext; box-sizing: border-box; }
   .markdown-editor .cm-line { padding: 0; unicode-bidi: plaintext; }
   .markdown-editor .cm-placeholder { color: var(--pi-dim); }
   .markdown-editor .cm-focused { outline: none; }
@@ -659,7 +659,7 @@ export const promptEditorStyles = css`
   button { border: 1px solid var(--pi-border); border-radius: 8px; background: var(--pi-surface); color: var(--pi-text); padding: 7px 9px; cursor: pointer; }
   button:disabled, textarea:disabled, .markdown-editor-disabled .cm-editor { opacity: .5; cursor: not-allowed; }
   @media (max-width: 640px) {
-    footer { padding: 6px 12px 12px; }
+    footer { padding: 4px 12px 10px; }
     .input-card { border-radius: 14px; }
     .select-model { max-width: min(58vw, 220px); }
   }
