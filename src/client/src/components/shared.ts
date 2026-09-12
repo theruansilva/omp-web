@@ -636,9 +636,10 @@ export const promptEditorStyles = css`
   textarea, .markdown-editor .cm-editor { box-sizing: border-box; width: 100%; min-height: 44px; max-height: 220px; resize: none; overflow: hidden; border: 0; background: transparent; color: var(--pi-text); font: var(--pi-control-font-size, 16px)/1.4 var(--pi-control-font-family, system-ui, sans-serif); }
   textarea { overflow-y: auto; padding: 10px 12px; }
   .markdown-editor .cm-scroller { min-height: 44px; max-height: 220px; overflow-y: auto; font-family: var(--pi-control-font-family, system-ui, sans-serif); line-height: 1.4; }
-  .markdown-editor .cm-content { min-height: 44px; padding: 10px 12px 6px 12px; caret-color: var(--pi-text); text-align: start; unicode-bidi: plaintext; box-sizing: border-box; }
+  .markdown-editor .cm-content { min-height: 44px; padding: 12px 14px; caret-color: var(--pi-text); text-align: start; unicode-bidi: plaintext; box-sizing: border-box; }
   .markdown-editor .cm-line { padding: 0; unicode-bidi: plaintext; }
-  .markdown-editor .cm-placeholder { color: var(--pi-dim); }
+  .markdown-editor .cm-placeholder { color: var(--pi-dim); margin: 0; }
+  .markdown-editor .cm-cursor { border-left-width: 2px; }
   .markdown-editor .cm-focused { outline: none; }
   .markdown-editor-disabled .cm-editor { opacity: .5; cursor: not-allowed; }
   .mode-hint { margin: 6px 12px 0; align-self: flex-start; border: 1px solid var(--pi-success-border); border-radius: 999px; background: var(--pi-success-surface); color: var(--pi-success); padding: 2px 8px; font-size: 12px; pointer-events: none; }
