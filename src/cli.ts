@@ -7,8 +7,14 @@ import { basename, dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { defaultOmpWebConfigPath, defaultOmpWebDataDir, exampleOmpWebConfig } from "./config.js";
 import { packageVersion, printOmpWebVersionReport } from "./ompWebVersionReport.js";
-import { checkNodePtyDarwinSpawnHelper, formatNodePtyDarwinSpawnHelperCheck } from "./server/diagnostics/nodePtySpawnHelper.js";
 import { isRecord } from "./server/utils.js";
+import { runDoctor, runChecks, printPathSetupAdvice } from "./cli/doctor.js";
+import {
+  systemdUnit as makeSystemdUnit,
+  launchdLogPath,
+  launchdPlist as makeLaunchdPlist,
+} from "./cli/serviceTemplates.js";
+
 
 const OMP_WEB_PACKAGE_NAME = "@progmruansilva/omp-web";
 
@@ -459,63 +465,12 @@ function devServiceDefinitions(options: InstallOptions, configPath: string, root
   ];
 }
 
-function dependencyLine(name: "After" | "Wants", ids: ServiceId[] | undefined): string {
-  if (ids === undefined || ids.length === 0) return "";
-  return `${name}=${ids.map((id) => serviceRefs[id].systemdName).join(" ")}\n`;
-}
-
-function environmentLines(environment: Record<string, string>): string {
-  return Object.entries(environment)
-    .map(([key, value]) => `Environment="${key}=${systemdEscape(value)}"\n`)
-    .join("");
-}
-
 function systemdUnit(service: ServiceDefinition): string {
-  const workingDirectory = service.workingDirectory === undefined ? "" : `WorkingDirectory=${systemdQuotedValue(service.workingDirectory)}\n`;
-  const restart = service.restart === "on-failure" ? "Restart=on-failure\nRestartSec=2\n" : "Restart=no\n";
-  return `[Unit]
-Description=${service.description}
-${dependencyLine("After", service.after)}${dependencyLine("Wants", service.wants)}
-[Service]
-Type=simple
-${workingDirectory}${environmentLines(service.environment)}ExecStart=${serviceShellExecPrefix()} ${systemdServiceShellQuote(service.shellCommand)}
-${restart}
-[Install]
-WantedBy=default.target
-`;
-}
-
-function plistString(key: string, value: string, indent = "  "): string {
-  return `${indent}<key>${xmlEscape(key)}</key>\n${indent}<string>${xmlEscape(value)}</string>\n`;
-}
-
-function plistProgramArguments(service: ServiceDefinition): string {
-  const args = ["/usr/bin/env", detectServiceShell().executable, "-lc", service.shellCommand];
-  return `  <key>ProgramArguments</key>\n  <array>\n${args.map((arg) => `    <string>${xmlEscape(arg)}</string>`).join("\n")}\n  </array>\n`;
-}
-
-function plistEnvironment(environment: Record<string, string>): string {
-  const entries = Object.entries(environment);
-  if (entries.length === 0) return "";
-  return `  <key>EnvironmentVariables</key>\n  <dict>\n${entries.map(([key, value]) => plistString(key, value, "    ")).join("")}  </dict>\n`;
-}
-
-function launchdLogPath(ref: ServiceRef): string {
-  return join(logDir, ref.logName);
+  return makeSystemdUnit(service, serviceRefs, systemdEscape, systemdQuotedValue, serviceShellExecPrefix, systemdServiceShellQuote);
 }
 
 function launchdPlist(service: ServiceDefinition): string {
-  const workingDirectory = service.workingDirectory === undefined ? "" : plistString("WorkingDirectory", service.workingDirectory);
-  const keepAlive = service.restart === "on-failure" ? "  <key>KeepAlive</key>\n  <dict>\n    <key>SuccessfulExit</key>\n    <false/>\n  </dict>\n" : "";
-  return `<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<dict>
-${plistString("Label", service.launchdLabel)}${plistProgramArguments(service)}${workingDirectory}${plistEnvironment(service.environment)}  <key>RunAtLoad</key>
-  <true/>
-${keepAlive}${plistString("StandardOutPath", launchdLogPath(service))}${plistString("StandardErrorPath", launchdLogPath(service))}</dict>
-</plist>
-`;
+  return makeLaunchdPlist(service, logDir, detectServiceShell, xmlEscape);
 }
 
 async function writeInitialConfig(options: InstallOptions): Promise<string> {
@@ -800,7 +755,7 @@ async function install(args: string[]): Promise<void> {
   console.log(`Service backend: ${backend.label}`);
   console.log(`Service shell: ${describeServiceShell()}`);
   if (!runChecks(installPreflightChecks(backend, options.mode, executables, devRoot))) {
-    printPathSetupAdvice();
+    printPathSetupAdvice(detectServiceShell().name);
     throw new Error("Install preflight checks failed. Fix the failed checks above, then run `omp-web doctor` for more detail.");
   }
 
@@ -904,7 +859,7 @@ function logs(): void {
     run("journalctl", ["--user", ...refs.flatMap((ref) => ["-u", ref.systemdName]), "-f"]);
     return;
   }
-  run("tail", ["-F", ...refs.map((ref) => launchdLogPath(ref))]);
+  run("tail", ["-F", ...refs.map((ref) => launchdLogPath(logDir, ref))]);
 }
 
 function serviceShellLabel(): string {
@@ -974,120 +929,22 @@ function doctorChecks(): Check[] {
   return checks;
 }
 
-function runChecks(checks: Check[]): boolean {
-  let failed = false;
-  for (const [label, command] of checks) {
-    const [bin, ...args] = command;
-    if (bin === undefined) continue;
-    const result = capture(bin, args);
-    const ok = result.status === 0;
-    failed ||= !ok;
-    console.log(`${ok ? "✓" : "✗"} ${label}`);
-    printCheckOutput(result.stdout || result.stderr);
-  }
-  return !failed;
-}
-
-function printCheckOutput(output: string): void {
-  const trimmed = output.trim();
-  if (trimmed === "") return;
-  const lines = trimmed.split("\n");
-  for (const line of lines.slice(0, 3)) console.log(`  ${line}`);
-  if (lines.length > 3) console.log("  ...");
-}
-
-function optionalDoctorChecks(): Check[] {
-  const shell = serviceShellLabel();
-  const backend = currentServiceBackend();
-  const checks: Check[] = [[`${shell} can find optional ripgrep (rg)`, serviceShellCommand(commandCheck("rg"))]];
-  if (backend?.kind === "systemd") checks.push([`systemd user ${shell} can find optional ripgrep (rg)`, systemdUserServiceShellCommand(commandCheck("rg"))]);
-  return checks;
-}
-
-function printOptionalDoctorChecks(): void {
-  let missingOptionalTool = false;
-  for (const [label, command] of optionalDoctorChecks()) {
-    const [bin, ...args] = command;
-    if (bin === undefined) continue;
-    const result = capture(bin, args);
-    const ok = result.status === 0;
-    missingOptionalTool ||= !ok;
-    console.log(`${ok ? "✓" : "!"} ${label}`);
-    printCheckOutput(result.stdout || result.stderr);
-  }
-  if (missingOptionalTool) {
-    console.log("  Install ripgrep, or make rg visible to the service shell, for faster all-file @ suggestions.");
-    console.log("  PI WEB falls back to a bounded filesystem scan when rg is unavailable.");
-  }
-}
-
-function printPathSetupAdvice(): void {
-  const shell = detectServiceShell();
-  console.log("\nPATH setup advice:");
-  if (shell.name === "bash") {
-    console.log("  Detected bash. Put PATH setup for node/version managers/tools in ~/.bash_profile or ~/.profile.");
-    console.log("  If ~/.bash_profile exists, bash will not read ~/.profile unless you source it from ~/.bash_profile.");
-    console.log("  Do not rely only on ~/.bashrc or prompt hooks for tools needed by services or agents.");
-  } else if (shell.name === "zsh") {
-    console.log("  Detected zsh. Put PATH setup for node/version managers/tools in ~/.zprofile, not only ~/.zshrc.");
-    console.log("  Avoid relying on prompt hooks; PI WEB services run non-interactive login shells.");
-  } else {
-    console.log("  Detected fish. Prefer universal PATH setup such as `fish_add_path -U ...` for tools needed by services or agents.");
-    console.log("  Avoid relying on prompt hooks; PI WEB services run non-interactive login shells.");
-  }
-}
-
 async function doctor(): Promise<void> {
-  const backend = currentServiceBackend();
-  console.log(`Platform: ${platformLabel()}`);
-  console.log(`Service backend: ${backend?.label ?? "manual run only"}`);
-  console.log(`Service shell: ${describeServiceShell()}`);
-  if (backend === undefined) {
-    console.log(`- Native user service checks skipped on ${platformLabel()}`);
-  }
-  console.log("");
-  await printOmpWebVersionReport();
-  console.log("\nDoctor checks:");
-  const ok = runChecks(doctorChecks());
-  printOptionalDoctorChecks();
-  const nodePtySpawnHelperOk = printNodePtyDarwinSpawnHelperCheck();
-
-  if (supportsSystemdUserServices()) {
-    const linger = isLingerEnabled();
-    if (linger === true) {
-      console.log("✓ systemd user lingering enabled");
-    } else if (linger === false) {
-      console.log("✗ systemd user lingering disabled");
-      console.log(`  Recommended on servers: sudo loginctl enable-linger ${userInfo().username}`);
-    } else {
-      console.log("? systemd user lingering unknown");
-      console.log(`  Recommended on servers: sudo loginctl enable-linger ${userInfo().username}`);
-    }
-  } else if (backend?.kind === "launchd") {
-    console.log("- user services start at login with LaunchAgents");
-  } else {
-    console.log(`- systemd user lingering skipped on ${platformLabel()}`);
-  }
-
-  if (!ok) {
-    console.log("\nIf a command works in your terminal but fails here, make sure your service shell login files set PATH the same way.");
-    if (backend?.kind === "systemd") console.log("If a bundled entrypoint is not accessible, reinstall or update the PI WEB package.");
-    printPathSetupAdvice();
-  }
-
-  if (ok && backend === undefined) {
-    console.log(`\n${manualRunAdvice()}`);
-  }
-
-  if (!ok || !nodePtySpawnHelperOk) process.exitCode = 1;
+  await runDoctor({
+    platformLabel,
+    currentServiceBackend,
+    describeServiceShell,
+    doctorChecks,
+    supportsSystemdUserServices,
+    isLingerEnabled,
+    manualRunAdvice,
+    serviceShellLabel,
+    serviceShellCommand,
+    systemdUserServiceShellCommand,
+    commandCheck,
+    detectServiceShell,
+  });
 }
-
-function printNodePtyDarwinSpawnHelperCheck(): boolean {
-  const result = formatNodePtyDarwinSpawnHelperCheck(checkNodePtyDarwinSpawnHelper());
-  for (const line of result.lines) console.log(line);
-  return result.ok;
-}
-
 
 function help(): void {
   console.log(`PI WEB
