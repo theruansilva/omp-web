@@ -1,22 +1,12 @@
-import { statSync } from "node:fs";
-import { open, readFile, writeFile } from "node:fs/promises";
 import type { ImageContent } from "@oh-my-pi/pi-ai";
-import type { StreamFn } from "@oh-my-pi/pi-agent-core";
 import {
- type AgentSession,
  AuthStorage,
  createAgentSession,
  getAgentDir,
- ModelRegistry,
  SessionManager,
- Settings,
 } from "@oh-my-pi/pi-coding-agent";
-import { EditTool } from "@oh-my-pi/pi-coding-agent/edit";
-import { randomUUID } from "node:crypto";
-import { readPlanFile } from "@oh-my-pi/pi-coding-agent/plan-mode/plan-files";
-import type { ExtensionAskDialogQuestion, ExtensionAskDialogResult, ExtensionUIDialogOptions, ExtensionUIContext, ToolDefinition } from "@oh-my-pi/pi-coding-agent/extensibility/extensions/types";
-import type { AskDialogOption, AskDialogQuestion, AskDialogResult, PlanModeStatus } from "../../shared/apiTypes.js";
-import type { ClientArchiveSessionsResponse, ClientCommand, ClientCommandResult, ClientMessagePage, ClientSession, ClientSessionCleanupExecuteResponse, ClientSessionCleanupPreviewResponse, ClientSessionModel, ClientSessionRef, ClientSessionStatus, ClientThinkingLevel, SessionUiEvent } from "../types.js";
+import type { AskDialogQuestion, AskDialogResult } from "../../shared/apiTypes.js";
+import type { ClientArchiveSessionsResponse, ClientCommand, ClientCommandResult, ClientMessagePage, ClientSession, ClientSessionCleanupExecuteResponse, ClientSessionCleanupPreviewResponse, ClientSessionModel, ClientSessionRef, ClientSessionStatus, ClientThinkingLevel } from "../types.js";
 import { pageMessagesAtSafeBoundary } from "./messagePaging.js";
 import type { SessionEventHub } from "../realtime/sessionEventHub.js";
 import { BUILTIN_COMMANDS } from "./builtinCommands.js";
@@ -26,12 +16,10 @@ import { findArchiveCandidateByIdOrPrefix, planSessionArchiveTree, type SessionA
 import type { ActiveSession } from "./sessionRuntimeStore.js";
 import type { AuthChange } from "./authService.js";
 import { fallbackSessionName, generateShortSessionName } from "./sessionNameGenerator.js";
-import { computeEditPreview, type EditReplacement } from "./editPreview.js";
 import { createPiSessionManagerGateway } from "./piSessionManagerGateway.js";
 import { attachmentsToInlineImages, saveAttachmentsToWorkspace } from "./attachmentService.js";
 import { parsePromptAttachments } from "../../shared/promptAttachments.js";
 import type { SavedPromptAttachment, SessionBulkArchiveResponse, SessionBulkDeleteArchivedResponse, SessionBulkFailure, SessionBulkMutationRef } from "../../shared/apiTypes.js";
-import { isKnownThinkingLevel } from "../../shared/thinkingLevels.js";
 
 import { cwdPathsEqual } from "../workingDirectory.js";
 import { errorMessage, isRecord } from "../utils.js";
@@ -39,13 +27,98 @@ import type { WorkspaceActivityService } from "../activity/workspaceActivityServ
 import { createSpawnSessionToolDefinition, type SpawnSessionInvocation, type SpawnSessionResult } from "./spawnSessionTool.js";
 import { createSubsessionToolDefinitions, type SpawnSubsessionInvocation, type SpawnSubsessionResult, type SubsessionCheckResult, type SubsessionReadQuery, type SubsessionReadResult, type SubsessionStatus, type SubsessionSummary, type SubsessionToolDeps } from "./spawnSubsessionTool.js";
 import { buildTranscriptView } from "./subsessionTranscript.js";
-import { planSessionCleanup, summarizeSessionCleanupExecution, type NormalizedSessionCleanupRequest, type SessionCleanupPlan } from "./sessionCleanup.js";
+import { planSessionCleanup, summarizeSessionCleanupExecution, type NormalizedSessionCleanupRequest } from "./sessionCleanup.js";
 import type { SpawnTargetDecision, SpawnTargetResolver } from "./spawnTargetResolver.js";
 import type { CronScheduler } from "./schedulePrompt/scheduler.js";
 import { SchedulePromptService } from "./schedulePrompt/schedulePromptService.js";
 import type { CronStorage } from "./schedulePrompt/storage.js";
 import { createSchedulePromptToolDefinition } from "./schedulePrompt/tool.js";
 import type { PushNotificationService } from "../push/PushNotificationService.js";
+import {
+  type AgentModel,
+  type CreateAgentRuntime,
+  type CreateAgentRuntimeOptions,
+  type ModelRegistryInstance,
+  type OmpWebCreateAgentSessionRuntimeFactory,
+  type PiAgentSession,
+  type PiSessionManager,
+  type PiSessionManagerGateway,
+  type PiSessionRuntime,
+  DefaultPiAgentSession,
+  DefaultPiSessionRuntime,
+  defaultCreateAgentRuntime,
+} from "./piAgentSession.js";
+import { createOmpWebEditToolDefinition } from "./editTool.js";
+import { toClientEvent } from "./sessionEventMapper.js";
+import {
+  SUBSESSION_LINK_CUSTOM_TYPE,
+  SUBSESSION_CHILD_LINK_CUSTOM_TYPE,
+  SUBSESSION_NOTIFICATION_CUSTOM_TYPE,
+  type TrackedSubsessionLink,
+  type PersistedParentSubsessionLink,
+  type PersistedChildSubsessionLink,
+  trackedSubsessionLinkFromParentLink,
+  persistedParentSubsessionLinkData,
+  persistedChildSubsessionLinkData,
+  parsePersistedParentSubsessionLink,
+  parsePersistedChildSubsessionLink,
+  nonEmptyString,
+  subsessionHydratedParentKey,
+  sessionPathsEqual,
+  sessionFileExists,
+  sessionFileMatches,
+  activeSessionFileMatches,
+  trackedLinkParentFileMatches,
+  readSessionHeaderSummary,
+  sessionFileHeaderMatches,
+  clearParentSession,
+  clearParentSessionHeader,
+  truncateForNotification,
+  finalAssistantText,
+} from "./subsessionLinks.js";
+import {
+  type PiSessionLookup,
+  type PiSessionListEntry,
+  type WorkspaceArchiveCandidate,
+  type BulkSessionLookupContext,
+  type BulkArchivePlanItem,
+  type BulkDeletePlanItem,
+  previewResponseFromPlan,
+  uniqueBulkSessionRefs,
+  bulkRefToLookup,
+  findArchivedRecordForBulkRef,
+  findListedSessionForBulkRef,
+  findSessionByIdOrPrefix,
+  uniqueStrings,
+  modelToClientModel,
+  clientSessionFromListEntry,
+  archiveInputFromListEntry,
+  archiveInputFromActiveSession,
+  archiveCandidateFromListEntry,
+  archiveCandidateFromArchivedRecord,
+  archiveCandidateFromActiveSession,
+  archiveInputFromCandidate,
+  sessionHasActiveWork,
+  clientSessionFromArchivedRecord,
+  addSessionName,
+  compareArchivedRecords,
+  isDefined,
+} from "./sessionArchiveHelpers.js";
+
+export type {
+  AgentModel,
+  CreateAgentRuntime,
+  CreateAgentRuntimeOptions,
+  ModelRegistryInstance,
+  OmpWebCreateAgentSessionRuntimeFactory,
+  PiAgentSession,
+  PiSessionManager,
+  PiSessionManagerGateway,
+  PiSessionRuntime,
+  PiSessionListEntry,
+  PiSessionLookup,
+};
+
 
 /**
  * Minimal structured-logging seam, shaped like Fastify's logger so sessiond can
@@ -92,25 +165,6 @@ interface QueuedPrompt {
  echoUserMessage?: boolean;
 }
 
-interface TrackedSubsessionLink {
- parentSessionId: string;
- childSessionId: string;
- childSessionFile?: string;
- parentSessionFile?: string;
- cwd?: string;
-}
-
-interface PersistedParentSubsessionLink {
- spawnedBySessionId: string;
- spawnedSessionId: string;
- spawnedSessionFile?: string;
- cwd?: string;
-}
-
-interface PersistedChildSubsessionLink {
- spawnedBySessionId: string;
- spawnedSessionId: string;
-}
 
 interface StartSessionOptions {
  parentSession?: string;
@@ -136,688 +190,7 @@ type SessionArchiveRepository = Pick<SessionArchiveStore, "list" | "get" | "arch
 
 export type PiSessionRef = ClientSessionRef;
 
-type PiSessionLookup = string | PiSessionRef;
 
-export interface PiSessionListEntry {
- id: string;
- path: string;
- cwd: string;
- created: Date;
- modified: Date;
- messageCount: number;
- firstMessage: string;
- allMessagesText: string;
- name?: string;
- title?: string;
- parentSessionPath?: string;
-}
-
-interface WorkspaceArchiveCandidate extends SessionArchiveTreeCandidate {
- cwd: string;
- listEntry?: PiSessionListEntry;
- activeSession?: PiAgentSession;
-}
-
-interface BulkSessionLookupContext {
- sessionsByCwd: Map<string, PiSessionListEntry[]>;
- allSessions?: readonly PiSessionListEntry[];
-}
-
-interface BulkArchivePlanItem {
- input: ArchiveSessionInput;
- activeSession?: PiAgentSession;
-}
-
-interface BulkDeletePlanItem {
- record: ArchivedSessionRecord;
-}
-
-type AgentModel = NonNullable<SpawnSessionInvocation["model"]>;
-type ModelRegistryInstance = ModelRegistry;
-
-export interface PiSessionManager {
- getCwd(): string;
- getBranch(): unknown[];
- getEntries?(): readonly unknown[];
- getLeafId(): string | null;
- getHeader?(): { parentSession?: string } | null | undefined;
- appendCustomEntry?(customType: string, data?: unknown): string;
-}
-
-export interface PiSessionManagerGateway {
- list(cwd: string): Promise<PiSessionListEntry[]>;
- create(cwd: string, options?: { parentSession?: string }): PiSessionManager;
- /**
-  * Legacy id-only lookup surface for older clients. This intentionally searches
-  * only Pi's default session store, because custom session directories require
-  * a cwd-scoped lookup.
-  */
- listAll?(): Promise<PiSessionListEntry[]>;
- open(path: string): Promise<PiSessionManager>;
-}
-
-interface PiExtensionError {
- extensionPath: string;
- event: string;
- error: string;
- stack?: string;
-}
-
-interface PiExtensionBindings {
- onError?: (error: PiExtensionError) => void;
-}
-
-export interface PiAgentSession {
- modelRegistry: ModelRegistryInstance;
- sessionManager: PiSessionManager;
- scopedModels: readonly { model: AgentModel; thinkingLevel?: ClientThinkingLevel }[];
- sessionId: string;
- sessionFile: string | undefined;
- sessionName: string | undefined;
- messages: readonly unknown[];
- model: AgentModel | undefined;
- thinkingLevel: ClientThinkingLevel;
- isStreaming: boolean;
- isCompacting: boolean;
- isBashRunning: boolean;
- pendingMessageCount: number;
- extensionRunner: { getRegisteredCommands(): readonly { name: string; description?: string }[] };
- promptTemplates: readonly { name: string; description?: string }[];
- resourceLoader: { getSkills(): { skills: readonly { name: string; description?: string }[] } };
- subscribe(listener: (event: unknown) => void): () => void;
- bindExtensions(bindings: PiExtensionBindings): Promise<void>;
- compact(instructions?: string): Promise<{ summary: string; tokensBefore: number }>;
- getUserMessagesForForking(): readonly { entryId: string; text: string }[];
- getSessionStats(): { sessionId: string; totalMessages: number; userMessages: number; assistantMessages: number; toolCalls: number; tokens: ClientSessionStatus["tokens"]; cost: number };
- reload(): Promise<void>;
- getContextUsage(): ClientSessionStatus["contextUsage"] | undefined;
- getExtensionStatuses?(): Record<string, string> | undefined;
- onExtensionStatusChange?: () => void;
- prompt(text: string, options?: { streamingBehavior?: "steer" | "followUp"; images?: ImageContent[] }): Promise<void>;
- sendCustomMessage(message: { customType: string; content: string; display: boolean; details?: unknown }, options?: { triggerTurn?: boolean; deliverAs?: "steer" | "followUp" | "nextTurn" }): Promise<void>;
- executeBash(command: string, onChunk?: (chunk: string) => void, options?: { excludeFromContext?: boolean }): Promise<{ output: string; exitCode: number | undefined; cancelled: boolean; truncated: boolean }>;
- abort(): Promise<void>;
- clearQueue(): { steering: string[]; followUp: string[] };
- getSteeringMessages(): readonly string[];
- getFollowUpMessages(): readonly string[];
- setModel(model: AgentModel, role?: string, options?: { persist?: boolean }): Promise<void>;
- cycleModel(direction?: "forward" | "backward"): Promise<{ model: AgentModel } | undefined>;
- getAvailableThinkingLevels(): ClientThinkingLevel[];
- setThinkingLevel(level: ClientThinkingLevel): void;
- cycleThinkingLevel(): ClientThinkingLevel | undefined;
- setSessionName(name: string): void;
- /**
-  * Narrow re-expression of `AgentSession.agent` (an `@earendil-works/pi-agent-core`
-  * `Agent`), exposing only `streamFn` — the resolved-auth/headers/retry "call this
-  * model" function pi's own compaction/branch-summarization code uses internally.
-  * Lets callers (e.g. session title generation) issue one-off model calls without
-  * depending on pi-ai's deprecated `/compat` provider registry or leaking the full
-  * `Agent`/`AgentSession` surface.
-  */
- agent: { streamFn: StreamFn };
- getPlanModeState(): { enabled: boolean; planFilePath: string } | undefined;
- setPlanModeState(state: { enabled: boolean; planFilePath: string } | undefined): void;
- toggleAdvisorEnabled(): boolean;
- setAdvisorEnabled(enabled: boolean): boolean;
- getProposedPlan?(): { planFilePath: string; title: string; planContent: string } | undefined;
- approvePlan?(): Promise<void>;
- rejectPlan?(feedback?: string): Promise<void>;
- loadPlanForReview?(): Promise<{ planFilePath: string; title: string; planContent: string } | undefined>;
- getPendingAsk?(): { requestId: string; questions: AskDialogQuestion[] } | undefined;
- resolvePendingAsk?(requestId: string, result: AskDialogResult | undefined): boolean;
- onPlanProposed?: (plan: { planFilePath: string; title: string; planContent: string }) => void;
- onPlanCleared?: () => void;
- onAskRequested?: (ask: { requestId: string; questions: AskDialogQuestion[] }) => void;
- onAskCleared?: (requestId: string) => void;
-}
-
-export interface PiSessionRuntime {
- readonly cwd: string;
- readonly session: PiAgentSession;
- setRebindSession(rebindSession?: (session: PiAgentSession) => Promise<void>): void;
- fork(entryId: string, options?: { position?: "before" | "at" }): Promise<{ cancelled: boolean; selectedText?: string }>;
- dispose(): Promise<void>;
-}
-
-interface CreateAgentRuntimeOptions {
- cwd: string;
- agentDir: string;
- sessionManager: PiSessionManager;
- initialModel?: AgentModel;
-}
-
-type OmpWebCreateAgentSessionRuntimeFactory = (options: CreateAgentRuntimeOptions & { sessionStartEvent?: unknown }) => Promise<PiSessionRuntime>;
-
-type CreateAgentRuntime = (createRuntime: OmpWebCreateAgentSessionRuntimeFactory | undefined, options: CreateAgentRuntimeOptions) => Promise<PiSessionRuntime>;
-
-class DefaultPiAgentSession implements PiAgentSession {
- private _isBashRunning = false;
- private readonly _extensionStatuses = new Map<string, string>();
- onExtensionStatusChange?: () => void;
- onPlanProposed?: (plan: { planFilePath: string; title: string; planContent: string }) => void;
- onPlanCleared?: () => void;
- onAskRequested?: (ask: { requestId: string; questions: AskDialogQuestion[] }) => void;
- onAskCleared?: (requestId: string) => void;
-
- private _proposedPlan: { planFilePath: string; title: string; planContent: string } | undefined;
- private _pendingAsk: {
-  requestId: string;
-  questions: AskDialogQuestion[];
-  resolve: (result: AskDialogResult | undefined) => void;
-  timer?: ReturnType<typeof setTimeout> | undefined;
- } | undefined;
- private readonly uiContext: ExtensionUIContext;
-
- constructor(
-  private readonly ompSession: AgentSession,
-  private readonly piSessionManager: PiSessionManager,
-  private readonly setToolUIContext?: (uiContext: ExtensionUIContext, hasUI: boolean) => void,
- ) {
-  this.uiContext = this.buildUIContext();
-  this.setToolUIContext?.(this.uiContext, true);
- }
-
- get modelRegistry(): ModelRegistryInstance { return this.ompSession.modelRegistry; }
- get sessionManager(): PiSessionManager { return this.piSessionManager; }
- get scopedModels(): readonly { model: AgentModel; thinkingLevel?: ClientThinkingLevel }[] {
-  /* eslint-disable @typescript-eslint/consistent-type-assertions */
-  return (this.ompSession.scopedModels as unknown) as readonly { model: AgentModel; thinkingLevel?: ClientThinkingLevel }[];
-  /* eslint-enable @typescript-eslint/consistent-type-assertions */
- }
- get sessionId(): string { return this.ompSession.sessionId; }
- get sessionFile(): string | undefined { return this.ompSession.sessionFile; }
- get sessionName(): string | undefined { return this.ompSession.sessionName; }
- get messages(): readonly unknown[] { return this.ompSession.messages; }
- get model(): AgentModel | undefined { return this.ompSession.model; }
- get thinkingLevel(): ClientThinkingLevel {
-  const configured = this.ompSession.configuredThinkingLevel();
-  return configured !== undefined && isKnownThinkingLevel(configured) ? configured : "off";
- }
- get isStreaming(): boolean { return this.ompSession.isStreaming; }
- get isCompacting(): boolean { return this.ompSession.isCompacting; }
- get isBashRunning(): boolean { return this._isBashRunning; }
- get pendingMessageCount(): number { return this.ompSession.queuedMessageCount; }
- get extensionRunner(): { getRegisteredCommands(): readonly { name: string; description?: string }[] } {
-  const runner = this.ompSession.extensionRunner;
-  return { getRegisteredCommands: () => runner?.getRegisteredCommands() ?? [] };
- }
- get promptTemplates(): readonly { name: string; description?: string }[] { return this.ompSession.promptTemplates; }
- get resourceLoader(): { getSkills(): { skills: readonly { name: string; description?: string }[] } } {
-  return {
-   getSkills: () => ({
-    skills: this.ompSession.skills.map((s) => ({ name: s.name, description: s.description })),
-   }),
-  };
- }
- getPlanModeState(): { enabled: boolean; planFilePath: string } | undefined {
-  const fn = Reflect.get(this.ompSession, "getPlanModeState");
-  if (typeof fn !== "function") return undefined;
-  const res = fn.call(this.ompSession);
-  return isRecord(res) && typeof res.enabled === "boolean" && typeof res.planFilePath === "string"
-   ? { enabled: res.enabled, planFilePath: res.planFilePath }
-   : undefined;
- }
- getProposedPlan(): { planFilePath: string; title: string; planContent: string } | undefined {
-  return this._proposedPlan;
- }
- setPlanModeState(state: { enabled: boolean; planFilePath: string } | undefined): void {
-  const fn = Reflect.get(this.ompSession, "setPlanModeState");
-  if (typeof fn === "function") fn.call(this.ompSession, state);
-  if (state?.enabled) {
-   const setHandler = Reflect.get(this.ompSession, "setPlanProposalHandler");
-   if (typeof setHandler === "function") {
-    setHandler.call(this.ompSession, async (title: string) => {
-     const prepareFn = Reflect.get(this.ompSession, "preparePlanForReview");
-     if (typeof prepareFn !== "function") throw new Error("preparePlanForReview unavailable");
-     /* eslint-disable @typescript-eslint/consistent-type-assertions */
-     const result = (await prepareFn.call(this.ompSession, title)) as {
-      content: unknown[];
-      details?: { planFilePath: string; title: string; planExists: boolean };
-     };
-     if (result.details && typeof result.details === "object" && typeof result.details.planFilePath === "string") {
-      const planContent = (await this.readPlanContent(result.details.planFilePath)) ?? "";
-      this._proposedPlan = {
-       planFilePath: result.details.planFilePath,
-       title: result.details.title,
-       planContent,
-      };
-      this.onPlanProposed?.(this._proposedPlan);
-     }
-     return result as never;
-     /* eslint-enable @typescript-eslint/consistent-type-assertions */
-    });
-   }
-  } else {
-   const setHandler = Reflect.get(this.ompSession, "setPlanProposalHandler");
-   if (typeof setHandler === "function") setHandler.call(this.ompSession, null);
-   this._proposedPlan = undefined;
-   this.onPlanCleared?.();
-  }
- }
- async loadPlanForReview(): Promise<{ planFilePath: string; title: string; planContent: string } | undefined> {
-  if (this._proposedPlan !== undefined) return this._proposedPlan;
-  try {
-   const prepareFn = Reflect.get(this.ompSession, "preparePlanForReview");
-   if (typeof prepareFn !== "function") return undefined;
-   const result = (await prepareFn.call(this.ompSession, "")) as {
-    content: unknown[];
-    details?: { planFilePath: string; title: string; planExists: boolean };
-   };
-   if (result.details && typeof result.details === "object" && typeof result.details.planFilePath === "string") {
-    const planContent = (await this.readPlanContent(result.details.planFilePath)) ?? "";
-    this._proposedPlan = {
-     planFilePath: result.details.planFilePath,
-     title: result.details.title,
-     planContent,
-    };
-    return this._proposedPlan;
-   }
-  } catch {
-   return undefined;
-  }
-  return undefined;
- }
- async approvePlan(): Promise<void> {
-  this.setPlanModeState(undefined);
-  this._proposedPlan = undefined;
-  this.onPlanCleared?.();
-  await this.prompt("Plan approved. Proceed with execution as planned.", { streamingBehavior: "steer" });
- }
- async rejectPlan(feedback?: string): Promise<void> {
-  this._proposedPlan = undefined;
-  this.onPlanCleared?.();
-  const text = feedback !== undefined && feedback.trim() !== ""
-   ? `Plan revision requested: ${feedback.trim()}`
-   : "Plan rejected. Please revise the plan based on requirements.";
-  await this.prompt(text, { streamingBehavior: "steer" });
- }
- private async readPlanContent(planFilePath: string): Promise<string | null> {
-  const localOptions = {
-   getArtifactsDir: () => this.ompSession.sessionManager?.getArtifactsDir?.() ?? null,
-   getSessionId: () => this.ompSession.sessionManager?.getSessionId?.() ?? null,
-  };
-  return readPlanFile(planFilePath, {
-   localProtocolOptions: localOptions,
-   cwd: this.sessionManager.getCwd(),
-  });
- }
- getPendingAsk(): { requestId: string; questions: AskDialogQuestion[] } | undefined {
-  if (this._pendingAsk === undefined) return undefined;
-  return { requestId: this._pendingAsk.requestId, questions: this._pendingAsk.questions };
- }
- resolvePendingAsk(requestId: string, result: AskDialogResult | undefined): boolean {
-  if (this._pendingAsk === undefined || this._pendingAsk.requestId !== requestId) return false;
-  const pending = this._pendingAsk;
-  this._pendingAsk = undefined;
-  if (pending.timer !== undefined) clearTimeout(pending.timer);
-  /* eslint-disable-next-line @typescript-eslint/consistent-type-assertions */
-  pending.resolve(result as ExtensionAskDialogResult | undefined);
-  this.onAskCleared?.(requestId);
-  return true;
- }
- toggleAdvisorEnabled(): boolean {
-  const fn = Reflect.get(this.ompSession, "toggleAdvisorEnabled");
-  if (typeof fn !== "function") return false;
-  const res = fn.call(this.ompSession);
-  return typeof res === "boolean" ? res : false;
- }
- setAdvisorEnabled(enabled: boolean): boolean {
-  const fn = Reflect.get(this.ompSession, "setAdvisorEnabled");
-  if (typeof fn !== "function") return false;
-  const res = fn.call(this.ompSession, enabled);
-  return typeof res === "boolean" ? res : false;
- }
- get agent(): { streamFn: StreamFn } {
-  return { streamFn: this.ompSession.agent.streamFn };
- }
-
- subscribe(listener: (event: unknown) => void): () => void {
-  return this.ompSession.subscribe(listener);
- }
-
- getExtensionStatuses(): Record<string, string> | undefined {
-  if (this._extensionStatuses.size === 0) return undefined;
-  return Object.fromEntries(this._extensionStatuses);
- }
-
- private buildUIContext(): ExtensionUIContext {
-  // eslint-disable-next-line no-control-regex -- ANSI escape sequences contain ASCII 0x1B
-  const ANSI_ESCAPE = /\x1b\[[0-9;]*m/g;
-  const cleanStatusText = (text: string): string => text.replace(ANSI_ESCAPE, "").trim();
-
-  const theme = {
-   fg: (_color: string, text: string) => text,
-   bg: (_color: string, text: string) => text,
-  };
-
-  /* eslint-disable @typescript-eslint/require-await, @typescript-eslint/no-empty-function, @typescript-eslint/consistent-type-assertions */
-  return {
-   theme: theme as never,
-   setStatus: (key: string, text: string | undefined): void => {
-    if (text === undefined || text.trim() === "") {
-     this._extensionStatuses.delete(key);
-    } else {
-     this._extensionStatuses.set(key, cleanStatusText(text));
-    }
-    this.onExtensionStatusChange?.();
-   },
-   notify: (_message: string, _type?: "info" | "warning" | "error"): void => {},
-   onTerminalInput: () => () => {},
-   select: async (prompt, options, dialogOptions) => {
-    const res = await this.askDialog(
-     [{ id: "select", question: prompt, options: options.map((opt) => ({ label: typeof opt === "string" ? opt : opt.label })) }],
-     dialogOptions,
-    );
-    if (res?.kind === "submit" && res.results[0]?.selectedOptions[0]) {
-     return res.results[0].selectedOptions[0];
-    }
-    return undefined;
-   },
-   confirm: async (title, message, dialogOptions) => {
-    const res = await this.askDialog(
-     [{ id: "confirm", question: `${title}\n${message}`.trim(), options: [{ label: "Yes" }, { label: "No" }] }],
-     dialogOptions,
-    );
-    return res?.kind === "submit" && res.results[0]?.selectedOptions[0] === "Yes";
-   },
-   input: async (title, placeholder, dialogOptions) => {
-    const question: ExtensionAskDialogQuestion = {
-     id: "input",
-     question: title,
-     options: [],
-     ...(placeholder !== undefined && placeholder.trim() !== "" ? { header: placeholder } : {}),
-    };
-    const res = await this.askDialog([question], dialogOptions);
-    return res?.kind === "submit" ? res.results[0]?.customInput : undefined;
-   },
-   askDialog: async (questions, dialogOptions) => {
-    return this.askDialog(questions, dialogOptions);
-   },
-   setWorkingMessage: (): void => {},
-   setWidget: (): void => {},
-   setFooter: (): void => {},
-   setHeader: (): void => {},
-   setTitle: (): void => {},
-   custom: async () => undefined as never,
-   setEditorComponent: (): void => {},
-   setEditorText: (): void => {},
-   pasteToEditor: (): void => {},
-   getEditorText: (): string => "",
-   editor: async () => "",
-   addAutocompleteProvider: () => () => {},
-   getAllThemes: async () => [],
-   getTheme: async () => undefined,
-   setTheme: async () => ({ success: false }),
-   getToolsExpanded: () => false,
-   setToolsExpanded: (): void => {},
-  };
-  /* eslint-enable @typescript-eslint/require-await, @typescript-eslint/no-empty-function, @typescript-eslint/consistent-type-assertions */
- }
-
- private askDialog(
-  questions: ExtensionAskDialogQuestion[],
-  dialogOptions?: ExtensionUIDialogOptions,
- ): Promise<ExtensionAskDialogResult | undefined> {
-  if (this._pendingAsk !== undefined) {
-   this.resolvePendingAsk(this._pendingAsk.requestId, undefined);
-  }
-  const requestId = randomUUID();
-  return new Promise<ExtensionAskDialogResult | undefined>((resolve) => {
-   let timer: ReturnType<typeof setTimeout> | undefined;
-   if (dialogOptions?.timeout !== undefined && dialogOptions.timeout > 0) {
-    timer = setTimeout(() => {
-     const results = questions.map((q) => {
-      const recIndex = q.recommended ?? 0;
-      const rec = q.options[recIndex]?.label ?? q.options[0]?.label;
-      return {
-       id: q.id,
-       question: q.question,
-       options: q.options.map((o) => o.label),
-       multi: q.multi ?? false,
-       selectedOptions: rec ? [rec] : [],
-       timedOut: true,
-      };
-     });
-     this.resolvePendingAsk(requestId, { kind: "submit", results });
-    }, dialogOptions.timeout);
-   }
-   if (dialogOptions?.signal) {
-    dialogOptions.signal.addEventListener(
-     "abort",
-     () => { this.resolvePendingAsk(requestId, undefined); },
-     { once: true },
-    );
-   }
-   this._pendingAsk = { requestId, questions, resolve, timer };
-   this.onAskRequested?.({ requestId, questions });
-  });
- }
-
- async bindExtensions(bindings?: PiExtensionBindings): Promise<void> {
-  this.setToolUIContext?.(this.uiContext, true);
-  const runner = this.ompSession.extensionRunner;
-  if (!runner) return Promise.resolve();
-
-  if (bindings?.onError) {
-   runner.onError((err: { extensionPath: string; event: string; error: string }) => {
-    bindings.onError?.(err);
-   });
-  }
-
-  try {
-   runner.initialize(
-    {
-     sendMessage: (msg, opts) => { void this.ompSession.sendCustomMessage(msg, opts); },
-     sendUserMessage: (c, opts) => { void this.ompSession.sendUserMessage(c, opts); },
-     appendEntry: (t, d) => { this.ompSession.sessionManager.appendCustomEntry(t, d); },
-     setLabel: (targetId, label) => { this.ompSession.sessionManager.appendLabelChange(targetId, label); },
-     getActiveTools: () => this.ompSession.getEnabledToolNames(),
-     getAllTools: () => this.ompSession.getAllToolInfos(),
-     setActiveTools: async (tools) => { await this.ompSession.setActiveToolsByName(tools); },
-     getCommands: () => [],
-     setModel: async (m) => { const res = await this.ompSession.setModel(m); return res.switched; },
-     getThinkingLevel: () => this.ompSession.thinkingLevel,
-     setThinkingLevel: (l) => { this.ompSession.setThinkingLevel(l); },
-     getSessionName: () => this.ompSession.sessionManager.getSessionName(),
-     setSessionName: async (n) => { await this.ompSession.sessionManager.setSessionName(n, "user"); },
-    },
-    {
-     getModel: () => this.ompSession.model,
-     isIdle: () => !this.ompSession.isStreaming,
-     abort: () => { void this.ompSession.abort(); },
-     hasPendingMessages: () => this.ompSession.queuedMessageCount > 0,
-     shutdown: () => {},
-     getContextUsage: () => this.ompSession.getContextUsage(),
-     getSystemPrompt: () => this.ompSession.systemPrompt,
-     compact: async (opts) => { await this.ompSession.compact(typeof opts === "string" ? opts : undefined); },
-    },
-    {
-     getContextUsage: () => this.ompSession.getContextUsage(),
-     waitForIdle: async () => { await this.ompSession.agent.waitForIdle(); },
-     newSession: async () => ({ cancelled: false }),
-     branch: async () => ({ cancelled: false }),
-     navigateTree: async () => ({ cancelled: false }),
-     switchSession: async () => ({ cancelled: false }),
-     reload: async () => {},
-     compact: async (opts) => { await this.ompSession.compact(typeof opts === "string" ? opts : undefined); },
-    },
-    this.uiContext,
-    "rpc"
-   );
-
-   await runner.emit({ type: "session_start" });
-   return;
-  } catch {
-   return Promise.resolve();
-  }
- }
-
- async compact(instructions?: string): Promise<{ summary: string; tokensBefore: number }> {
-  const result = await this.ompSession.compact(instructions);
-  return { summary: result.summary, tokensBefore: 0 };
- }
-
- getUserMessagesForForking(): readonly { entryId: string; text: string }[] {
-  return this.ompSession.getUserMessagesForBranching();
- }
-
- getSessionStats(): {
-  sessionId: string; totalMessages: number; userMessages: number;
-  assistantMessages: number; toolCalls: number;
-  tokens: ClientSessionStatus["tokens"]; cost: number;
- } {
-  const stats = this.ompSession.getSessionStats();
-  return {
-   sessionId: stats.sessionId,
-   totalMessages: stats.totalMessages,
-   userMessages: stats.userMessages,
-   assistantMessages: stats.assistantMessages,
-   toolCalls: stats.toolCalls,
-   tokens: stats.tokens,
-   cost: stats.cost,
-  };
- }
-
- async reload(): Promise<void> {
-  // omp sessions manage persistence internally
- }
-
- getContextUsage(): ClientSessionStatus["contextUsage"] | undefined {
-  return undefined;
- }
-
- async prompt(text: string, options?: { streamingBehavior?: "steer" | "followUp"; images?: ImageContent[] }): Promise<void> {
-  await this.ompSession.prompt(text, options);
- }
-
- async sendCustomMessage(
-  message: { customType: string; content: string; display: boolean; details?: unknown },
-  options?: { triggerTurn?: boolean; deliverAs?: "steer" | "followUp" | "nextTurn" },
- ): Promise<void> {
-  await this.ompSession.sendCustomMessage(message, options);
- }
-
- async executeBash(
-  command: string,
-  onChunk?: (chunk: string) => void,
-  options?: { excludeFromContext?: boolean },
- ): Promise<{ output: string; exitCode: number | undefined; cancelled: boolean; truncated: boolean }> {
-  this._isBashRunning = true;
-  try {
-   const result = await this.ompSession.executeBash(command, onChunk, options);
-   return {
-    output: result.output,
-    exitCode: result.exitCode,
-    cancelled: result.cancelled,
-    truncated: result.truncated,
-   };
-  } finally {
-   this._isBashRunning = false;
-  }
- }
-
- async abort(): Promise<void> {
-  await this.ompSession.abort();
- }
-
- clearQueue(): { steering: string[]; followUp: string[] } {
-  const result = this.ompSession.clearQueue();
-  const extractText = (m: unknown): string => {
-   if (typeof m === "string") return m;
-   if (isRecord(m) && typeof m["text"] === "string") return m["text"];
-   return "";
-  };
-  return {
-   steering: result.steering.map(extractText),
-   followUp: result.followUp.map(extractText),
-  };
- }
-
- getSteeringMessages(): readonly string[] {
-  return this.ompSession.getQueuedMessages().steering;
- }
-
- getFollowUpMessages(): readonly string[] {
-  return this.ompSession.getQueuedMessages().followUp;
- }
-
- async setModel(model: AgentModel, role = "default", options: { persist?: boolean } = {}): Promise<void> {
-  await this.ompSession.setModel(model, role, options);
- }
- setThinkingLevel(level: ClientThinkingLevel): void {
-  const setLevel = Reflect.get(this.ompSession, "setThinkingLevel");
-  if (typeof setLevel === "function") {
-   Reflect.apply(setLevel, this.ompSession, [level === "off" ? undefined : level]);
-  }
- }
-
- async cycleModel(direction?: "forward" | "backward"): Promise<{ model: AgentModel } | undefined> {
-  const result = await this.ompSession.cycleModel(direction);
-  if (result === undefined) return undefined;
-  return { model: result.model };
- }
-
- getAvailableThinkingLevels(): ClientThinkingLevel[] {
-  const efforts = this.ompSession.getAvailableThinkingLevels();
-  const levels: ClientThinkingLevel[] = ["off"];
-  for (const effort of efforts) {
-   if (isKnownThinkingLevel(effort)) levels.push(effort);
-  }
-  return levels;
- }
-
- cycleThinkingLevel(): ClientThinkingLevel | undefined {
-  const levels = this.ompSession.getAvailableThinkingLevels();
-  const fullCycle: ClientThinkingLevel[] = ["off"];
-  for (const level of levels) {
-   if (isKnownThinkingLevel(level)) fullCycle.push(level);
-  }
-  const current = this.ompSession.configuredThinkingLevel();
-  if (current !== undefined && !isKnownThinkingLevel(current)) return undefined;
-  const currentLevel: ClientThinkingLevel = current !== undefined && isKnownThinkingLevel(current) ? current : "off";
-  const currentIndex = fullCycle.indexOf(currentLevel);
-  if (currentIndex === -1) return undefined;
-  const nextIndex = (currentIndex + 1) % fullCycle.length;
-  const next = fullCycle[nextIndex];
-  if (next === undefined) return undefined;
-  this.setThinkingLevel(next);
-  return next;
- }
-
- setSessionName(name: string): void {
-  void this.ompSession.setSessionName(name);
- }
-}
-
-class DefaultPiSessionRuntime implements PiSessionRuntime {
- readonly cwd: string;
- readonly session: PiAgentSession;
- private rebindSessionCallback: ((session: PiAgentSession) => Promise<void>) | undefined = undefined;
- private readonly ompSession: AgentSession;
-
- constructor(session: PiAgentSession, cwd: string, private readonly result: { session: AgentSession }) {
-  this.session = session;
-  this.cwd = cwd;
-  this.ompSession = result.session;
- }
-
- setRebindSession(rebindSession?: (session: PiAgentSession) => Promise<void>): void {
-  this.rebindSessionCallback = rebindSession;
- }
-
- async fork(entryId: string): Promise<{ cancelled: boolean; selectedText?: string }> {
-  return this.ompSession.branch(entryId);
- }
-
- async dispose(): Promise<void> {
-  await this.ompSession.dispose();
- }
-}
-
-function defaultCreateAgentRuntime(createRuntime: OmpWebCreateAgentSessionRuntimeFactory | undefined, options: CreateAgentRuntimeOptions): Promise<PiSessionRuntime> {
- if (createRuntime === undefined) throw new Error("Runtime factory is required");
- return createRuntime(options);
-}
 
 type SpawnSessionFn = (input: SpawnSessionInvocation) => Promise<SpawnSessionResult>;
 
@@ -866,49 +239,7 @@ function createDefaultRuntimeFactory(authStorage: AuthStorage, modelRegistry: Mo
  };
 }
 
-function isEditReplacement(x: unknown): x is EditReplacement {
- return isRecord(x);
-}
 
-function isEditParams(params: unknown): params is Parameters<EditTool["execute"]>[1] {
- return isRecord(params) && typeof params["path"] === "string" && Array.isArray(params["edits"]);
-}
-function createOmpWebEditToolDefinition(cwd: string): ToolDefinition {
- const editTool = new EditTool({
-  cwd,
-  hasUI: true,
-  getSessionFile: () => null,
-  getSessionSpawns: () => null,
-  settings: Settings.isolated({}),
- });
- const def: ToolDefinition = {
-  name: editTool.name,
-  label: editTool.label,
-  description: editTool.description,
-   
-  parameters: editTool.parameters,
-  async execute(toolCallId, params, signal, onUpdate) {
-   if (isRecord(params) && typeof params["path"] === "string" && params["path"].length > 0) {
-    const path = params["path"];
-    const rawEdits = Array.isArray(params["edits"]) ? params["edits"] : [];
-    const edits: EditReplacement[] = [];
-    for (const item of rawEdits) {
-     if (isEditReplacement(item)) edits.push(item);
-    }
-    const preview = await computeEditPreview(path, edits, cwd);
-    if (signal?.aborted !== true) {
-     onUpdate?.({ content: [{ type: "text", text: "Edit preview computed." }], details: { preview } });
-    }
-   }
-   type EditExecuteFn = (toolCallId: string, params: Parameters<EditTool["execute"]>[1], signal?: AbortSignal, onUpdate?: (partialResult: { content: ({ type: "text"; text: string } | ImageContent)[]; details?: unknown }) => void) => Promise<{ content: ({ type: "text"; text: string } | ImageContent)[] }>;
-   const execute: EditExecuteFn = Reflect.get(editTool, "execute");
-   const executeParams = isEditParams(params) ? params : { path: "", edits: [] };
-   const res = execute.call(editTool, toolCallId, executeParams, signal, onUpdate);
-   return res;
-  },
- };
- return def;
-}
 
 export interface PiSessionServiceDependencies {
  archiveStore?: SessionArchiveRepository;
@@ -2560,339 +1891,6 @@ export class PiSessionService {
  }
 }
 
-function previewResponseFromPlan(plan: SessionCleanupPlan): ClientSessionCleanupPreviewResponse {
- return {
-  generatedAt: plan.generatedAt,
-  thresholds: plan.thresholds,
-  projects: plan.projects,
-  totals: plan.totals,
-  ...(plan.skippedBusySessionIds.length === 0 ? {} : { skippedBusySessionIds: plan.skippedBusySessionIds }),
- };
-}
-
-function uniqueBulkSessionRefs(refs: readonly SessionBulkMutationRef[]): SessionBulkMutationRef[] {
- const seen = new Set<string>();
- const unique: SessionBulkMutationRef[] = [];
- for (const ref of refs) {
-  const key = `${ref.cwd ?? ""}\0${ref.id}`;
-  if (seen.has(key)) continue;
-  seen.add(key);
-  unique.push(ref);
- }
- return unique;
-}
-
-function bulkRefToLookup(ref: SessionBulkMutationRef): PiSessionLookup {
- return ref.cwd === undefined ? ref.id : { id: ref.id, cwd: ref.cwd };
-}
-
-function findArchivedRecordForBulkRef(records: readonly ArchivedSessionRecord[], ref: SessionBulkMutationRef): ArchivedSessionRecord | undefined {
- return records.find((record) => (ref.cwd === undefined || record.cwd === ref.cwd) && (record.sessionId === ref.id || record.sessionId.startsWith(ref.id)));
-}
-
-function findListedSessionForBulkRef(context: BulkSessionLookupContext, ref: SessionBulkMutationRef): PiSessionListEntry | undefined {
- if (ref.cwd !== undefined) return findSessionByIdOrPrefix(context.sessionsByCwd.get(ref.cwd) ?? [], ref.id);
- return context.allSessions === undefined ? undefined : findSessionByIdOrPrefix(context.allSessions, ref.id);
-}
-
-function findSessionByIdOrPrefix(sessions: readonly PiSessionListEntry[], sessionId: string): PiSessionListEntry | undefined {
- return sessions.find((session) => session.id === sessionId) ?? sessions.find((session) => session.id.startsWith(sessionId));
-}
-
-function uniqueStrings(values: readonly string[]): string[] {
- return [...new Set(values)];
-}
-
-
-function modelToClientModel(model: PiAgentSession["model"]): ClientSessionModel {
- if (model === undefined) return {};
- const name = getString(model, "name");
- const reasoning = getProperty(model, "reasoning");
- return {
-  provider: model.provider,
-  id: model.id,
-  ...(name === undefined ? {} : { name }),
-  ...(model.contextWindow === null ? {} : { contextWindow: model.contextWindow }),
-  ...(reasoning === undefined ? {} : { reasoning }),
- };
-}
-
-function clientSessionFromListEntry(session: PiSessionListEntry): ClientSession {
- const name = session.name ?? session.title;
- return {
-  id: session.id,
-  path: session.path,
-  cwd: session.cwd,
-  persisted: true,
-  ...(name === undefined || name === "" ? {} : { name }),
-  created: session.created.toISOString(),
-  modified: session.modified.toISOString(),
-  messageCount: session.messageCount,
-  firstMessage: session.firstMessage,
-  ...(session.parentSessionPath === undefined ? {} : { parentSessionPath: session.parentSessionPath }),
- };
-}
-
-function archiveInputFromListEntry(session: PiSessionListEntry): ArchiveSessionInput {
- const name = session.name ?? session.title;
- return {
-  sessionId: session.id,
-  cwd: session.cwd,
-  path: session.path,
-  created: session.created.toISOString(),
-  modified: session.modified.toISOString(),
-  messageCount: session.messageCount,
-  firstMessage: session.firstMessage,
-  ...(name === undefined || name === "" ? {} : { name }),
-  ...(session.parentSessionPath === undefined ? {} : { parentSessionPath: session.parentSessionPath }),
- };
-}
-
-function archiveInputFromActiveSession(session: PiAgentSession): ArchiveSessionInput {
- const sessionFile = session.sessionFile;
- if (sessionFile === undefined || sessionFile === "") throw new Error("Session is not persisted");
- const parentSessionPath = session.sessionManager.getHeader?.()?.parentSession;
- return {
-  sessionId: session.sessionId,
-  cwd: session.sessionManager.getCwd(),
-  path: sessionFile,
-  created: new Date().toISOString(),
-  modified: new Date().toISOString(),
-  messageCount: session.messages.length,
-  firstMessage: "",
-  ...(session.sessionName === undefined ? {} : { name: session.sessionName }),
-  ...(parentSessionPath === undefined ? {} : { parentSessionPath }),
- };
-}
-
-function archiveCandidateFromListEntry(session: PiSessionListEntry): WorkspaceArchiveCandidate {
- return {
-  id: session.id,
-  path: session.path,
-  cwd: session.cwd,
-  archived: false,
-  listEntry: session,
-  ...(session.parentSessionPath === undefined ? {} : { parentSessionPath: session.parentSessionPath }),
- };
-}
-
-function archiveCandidateFromArchivedRecord(record: ArchivedSessionRecord, fallback: PiSessionListEntry | undefined): WorkspaceArchiveCandidate | undefined {
- const path = record.originalPath ?? fallback?.path;
- if (path === undefined) return undefined;
- const parentSessionPath = record.parentSessionPath ?? fallback?.parentSessionPath;
- return {
-  id: record.sessionId,
-  path,
-  cwd: record.cwd,
-  archived: true,
-  ...(fallback === undefined ? {} : { listEntry: fallback }),
-  ...(parentSessionPath === undefined ? {} : { parentSessionPath }),
- };
-}
-
-function archiveCandidateFromActiveSession(session: PiAgentSession, archived: boolean): WorkspaceArchiveCandidate {
- const sessionFile = session.sessionFile;
- if (sessionFile === undefined || sessionFile === "") throw new Error("Session is not persisted");
- const parentSessionPath = session.sessionManager.getHeader?.()?.parentSession;
- return {
-  id: session.sessionId,
-  path: sessionFile,
-  cwd: session.sessionManager.getCwd(),
-  archived,
-  activeSession: session,
-  ...(parentSessionPath === undefined ? {} : { parentSessionPath }),
- };
-}
-
-function archiveInputFromCandidate(candidate: WorkspaceArchiveCandidate): ArchiveSessionInput {
- if (candidate.listEntry !== undefined) return archiveInputFromListEntry(candidate.listEntry);
- if (candidate.activeSession !== undefined) return archiveInputFromActiveSession(candidate.activeSession);
- throw new Error(`Session is not available for archiving: ${candidate.id}`);
-}
-
-function sessionHasActiveWork(session: PiAgentSession, extraQueuedMessageCount = 0): boolean {
- return session.isStreaming || session.isCompacting || session.isBashRunning || session.pendingMessageCount + extraQueuedMessageCount > 0;
-}
-
-function clientSessionFromArchivedRecord(record: ArchivedSessionRecord, fallback: PiSessionListEntry | undefined): ClientSession | undefined {
- const path = record.originalPath ?? fallback?.path;
- const created = record.created ?? fallback?.created.toISOString();
- const modified = record.modified ?? fallback?.modified.toISOString();
- const messageCount = record.messageCount ?? fallback?.messageCount;
- const firstMessage = record.firstMessage ?? fallback?.firstMessage;
- if (path === undefined || created === undefined || modified === undefined || messageCount === undefined || firstMessage === undefined) return undefined;
- const name = record.name ?? fallback?.name ?? fallback?.title;
- const parentSessionPath = record.parentSessionPath ?? fallback?.parentSessionPath;
- return {
-  id: record.sessionId,
-  path,
-  cwd: record.cwd,
-  ...(name === undefined ? {} : { name }),
-  created,
-  modified,
-  messageCount,
-  firstMessage,
-  ...(parentSessionPath === undefined ? {} : { parentSessionPath }),
-  archived: true,
-  archivedAt: record.archivedAt,
- };
-}
-
-function addSessionName(names: Set<string>, name: string | undefined): void {
- const trimmed = name?.replace(/\s+/g, " ").trim();
- if (trimmed !== undefined && trimmed !== "") names.add(trimmed);
-}
-
-function compareArchivedRecords(a: ArchivedSessionRecord, b: ArchivedSessionRecord): number {
- return archivedTimestamp(b) - archivedTimestamp(a);
-}
-
-function archivedTimestamp(record: ArchivedSessionRecord): number {
- const time = Date.parse(record.archivedAt);
- return Number.isNaN(time) ? 0 : time;
-}
-
-function isDefined<T>(value: T | undefined): value is T {
- return value !== undefined;
-}
-
-function trackedSubsessionLinkFromParentLink(parentSessionId: string, link: PersistedParentSubsessionLink, parentSessionFile: string): TrackedSubsessionLink {
- return {
-  parentSessionId,
-  childSessionId: link.spawnedSessionId,
-  ...(link.spawnedSessionFile === undefined ? {} : { childSessionFile: link.spawnedSessionFile }),
-  parentSessionFile,
-  ...(link.cwd === undefined ? {} : { cwd: link.cwd }),
- };
-}
-
-function persistedParentSubsessionLinkData(link: TrackedSubsessionLink): Record<string, unknown> {
- return {
-  version: 1,
-  spawnedBySessionId: link.parentSessionId,
-  spawnedSessionId: link.childSessionId,
-  ...(link.childSessionFile === undefined ? {} : { spawnedSessionFile: link.childSessionFile }),
-  ...(link.cwd === undefined ? {} : { cwd: link.cwd }),
- };
-}
-
-function persistedChildSubsessionLinkData(parentSessionId: string, childSessionId: string): Record<string, unknown> {
- return {
-  version: 1,
-  spawnedBySessionId: parentSessionId,
-  spawnedSessionId: childSessionId,
- };
-}
-
-function parsePersistedParentSubsessionLink(entry: unknown): PersistedParentSubsessionLink | undefined {
- if (!isRecord(entry) || entry["type"] !== "custom" || entry["customType"] !== SUBSESSION_LINK_CUSTOM_TYPE) return undefined;
- const data = entry["data"];
- if (!isRecord(data)) return undefined;
- const spawnedBySessionId = getString(data, "spawnedBySessionId");
- const spawnedSessionId = getString(data, "spawnedSessionId");
- if (spawnedBySessionId === undefined || spawnedBySessionId === "" || spawnedSessionId === undefined || spawnedSessionId === "") return undefined;
- const spawnedSessionFile = getString(data, "spawnedSessionFile");
- const cwd = getString(data, "cwd");
- return {
-  spawnedBySessionId,
-  spawnedSessionId,
-  ...(spawnedSessionFile === undefined || spawnedSessionFile === "" ? {} : { spawnedSessionFile }),
-  ...(cwd === undefined || cwd === "" ? {} : { cwd }),
- };
-}
-
-function parsePersistedChildSubsessionLink(entry: unknown): PersistedChildSubsessionLink | undefined {
- if (!isRecord(entry) || entry["type"] !== "custom" || entry["customType"] !== SUBSESSION_CHILD_LINK_CUSTOM_TYPE) return undefined;
- const data = entry["data"];
- if (!isRecord(data)) return undefined;
- const spawnedBySessionId = getString(data, "spawnedBySessionId");
- const spawnedSessionId = getString(data, "spawnedSessionId");
- if (spawnedBySessionId === undefined || spawnedBySessionId === "" || spawnedSessionId === undefined || spawnedSessionId === "") return undefined;
- return { spawnedBySessionId, spawnedSessionId };
-}
-
-function nonEmptyString(value: string | undefined): string | undefined {
- return value === undefined || value === "" ? undefined : value;
-}
-
-function subsessionHydratedParentKey(parentSessionId: string, parentSessionFile: string | undefined): string {
- return `${parentSessionId}\0${parentSessionFile ?? ""}`;
-}
-
-function sessionPathsEqual(a: string, b: string): boolean {
- return cwdPathsEqual(a, b);
-}
-
-function sessionFileExists(sessionFile: string | undefined): sessionFile is string {
- if (sessionFile === undefined || sessionFile === "") return false;
- try {
-  return statSync(sessionFile).isFile();
- } catch {
-  return false;
- }
-}
-
-function sessionFileMatches(session: PiAgentSession, expectedSessionFile: string | undefined): boolean {
- const sessionFile = nonEmptyString(session.sessionFile);
- return sessionFile !== undefined && expectedSessionFile !== undefined && sessionPathsEqual(sessionFile, expectedSessionFile);
-}
-
-function activeSessionFileMatches(active: ActiveSession<PiSessionRuntime>, expectedSessionFile: string | undefined): boolean {
- return sessionFileMatches(active.runtime.session, expectedSessionFile);
-}
-
-function trackedLinkParentFileMatches(link: TrackedSubsessionLink, parentSessionFile: string): boolean {
- return link.parentSessionFile !== undefined && sessionPathsEqual(link.parentSessionFile, parentSessionFile);
-}
-
-interface SessionHeaderSummary {
- id: string;
- parentSession?: string;
-}
-
-async function readSessionHeaderSummary(sessionFile: string): Promise<SessionHeaderSummary | undefined> {
- let file: Awaited<ReturnType<typeof open>> | undefined;
- try {
-  file = await open(sessionFile, "r");
-  const buffer = Buffer.alloc(4096);
-  const { bytesRead } = await file.read(buffer, 0, buffer.length, 0);
-  const firstLine = buffer.toString("utf8", 0, bytesRead).split("\n", 1)[0];
-  if (firstLine === undefined || firstLine === "") return undefined;
-  const header: unknown = JSON.parse(firstLine);
-  if (!isRecord(header) || header["type"] !== "session" || typeof header["id"] !== "string") return undefined;
-  const parentSession = getString(header, "parentSession");
-  return { id: header["id"], ...(parentSession === undefined ? {} : { parentSession }) };
- } catch {
-  return undefined;
- } finally {
-  await file?.close().catch(() => undefined);
- }
-}
-
-async function sessionFileHeaderMatches(sessionFile: string, expected: { sessionId: string; parentSessionFile?: string | undefined }): Promise<boolean> {
- const header = await readSessionHeaderSummary(sessionFile);
- if (header?.id !== expected.sessionId) return false;
- if (expected.parentSessionFile === undefined) return true;
- return header.parentSession !== undefined && sessionPathsEqual(header.parentSession, expected.parentSessionFile);
-}
-
-async function clearParentSession(sessionFile: string): Promise<void> {
- const content = await readFile(sessionFile, "utf8");
- const newlineIndex = content.indexOf("\n");
- const firstLine = newlineIndex === -1 ? content : content.slice(0, newlineIndex);
- const rest = newlineIndex === -1 ? "" : content.slice(newlineIndex);
- const header: unknown = JSON.parse(firstLine);
- if (!isRecord(header) || header["type"] !== "session") throw new Error("Invalid session file header");
- if (header["parentSession"] === undefined) return;
- delete header["parentSession"];
- await writeFile(sessionFile, `${JSON.stringify(header)}${rest}`, "utf8");
-}
-
-function clearParentSessionHeader(sessionManager: PiSessionManager): void {
- const header = sessionManager.getHeader?.();
- if (header !== undefined && header !== null) delete header.parentSession;
-}
-
 function clearSessionQueue(session: PiAgentSession): void {
  session.clearQueue();
 }
@@ -2922,6 +1920,15 @@ function userMessage(text: string, images: ImageContent[]): { role: "user"; cont
  return { role: "user", content };
 }
 
+
+function getString(value: unknown, key: string): string | undefined {
+ return isRecord(value) && typeof value[key] === "string" ? (value[key] as string) : undefined;
+}
+
+function getBoolean(value: unknown, key: string): boolean | undefined {
+ return isRecord(value) && typeof value[key] === "boolean" ? (value[key] as boolean) : undefined;
+}
+
 function buildPromptOptions(behavior: QueuedPromptKind | undefined, images: ImageContent[]): { streamingBehavior?: "steer" | "followUp"; images?: ImageContent[] } | undefined {
  const options: { streamingBehavior?: "steer" | "followUp"; images?: ImageContent[] } = {};
  if (behavior !== undefined) options.streamingBehavior = behavior;
@@ -2945,137 +1952,3 @@ function historyMessages(session: PiAgentSession): unknown[] {
  return messages;
 }
 
-/** custom entry type used to persist parent -> child subsession links outside LLM context. */
-const SUBSESSION_LINK_CUSTOM_TYPE = "omp-web.subsession.link";
-
-/** custom entry type used to mark a child as created by spawn_subsession. */
-const SUBSESSION_CHILD_LINK_CUSTOM_TYPE = "omp-web.subsession.spawned";
-
-/** customType marking a parent-facing subsession-completion notice. */
-const SUBSESSION_NOTIFICATION_CUSTOM_TYPE = "subsession.completion";
-
-const SUBSESSION_NOTIFICATION_PREVIEW_CHARS = 2000;
-
-function truncateForNotification(text: string): string {
- if (text.length <= SUBSESSION_NOTIFICATION_PREVIEW_CHARS) return text;
- return `${text.slice(0, SUBSESSION_NOTIFICATION_PREVIEW_CHARS)}…`;
-}
-
-/** Most recent assistant text from a history message list, or "" if none. */
-function finalAssistantText(messages: readonly unknown[]): string {
- for (let i = messages.length - 1; i >= 0; i--) {
-  const message = messages[i];
-  if (!isRecord(message) || message["role"] !== "assistant") continue;
-  const content = message["content"];
-  if (typeof content === "string") return content;
-  if (!Array.isArray(content)) continue;
-  const texts: string[] = [];
-  for (const part of content) {
-   if (isRecord(part) && part["type"] === "text" && typeof part["text"] === "string") texts.push(part["text"]);
-  }
-  if (texts.length > 0) return texts.join("\n").trim();
- }
- return "";
-}
-
-function toClientEvent(event: unknown): SessionUiEvent {
- const eventType = getString(event, "type");
- const assistantMessageEvent = getProperty(event, "assistantMessageEvent");
- if (eventType === "message_update" && getString(assistantMessageEvent, "type") === "text_delta") {
-  return { type: "assistant.delta", text: getString(assistantMessageEvent, "delta") ?? "" };
- }
- if (eventType === "message_update" && getString(assistantMessageEvent, "type") === "thinking_delta") {
-  return { type: "assistant.thinking.delta", text: getString(assistantMessageEvent, "delta") ?? "" };
- }
- if (eventType === "tool_execution_start") {
-  const args = getProperty(event, "args");
-  return { type: "tool.start", toolName: getString(event, "toolName") ?? "", toolCallId: getString(event, "toolCallId") ?? "", summary: summarizeToolArgs(args), args };
- }
- if (eventType === "tool_execution_update") {
-  const partialResult = getProperty(event, "partialResult");
-  return { type: "tool.update", toolName: getString(event, "toolName") ?? "", toolCallId: getString(event, "toolCallId") ?? "", text: stringifyToolResult(partialResult), content: toolResultContent(partialResult), details: toolResultDetails(partialResult) };
- }
- if (eventType === "tool_execution_end") {
-  const result = getProperty(event, "result");
-  return { type: "tool.end", toolName: getString(event, "toolName") ?? "", toolCallId: getString(event, "toolCallId") ?? "", text: stringifyToolResult(result), content: toolResultContent(result), details: toolResultDetails(result), isError: getBoolean(event, "isError") === true };
- }
- if (eventType === "agent_start") return { type: "agent.start" };
- if (eventType === "agent_end") return { type: "agent.end" };
- if (eventType === "message_end") {
-  const message = getProperty(event, "message");
-  return message === undefined ? { type: "message.end" } : { type: "message.end", message };
- }
- return { type: "pi.event", eventType: eventType ?? "unknown" };
-}
-
-function summarizeToolArgs(args: unknown): string {
- if (!isRecord(args)) return stringifyPrimitive(args);
- const command = getString(args, "command");
- if (command !== undefined) return command;
- const path = getString(args, "path");
- if (path !== undefined) return path;
- if (typeof args["oldText"] === "string" && typeof args["newText"] === "string") return "edit text replacement";
- const edits = args["edits"];
- if (Array.isArray(edits)) return `${String(edits.length)} edit${edits.length === 1 ? "" : "s"}`;
- const entries = Object.entries(args).filter(([, value]) => value != null).slice(0, 3);
- return entries.map(([key, value]) => `${key}: ${shortToolValue(value)}`).join(" · ");
-}
-
-function shortToolValue(value: unknown): string {
- if (typeof value === "string") return value.length > 80 ? `${value.slice(0, 77)}…` : value;
- if (typeof value === "number" || typeof value === "boolean") return String(value);
- if (Array.isArray(value)) return `${String(value.length)} item${value.length === 1 ? "" : "s"}`;
- if (typeof value === "object" && value !== null) return "object";
- return "";
-}
-
-function toolResultContent(result: unknown): unknown {
- if (isRecord(result)) {
-  const content = getProperty(result, "content");
-  if (content !== undefined) return content;
-  const text = getString(result, "text") ?? getString(result, "output");
-  if (text !== undefined) return [{ type: "text", text }];
- }
- if (typeof result === "string") return [{ type: "text", text: result }];
- return result;
-}
-
-function toolResultDetails(result: unknown): unknown {
- return isRecord(result) ? getProperty(result, "details") : undefined;
-}
-
-function stringifyToolResult(result: unknown): string {
- if (typeof result === "string") return result;
- if (Array.isArray(result)) return result.map(stringifyToolResult).filter((text) => text !== "").join("\n");
- if (isRecord(result)) {
-  if (getString(result, "type") === "image") return "[image]";
-  const text = getString(result, "text") ?? getString(result, "content") ?? getString(result, "output");
-  if (text !== undefined) return text;
-  const content = getProperty(result, "content");
-  if (Array.isArray(content)) return stringifyToolResult(content);
-  return JSON.stringify(result, null, 2);
- }
- return stringifyPrimitive(result);
-}
-
-
-function getProperty(value: unknown, key: string): unknown {
- return isRecord(value) ? value[key] : undefined;
-}
-
-function getString(value: unknown, key: string): string | undefined {
- const property = getProperty(value, key);
- return typeof property === "string" ? property : undefined;
-}
-
-function getBoolean(value: unknown, key: string): boolean | undefined {
- const property = getProperty(value, key);
- return typeof property === "boolean" ? property : undefined;
-}
-
-function stringifyPrimitive(value: unknown): string {
- if (value == null) return "";
- if (typeof value === "string") return value;
- if (typeof value === "number" || typeof value === "boolean" || typeof value === "bigint") return String(value);
- return "";
-}
