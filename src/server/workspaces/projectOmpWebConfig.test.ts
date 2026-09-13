@@ -1,7 +1,7 @@
 import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { tmpdir } from "node:os";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "bun:test";
 import { loadEffectiveProjectPathAccess, loadEffectiveProjectUploadsConfig, loadProjectOmpWebConfig, mergePathAccessConfigs, PROJECT_OMP_WEB_CONFIG_PATH } from "./projectOmpWebConfig.js";
 
 let tempDir: string;

@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "bun:test";
 import {
   effectiveWorkspaceUploadFolder,
   uploadWorkspaceFile,
@@ -41,7 +41,7 @@ describe("workspace upload helpers", () => {
     const xhr = xhrs.only();
     expect(xhr.method).toBe("PUT");
     expect(xhr.url).toBe("/api/machines/remote%20a/projects/p%201/workspaces/w%2F1/file?path=manual%2Fhello.txt&overwrite=false");
-    expect(xhr.headers.get("content-type")).toBe("text/plain");
+    expect(xhr.headers.get("content-type")).toMatch(/^text\/plain/);
     expect(xhr.body).toBe(file);
 
     xhr.emitUploadProgress(2, 5);

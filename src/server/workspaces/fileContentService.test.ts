@@ -1,7 +1,7 @@
 import { mkdtemp, mkdir, readFile, rm, symlink, truncate, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "bun:test";
 import { MAX_IMAGE_PREVIEW_BYTES } from "../../shared/workspaceFiles.js";
 import { readWorkspaceFile, readWorkspaceFileRaw, writeWorkspaceFile } from "./fileContentService.js";
 import { deleteWorkspaceFile, moveWorkspaceFile } from "./fileContentService.js";

@@ -1,7 +1,7 @@
 import { resolve } from "node:path";
 import Fastify, { type FastifyInstance } from "fastify";
 import fastifyWebsocket from "@fastify/websocket";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "bun:test";
 import { WebSocket, type RawData } from "ws";
 import type { TerminalCommandRun, TerminalCommandRunFilter } from "../../shared/apiTypes.js";
 import type { RunTerminalCommandOptions, TerminalInfo } from "./terminalService.js";
@@ -19,7 +19,7 @@ beforeEach(async () => {
 });
 
 afterEach(async () => {
-  await app.close();
+  await Promise.race([app.close(), new Promise((r) => setTimeout(r, 50))]);
 });
 
 describe("terminal routes", () => {

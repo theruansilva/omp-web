@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "bun:test";
 import {
   OMP_WEB_DOCKER_USER_COMMANDS,
   parseOmpWebDockerArgs,

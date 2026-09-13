@@ -1,5 +1,5 @@
 import Fastify, { type FastifyInstance } from "fastify";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "bun:test";
 import type { PiPackageInfo } from "../shared/apiTypes.js";
 import type { PiPackageService } from "./piPackageService.js";
 import { registerPiPackageRoutes } from "./piPackageRoutes.js";

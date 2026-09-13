@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { AssistantMessageEventStream } from "@oh-my-pi/pi-ai/utils/event-stream";
 import type { AssistantMessage } from "@oh-my-pi/pi-ai";
 import type { StreamFn } from "@oh-my-pi/pi-agent-core";
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "bun:test";
 import { Database } from "bun:sqlite";
 import { AuthStorage, ModelRegistry, SqliteAuthCredentialStore } from "@oh-my-pi/pi-coding-agent";
 
@@ -181,6 +181,20 @@ function emptyArchiveStore(): NonNullable<PiSessionServiceDependencies["archiveS
   };
 }
 
+
+async function waitFor(fn: () => void | Promise<void>, timeoutMs = 2000): Promise<void> {
+  const start = Date.now();
+  while (true) {
+    try {
+      await fn();
+      return;
+    } catch (err) {
+      if (Date.now() - start >= timeoutMs) throw err;
+      await new Promise((r) => setTimeout(r, 10));
+    }
+  }
+}
+
 describe("PiSessionService", () => {
   it("starts sessions through an injected runtime creator", async () => {
     const hub = new CapturingSessionEventHub();
@@ -343,8 +357,7 @@ describe("PiSessionService", () => {
       expect(activityPhases()).toEqual(["active"]);
 
       fake.session.isStreaming = false;
-      await vi.advanceTimersByTimeAsync(1_000);
-      await vi.advanceTimersByTimeAsync(1_000);
+      vi.advanceTimersByTime(2_000);
 
       expect(activityPhases()).toEqual(["active", "idle"]);
     } finally {
@@ -1025,7 +1038,7 @@ describe("PiSessionService", () => {
     });
 
     await service.prompt(sessionRef("name-session"), "Please fix the login bug");
-    await vi.waitFor(() => { expect(fake.session.sessionName).toBe("Fix login bug"); });
+    await waitFor(() => { expect(fake.session.sessionName).toBe("Fix login bug"); });
 
     expect(streamCalls).toHaveLength(1);
     expect(hub.sessionEvents.some(({ event }) => event.type === "session.name" && event.name === "Fix login bug")).toBe(true);

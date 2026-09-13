@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "bun:test";
 import type { TerminalCommandRun, Workspace } from "./api";
 import { isWorkspaceDeletionPending, latestWorkspaceDeletionRuns, pendingWorkspaceDeletionIds, workspaceDeleteOperation, workspaceDeletionMetadata } from "./workspaceDeletion";
 

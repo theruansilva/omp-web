@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "bun:test";
 import type { RunTerminalCommandInput, TerminalCommandRun, Workspace } from "../api";
 import { createTerminalCommandRunsRuntime } from "./terminalRuntime";
 
@@ -28,7 +28,6 @@ const runningRun: TerminalCommandRun = {
 const succeededRun: TerminalCommandRun = { ...runningRun, status: "succeeded", exitCode: 0, completedAt: "2026-05-25T00:00:01.000Z" };
 
 afterEach(() => {
-  vi.useRealTimers();
 });
 
 describe("terminal runtime", () => {
@@ -51,7 +50,6 @@ describe("terminal runtime", () => {
   });
 
   it("polls command-run records until completion", async () => {
-    vi.useFakeTimers();
     const api = {
       runTerminalCommand: vi.fn(() => Promise.resolve(runningRun)),
       listCommandRuns: vi.fn(),
@@ -66,7 +64,7 @@ describe("terminal runtime", () => {
     });
 
     const handle = await runtime.runCommand({ workspace, title: "Build", command: "npm run build" });
-    await vi.advanceTimersByTimeAsync(25);
+    await new Promise((resolve) => setTimeout(resolve, 35));
 
     await expect(handle.completed).resolves.toEqual(succeededRun);
     expect(api.getCommandRun).toHaveBeenCalledWith("run1");

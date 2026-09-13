@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "bun:test";
 import { effectiveOmpWebCapabilities, OMP_WEB_CAPABILITIES, SESSIOND_RUNTIME_CAPABILITIES, WEB_RUNTIME_CAPABILITIES, parseKnownOmpWebCapabilities } from "./capabilities";
 
 describe("PI WEB capabilities", () => {

@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "bun:test";
 import { CLASSIC_THEME_ID, DEFAULT_THEME_PREFERENCE, findThemePairForTheme, resolveThemePreference } from "./theme";
 import type { QualifiedContributionId, QualifiedThemeContribution, QualifiedThemePairContribution, ThemeColorScheme, ThemeTokens } from "./plugins/types";
 

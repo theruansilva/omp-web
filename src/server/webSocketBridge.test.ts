@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "bun:test";
 import { WebSocket, WebSocketServer, type RawData } from "ws";
 import { createBufferedSender } from "./webSocketBridge.js";
 
@@ -9,6 +9,7 @@ afterEach(async () => {
   if (socketServer === undefined) return;
   await new Promise<void>((resolve) => {
     socketServer.close(() => { resolve(); });
+    setTimeout(resolve, 50);
   });
   server = undefined;
 });

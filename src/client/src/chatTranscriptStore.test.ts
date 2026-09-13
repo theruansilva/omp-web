@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "bun:test";
 import { ChatTranscriptStore, type ChatHistoryCacheAdapter } from "./chatTranscriptStore";
 import type { RawMessagePage } from "./chatHistoryCache";
 

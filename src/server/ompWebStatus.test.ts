@@ -1,7 +1,7 @@
 import { chmod, mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "bun:test";
 import { comparePackageVersions, getOmpWebRuntime, getOmpWebStatus, getOmpWebVersionStatus } from "./ompWebStatus.js";
 import { SessionDaemonClient } from "../sessiond/sessionDaemonClient.js";
 import type { OmpWebComponentStatus } from "../shared/apiTypes.js";

@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "bun:test";
 import {
   CHAT_PREFERENCES_CHANGED_EVENT,
   DEFAULT_CHAT_PREFERENCES,

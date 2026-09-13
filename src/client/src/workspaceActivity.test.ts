@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "bun:test";
 import type { Project, Workspace, WorkspaceActivity } from "./api";
 import { machineActivityIndicator, projectActivityIndicator, workspaceActivityFor, workspaceActivityIndicator } from "./workspaceActivity";
 

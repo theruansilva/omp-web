@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "bun:test";
 import { PWA_DISPLAY_MODE_QUERIES, detectPwaDisplayMode } from "./pwaDisplayMode";
 
 describe("detectPwaDisplayMode", () => {

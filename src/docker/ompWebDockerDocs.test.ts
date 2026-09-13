@@ -1,7 +1,7 @@
 import { readFile } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "bun:test";
 import { OMP_WEB_DOCKER_USER_COMMANDS } from "./ompWebDockerCommandPlan.js";
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..");

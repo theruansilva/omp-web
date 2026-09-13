@@ -1,7 +1,7 @@
 import type { AssistantMessage, Model } from "@oh-my-pi/pi-ai";
 import { AssistantMessageEventStream } from "@oh-my-pi/pi-ai/utils/event-stream";
 import type { StreamFn } from "@oh-my-pi/pi-agent-core";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "bun:test";
 import { cleanSessionName, fallbackSessionName, generateShortSessionName } from "./sessionNameGenerator.js";
 
 function fakeModel(): Model {

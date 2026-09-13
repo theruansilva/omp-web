@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "bun:test";
 import type { OmpWebStatusResponse } from "../shared/apiTypes.js";
 import { createOmpWebStatusCache } from "./ompWebStatusCache.js";
 

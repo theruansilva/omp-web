@@ -1,5 +1,5 @@
 import type { AuthStorage } from "@oh-my-pi/pi-coding-agent";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "bun:test";
 import { OAuthLoginFlowService } from "./oauthLoginFlowService.js";
 
 // Minimal callback shape matching the omp AuthStorage.login() inline interface.

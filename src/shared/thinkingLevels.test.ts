@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "bun:test";
 import { KNOWN_THINKING_LEVELS, isKnownThinkingLevel, thinkingGauge, thinkingLevelLabel, type ThinkingLevel } from "./thinkingLevels";
 
 // Compile-time drift guard: if pi ADDS a thinking level we do not know about,

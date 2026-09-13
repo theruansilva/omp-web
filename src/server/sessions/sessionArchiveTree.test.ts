@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "bun:test";
 import { findArchiveCandidateByIdOrPrefix, planSessionArchiveTree, type SessionArchiveTreeCandidate } from "./sessionArchiveTree.js";
 
 function candidate(id: string, options: Partial<SessionArchiveTreeCandidate> = {}): SessionArchiveTreeCandidate {

@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "bun:test";
 import type { OmpWebComponentStatus, OmpWebStatusMessage, OmpWebStatusResponse, PluginRuntimeState } from "@ProgmRuanSilva/omp-web/plugin-api";
 import { additionalCommands, fallbackDockerStatus, formatVersion, installationLabel, messageCount, recommendedCommand, shouldShowUpdatesPanel } from "./updatesLogic";
 

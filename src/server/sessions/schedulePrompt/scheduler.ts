@@ -245,6 +245,7 @@ export class CronScheduler {
 
  /** Parse relative time delta (e.g., "+10s") → ISO string */
  static parseRelativeTime(delta: string): string | null {
+  if (!delta.startsWith("+")) return null;
   const ms = CronScheduler.parseDuration(delta);
   if (ms == null) return null;
   return new Date(Date.now() + ms).toISOString();

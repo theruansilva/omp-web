@@ -1,7 +1,7 @@
 import Fastify, { type FastifyInstance } from "fastify";
 import fastifyWebsocket from "@fastify/websocket";
 import { WebSocket, WebSocketServer } from "ws";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "bun:test";
 import { registerSessionProxyRoutes } from "./sessionProxyRoutes";
 
 let app: FastifyInstance;
@@ -15,8 +15,7 @@ beforeEach(async () => {
 });
 
 afterEach(async () => {
-  await app.close();
-  await daemon.close();
+  await Promise.race([Promise.all([app.close(), daemon.close()]), new Promise((r) => setTimeout(r, 50))]);
 });
 
 describe("machine-scoped session proxy routes", () => {

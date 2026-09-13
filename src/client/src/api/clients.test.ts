@@ -1,4 +1,5 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+const originalFetch = globalThis.fetch;
+import { afterEach, describe, expect, it, vi } from "bun:test";
 import { OMP_WEB_CAPABILITIES } from "../../../shared/capabilities";
 import type { OmpWebConfigValues, TerminalCommandRun, Workspace } from "../../../shared/apiTypes";
 import { configApi, filesApi, machinesApi, piPackagesApi, ompWebApi, pluginsApi, sessionsApi, terminalsApi, workspacesApi } from "./clients";
@@ -27,7 +28,7 @@ const commandRun: TerminalCommandRun = {
 };
 
 afterEach(() => {
-  vi.unstubAllGlobals();
+  globalThis.fetch = originalFetch;
 });
 
 describe("machine-scoped runtime API", () => {
@@ -379,13 +380,13 @@ function stubSequenceFetch(responses: Response[]): FetchMock {
     if (response === undefined) throw new Error("No fetch response queued");
     return Promise.resolve(response);
   });
-  vi.stubGlobal("fetch", fetchMock);
+  globalThis.fetch = fetchMock as any;
   return fetchMock;
 }
 
 function stubResponseFetch(response: Response): FetchMock {
   const fetchMock = vi.fn<FetchLike>(() => Promise.resolve(response));
-  vi.stubGlobal("fetch", fetchMock);
+  globalThis.fetch = fetchMock as any;
   return fetchMock;
 }
 

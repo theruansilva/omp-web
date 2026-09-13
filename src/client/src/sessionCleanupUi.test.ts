@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "bun:test";
 import type { SessionCleanupPreviewResponse } from "./api";
 import { canRunSessionCleanup, confirmSessionCleanup, selectedSessionCleanupProjectCwds, sessionCleanupConfirmationMessage, sessionCleanupPreviewForSelectedProjects, sessionCleanupRequestKey, sessionCleanupUnavailableMessage, validateSessionCleanupDraft, type SessionCleanupDraft } from "./sessionCleanupUi";
 

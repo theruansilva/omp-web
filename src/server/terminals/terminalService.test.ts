@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "bun:test";
 import { TerminalService } from "./terminalService";
 
 // TerminalService spawns a POSIX shell (/bin/bash with -lc and commands like

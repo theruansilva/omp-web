@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "bun:test";
 import { normalizeSessionCleanupRequest, normalizeSessionCleanupThresholds, planSessionCleanup } from "./sessionCleanup.js";
 import type { PiSessionListEntry } from "./piSessionService.js";
 import type { ArchivedSessionRecord } from "./sessionArchiveStore.js";

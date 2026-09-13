@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "bun:test";
 import { ChatScrollController, captureScrollPosition, chatScrollStorageKey, findFirstVisibleArticle, findVisibleScrollAnchor, type ChatScrollElement, type ChatScrollScheduler, type ChatScrollStorage, type ChatScrollViewport } from "./chatScrollPosition";
 
 class MemoryScrollStorage implements ChatScrollStorage {

@@ -1,5 +1,5 @@
 import Fastify, { type FastifyInstance } from "fastify";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "bun:test";
 import { registerConfigRoutes, registerLocalMachineConfigRoutes, type OmpWebConfigService } from "./configRoutes.js";
 import type { OmpWebConfigResponse, OmpWebConfigValues } from "../shared/apiTypes.js";
 

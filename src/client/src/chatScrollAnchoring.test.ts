@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "bun:test";
 import { scrollDeltaForMarker, scrollTopForBottomDistance, selectPrependMarker } from "./chatScrollAnchoring";
 
 describe("chat scroll anchoring", () => {

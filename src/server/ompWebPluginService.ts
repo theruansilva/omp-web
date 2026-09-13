@@ -1,4 +1,4 @@
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { readdir, readFile, realpath, stat } from "node:fs/promises";
 import { dirname, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -70,14 +70,26 @@ interface OmpWebPluginEntry {
 type ArraylessPluginRecord = Omit<PluginRecord, "source" | "scope">;
 
 export class DefaultPiPackageProvider implements PiPackageProvider {
-  // eslint-disable-next-line @typescript-eslint/no-useless-constructor
-  constructor(_cwd?: string, _agentDir?: string) { /* no-op */ }
+  constructor(private readonly cwd?: string, private readonly agentDir?: string) {}
 
   listPackages(): ConfiguredPiPackage[] {
+    if (!this.agentDir) return [];
+    try {
+      const raw = readFileSync(join(this.agentDir, "settings.json"), "utf8");
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed?.packages)) {
+        return parsed.packages.map((source: string) => ({
+          source,
+          scope: "user" as const,
+          installedPath: source,
+        }));
+      }
+    } catch {}
     return [];
   }
-  getInstalledPath(): string | undefined {
-    return undefined;
+
+  getInstalledPath(source: string): string | undefined {
+    return source;
   }
 }
 

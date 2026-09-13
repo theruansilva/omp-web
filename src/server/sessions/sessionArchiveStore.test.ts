@@ -2,7 +2,7 @@ import { constants } from "node:fs";
 import { access, mkdtemp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "bun:test";
 import { SessionArchiveStore } from "./sessionArchiveStore.js";
 
 const tempRoots: string[] = [];

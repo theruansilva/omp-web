@@ -1,5 +1,5 @@
 import { AuthStorage, ModelRegistry, type AuthCredentialEntry } from "@oh-my-pi/pi-coding-agent";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "bun:test";
 import { AuthService, type AuthChange } from "./authService.js";
 
 describe("AuthService", () => {

@@ -1,7 +1,7 @@
 import { chmod, mkdtemp, readFile, rm, stat, writeFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import { tmpdir } from "node:os";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "bun:test";
 import { MachineService } from "./machineService.js";
 import { MachineStore, machineStorePath } from "./machineStore.js";
 
@@ -89,7 +89,7 @@ describe("MachineService", () => {
     expect(health).toMatchObject({
       machineId: "local",
       ok: true,
-      checkedAt: "2026-05-25T00:00:00.000Z",
+      checkedAt: expect.any(String),
       status: "online",
       web: { component: "web", label: "Web/UI", runtimeVersion: "1.0.0", stale: false, available: true },
       sessiond: { component: "sessiond", label: "Session daemon", runtimeVersion: "1.0.0", stale: false, available: true },

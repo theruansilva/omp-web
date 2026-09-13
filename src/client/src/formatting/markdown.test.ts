@@ -1,7 +1,9 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "bun:test";
 
 if (typeof globalThis.document === "undefined") {
   Reflect.set(globalThis, "document", {
+    createTreeWalker: () => ({}),
+    createComment: () => ({}),
     createElement: () => ({
       content: {
         querySelectorAll: () => [],

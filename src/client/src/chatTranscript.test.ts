@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "bun:test";
 import { textMessage } from "./chatMessages";
 import { applyTranscriptEvent } from "./chatTranscript";
 import type { ChatLine } from "./components/shared";

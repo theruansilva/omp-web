@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "bun:test";
 import { base64ByteLength, extensionForImageMimeType, isSupportedImageMimeType, MAX_INLINE_IMAGE_BASE64_BYTES, parsePromptAttachments } from "./promptAttachments.js";
 
 const validImageBase64 = "QUJD";

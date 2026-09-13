@@ -1,25 +1,15 @@
 import { EventEmitter } from "node:events";
 import { randomUUID } from "node:crypto";
 import type * as pty from "bun-pty";
-import { createRequire } from "node:module";
 
 let ptySpawn: typeof pty.spawn;
 try {
-  if (typeof process !== "undefined" && process.versions["bun"] !== undefined) {
-    // dynamic import required because bun-pty crashes Node.js tests synchronously if statically imported
-    const ptyMod: unknown = await import("bun-pty");
-    if (isRecord(ptyMod) && isPtySpawn(ptyMod["spawn"])) {
-      ptySpawn = ptyMod["spawn"];
-    }
-  } else {
-    const requireFromHere = createRequire(import.meta.url);
-    const ptyMod: unknown = requireFromHere("node-pty");
-    if (isRecord(ptyMod) && isPtySpawn(ptyMod["spawn"])) {
-      ptySpawn = ptyMod["spawn"];
-    }
+  const ptyMod: unknown = await import("bun-pty");
+  if (isRecord(ptyMod) && isPtySpawn(ptyMod["spawn"])) {
+    ptySpawn = ptyMod["spawn"];
   }
 } catch (error) {
-  throw new Error(`Failed to load PTY native module: ${error instanceof Error ? error.message : String(error)}`, { cause: error });
+  throw new Error(`Failed to load bun-pty native module: ${error instanceof Error ? error.message : String(error)}`, { cause: error });
 }
 import type { TerminalCommandRun, TerminalCommandRunFilter, TerminalCommandRunStatus, TerminalUiEvent } from "../../shared/apiTypes.js";
 import type { SessionEventHub } from "../realtime/sessionEventHub.js";

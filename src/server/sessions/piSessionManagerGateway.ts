@@ -1,4 +1,5 @@
 import type { Dirent } from "node:fs";
+import { readFileSync } from "node:fs";
 import { readdir } from "node:fs/promises";
 import { homedir } from "node:os";
 import { dirname, isAbsolute, join, resolve } from "node:path";
@@ -19,6 +20,25 @@ export interface SessionDirResolution {
 export interface SessionDirResolverOptions {
  agentDir?: string;
  env?: NodeJS.ProcessEnv;
+}
+
+
+function readConfiguredSessionDir(cwd: string, agentDir: string): string | undefined {
+  const localPath = join(cwd, ".pi", "settings.json");
+  try {
+    const raw = readFileSync(localPath, "utf8");
+    const parsed = JSON.parse(raw);
+    if (typeof parsed?.sessionDir === "string" && parsed.sessionDir !== "") return parsed.sessionDir;
+  } catch {}
+
+  const globalPath = join(agentDir, "settings.json");
+  try {
+    const raw = readFileSync(globalPath, "utf8");
+    const parsed = JSON.parse(raw);
+    if (typeof parsed?.sessionDir === "string" && parsed.sessionDir !== "") return parsed.sessionDir;
+  } catch {}
+
+  return undefined;
 }
 
 export class SessionDirResolver {
@@ -47,8 +67,8 @@ export class SessionDirResolver {
    return { source: "env", sessionDir: resolveConfiguredPath(envSessionDir, cwd), usesConfiguredSessionDir: true };
   }
 
-  const settingsSessionDir = SessionManager.getDefaultSessionDir(cwd, this.agentDir);
-  if (settingsSessionDir !== "") {
+  const settingsSessionDir = readConfiguredSessionDir(cwd, this.agentDir);
+  if (settingsSessionDir !== undefined && settingsSessionDir !== "") {
    return { source: "settings", sessionDir: resolveConfiguredPath(settingsSessionDir, cwd), usesConfiguredSessionDir: true };
   }
 
@@ -68,6 +88,14 @@ class SettingsAwarePiSessionManagerGateway implements PiSessionManagerGateway {
  async list(cwd: string): Promise<PiSessionListEntry[]> {
   const resolution = this.resolver.resolve(cwd);
   return filterSessionsForCwd(await listSessionsInDir(resolution.sessionDir), cwd);
+ }
+
+ async listAll(): Promise<PiSessionListEntry[]> {
+  const globalEnv = this.resolver.globalEnvSessionDir();
+  const defaultSessions = await listSessionsInDefaultPiStore(this.resolver.defaultSessionsRoot());
+  if (globalEnv === undefined) return defaultSessions;
+  const envSessions = await listSessionsInDir(globalEnv);
+  return [...defaultSessions, ...envSessions].sort((a, b) => b.modified.getTime() - a.modified.getTime());
  }
 
  create(cwd: string): PiSessionManager {

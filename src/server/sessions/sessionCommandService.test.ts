@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "bun:test";
 import type { SessionUiEvent } from "../../shared/apiTypes.js";
 import { SessionCommandService, type CommandActiveSession, type CommandSession } from "./sessionCommandService.js";
 
@@ -57,6 +57,20 @@ function eventPublisher() {
   return { publish: vi.fn<(sessionId: string, event: SessionUiEvent) => void>() };
 }
 
+
+async function waitFor(fn: () => void | Promise<void>, timeoutMs = 2000): Promise<void> {
+  const start = Date.now();
+  while (true) {
+    try {
+      await fn();
+      return;
+    } catch (err) {
+      if (Date.now() - start >= timeoutMs) throw err;
+      await new Promise((r) => setTimeout(r, 10));
+    }
+  }
+}
+
 describe("SessionCommandService", () => {
   it("rejects unknown commands and forwards runtime commands as prompts", async () => {
     const active = activeSession();
@@ -108,7 +122,7 @@ describe("SessionCommandService", () => {
 
     await expect(service.run("s1", "/compact focus on tests")).resolves.toEqual({ type: "done", message: "Compaction started…" });
     expect(onCompactionStart).toHaveBeenCalledWith(active.runtime.session);
-    await vi.waitFor(() => {
+    await waitFor(() => {
       expect(events.publish).toHaveBeenCalledWith("s1", {
         type: "command.output",
         level: "success",
@@ -151,7 +165,7 @@ describe("SessionCommandService", () => {
         { entryId: "newest", text: "newest message" },
       ]),
     });
-    vi.mocked(active.runtime.fork).mockResolvedValueOnce({ cancelled: false, selectedText: "newest message" });
+    (active.runtime.fork as any).mockResolvedValueOnce({ cancelled: false, selectedText: "newest message" });
     const service = new SessionCommandService(() => getActive(active), vi.fn(), eventPublisher());
 
     const result = await service.run("s1", "/fork");
@@ -166,7 +180,7 @@ describe("SessionCommandService", () => {
   it("names forked sessions from the source title with the next available counter", async () => {
     const active = activeSession({ sessionName: "Build auth" });
     const forked = activeSession({ sessionId: "forked", sessionName: undefined }).runtime.session;
-    vi.mocked(active.runtime.fork).mockImplementationOnce(() => {
+    (active.runtime.fork as any).mockImplementationOnce(() => {
       active.runtime.session = forked;
       return Promise.resolve({ cancelled: false, selectedText: "newest message" });
     });
@@ -189,7 +203,7 @@ describe("SessionCommandService", () => {
   it("names cloned sessions as copies of the source title", async () => {
     const active = activeSession({ sessionName: "Build auth — Fork 1" });
     const cloned = activeSession({ sessionId: "copy", sessionName: undefined }).runtime.session;
-    vi.mocked(active.runtime.fork).mockImplementationOnce(() => {
+    (active.runtime.fork as any).mockImplementationOnce(() => {
       active.runtime.session = cloned;
       return Promise.resolve({ cancelled: false });
     });
@@ -301,7 +315,7 @@ describe("SessionCommandService", () => {
     await expect(service.run("s1", "/btw what is this?")).resolves.toEqual({ type: "done", message: "Ephemeral question asked." });
     expect(events.publish).toHaveBeenCalledWith("s1", { type: "btw.start", question: "what is this?" });
 
-    await vi.waitFor(() => {
+    await waitFor(() => {
       expect(runEphemeralTurn).toHaveBeenCalledTimes(1);
       expect(events.publish).toHaveBeenCalledWith("s1", { type: "btw.delta", delta: "chunk 1" });
       expect(events.publish).toHaveBeenCalledWith("s1", {

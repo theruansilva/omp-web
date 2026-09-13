@@ -1,7 +1,7 @@
 import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "bun:test";
 import { DEFAULT_MAX_UPLOAD_BYTES, DEFAULT_UPLOADS_FOLDER, effectiveOmpWebConfig, loadOmpWebConfig, maxUploadBytes, saveOmpWebConfig, spawnSessionsEnabled, subsessionsEnabled } from "./config.js";
 
 let tempDir: string;

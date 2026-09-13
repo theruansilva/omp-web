@@ -1,6 +1,6 @@
 import type { ImageContent, TextContent } from "@oh-my-pi/pi-ai";
 import type { ExtensionContext } from "@oh-my-pi/pi-coding-agent";
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "bun:test";
 import { createSubsessionToolDefinitions, type SubsessionToolDeps } from "./spawnSubsessionTool.js";
 
 const dispatchModel = { provider: "anthropic", id: "claude-sonnet" };

@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "bun:test";
 import { ChatDisclosureController, parseDisclosureSnapshot, type ChatDisclosureSnapshot, type ChatDisclosureStorage } from "./chatDisclosure";
 
 class MemoryDisclosureStorage implements ChatDisclosureStorage {

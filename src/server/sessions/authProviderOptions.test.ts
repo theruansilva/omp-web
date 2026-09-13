@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "bun:test";
 import { getLoginProviderOptions, getLogoutProviderOptions, isApiKeyLoginProvider, type AuthProviderModelRegistry } from "./authProviderOptions";
 
 function registry(): AuthProviderModelRegistry {

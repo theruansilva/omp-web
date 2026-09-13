@@ -1,7 +1,7 @@
 import { mkdtemp, mkdir, rm, symlink, writeFile } from "node:fs/promises";
 import { homedir, tmpdir } from "node:os";
 import { basename, join } from "node:path";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "bun:test";
 import { listFileSuggestions, listPathSuggestions, type FileSuggestionDependencies } from "./fileSuggestions";
 
 const temporaryRoots: string[] = [];

@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "bun:test";
 import { buildTranscriptView } from "./subsessionTranscript.js";
 
 const user = (text: string) => ({ role: "user", content: text });

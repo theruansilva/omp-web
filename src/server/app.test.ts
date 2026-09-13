@@ -3,7 +3,7 @@ import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { Readable } from "node:stream";
 import type { FastifyInstance } from "fastify";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "bun:test";
 import { isRecord } from "./utils.js";
 import { buildApp } from "./app.js";
 import { ProjectService } from "./projects/projectService.js";

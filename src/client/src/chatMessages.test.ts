@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "bun:test";
 import { appendText, appendThinking, normalizeMessage, normalizeMessages, textMessage } from "./chatMessages";
 
 describe("chat message normalization", () => {

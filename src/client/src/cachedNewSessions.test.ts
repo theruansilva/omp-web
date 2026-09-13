@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "bun:test";
 import type { SessionInfo } from "./api";
 import { forgetCachedNewSession, isCachedNewSessionInfo, loadCachedNewSessions, mergeCachedNewSessions, rememberCachedNewSession } from "./cachedNewSessions";
 

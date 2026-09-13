@@ -1,7 +1,7 @@
 import { mkdir, mkdtemp, readFile, readdir, rm, symlink } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "bun:test";
 import { DEFAULT_ATTACHMENT_FOLDER, saveAttachmentsToWorkspace } from "./attachmentService.js";
 
 let workspace: string;

@@ -1,5 +1,5 @@
 import { join, resolve, sep } from "node:path";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "bun:test";
 import { canonicalizeStoredCwd, cwdPathsEqual, normalizeRequestCwd } from "./workingDirectory.js";
 
 // resolve() so the base already carries a drive letter on Windows, matching

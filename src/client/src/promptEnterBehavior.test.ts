@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "bun:test";
 import {
   MOBILE_PROMPT_ENTER_MEDIA_QUERY,
   parsePromptEnterPreference,

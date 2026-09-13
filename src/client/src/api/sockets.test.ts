@@ -1,4 +1,6 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+const originalWebSocket = globalThis.WebSocket;
+const originalLocation = (globalThis as any).location;
+import { afterEach, beforeEach, describe, expect, it, vi } from "bun:test";
 import { globalSessionEvents, realtimeEvents, sessionEvents, terminalSocket } from "./sockets";
 
 const webSocketUrls: string[] = [];
@@ -9,12 +11,13 @@ function FakeWebSocket(url: string): void {
 
 beforeEach(() => {
   webSocketUrls.length = 0;
-  vi.stubGlobal("WebSocket", FakeWebSocket);
-  vi.stubGlobal("location", { protocol: "https:", host: "pi.example.test" });
+  (globalThis as any).WebSocket = FakeWebSocket;
+  (globalThis as any).location = { protocol: "https:", host: "pi.example.test" };
 });
 
 afterEach(() => {
-  vi.unstubAllGlobals();
+  if (originalWebSocket) globalThis.WebSocket = originalWebSocket;
+  if (originalLocation) (globalThis as any).location = originalLocation;
 });
 
 describe("machine-scoped socket urls", () => {

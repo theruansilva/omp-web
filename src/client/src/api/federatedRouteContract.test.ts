@@ -1,4 +1,7 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+const originalFetch = globalThis.fetch;
+const originalWebSocket = globalThis.WebSocket;
+const originalLocation = (globalThis as any).location;
+import { afterEach, describe, expect, it, vi } from "bun:test";
 import type { Workspace } from "../../../shared/apiTypes";
 import { FEDERATED_HTTP_ROUTES, FEDERATED_WEBSOCKET_ROUTES, type FederatedHttpRouteSpec } from "../../../shared/federatedRoutes";
 import { activityApi, configApi, filesApi, gitApi, piPackagesApi, ompWebApi, pluginsApi, projectsApi, sessionsApi, terminalsApi, workspacesApi } from "./clients";
@@ -18,13 +21,15 @@ const workspace: Workspace = {
 const session = { id: "s 1", cwd: workspace.path };
 
 afterEach(() => {
-  vi.unstubAllGlobals();
+  globalThis.fetch = originalFetch;
+  if (originalWebSocket) globalThis.WebSocket = originalWebSocket;
+  if (originalLocation) (globalThis as any).location = originalLocation;
 });
 
 describe("federated route contract", () => {
   it("covers machine-scoped client HTTP calls with remote proxy routes", async () => {
     const fetchMock = vi.fn<FetchLike>(() => Promise.resolve(jsonResponse({})));
-    vi.stubGlobal("fetch", fetchMock);
+    globalThis.fetch = fetchMock as any;
 
     await Promise.all([
       ignoreParseFailure(ompWebApi.ompWebStatus(machineId)),
@@ -111,8 +116,8 @@ describe("federated route contract", () => {
     function FakeWebSocket(url: string): void {
       webSocketUrls.push(url);
     }
-    vi.stubGlobal("WebSocket", FakeWebSocket);
-    vi.stubGlobal("location", { protocol: "https:", host: "pi.example.test" });
+    (globalThis as any).WebSocket = FakeWebSocket;
+    (globalThis as any).location = { protocol: "https:", host: "pi.example.test" };
 
     sessionEvents(session, machineId);
     globalSessionEvents(machineId);

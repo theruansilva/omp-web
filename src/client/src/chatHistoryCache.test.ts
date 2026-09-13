@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "bun:test";
 import { mergeChatHistory, type RawMessagePage } from "./chatHistoryCache";
 
 function page(start: number, total: number, messages: unknown[]): RawMessagePage {

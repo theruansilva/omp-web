@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "bun:test";
 import { OMP_WEB_CAPABILITIES } from "./capabilities";
 import { parseOmpWebComponentStatus, parseOmpWebInstallationInfo, parseOmpWebRuntimeResponse, parseOmpWebVersionResponse } from "./ompWebStatusParsing";
 

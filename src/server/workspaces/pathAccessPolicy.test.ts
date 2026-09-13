@@ -1,7 +1,7 @@
 import { mkdtemp, mkdir, realpath, rm, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "bun:test";
 import { createPathAccessPolicy, isAbsoluteishPath, resolvePathAccessTarget, resolveWorkspacePathAccessTarget } from "./pathAccessPolicy.js";
 
 const roots: string[] = [];

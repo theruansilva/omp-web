@@ -1,5 +1,5 @@
 import type { ExtensionContext } from "@oh-my-pi/pi-coding-agent";
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "bun:test";
 import { createSpawnSessionToolDefinition } from "./spawnSessionTool.js";
 
 // eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- test stub with the minimal surface the tool reads.

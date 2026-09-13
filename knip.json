@@ -16,8 +16,5 @@
     "exports": "off",
     "types": "off",
     "binaries": "off"
-  },
-  "ignoreDependencies": [
-    "node-pty"
-  ]
+  }
 }

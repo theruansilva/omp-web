@@ -1,11 +1,12 @@
 import { mkdtemp, rm, writeFile, mkdir, symlink } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "bun:test";
 import { OmpWebPluginService, type PiPackageProvider } from "./ompWebPluginService.js";
 
 let tempDir: string;
 
+const originalOmpWebConfig = process.env["OMP_WEB_CONFIG"];
 const originalDockerRuntime = process.env["OMP_WEB_DOCKER_RUNTIME"];
 const originalDockerMode = process.env["OMP_WEB_DOCKER_MODE"];
 const originalDockerDevRepoRoot = process.env["OMP_WEB_DOCKER_DEV_REPO_ROOT"];
@@ -13,9 +14,11 @@ const originalDockerInstallDir = process.env["OMP_WEB_DOCKER_INSTALL_DIR"];
 
 beforeEach(async () => {
   tempDir = await mkdtemp(join(tmpdir(), "omp-web-plugin-service-test-"));
+  process.env["OMP_WEB_CONFIG"] = join(tempDir, "non-existent-config.json");
 });
 
 afterEach(async () => {
+  restoreEnv("OMP_WEB_CONFIG", originalOmpWebConfig);
   restoreEnv("OMP_WEB_DOCKER_RUNTIME", originalDockerRuntime);
   restoreEnv("OMP_WEB_DOCKER_MODE", originalDockerMode);
   restoreEnv("OMP_WEB_DOCKER_DEV_REPO_ROOT", originalDockerDevRepoRoot);
