@@ -378,6 +378,45 @@ export class PromptEditor extends LitElement {
       state: EditorState.create({
         doc: this.draft,
         extensions: [
+          EditorView.theme({
+            "&": {
+              minHeight: "44px",
+              maxHeight: "220px",
+              border: "none",
+              outline: "none !important",
+              background: "transparent",
+            },
+            "&.cm-focused": {
+              outline: "none !important",
+            },
+            ".cm-scroller": {
+              minHeight: "44px",
+              maxHeight: "220px",
+              overflowY: "auto",
+              fontFamily: "var(--pi-control-font-family, system-ui, sans-serif)",
+              lineHeight: "1.4",
+            },
+            ".cm-content": {
+              minHeight: "44px",
+              padding: "10px 14px",
+              caretColor: "var(--pi-text)",
+              textAlign: "start",
+              boxSizing: "border-box",
+            },
+            ".cm-line": {
+              padding: "0",
+              lineHeight: "1.4",
+            },
+            ".cm-placeholder": {
+              color: "var(--pi-dim)",
+              lineHeight: "1.4",
+              display: "inline-block",
+              verticalAlign: "top",
+            },
+            ".cm-cursor, .cm-dropCursor": {
+              borderLeft: "2px solid var(--pi-text)",
+            },
+          }),
           history(),
           markdown(),
           indentOnInput(),
