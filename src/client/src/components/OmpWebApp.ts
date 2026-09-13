@@ -1,10 +1,9 @@
 import { LitElement, html } from "lit";
 import { errorMessage } from "../utils.js";
 import { customElement, query, state } from "lit/decorators.js";
-import { configApi, effectiveWorkspaceUploadFolder, type AskDialogSubmitResult, ompWebApi, sessionsApi, terminalsApi, workspacesApi, workspaceEffectiveUploadFolder, type Machine, type MachineHealth, type OmpWebConfigValues, type OmpWebShortcutConfig, type Project, type RealtimeEvent, type SessionCleanupExecuteResponse, type SessionCleanupPreviewResponse, type SessionCleanupRequest, type SessionInfo, type TerminalCommandRun, type TerminalUiEvent, type Workspace } from "../api";
+import { configApi, effectiveWorkspaceUploadFolder, type AskDialogSubmitResult, ompWebApi, sessionsApi, terminalsApi, workspacesApi, workspaceEffectiveUploadFolder, type Machine, type OmpWebConfigValues, type OmpWebShortcutConfig, type Project, type RealtimeEvent, type SessionCleanupExecuteResponse, type SessionCleanupPreviewResponse, type SessionCleanupRequest, type SessionInfo, type TerminalCommandRun, type TerminalUiEvent, type Workspace } from "../api";
 import type { AppAction } from "../actions";
 import { initialAppState, type AppState } from "../appState";
-import { isSessionActive } from "../../../shared/activity";
 import { OMP_WEB_CAPABILITIES, supportsOmpWebCapability } from "../../../shared/capabilities";
 import { ActivityController } from "../controllers/activityController";
 import { AuthController } from "../controllers/authController";
@@ -22,12 +21,10 @@ import { KeyboardShortcutDispatcher } from "../keyboardShortcuts";
 import { selectedMachineId } from "../controllers/types";
 import { sessionCleanupRequestKey, sessionCleanupUnavailableMessage } from "../sessionCleanupUi";
 import { RealtimeSocket } from "../sessionSocket";
-import type { OmpWebPluginRegistration, PluginMachine, PluginPromptEditor, QualifiedContributionId, QualifiedThemeContribution, QualifiedThemePairContribution, QualifiedWorkspacePanelContribution, PluginRuntimeContext, TerminalCommandRunsInternalRuntime, WorkspaceFiles, WorkspaceHost, WorkspaceLabelContext, WorkspaceLabelItem, WorkspacePanelContext } from "../plugins/types";
+import type { OmpWebPluginRegistration, PluginPromptEditor, QualifiedContributionId, QualifiedThemeContribution, QualifiedThemePairContribution, QualifiedWorkspacePanelContribution, PluginRuntimeContext, TerminalCommandRunsInternalRuntime, WorkspaceFiles, WorkspaceHost, WorkspaceLabelContext, WorkspaceLabelItem, WorkspacePanelContext } from "../plugins/types";
 import { CLASSIC_THEME_ID, DEFAULT_THEME_PREFERENCE, applyOmpWebTheme, findThemePairForTheme, readStoredThemePreference, resolveThemePreference, writeStoredThemePreference, type ThemePreference, type ThemePreferenceResolution } from "../theme";
-import { corePlugin } from "../plugins/core";
-import { themePackPlugin } from "../plugins/themes";
 import { loadExternalPlugins } from "../plugins/external";
-import { PluginRegistry, installPluginRuntimeScope, installWorkspacePanelScope } from "../plugins/registry";
+import { installPluginRuntimeScope, installWorkspacePanelScope } from "../plugins/registry";
 import { queryNamespace, readNamespacedString, setNamespacedQueryKey } from "../namespacedQueryArgs";
 import { AppShellController } from "../appShell/appShellController";
 import { NavigationSectionsController, type NavigationSection } from "../appShell/navigationState";
@@ -75,6 +72,23 @@ import { shouldShowMachinesSection, type AppNavigationPanel, type NavigationFocu
 import "./appShell/AppPanelEdgeControl";
 import "./appShell/AppRefreshControl";
 import { appStyles } from "./shared";
+import {
+  createPluginRegistry,
+  pluginMachineFromState,
+  machineActivitySubscriptionInputsChanged,
+  shouldSubscribeToMachineActivity,
+  shouldRefreshMachineActivity,
+  patchChangesState,
+  isActive,
+  isTerminalEvent,
+  emptyWorkspaceRouteSurface,
+  machineScopedKey,
+  remoteRouteRestoreRetryDelay,
+  omitWorkspaceDeletionRun,
+  nextFrame,
+  thinkingDescription,
+} from "./appShell/ompWebAppHelpers.js";
+
 
 
 const OMP_WEB_STATUS_REFRESH_MS = 15 * 60 * 1000;
@@ -2015,6 +2029,46 @@ export class OmpWebApp extends LitElement {
     ];
   }
 
+  private renderModals(state: AppState) {
+    return html`
+      ${state.planReviewDialog !== undefined ? html`
+        <plan-review-dialog
+          .plan=${state.planReviewDialog}
+          .onApprove=${() => { void this.sessions.approvePlan(); }}
+          .onReject=${(feedback?: string) => { void this.sessions.rejectPlan(feedback); }}
+          .onCancel=${() => { this.sessions.closePlanReview(); }}
+        ></plan-review-dialog>
+      ` : null}
+      ${state.askDialog !== undefined ? html`
+        <ask-dialog
+          .requestId=${state.askDialog.requestId}
+          .questions=${state.askDialog.questions}
+          .onSubmit=${(result: AskDialogSubmitResult) => { void this.sessions.submitAsk(state.askDialog!.requestId, result); }}
+          .onChat=${() => { void this.sessions.submitAsk(state.askDialog!.requestId, { kind: "chat" }); }}
+          .onCancel=${() => { void this.sessions.cancelAsk(state.askDialog!.requestId); }}
+        ></ask-dialog>
+      ` : null}
+      ${state.btwState !== undefined ? html`
+        <btw-panel
+          .state=${state.btwState}
+          .onBranch=${() => { void this.sessions.branchBtw(); }}
+          .onClose=${() => { this.sessions.closeBtw(); }}
+        ></btw-panel>
+      ` : null}
+      ${state.commandDialog !== undefined ? html`<command-picker .title=${state.commandDialog.title} .options=${state.commandDialog.options} .onPick=${(value: string) => this.sessions.respondToCommand(state.commandDialog?.requestId ?? "", value)} .onCancel=${() => { this.sessions.cancelCommand(); }}></command-picker>` : null}
+      ${state.modelDialog !== undefined ? html`<command-picker title=${state.modelDialog.title} .searchable=${true} .options=${state.modelDialog.options} .selectedValue=${state.modelDialog.selectedValue} .onPick=${(value: string) => { this.pickModel(value); }} .onCancel=${() => { this.setState({ modelDialog: undefined }); }}></command-picker>` : null}
+      ${state.modelActionDialog !== undefined ? html`<command-picker title=${state.modelActionDialog.title} .options=${state.modelActionDialog.options} .selectedValue=${state.modelActionDialog.selectedValue} .onPick=${(value: string) => { void this.pickModelAction(value); }} .onCancel=${() => { this.setState({ modelActionDialog: undefined }); }}></command-picker>` : null}
+      ${state.thinkingDialog !== undefined ? html`<command-picker title=${state.thinkingDialog.title} .options=${state.thinkingDialog.options} .selectedValue=${state.thinkingDialog.selectedValue} .onPick=${(value: string) => { void this.pickThinking(value); }} .onCancel=${() => { this.setState({ thinkingDialog: undefined }); }}></command-picker>` : null}
+      ${state.authDialog !== undefined ? html`<auth-dialog .state=${state.authDialog} .onChooseMethod=${(authType: "oauth" | "api_key") => { void this.auth.chooseLoginMethod(authType); }} .onSelectProvider=${(providerId: string, authType: "oauth" | "api_key") => { void this.auth.selectLoginProvider(providerId, authType); }} .onApiKeyInput=${(value: string) => { this.auth.updateApiKey(value); }} .onSaveApiKey=${() => { void this.auth.saveApiKey(); }} .onLogoutProvider=${(providerId: string) => { void this.auth.logoutProvider(providerId); }} .onOAuthInput=${(value: string) => { this.auth.updateOAuthInput(value); }} .onOAuthRespond=${(value?: string) => { void this.auth.respondOAuth(value); }} .onOAuthCancel=${() => { void this.auth.cancelOAuth(); }} .onCancel=${() => { this.auth.closeDialog(); }}></auth-dialog>` : null}
+      ${state.actionPaletteOpen ? html`<action-palette .actions=${this.getActions()} .onRun=${(action: AppAction) => { this.setState({ actionPaletteOpen: false }); this.runAction(action); }} .onCancel=${() => { this.setState({ actionPaletteOpen: false }); }}></action-palette>` : null}
+      ${state.projectDialogOpen ? html`<project-dialog .machineId=${selectedMachineId(state)} .onSubmit=${(path: string, create: boolean) => this.projects.addProject(path, create)} .onCancel=${() => { this.setState({ projectDialogOpen: false }); }}></project-dialog>` : null}
+      ${state.machineDialogOpen ? html`<machine-dialog .error=${state.error} .onSubmit=${(input: MachineDialogSubmit) => this.submitMachineDialog(input)} .onCancel=${() => { this.setState({ machineDialogOpen: false }); }}></machine-dialog>` : null}
+      ${this.sessionCleanupDialog !== undefined ? html`<session-cleanup-dialog .canCleanup=${this.canCleanupSessions()} .unavailableMessage=${this.sessionCleanupUnavailableMessage()} .preview=${this.sessionCleanupDialog.preview} .previewRequest=${this.sessionCleanupDialog.previewRequest} .result=${this.sessionCleanupDialog.result} .loading=${this.sessionCleanupDialog.loading === true} .running=${this.sessionCleanupDialog.running === true} .error=${this.sessionCleanupDialog.error ?? ""} .onPreview=${(request: SessionCleanupRequest) => { void this.previewSessionCleanup(request); }} .onRun=${(request: SessionCleanupRequest) => { void this.runSessionCleanup(request); }} .onClose=${() => { this.closeSessionCleanupDialog(); }}></session-cleanup-dialog>` : null}
+      ${state.themeDialog !== undefined ? html`<command-picker title=${state.themeDialog.title} .options=${state.themeDialog.options} .selectedValue=${state.themeDialog.selectedValue} .onPick=${(value: string) => { this.pickTheme(value); }} .onCancel=${() => { this.setState({ themeDialog: undefined }); }}></command-picker>` : null}
+      ${this.settingsSection !== undefined ? html`<settings-dialog .section=${this.settingsSection} .machine=${state.selectedMachine} .machineRuntime=${this.selectedMachineRuntime()} .actions=${this.getDefaultActions()} .onNavigate=${(section: SettingsSection) => { this.navigateSettings(section); }} .onClose=${() => { this.closeSettings(); }} .onConfigSaved=${(config: OmpWebConfigValues) => { this.applyClientConfig(config); }}></settings-dialog>` : null}
+    `;
+  }
+
   private renderAppRefresh() {
     return html`<app-refresh-control .onReload=${() => { this.hardReloadApp(); }}></app-refresh-control>`;
   }
@@ -2037,45 +2091,11 @@ export class OmpWebApp extends LitElement {
             <chat-view .sessionId=${state.selectedSession.id} .messages=${state.messages} .messageStart=${state.messagePageStart} .messageEnd=${state.messagePageEnd} .messageTotal=${state.messagePageTotal} .hasMore=${state.messagePageStart > 0} .loadingMore=${state.isLoadingEarlierMessages} .isReceivingPartialStream=${state.isReceivingPartialStream} .isSendingPrompt=${state.sendingPrompts[state.selectedSession.id] === true} .isCompacting=${state.status?.isCompacting === true} .pendingMessageCount=${state.status?.pendingMessageCount ?? 0} .clientQueuedMessages=${state.clientQueuedSessionMessages[state.selectedSession.id] ?? []} .status=${state.status} .activity=${state.activity} .onLoadMore=${() => this.withChatPrependTransition(() => this.sessions.loadEarlierMessages())}></chat-view>
             <prompt-editor .sessionId=${state.selectedSession.id} .cwd=${state.selectedWorkspace?.path} .machineId=${selectedMachineId(state)} .projectId=${state.selectedWorkspace?.projectId} .workspaceId=${state.selectedWorkspace?.id} .workspaceScopedFileSuggestions=${this.supportsWorkspaceFileSuggestions()} .disabled=${state.selectedSession.archived === true} .canSteer=${state.status?.isStreaming === true} .isCompacting=${state.status?.isCompacting === true} .canStop=${state.status?.isStreaming === true || state.status?.isBashRunning === true || state.status?.isCompacting === true || (state.status?.pendingMessageCount ?? 0) > 0} .status=${state.status} .availableThinkingLevels=${state.availableThinkingLevels} .sending=${state.sendingPrompts[state.selectedSession.id] === true} .onTogglePlanMode=${() => { this.sessions.togglePlanMode(); }} .onOpenPlanReview=${() => { this.sessions.openPlanReview(); }} .onSend=${this.handleSendPrompt} .onStop=${this.handleStopActiveWork} .onSelectModel=${this.handleSelectModel} .onSelectThinking=${this.handleSelectThinking}></prompt-editor>
             ${this.chatPreferences.showStatusBar ? html`<status-bar .status=${state.status}></status-bar>` : null}
-            ${state.planReviewDialog !== undefined ? html`
-              <plan-review-dialog
-                .plan=${state.planReviewDialog}
-                .onApprove=${() => { void this.sessions.approvePlan(); }}
-                .onReject=${(feedback?: string) => { void this.sessions.rejectPlan(feedback); }}
-                .onCancel=${() => { this.sessions.closePlanReview(); }}
-              ></plan-review-dialog>
-            ` : null}
-            ${state.askDialog !== undefined ? html`
-              <ask-dialog
-                .requestId=${state.askDialog.requestId}
-                .questions=${state.askDialog.questions}
-                .onSubmit=${(result: AskDialogSubmitResult) => { void this.sessions.submitAsk(state.askDialog!.requestId, result); }}
-                .onChat=${() => { void this.sessions.submitAsk(state.askDialog!.requestId, { kind: "chat" }); }}
-                .onCancel=${() => { void this.sessions.cancelAsk(state.askDialog!.requestId); }}
-              ></ask-dialog>
-            ` : null}
-            ${state.btwState !== undefined ? html`
-              <btw-panel
-                .state=${state.btwState}
-                .onBranch=${() => { void this.sessions.branchBtw(); }}
-                .onClose=${() => { this.sessions.closeBtw(); }}
-              ></btw-panel>
-            ` : null}
-            ${state.commandDialog !== undefined ? html`<command-picker .title=${state.commandDialog.title} .options=${state.commandDialog.options} .onPick=${(value: string) => this.sessions.respondToCommand(state.commandDialog?.requestId ?? "", value)} .onCancel=${() => { this.sessions.cancelCommand(); }}></command-picker>` : null}
-            ${state.modelDialog !== undefined ? html`<command-picker title=${state.modelDialog.title} .searchable=${true} .options=${state.modelDialog.options} .selectedValue=${state.modelDialog.selectedValue} .onPick=${(value: string) => { this.pickModel(value); }} .onCancel=${() => { this.setState({ modelDialog: undefined }); }}></command-picker>` : null}
-            ${state.modelActionDialog !== undefined ? html`<command-picker title=${state.modelActionDialog.title} .options=${state.modelActionDialog.options} .selectedValue=${state.modelActionDialog.selectedValue} .onPick=${(value: string) => { void this.pickModelAction(value); }} .onCancel=${() => { this.setState({ modelActionDialog: undefined }); }}></command-picker>` : null}
-            ${state.thinkingDialog !== undefined ? html`<command-picker title=${state.thinkingDialog.title} .options=${state.thinkingDialog.options} .selectedValue=${state.thinkingDialog.selectedValue} .onPick=${(value: string) => { void this.pickThinking(value); }} .onCancel=${() => { this.setState({ thinkingDialog: undefined }); }}></command-picker>` : null}
-            ${state.authDialog !== undefined ? html`<auth-dialog .state=${state.authDialog} .onChooseMethod=${(authType: "oauth" | "api_key") => { void this.auth.chooseLoginMethod(authType); }} .onSelectProvider=${(providerId: string, authType: "oauth" | "api_key") => { void this.auth.selectLoginProvider(providerId, authType); }} .onApiKeyInput=${(value: string) => { this.auth.updateApiKey(value); }} .onSaveApiKey=${() => { void this.auth.saveApiKey(); }} .onLogoutProvider=${(providerId: string) => { void this.auth.logoutProvider(providerId); }} .onOAuthInput=${(value: string) => { this.auth.updateOAuthInput(value); }} .onOAuthRespond=${(value?: string) => { void this.auth.respondOAuth(value); }} .onOAuthCancel=${() => { void this.auth.cancelOAuth(); }} .onCancel=${() => { this.auth.closeDialog(); }}></auth-dialog>` : null}
           ` : html`<div class="empty">${this.sessionEmptyMessage()}</div>`}
         </main>
         ${this.renderWorkspacePanelEdgeControl()}
         ${this.renderWorkspacePanel()}
-        ${state.actionPaletteOpen ? html`<action-palette .actions=${this.getActions()} .onRun=${(action: AppAction) => { this.setState({ actionPaletteOpen: false }); this.runAction(action); }} .onCancel=${() => { this.setState({ actionPaletteOpen: false }); }}></action-palette>` : null}
-        ${state.projectDialogOpen ? html`<project-dialog .machineId=${selectedMachineId(state)} .onSubmit=${(path: string, create: boolean) => this.projects.addProject(path, create)} .onCancel=${() => { this.setState({ projectDialogOpen: false }); }}></project-dialog>` : null}
-        ${state.machineDialogOpen ? html`<machine-dialog .error=${state.error} .onSubmit=${(input: MachineDialogSubmit) => this.submitMachineDialog(input)} .onCancel=${() => { this.setState({ machineDialogOpen: false }); }}></machine-dialog>` : null}
-        ${this.sessionCleanupDialog !== undefined ? html`<session-cleanup-dialog .canCleanup=${this.canCleanupSessions()} .unavailableMessage=${this.sessionCleanupUnavailableMessage()} .preview=${this.sessionCleanupDialog.preview} .previewRequest=${this.sessionCleanupDialog.previewRequest} .result=${this.sessionCleanupDialog.result} .loading=${this.sessionCleanupDialog.loading === true} .running=${this.sessionCleanupDialog.running === true} .error=${this.sessionCleanupDialog.error ?? ""} .onPreview=${(request: SessionCleanupRequest) => { void this.previewSessionCleanup(request); }} .onRun=${(request: SessionCleanupRequest) => { void this.runSessionCleanup(request); }} .onClose=${() => { this.closeSessionCleanupDialog(); }}></session-cleanup-dialog>` : null}
-        ${state.themeDialog !== undefined ? html`<command-picker title=${state.themeDialog.title} .options=${state.themeDialog.options} .selectedValue=${state.themeDialog.selectedValue} .onPick=${(value: string) => { this.pickTheme(value); }} .onCancel=${() => { this.setState({ themeDialog: undefined }); }}></command-picker>` : null}
-        ${this.settingsSection !== undefined ? html`<settings-dialog .section=${this.settingsSection} .machine=${state.selectedMachine} .machineRuntime=${this.selectedMachineRuntime()} .actions=${this.getDefaultActions()} .onNavigate=${(section: SettingsSection) => { this.navigateSettings(section); }} .onClose=${() => { this.closeSettings(); }} .onConfigSaved=${(config: OmpWebConfigValues) => { this.applyClientConfig(config); }}></settings-dialog>` : null}
+        ${this.renderModals(state)}
       </div>
     `;
   }
@@ -2083,77 +2103,3 @@ export class OmpWebApp extends LitElement {
   static override styles = appStyles;
 }
 
-function createPluginRegistry(): PluginRegistry {
-  const registry = new PluginRegistry();
-  registry.register({ id: "core", plugin: corePlugin });
-  registry.register({ id: "themes", plugin: themePackPlugin });
-  return registry;
-}
-
-function pluginMachineFromState(state: Pick<AppState, "selectedMachine">): PluginMachine {
-  const machine = state.selectedMachine;
-  if (machine !== undefined) return { id: machine.id, name: machine.name, kind: machine.kind };
-  return { id: "local", name: "local", kind: "local" };
-}
-
-function machineActivitySubscriptionInputsChanged(previous: AppState, next: AppState): boolean {
-  return previous.machines !== next.machines
-    || previous.machineStatuses !== next.machineStatuses
-    || (previous.selectedMachine?.id ?? "local") !== (next.selectedMachine?.id ?? "local");
-}
-
-function shouldSubscribeToMachineActivity(machine: Machine, health: MachineHealth | undefined): boolean {
-  return shouldRefreshMachineActivity(machine, health);
-}
-
-function shouldRefreshMachineActivity(machine: Machine, health: MachineHealth | undefined): boolean {
-  if (machine.kind === "local") return true;
-  const status = health?.status ?? machine.status;
-  return status === undefined || status === "unknown" || status === "online";
-}
-
-function patchChangesState(state: AppState, patch: Partial<AppState>): boolean {
-  return Object.entries(patch).some(([key, value]) => Reflect.get(state, key) !== value);
-}
-
-function isActive(state: Pick<AppState, "status" | "activity">): boolean {
-  return isSessionActive(state.status, state.activity);
-}
-
-function isTerminalEvent(event: RealtimeEvent): event is TerminalUiEvent {
-  return event.type === "terminal.created" || event.type === "terminal.exited" || event.type === "terminal.closed";
-}
-
-function emptyWorkspaceRouteSurface(): WorkspaceRouteSurface {
-  return {};
-}
-
-function machineScopedKey(machineId: string, value: string): string {
-  return JSON.stringify([machineId, value]);
-}
-
-function remoteRouteRestoreRetryDelay(attempt: number): number {
-  const index = Math.min(attempt, REMOTE_ROUTE_RESTORE_RETRY_DELAYS_MS.length - 1);
-  return REMOTE_ROUTE_RESTORE_RETRY_DELAYS_MS[index] ?? 30_000;
-}
-
-
-function omitWorkspaceDeletionRun(runs: Record<string, TerminalCommandRun>, workspaceId: string): Record<string, TerminalCommandRun> {
-  return Object.fromEntries(Object.entries(runs).filter(([candidate]) => candidate !== workspaceId));
-}
-
-function nextFrame(): Promise<void> {
-  return new Promise((resolve) => requestAnimationFrame(() => { resolve(); }));
-}
-
-function thinkingDescription(level: string): string | undefined {
-  switch (level) {
-    case "off": return "No reasoning";
-    case "minimal": return "Very brief reasoning (~1k tokens)";
-    case "low": return "Light reasoning (~2k tokens)";
-    case "medium": return "Moderate reasoning (~8k tokens)";
-    case "high": return "Deep reasoning (~16k tokens)";
-    case "xhigh": return "Maximum reasoning (~32k tokens)";
-    default: return undefined; // unknown level from a newer pi: no description
-  }
-}
