@@ -188,10 +188,6 @@ export async function buildApp(deps: AppDependencies = {}): Promise<FastifyInsta
     await app.register(fastifyStatic, { root: clientDist });
     app.setNotFoundHandler((_request, reply) => reply.sendFile("index.html"));
   }
-  const reactClientDist = join(dirname(fileURLToPath(import.meta.url)), "..", "client-react");
-  if (existsSync(reactClientDist)) {
-    await app.register(fastifyStatic, { root: reactClientDist, prefix: "/app-react/", decorateReply: false });
-  }
 
   return app;
 }
