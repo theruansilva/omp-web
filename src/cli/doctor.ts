@@ -1,7 +1,6 @@
 import { spawnSync } from "node:child_process";
 import { userInfo } from "node:os";
 import { printOmpWebVersionReport } from "../ompWebVersionReport.js";
-import { checkNodePtyDarwinSpawnHelper, formatNodePtyDarwinSpawnHelperCheck } from "../server/diagnostics/nodePtySpawnHelper.js";
 import type { Check, ServiceBackend, ServiceShell } from "./types.js";
 
 export function capture(command: string, args: string[]): { status: number; stdout: string; stderr: string } {
@@ -50,11 +49,6 @@ export function printPathSetupAdvice(shellName?: string): void {
   }
 }
 
-export function printNodePtyDarwinSpawnHelperCheck(): boolean {
-  const result = formatNodePtyDarwinSpawnHelperCheck(checkNodePtyDarwinSpawnHelper());
-  for (const line of result.lines) console.log(line);
-  return result.ok;
-}
 
 export interface DoctorDeps {
   platformLabel: () => string;
@@ -106,7 +100,6 @@ export async function runDoctor(deps: DoctorDeps): Promise<void> {
   console.log("\nDoctor checks:");
   const ok = runChecks(deps.doctorChecks());
   printOptionalDoctorChecks(deps);
-  const nodePtySpawnHelperOk = printNodePtyDarwinSpawnHelperCheck();
 
   if (deps.supportsSystemdUserServices()) {
     const linger = deps.isLingerEnabled();
@@ -135,5 +128,5 @@ export async function runDoctor(deps: DoctorDeps): Promise<void> {
     console.log(`\n${deps.manualRunAdvice()}`);
   }
 
-  if (!ok || !nodePtySpawnHelperOk) process.exitCode = 1;
+  if (!ok) process.exitCode = 1;
 }

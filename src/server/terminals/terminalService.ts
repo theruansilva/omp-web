@@ -1,6 +1,6 @@
 import { EventEmitter } from "node:events";
 import { randomUUID } from "node:crypto";
-import type * as pty from "node-pty";
+import type * as pty from "bun-pty";
 import { createRequire } from "node:module";
 
 let ptySpawn: typeof pty.spawn;

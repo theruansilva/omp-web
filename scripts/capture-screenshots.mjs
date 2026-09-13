@@ -88,15 +88,15 @@ async function main() {
     NO_COLOR: "1",
   };
 
-  const tsxBin = join(REPO_ROOT, "node_modules", ".bin", process.platform === "win32" ? "tsx.cmd" : "tsx");
+  const bunBin = process.execPath;
   const viteBin = join(REPO_ROOT, "node_modules", ".bin", process.platform === "win32" ? "vite.cmd" : "vite");
-  assertExecutable(tsxBin, "Run npm install before capturing screenshots.");
+  assertExecutable(bunBin, "bun executable not found.");
   assertExecutable(viteBin, "Run npm install before capturing screenshots.");
 
   console.log("Starting isolated PI WEB session daemon, API server, and Vite client…");
-  startChild("sessiond", tsxBin, ["src/server/sessiond.ts"], { env, cwd: REPO_ROOT, logsDir });
+  startChild("sessiond", bunBin, ["src/server/sessiond.ts"], { env, cwd: REPO_ROOT, logsDir });
   await waitForFile(socketPath, 10_000);
-  startChild("api", tsxBin, ["src/server/index.ts"], { env, cwd: REPO_ROOT, logsDir });
+  startChild("api", bunBin, ["src/server/index.ts"], { env, cwd: REPO_ROOT, logsDir });
   await waitForHttp(`http://127.0.0.1:${apiPort}/api/projects`, 15_000);
   startChild("vite", viteBin, ["--host", "127.0.0.1", "--port", String(clientPort), "--strictPort", "true"], { env, cwd: REPO_ROOT, logsDir });
   await waitForHttp(`http://127.0.0.1:${clientPort}/`, 30_000);
