@@ -1,5 +1,6 @@
 import { isRecord } from "../utils.js";
-export async function request<T>(url: string, parse: (value: unknown) => T, init?: RequestInit): Promise<T> {
+
+export async function request<T>(url: string, init?: RequestInit): Promise<T> {
   const headers = new Headers(init?.headers);
   if (init?.body !== undefined && !headers.has("content-type")) headers.set("content-type", "application/json");
   const response = await fetch(url, { ...init, headers });
@@ -7,12 +8,10 @@ export async function request<T>(url: string, parse: (value: unknown) => T, init
     const body: unknown = await response.json().catch((): unknown => ({}));
     throw new Error(errorMessage(body) ?? response.statusText);
   }
-  const body: unknown = await response.json();
-  return parse(body);
+  return (await response.json()) as T;
 }
 
 function errorMessage(value: unknown): string | undefined {
   if (!isRecord(value)) return undefined;
   return typeof value["error"] === "string" ? value["error"] : undefined;
 }
-

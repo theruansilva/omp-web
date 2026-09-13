@@ -1,5 +1,4 @@
 import type { WriteWorkspaceFileOptions, WriteWorkspaceFileResponse } from "../../../shared/apiTypes";
-import { parseWriteWorkspaceFileResponse } from "./parsers";
 import { workspaceFileWriteUrl } from "./urls";
 import { errorMessage, isRecord } from "../utils.js";
 
@@ -149,7 +148,7 @@ export function uploadWorkspaceFile(
       if (xhr.status >= 200 && xhr.status < 300) {
         try {
           options.onProgress?.({ loaded: input.file.size, total: input.file.size, percent: 1, lengthComputable: true });
-          succeed(parseWriteWorkspaceFileResponse(readXhrJson(xhr)));
+          succeed(readXhrJson(xhr) as WriteWorkspaceFileResponse);
         } catch (error) {
           fail(error instanceof Error ? error : new Error(String(error)));
         }
