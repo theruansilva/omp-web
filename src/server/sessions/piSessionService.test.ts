@@ -5,7 +5,6 @@ import { AssistantMessageEventStream } from "@oh-my-pi/pi-ai/utils/event-stream"
 import type { AssistantMessage } from "@oh-my-pi/pi-ai";
 import type { StreamFn } from "@oh-my-pi/pi-agent-core";
 import { describe, expect, it, vi } from "vitest";
-// @ts-expect-error - bun:sqlite is available at runtime under bun
 import { Database } from "bun:sqlite";
 import { AuthStorage, ModelRegistry, SqliteAuthCredentialStore } from "@oh-my-pi/pi-coding-agent";
 

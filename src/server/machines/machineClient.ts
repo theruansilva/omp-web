@@ -51,7 +51,7 @@ export class RemoteMachineRequestError extends Error {
 }
 
 export class RemoteMachineClient implements MachineClient {
-  constructor(private readonly machine: Pick<StoredMachine, "baseUrl" | "token" | "headers">, private readonly fetchImpl: typeof fetch = fetch) {}
+  constructor(private readonly machine: Pick<StoredMachine, "baseUrl" | "token" | "headers">, private readonly fetchImpl: (input: string | URL | Request, init?: RequestInit) => Promise<Response> = fetch) {}
 
   async request(method: string, path: string, body?: unknown, options: MachineRequestOptions = {}): Promise<MachineHttpResponse> {
     const response = await this.fetchResponse(method, path, body, options);
@@ -180,7 +180,7 @@ function copyArrayBufferView(view: ArrayBufferView): ArrayBuffer {
 function readableFromWebResponseBody(body: Response["body"]): NodeJS.ReadableStream {
   if (body === null) throw new Error("Response body is not readable");
   // eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- Node fetch returns a web stream that is runtime-compatible with Readable.fromWeb, but DOM and node:stream/web types are not structurally identical in this TS config.
-  return Readable.fromWeb(body as Parameters<typeof Readable.fromWeb>[0]);
+  return Readable.fromWeb(body as any);
 }
 
 function isAbortError(error: unknown): boolean {

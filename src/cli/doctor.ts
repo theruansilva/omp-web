@@ -1,14 +1,13 @@
-import { spawnSync } from "node:child_process";
 import { userInfo } from "node:os";
 import { printOmpWebVersionReport } from "../ompWebVersionReport.js";
 import type { Check, ServiceBackend, ServiceShell } from "./types.js";
 
 export function capture(command: string, args: string[]): { status: number; stdout: string; stderr: string } {
-  const result = spawnSync(command, args, { encoding: "utf8" });
+  const proc = Bun.spawnSync([command, ...args]);
   return {
-    status: result.status === null ? 1 : result.status,
-    stdout: result.stdout,
-    stderr: result.stderr,
+    status: proc.exitCode,
+    stdout: proc.stdout.toString(),
+    stderr: proc.stderr.toString(),
   };
 }
 

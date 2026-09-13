@@ -61,7 +61,7 @@ describe("isCliEntrypoint", () => {
       const symlink = join(dir, "bin", "omp-web");
       mkdirSync(join(dir, "dist"));
       mkdirSync(join(dir, "bin"));
-      writeFileSync(target, "#!/usr/bin/env node\n", { mode: 0o755 });
+      writeFileSync(target, "#!/usr/bin/env bun\n", { mode: 0o755 });
       symlinkSync(target, symlink);
 
       expect(isCliEntrypoint(symlink, target)).toBe(true);

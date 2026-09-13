@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+#!/usr/bin/env bun
 import { effectiveOmpWebConfig, maxUploadBytes } from "../config.js";
 import { buildApp } from "./app.js";
 

@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+#!/usr/bin/env bun
 import { mkdir, rm } from "node:fs/promises";
 import { dirname } from "node:path";
 import Fastify from "fastify";

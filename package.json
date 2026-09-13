@@ -83,17 +83,17 @@
     "@oh-my-pi/pi-ai": "^18.1.11",
     "@oh-my-pi/pi-coding-agent": "^18.1.11",
     "@oh-my-pi/pi-utils": "^18.1.11",
-    "@types/node": "^24.10.1",
     "@types/web-push": "^3.6.4",
     "@types/ws": "^8.18.1",
+    "bun-types": "^1.4.2",
     "eslint": "^10.3.0",
     "globals": "^17.6.0",
     "knip": "^6.16.1",
+    "node-pty": "^1.1.0",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.59.2",
     "vite": "^7.2.4",
-    "vitest": "^4.1.5",
-    "node-pty": "^1.1.0"
+    "vitest": "^4.1.5"
   },
   "publishConfig": {
     "access": "public"

@@ -23,12 +23,16 @@
       "DOM.Iterable"
     ],
     "types": [
-      "node"
+      "bun-types"
     ],
     "baseUrl": ".",
     "paths": {
-      "@ProgmRuanSilva/omp-web/plugin-api": ["./src/plugin-api.ts"],
-      "@ProgmRuanSilva/omp-web/plugin-api/unstable": ["./src/plugin-api/unstable.ts"]
+      "@ProgmRuanSilva/omp-web/plugin-api": [
+        "./src/plugin-api.ts"
+      ],
+      "@ProgmRuanSilva/omp-web/plugin-api/unstable": [
+        "./src/plugin-api/unstable.ts"
+      ]
     }
   },
   "include": [

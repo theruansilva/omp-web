@@ -3,7 +3,7 @@ import { RemoteMachineClient } from "./machineClient.js";
 
 describe("RemoteMachineClient", () => {
   it("forwards raw binary request bodies with the provided content type", async () => {
-    const fetchImpl = vi.fn<typeof fetch>(() => Promise.resolve(new Response("ok", { status: 200 })));
+    const fetchImpl = vi.fn((..._args: unknown[]) => Promise.resolve(new Response("ok", { status: 200 })));
     const client = new RemoteMachineClient({ baseUrl: "https://remote.example.test/" }, fetchImpl);
     const payload = Buffer.from([0x89, 0x50, 0x4e, 0x47]);
 
@@ -18,7 +18,7 @@ describe("RemoteMachineClient", () => {
   });
 
   it("serializes structured request bodies as JSON by default", async () => {
-    const fetchImpl = vi.fn<typeof fetch>(() => Promise.resolve(new Response("ok", { status: 200 })));
+    const fetchImpl = vi.fn((..._args: unknown[]) => Promise.resolve(new Response("ok", { status: 200 })));
     const client = new RemoteMachineClient({ baseUrl: "https://remote.example.test/base/", token: "secret" }, fetchImpl);
 
     await client.request("POST", "/api/sessions", { cwd: "/repo" });
@@ -37,7 +37,7 @@ function fetchInputUrl(input: RequestInfo | URL): string {
   return input.url;
 }
 
-function onlyFetchCall(fetchImpl: ReturnType<typeof vi.fn<typeof fetch>>): { input: RequestInfo | URL; init: RequestInit } {
+function onlyFetchCall(fetchImpl: any): { input: RequestInfo | URL; init: RequestInit } {
   expect(fetchImpl).toHaveBeenCalledTimes(1);
   const call = fetchImpl.mock.calls[0];
   if (call === undefined) throw new Error("Expected fetch call");

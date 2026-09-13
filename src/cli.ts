@@ -1,5 +1,4 @@
-#!/usr/bin/env node
-import { spawnSync } from "node:child_process";
+#!/usr/bin/env bun
 import { existsSync, readFileSync, realpathSync } from "node:fs";
 import { mkdir, rm, writeFile } from "node:fs/promises";
 import { homedir, userInfo } from "node:os";
@@ -163,18 +162,19 @@ function manualRunAdvice(): string {
 }
 
 function run(command: string, args: string[], options: { check?: boolean } = {}): number {
-  const result = spawnSync(command, args, { stdio: "inherit" });
-  const status = result.status ?? 1;
+  const proc = Bun.spawnSync([command, ...args], { stdout: "inherit", stderr: "inherit", stdin: "inherit" });
+  const status = proc.exitCode;
   if (options.check === true && status !== 0) process.exit(status);
   return status;
 }
 
-
 function capture(command: string, args: string[]): { status: number; stdout: string; stderr: string } {
-  const result = spawnSync(command, args, { encoding: "utf8" });
-  const errorMessage = result.error instanceof Error ? result.error.message : "";
-  const stderr = typeof result.stderr === "string" ? result.stderr : "";
-  return { status: result.status ?? 1, stdout: typeof result.stdout === "string" ? result.stdout : "", stderr: stderr === "" ? errorMessage : stderr };
+  const proc = Bun.spawnSync([command, ...args]);
+  return {
+    status: proc.exitCode,
+    stdout: proc.stdout.toString(),
+    stderr: proc.stderr.toString(),
+  };
 }
 
 function runQuiet(command: string, args: string[]): number {
@@ -810,8 +810,7 @@ function update(): void {
 
   console.log("Refreshing installed services...");
   // Re-exec the updated CLI so service units point at the newly installed package path.
-  const result = spawnSync("omp-web", ["install"], { stdio: "inherit" });
-  if (result.status !== 0) process.exit(result.status ?? 1);
+  run("omp-web", ["install"], { check: true });
 
   serviceAction("status");
 }
