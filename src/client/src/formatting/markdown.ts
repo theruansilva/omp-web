@@ -41,7 +41,7 @@ const katexExtension: MarkedExtension = {
       },
       renderer(token: Tokens.Generic): string {
         const kToken = token as KatexToken;
-        return katex.renderToString(kToken.text, { displayMode: kToken.displayMode, throwOnError: false });
+        return katex.renderToString(kToken.text, { displayMode: kToken.displayMode, throwOnError: false, strict: false });
       },
     },
     {
@@ -64,7 +64,7 @@ const katexExtension: MarkedExtension = {
       },
       renderer(token: Tokens.Generic): string {
         const kToken = token as KatexToken;
-        return `${katex.renderToString(kToken.text, { displayMode: kToken.displayMode, throwOnError: false })}\n`;
+        return `${katex.renderToString(kToken.text, { displayMode: kToken.displayMode, throwOnError: false, strict: false })}\n`;
       },
     },
   ],
@@ -73,7 +73,7 @@ const katexExtension: MarkedExtension = {
 marked.use(katexExtension);
 
 const renderer = new marked.Renderer();
-renderer.html = ({ text }) => escapeHtml(text);
+renderer.html = ({ text }) => text;
 
 renderer.code = ({ text, lang }: { text: string; lang?: string }): string => {
   const language = (lang ?? "").trim().toLowerCase();
@@ -143,7 +143,8 @@ const markdownHtmlCache = new Map<string, string>();
 export function toSafeMarkdownHtml(text: string): string {
   const cached = markdownHtmlCache.get(text);
   if (cached !== undefined) return cached;
-  const normalized = normalizeLatexDelimiters(text);
+  const withUiTags = expandCustomUiTags(text);
+  const normalized = normalizeLatexDelimiters(withUiTags);
   const html = marked.parse(normalized, { async: false, breaks: true, gfm: true, renderer }) as string;
   const safeHtml = sanitizeHtml(html);
   markdownHtmlCache.set(text, safeHtml);
@@ -152,6 +153,44 @@ export function toSafeMarkdownHtml(text: string): string {
     if (oldest !== undefined) markdownHtmlCache.delete(oldest);
   }
   return safeHtml;
+}
+
+function expandCustomUiTags(text: string): string {
+  const parts = text.split(/(```[\s\S]*?```|`[^`\n]*`)/g);
+  for (let i = 0; i < parts.length; i += 2) {
+    const part = parts[i];
+    if (part !== undefined && part.length > 0) {
+      parts[i] = part
+        .replace(/<card(?:\s+title="([^"]*)")?(?:\s+badge="([^"]*)")?(?:\s+color="([^"]*)")?(?:\s+subtitle="([^"]*)")?\s*>([\s\S]*?)<\/card>/gi, (_, title, badge, color, subtitle, content) => {
+          const colorClass = color ? ` ui-badge-${color}` : " ui-badge-blue";
+          const badgeHtml = badge ? `<span class="ui-badge${colorClass}">${badge}</span>` : "";
+          const subtitleHtml = subtitle ? `<p class="ui-card-subtitle">${subtitle}</p>` : "";
+          const headerHtml = (title || badgeHtml) ? `<div class="ui-card-header">${title ? `<h3 class="ui-card-title">${title}</h3>` : ""}${badgeHtml}</div>` : "";
+          return `<div class="ui-card">\n\n${headerHtml}\n\n${subtitleHtml}\n\n${content.trim()}\n\n</div>`;
+        })
+        .replace(/<badge(?:\s+color="([^"]*)")?\s*>([\s\S]*?)<\/badge>/gi, (_, color, content) => {
+          const colorClass = color ? ` ui-badge-${color}` : " ui-badge-blue";
+          return `<span class="ui-badge${colorClass}">${content.trim()}</span>`;
+        })
+        .replace(/<kpi-grid\s*>([\s\S]*?)<\/kpi-grid>/gi, (_, content) => {
+          return `<div class="ui-kpi-grid">\n\n${content.trim()}\n\n</div>`;
+        })
+        .replace(/<kpi(?:\s+label="([^"]*)")?(?:\s+value="([^"]*)")?(?:\s+color="([^"]*)")?(?:\s+sub="([^"]*)")?\s*(?:\/>|>([\s\S]*?)<\/kpi>)/gi, (_, label, value, color, sub, inner) => {
+          const val = value ?? inner ?? "";
+          const colorStyle = color ? ` style="color: ${color};"` : "";
+          const subHtml = sub ? `<small class="ui-kpi-sub">${sub}</small>` : "";
+          return `<div class="ui-kpi"><small class="ui-kpi-label">${label ?? ""}</small><strong class="ui-kpi-value"${colorStyle}>${val.trim()}</strong>${subHtml}</div>`;
+        })
+        .replace(/<qa-card\s*>([\s\S]*?)<\/qa-card>/gi, (_, content) => {
+          return `<div class="ui-qa-card">\n\n${content.trim()}\n\n</div>`;
+        })
+        .replace(/<callout(?:\s+type="([^"]*)")?\s*>([\s\S]*?)<\/callout>/gi, (_, type, content) => {
+          const t = type ?? "info";
+          return `<div class="ui-callout ui-callout-${t}">\n\n${content.trim()}\n\n</div>`;
+        });
+    }
+  }
+  return parts.join("");
 }
 
 function normalizeLatexDelimiters(text: string): string {

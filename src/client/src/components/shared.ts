@@ -427,6 +427,165 @@ export const formattedTextStyles = css`
   img, video { max-width: 100%; height: auto; border-radius: 8px; margin: 6px 0; }
   .markdown-video { max-width: 100%; max-height: 70vh; display: block; margin: 8px 0; border-radius: 8px; background: #000; }
   .katex-display { overflow-x: auto; overflow-y: hidden; padding: 4px 0; margin: 8px 0; }
+
+  /* Generative UI Components */
+  .ui-card {
+    border: 1px solid var(--pi-border);
+    border-radius: 12px;
+    background: var(--pi-surface);
+    padding: 16px 18px;
+    margin: 14px 0;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  }
+  .ui-card > :first-child { margin-top: 0; }
+  .ui-card > :last-child { margin-bottom: 0; }
+  .ui-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 8px;
+  }
+  .ui-card-title {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--pi-text);
+  }
+  .ui-card-subtitle {
+    margin: 0 0 12px;
+    font-size: 13px;
+    color: var(--pi-muted);
+  }
+
+  /* Badges / Pills */
+  .ui-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 10px;
+    border-radius: 9999px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    background: rgba(88, 166, 255, 0.15);
+    color: var(--pi-accent, #58a6ff);
+    border: 1px solid rgba(88, 166, 255, 0.25);
+  }
+  .ui-badge-orange {
+    background: rgba(210, 153, 34, 0.15);
+    color: #f0883e;
+    border-color: rgba(210, 153, 34, 0.3);
+  }
+  .ui-badge-blue {
+    background: rgba(88, 166, 255, 0.15);
+    color: #58a6ff;
+    border-color: rgba(88, 166, 255, 0.3);
+  }
+  .ui-badge-green {
+    background: rgba(63, 185, 80, 0.15);
+    color: #3fb950;
+    border-color: rgba(63, 185, 80, 0.3);
+  }
+  .ui-badge-purple {
+    background: rgba(188, 140, 255, 0.15);
+    color: #bc8cff;
+    border-color: rgba(188, 140, 255, 0.3);
+  }
+  .ui-badge-red {
+    background: rgba(248, 81, 73, 0.15);
+    color: #f85149;
+    border-color: rgba(248, 81, 73, 0.3);
+  }
+
+  /* KPI Grid */
+  .ui-kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+    gap: 12px;
+    margin: 14px 0;
+    padding: 12px 14px;
+    border-radius: 8px;
+    background: var(--pi-bg);
+    border: 1px solid var(--pi-border);
+  }
+  .ui-kpi {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .ui-kpi-label {
+    font-size: 11px;
+    color: var(--pi-muted);
+    font-weight: 500;
+    text-transform: capitalize;
+  }
+  .ui-kpi-value {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--pi-text);
+    letter-spacing: -0.01em;
+  }
+  .ui-kpi-sub {
+    font-size: 11px;
+    color: var(--pi-muted);
+  }
+
+  /* Tables inside UI card */
+  .ui-card table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 12px 0;
+    border: 1px solid var(--pi-border);
+    border-radius: 6px;
+    overflow: hidden;
+  }
+  .ui-card th {
+    background: var(--pi-bg);
+    color: var(--pi-muted);
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--pi-border);
+    text-align: left;
+  }
+  .ui-card td {
+    padding: 8px 12px;
+    font-size: 13px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    color: var(--pi-text);
+  }
+  .ui-card tr:last-child td {
+    border-bottom: none;
+  }
+  .ui-card tr:hover td {
+    background: rgba(255, 255, 255, 0.02);
+  }
+
+  /* QA Card / Premissas */
+  .ui-qa-card {
+    border: 1px solid var(--pi-border);
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.02);
+    padding: 14px 16px;
+    margin: 12px 0;
+  }
+  .ui-qa-card p { margin: 6px 0; font-size: 13.5px; }
+  .ui-qa-card strong { color: var(--pi-text); font-weight: 600; }
+
+  /* Callouts */
+  .ui-callout {
+    border-left: 3px solid var(--pi-accent);
+    background: var(--pi-surface);
+    border-radius: 4px 8px 8px 4px;
+    padding: 10px 14px;
+    margin: 10px 0;
+  }
+  .ui-callout-warning { border-left-color: #f0883e; }
+  .ui-callout-success { border-left-color: #3fb950; }
+  .ui-callout-danger { border-left-color: #f85149; }
 `;
 
 export const statusBarStyles = css`

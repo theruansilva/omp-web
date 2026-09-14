@@ -109,4 +109,56 @@ describe("toSafeMarkdownHtml", () => {
     const blockMath = toSafeMarkdownHtml("$$\\int x dx$$");
     expect(blockMath).toContain("katex-display");
   });
+
+  it("renders generative UI card and KPI components", () => {
+    const markdown = `
+<card title="Mês 1 — Validação" badge="Fase: Tráfego" color="orange" subtitle="1 público · 1 criativo">
+
+<kpi-grid>
+  <kpi label="Por dia" value="R$ 15" />
+  <kpi label="Total do mês" value="R$ 450" color="#58a6ff" sub="acumulado" />
+</kpi-grid>
+
+| Semana | Foco | Total |
+|---|---|---|
+| Sem 1 | Subir anúncio | R$ 105 |
+
+</card>
+`;
+    const html = toSafeMarkdownHtml(markdown);
+
+    expect(html).toContain("ui-card");
+    expect(html).toContain("ui-card-title");
+    expect(html).toContain("Mês 1 — Validação");
+    expect(html).toContain("ui-badge ui-badge-orange");
+    expect(html).toContain("Fase: Tráfego");
+    expect(html).toContain("ui-card-subtitle");
+    expect(html).toContain("ui-kpi-grid");
+    expect(html).toContain("ui-kpi");
+    expect(html).toContain("Por dia");
+    expect(html).toContain("R$ 15");
+    expect(html).toContain("Total do mês");
+    expect(html).toContain("R$ 450");
+    expect(html).toContain("acumulado");
+    expect(html).toContain("<table>");
+  });
+
+  it("renders generative UI QA cards and callouts", () => {
+    const markdown = `
+<qa-card>
+**Qual o orçamento?**
+R$ 500 – R$ 1.000
+</qa-card>
+
+<callout type="warning">
+Importante: monitorar CTR na primeira semana.
+</callout>
+`;
+    const html = toSafeMarkdownHtml(markdown);
+
+    expect(html).toContain("ui-qa-card");
+    expect(html).toContain("Qual o orçamento?");
+    expect(html).toContain("ui-callout ui-callout-warning");
+    expect(html).toContain("Importante: monitorar CTR");
+  });
 });
