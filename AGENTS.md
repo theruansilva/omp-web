@@ -16,6 +16,10 @@ The user manages the application lifecycle using the `omp-web` CLI:
 - Core features should add keys to these config files, not create one project file per feature.
 - Plugins may own separate project config files, such as `.omp-web/tasks.json`.
 
+## Plugin & Extension Conventions
+
+- In `package.json` for extensions or plugins, the manifest key MUST be `"omp"` (never legacy `"pi"`).
+
 ## Commits
 
 - Make atomic commits using the gitmoji convention.

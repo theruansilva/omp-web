@@ -39,7 +39,7 @@ export class AppNavigationPanel extends LitElement {
   @property({ type: Boolean }) projectsCollapsed = false;
   @property({ type: Boolean }) workspacesCollapsed = false;
   @property({ type: Boolean }) sessionsCollapsed = false;
-  @property({ type: Boolean }) hideWorkspaces = false;
+  @property({ type: Boolean, reflect: true, attribute: "hide-workspaces" }) hideWorkspaces = false;
   @property({ type: Number }) startingSessionCount = 0;
   @property({ type: Boolean }) canStartSession = false;
   @property({ type: Boolean }) canDeleteArchivedSessions = false;
@@ -220,6 +220,7 @@ export class AppNavigationPanel extends LitElement {
     :host([compact]) header { display: none; }
     .header-actions { flex: 0 0 auto; display: flex; align-items: center; gap: 8px; }
     machine-list, project-list, workspace-list { flex: 0 0 auto; max-height: 26%; min-height: 0; overflow: hidden; border-bottom: 1px solid var(--pi-border-muted); }
+    :host([hide-workspaces]) project-list { max-height: 50%; }
     session-list { flex: 1 1 auto; min-height: 0; overflow: hidden; }
     machine-list[collapsed],
     project-list[collapsed],
