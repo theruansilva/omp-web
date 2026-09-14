@@ -6,12 +6,13 @@ import { groupChatMessages, summarizeChatGroup, type ChatGroup } from "../chatGr
 import { capturePrependScrollAnchor, PREPEND_RESTORE_SETTLE_FRAMES, restorePrependScrollAnchor, type PrependScrollAnchor } from "../chatScrollAnchoring";
 import { shouldRequestEarlierMessages } from "../chatHistoryLoading";
 import { ChatScrollController, distanceFromScrollBottom, findFirstVisibleArticle, isNearScrollBottom, type ChatAnchorScrollPosition, type ChatScrollRestoreResult } from "../chatScrollPosition";
-import type { QueuedSessionMessage, SessionActivity, SessionStatus } from "../api";
+import type { AskDialogQuestion, AskDialogResult, QueuedSessionMessage, SessionActivity, SessionStatus } from "../api";
 import type { ChatLine, ChatPart } from "./shared";
 import { chatStyles } from "./shared";
 import "./ConversationMeter";
 import "./FormattedText";
 import "./ToolExecutionView";
+import "./AskDialog";
 
 import {
   CHAT_PREFERENCES_CHANGED_EVENT,
@@ -72,6 +73,9 @@ export class ChatView extends LitElement {
   @property({ type: Boolean }) isCompacting = false;
   @property({ type: Number }) pendingMessageCount = 0;
   @property({ attribute: false }) clientQueuedMessages: QueuedSessionMessage[] = [];
+  @property({ attribute: false }) pendingAsk?: { requestId: string; questions: AskDialogQuestion[] };
+  @property({ attribute: false }) onSubmitAsk?: (result: AskDialogResult) => void;
+  @property({ attribute: false }) onCancelAsk?: () => void;
   @property({ attribute: false }) status?: SessionStatus;
   @property({ attribute: false }) activity?: SessionActivity;
   @property({ attribute: false }) onLoadMore?: () => void;
@@ -184,6 +188,7 @@ export class ChatView extends LitElement {
     if (changed.has("hasMore") && !this.hasMore) this.loadMoreRequested = false;
     if (changed.has("sessionId")) this.restoreScrollPosition();
     if (!changed.has("sessionId") && changed.has("messages") && this.pinnedToBottom) this.scrollToBottom();
+    if (changed.has("pendingAsk") && this.pendingAsk !== undefined) this.scrollToBottom();
     if (changed.has("messages") || changed.has("messageStart") || changed.has("messageTotal") || changed.has("hasMore") || changed.has("loadingMore")) this.scheduleConversationRailUpdate();
     if (changed.has("messages") || changed.has("messageStart") || changed.has("hasMore") || changed.has("loadingMore")) this.continuePendingScrollRestore();
     if (changed.has("messages") || changed.has("hasMore") || changed.has("loadingMore")) this.requestLoadMoreIfNeeded();
@@ -212,6 +217,7 @@ export class ChatView extends LitElement {
     )}
           ${this.renderQueuedMessages()}
           ${this.renderSessionActivity()}
+          ${this.renderPendingAsk()}
         </div>
         ${this.renderActivityDock()}
       </div>
@@ -560,14 +566,19 @@ export class ChatView extends LitElement {
     `;
     if (part.type === "image") return html`<img class="part chat-image" src=${`data:${part.mimeType};base64,${part.data}`} alt="attached image" loading="lazy" />`;
     if (part.type === "toolCall") {
+      if (part.toolName === "ask") return null;
       if (!this.chatPreferences.showToolExecutions) return null;
       return html`<div class="part tool-line">▶ ${part.toolName}<span class="summary">${part.summary}</span></div>`;
     }
     if (part.type === "toolExecution") {
+      if (part.toolName === "ask") return null;
       if (!this.chatPreferences.showToolExecutions) return null;
       return html`<tool-execution-view class="part" .execution=${part}></tool-execution-view>`;
     }
     if (part.type === "toolResult") {
+      if (part.toolName === "ask") {
+        return this.renderAskResult(part);
+      }
       if (!this.chatPreferences.showToolExecutions) return null;
       return html`
         <details class="part" ?open=${part.isError}>
@@ -577,6 +588,50 @@ export class ChatView extends LitElement {
       `;
     }
     return null;
+  }
+
+
+  private renderPendingAsk() {
+    if (!this.pendingAsk) return null;
+    return html`
+      <div class="pending-ask-wrap" style="margin: 16px 0;">
+        <ask-dialog
+          .inline=${true}
+          .requestId=${this.pendingAsk.requestId}
+          .questions=${this.pendingAsk.questions}
+          .onSubmit=${this.onSubmitAsk}
+          .onChat=${() => { this.onSubmitAsk?.({ kind: "chat" }); }}
+          .onCancel=${this.onCancelAsk}
+        ></ask-dialog>
+      </div>
+    `;
+  }
+
+  private renderAskResult(part: { text: string; details?: unknown }) {
+    const formatted = parseAskAnswers(part.text, part.details);
+    if (formatted && formatted.length > 0) {
+      return html`
+        <div class="part ui-qa-card">
+          <div class="ui-qa-card-header" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
+            <span class="ui-badge ui-badge-green">✓ Respostas Registradas</span>
+          </div>
+          ${formatted.map((item) => html`
+            <div class="ui-qa-item" style="margin: 8px 0;">
+              <div class="ui-qa-question" style="font-size: 13px; color: var(--pi-muted); margin-bottom: 2px;">${item.question}</div>
+              <div class="ui-qa-answer" style="font-size: 14px; color: var(--pi-text); font-weight: 600;">${item.answer}</div>
+            </div>
+          `)}
+        </div>
+      `;
+    }
+    return html`
+      <div class="part ui-qa-card">
+        <div class="ui-qa-card-header" style="margin-bottom: 6px;">
+          <span class="ui-badge ui-badge-green">✓ Respostas Registradas</span>
+        </div>
+        <formatted-text .text=${part.text}></formatted-text>
+      </div>
+    `;
   }
 
   private onGroupToggle(key: string, event: Event, defaultOpen: boolean) {
@@ -897,4 +952,40 @@ export class ChatView extends LitElement {
   }
 
   static override styles = chatStyles;
+}
+
+interface AskAnswerItem {
+  question: string;
+  answer: string;
+}
+
+function parseAskAnswers(text: string, details?: unknown): AskAnswerItem[] | null {
+  if (details && typeof details === "object" && "results" in details && Array.isArray((details as { results: unknown[] }).results)) {
+    const results = (details as { results: Array<{ question?: string; id?: string; selectedOptions?: string[]; customInput?: string }> }).results;
+    return results.map((r) => {
+      const opts = (r.selectedOptions ?? []).join(", ");
+      const custom = r.customInput ? ` (${r.customInput})` : "";
+      return {
+        question: r.question || r.id || "Pergunta",
+        answer: (opts + custom).trim() || "(sem resposta)",
+      };
+    });
+  }
+
+  try {
+    const parsed = JSON.parse(text) as { results?: Array<{ question?: string; id?: string; selectedOptions?: string[]; customInput?: string }> };
+    if (parsed && typeof parsed === "object" && Array.isArray(parsed.results)) {
+      return parsed.results.map((r) => {
+        const opts = (r.selectedOptions ?? []).join(", ");
+        const custom = r.customInput ? ` (${r.customInput})` : "";
+        return {
+          question: r.question || r.id || "Pergunta",
+          answer: (opts + custom).trim() || "(sem resposta)",
+        };
+      });
+    }
+  } catch {
+    // Ignore JSON parse error
+  }
+  return null;
 }

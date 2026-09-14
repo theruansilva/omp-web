@@ -1,15 +1,16 @@
 import { LitElement, css, html } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
-import type { AskDialogQuestion, AskDialogSubmitResult } from "../api";
+import type { AskDialogQuestion, AskDialogResult } from "../api";
 import "./FormattedText";
 
 @customElement("ask-dialog")
 export class AskDialog extends LitElement {
   @property({ attribute: false }) requestId = "";
   @property({ attribute: false }) questions: AskDialogQuestion[] = [];
-  @property({ attribute: false }) onSubmit?: (result: AskDialogSubmitResult) => void;
+  @property({ attribute: false }) onSubmit?: (result: AskDialogResult) => void;
   @property({ attribute: false }) onChat?: () => void;
   @property({ attribute: false }) onCancel?: () => void;
+  @property({ type: Boolean, reflect: true }) inline = false;
 
   @state() private selections: Record<string, { selectedOptions: string[]; customInput: string }> = {};
   @state() private submitting = false;
@@ -108,6 +109,39 @@ export class AskDialog extends LitElement {
       ? (this.questions[0]?.header || "Clarification Needed")
       : `Clarification Needed (${this.questions.length} questions)`;
 
+    if (this.inline) {
+      return html`
+        <section class="inline-card">
+          <header>
+            <div class="title-wrap">
+              <span class="ask-badge">Pergunta</span>
+              <strong>${title}</strong>
+            </div>
+            <button class="close-btn" @click=${() => this.onCancel?.()} aria-label="Dismiss" title="Dismiss">×</button>
+          </header>
+
+          <div class="body">
+            ${this.questions.map((q) => this.renderQuestion(q))}
+          </div>
+
+          <footer>
+            <div class="footer-left">
+              <span class="shortcut-hint">Selecione uma opção</span>
+            </div>
+            <div class="footer-right">
+              <button class="btn secondary" @click=${() => this.onCancel?.()}>Cancelar</button>
+              <button class="btn secondary" ?disabled=${this.submitting} @click=${() => { this.handleChat(); }}>
+                Responder no chat
+              </button>
+              <button class="btn primary" ?disabled=${this.submitting} @click=${() => { this.handleSubmit(); }}>
+                ${this.submitting ? "Enviando…" : "Confirmar seleção"}
+              </button>
+            </div>
+          </footer>
+        </section>
+      `;
+    }
+
     return html`
       <div class="backdrop" @mousedown=${() => this.onCancel?.()}>
         <section @mousedown=${(event: MouseEvent) => { event.stopPropagation(); }}>
@@ -200,6 +234,37 @@ export class AskDialog extends LitElement {
   }
 
   static override styles = css`
+    :host([inline]) {
+      position: static;
+      display: block;
+      width: 100%;
+      margin: 16px 0;
+      z-index: 1;
+      font: 14px system-ui, sans-serif;
+    }
+    :host([inline]) .inline-card {
+      width: 100%;
+      max-height: none;
+      border: 1px solid var(--pi-border);
+      border-radius: 12px;
+      background: var(--pi-surface);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+      box-sizing: border-box;
+      overflow: hidden;
+    }
+    .ask-badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 8px;
+      border-radius: 9999px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      background: rgba(88, 166, 255, 0.15);
+      color: var(--pi-accent, #58a6ff);
+      border: 1px solid rgba(88, 166, 255, 0.3);
+    }
     :host {
       position: fixed;
       inset: 0;
