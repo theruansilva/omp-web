@@ -74,11 +74,12 @@ export class ChatView extends LitElement {
   @property({ type: Number }) pendingMessageCount = 0;
   @property({ attribute: false }) clientQueuedMessages: QueuedSessionMessage[] = [];
   @property({ attribute: false }) pendingAsk?: { requestId: string; questions: AskDialogQuestion[] };
-  @property({ attribute: false }) onSubmitAsk?: (result: AskDialogResult) => void;
-  @property({ attribute: false }) onCancelAsk?: () => void;
+  @property({ attribute: false }) onSubmitAsk?: (result: AskDialogResult, requestId?: string) => void;
+  @property({ attribute: false }) onCancelAsk?: (requestId?: string) => void;
   @property({ attribute: false }) status?: SessionStatus;
   @property({ attribute: false }) activity?: SessionActivity;
   @property({ attribute: false }) onLoadMore?: () => void;
+  @property({ attribute: false }) onFocusPrompt?: () => void;
   @query(".chat") private chat?: HTMLDivElement;
   @state() private pinnedToBottom = true;
   @state() private expandedMetaKey: string | undefined;
@@ -199,7 +200,7 @@ export class ChatView extends LitElement {
     return html`
       <div class="chat-wrap">
         ${this.renderConversationRail()}
-        <div class="chat" tabindex="-1" role="region" aria-label="Conversation" @scroll=${() => { this.onScroll(); }} @wheel=${(event: WheelEvent) => { this.onWheel(event); }} @touchstart=${(event: TouchEvent) => { this.onTouchStart(event); }} @touchmove=${(event: TouchEvent) => { this.onTouchMove(event); }}>
+        <div class="chat" tabindex="-1" role="region" aria-label="Conversation" @scroll=${() => { this.onScroll(); }} @wheel=${(event: WheelEvent) => { this.onWheel(event); }} @touchstart=${(event: TouchEvent) => { this.onTouchStart(event); }} @touchmove=${(event: TouchEvent) => { this.onTouchMove(event); }} @keydown=${(event: KeyboardEvent) => { this.onChatKeyDown(event); }}>
           ${this.renderHistoryBoundary()}
           ${repeat(
       groups,
@@ -600,9 +601,9 @@ export class ChatView extends LitElement {
           .inline=${true}
           .requestId=${this.pendingAsk.requestId}
           .questions=${this.pendingAsk.questions}
-          .onSubmit=${this.onSubmitAsk}
-          .onChat=${() => { this.onSubmitAsk?.({ kind: "chat" }); }}
-          .onCancel=${this.onCancelAsk}
+          .onSubmit=${(result: AskDialogResult, reqId?: string) => { this.onSubmitAsk?.(result, reqId || this.pendingAsk?.requestId); }}
+          .onChat=${(reqId?: string) => { this.onSubmitAsk?.({ kind: "chat" }, reqId || this.pendingAsk?.requestId); }}
+          .onCancel=${(reqId?: string) => { this.onCancelAsk?.(reqId || this.pendingAsk?.requestId); }}
         ></ask-dialog>
       </div>
     `;
@@ -760,6 +761,48 @@ export class ChatView extends LitElement {
   focusConversation(): void {
     const chat = this.renderRoot.querySelector<HTMLElement>(".chat");
     chat?.focus({ preventScroll: true });
+  }
+
+  private onChatKeyDown(event: KeyboardEvent): void {
+    if (event.defaultPrevented) return;
+
+    if (event.key === "ArrowUp") {
+      event.preventDefault();
+      this.chat?.scrollBy({ top: -80, behavior: "smooth" });
+      return;
+    }
+    if (event.key === "ArrowDown") {
+      event.preventDefault();
+      this.chat?.scrollBy({ top: 80, behavior: "smooth" });
+      return;
+    }
+    if (event.key === "PageUp") {
+      event.preventDefault();
+      const delta = (this.chat?.clientHeight ?? 400) * 0.8;
+      this.chat?.scrollBy({ top: -delta, behavior: "smooth" });
+      return;
+    }
+    if (event.key === "PageDown") {
+      event.preventDefault();
+      const delta = (this.chat?.clientHeight ?? 400) * 0.8;
+      this.chat?.scrollBy({ top: delta, behavior: "smooth" });
+      return;
+    }
+    if (event.key === "Home") {
+      event.preventDefault();
+      this.chat?.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
+    if (event.key === "End") {
+      event.preventDefault();
+      if (this.chat) this.chat.scrollTop = this.chat.scrollHeight;
+      return;
+    }
+    if (event.key === "Enter" || event.key === "Tab" || event.key === "Escape" || event.key === "i") {
+      event.preventDefault();
+      this.onFocusPrompt?.();
+      return;
+    }
   }
 
 

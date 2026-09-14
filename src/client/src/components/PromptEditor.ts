@@ -14,6 +14,7 @@ import { detectPromptCompletionTrigger, fileCompletionInsertText, type PromptCom
 import { clearDraft, loadDraft, saveDraft } from "../promptDraftStorage";
 import { loadAttachmentDelivery, saveAttachmentDelivery } from "../attachmentPreferences";
 import { createMobilePromptEnterMedia, readPromptEnterPreference, shouldSendPromptOnEnterShortcut, shouldUsePromptEnterShiftShortcut } from "../promptEnterBehavior";
+import { handlePromptBlurAction, handlePromptEscapeAction, handlePromptShiftTabAction } from "../promptEscapeBehavior";
 import { promptEditorStyles, type CompletionItem } from "./shared";
 import { renderAttachIcon, renderSendIcon, renderQueueIcon, renderSteerIcon, renderStopIcon, renderThinkingGauge } from "./promptEditorIcons";
 import { thinkingGauge, thinkingLevelLabel } from "../../../shared/thinkingLevels";
@@ -48,6 +49,7 @@ export class PromptEditor extends LitElement {
   @property({ attribute: false }) onSelectThinking?: () => void;
   @property({ attribute: false }) onOpenPlanReview?: () => void;
   @property({ attribute: false }) availableThinkingLevels: readonly string[] = [];
+  @property({ attribute: false }) onEscape?: () => void;
   @query(".markdown-editor") private editorHost?: HTMLDivElement;
   @query(".attachment-input") private attachmentInput?: HTMLInputElement;
   // `draft` is the live document text but is intentionally NOT reactive: it
@@ -458,7 +460,10 @@ export class PromptEditor extends LitElement {
           EditorView.contentAttributes.of((view) => inputAssistanceContentAttributes(view.state.sliceDoc(0, view.state.selection.main.head))),
           EditorView.domEventHandlers({
             keyup: (event) => this.handleEditorKeyUp(event),
-            blur: () => this.resetEditorModifierState(),
+            blur: (event: FocusEvent) => {
+              this.resetEditorModifierState();
+              handlePromptBlurAction(event.relatedTarget, this.onEscape);
+            },
           }),
           placeholder("Message Oh My Pi... Use / for commands, @ for files, ↑/↓ for history"),
           this.editableCompartment.of(EditorView.editable.of(!this.disabled)),
@@ -470,9 +475,9 @@ export class PromptEditor extends LitElement {
             { any: (view, event) => this.handleEditorKeyDown(event, view) },
             { key: "ArrowDown", run: () => this.moveCompletion(1) },
             { key: "ArrowUp", run: () => this.moveCompletion(-1) },
-            { key: "Escape", run: () => this.closeCompletions() },
+            { key: "Escape", run: () => this.handleEditorEscape() },
             { key: "Tab", run: (view) => this.handleEditorTab(view) },
-            { key: "Shift-Tab", run: (view) => indentWithTab.shift?.(view) ?? false },
+            { key: "Shift-Tab", run: (view) => this.handleEditorShiftTab(view) },
             { key: "Backspace", run: (view) => deleteMarkupBackward(view) },
             ...historyKeymap,
             ...defaultKeymap,
@@ -575,6 +580,21 @@ export class PromptEditor extends LitElement {
     if (!this.completions.length) return false;
     this.completions = [];
     return true;
+  }
+
+  private handleEditorEscape(): boolean {
+    return handlePromptEscapeAction(this.completions.length > 0, {
+      closeCompletions: () => { this.closeCompletions(); },
+      blur: () => this.editor?.contentDOM.blur(),
+      onEscape: this.onEscape,
+    });
+  }
+
+  private handleEditorShiftTab(view: EditorView): boolean {
+    return handlePromptShiftTabAction(
+      Boolean(indentWithTab.shift?.(view)),
+      () => this.handleEditorEscape(),
+    );
   }
 
   private handleEditorKeyDown(event: KeyboardEvent, view: EditorView): boolean {
