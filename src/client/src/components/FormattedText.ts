@@ -4,6 +4,7 @@ import { unsafeHTML } from "lit/directives/unsafe-html.js";
 import katexStyles from "katex/dist/katex.min.css?inline";
 import mermaid from "mermaid";
 import { toSafeMarkdownHtml } from "../formatting/markdown";
+import { openDiagramLightbox } from "./diagramLightbox";
 import { formattedTextStyles } from "./shared";
 
 @customElement("formatted-text")
@@ -85,6 +86,24 @@ export class FormattedText extends LitElement {
 
   private readonly onFormattedClick = (event: MouseEvent): void => {
     if (!(event.target instanceof Element)) return;
+    const zoomButton = event.target.closest(".diagram-zoom-button");
+    if (zoomButton instanceof HTMLButtonElement) {
+      const wrapper = zoomButton.closest(".mermaid-diagram-wrapper");
+      if (wrapper instanceof HTMLElement) {
+        const svg = wrapper.querySelector(".mermaid-svg-container svg");
+        if (svg instanceof SVGElement) {
+          openDiagramLightbox(svg.outerHTML, "Mermaid Diagram");
+        }
+      }
+      return;
+    }
+
+    const svgElement = event.target.closest(".mermaid-svg-container svg");
+    if (svgElement instanceof SVGElement) {
+      openDiagramLightbox(svgElement.outerHTML, "Mermaid Diagram");
+      return;
+    }
+
     const toggleButton = event.target.closest(".diagram-toggle-button");
     if (toggleButton instanceof HTMLButtonElement) {
       const wrapper = toggleButton.closest(".mermaid-diagram-wrapper");

@@ -25,6 +25,7 @@ describe("toSafeMarkdownHtml", () => {
     expect(html).toContain("ascii-diagram");
     expect(html).toContain("diagram-badge");
     expect(html).toContain("Mermaid Diagram");
+    expect(html).toContain("diagram-zoom-button");
     expect(html).toContain("diagram-toggle-button");
     expect(html).toContain("Client");
     expect(html).toContain("Server");

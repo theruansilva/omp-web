@@ -86,6 +86,7 @@ renderer.code = ({ text, lang }: { text: string; lang?: string }): string => {
         `<div class="diagram-header">` +
         `<span class="diagram-badge">Mermaid Diagram</span>` +
         `<div class="diagram-actions">` +
+        `<button type="button" class="diagram-zoom-button" title="Zoom & Pan diagram" aria-label="Zoom diagram"><span aria-hidden="true">⛶</span></button>` +
         `<button type="button" class="diagram-toggle-button" aria-label="Toggle diagram source">Source</button>` +
         `<button type="button" class="code-copy-button" title="Copy diagram" aria-label="Copy diagram"><span aria-hidden="true">⧉</span></button>` +
         `</div>` +

@@ -404,12 +404,13 @@ export const formattedTextStyles = css`
   .mermaid-diagram-container { width: 100%; overflow-x: auto; }
   .mermaid-svg-container { display: flex; justify-content: center; align-items: center; padding: 16px; min-height: 40px; }
   .mermaid-svg-container:empty { display: none; }
-  .mermaid-svg-container svg { max-width: 100%; height: auto; display: block; }
+  .mermaid-svg-container svg { max-width: 100%; height: auto; display: block; cursor: zoom-in; transition: opacity 0.15s; }
+  .mermaid-svg-container svg:hover { opacity: 0.92; }
   .diagram-header { display: flex; align-items: center; justify-content: space-between; padding: 6px 12px; border-bottom: 1px solid var(--pi-border); background: var(--pi-surface); font-size: 11px; color: var(--pi-muted); }
   .diagram-badge { font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--pi-accent); }
   .diagram-actions { display: flex; align-items: center; gap: 6px; }
-  .diagram-toggle-button { border: 1px solid var(--pi-border); border-radius: 4px; background: var(--pi-bg); color: var(--pi-muted); padding: 2px 8px; font-size: 11px; cursor: pointer; font-family: inherit; }
-  .diagram-toggle-button:hover { color: var(--pi-text); border-color: var(--pi-accent); }
+  .diagram-toggle-button, .diagram-zoom-button { border: 1px solid var(--pi-border); border-radius: 4px; background: var(--pi-bg); color: var(--pi-muted); padding: 2px 8px; font-size: 11px; cursor: pointer; font-family: inherit; display: inline-flex; align-items: center; justify-content: center; }
+  .diagram-toggle-button:hover, .diagram-zoom-button:hover { color: var(--pi-text); border-color: var(--pi-accent); }
   .mermaid-diagram-wrapper .code-copy-button { position: static; }
   .code-copy-button { position: absolute; top: 6px; right: 6px; z-index: 1; display: inline-grid; place-items: center; width: 24px; height: 24px; border: 1px solid var(--pi-border); border-radius: 6px; background: var(--pi-surface); color: var(--pi-muted); padding: 0; font: 14px system-ui, sans-serif; line-height: 1; cursor: pointer; }
   .code-copy-button:hover, .code-copy-button:focus { color: var(--pi-text); border-color: var(--pi-accent); }
