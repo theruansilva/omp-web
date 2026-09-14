@@ -614,13 +614,23 @@ export const formattedTextStyles = css`
     transition: background 0.15s, border-color 0.15s;
     user-select: none;
   }
-  .ui-option-item:hover {
-    border-color: var(--pi-accent, #58a6ff);
-    background: rgba(88, 166, 255, 0.04);
+  .ui-option-item:hover, .ui-option-item:focus-visible {
+    border-color: rgba(88, 166, 255, 0.5);
+    background: rgba(88, 166, 255, 0.05);
   }
   .ui-option-item.selected {
+    border-color: var(--pi-accent, #58a6ff) !important;
+    background: rgba(88, 166, 255, 0.14) !important;
+    box-shadow: 0 0 0 1px var(--pi-accent, #58a6ff), 0 2px 8px rgba(88, 166, 255, 0.15);
+  }
+  .ui-option-item.selected .ui-option-label {
+    color: var(--pi-text, #e6edf3);
+    font-weight: 700;
+  }
+  .ui-option-item.selected .ui-option-box {
+    background: var(--pi-accent, #58a6ff);
     border-color: var(--pi-accent, #58a6ff);
-    background: rgba(88, 166, 255, 0.08);
+    box-shadow: 0 0 6px rgba(88, 166, 255, 0.4);
   }
   .ui-option-checkbox {
     position: absolute;

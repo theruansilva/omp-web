@@ -12,7 +12,7 @@ export class FormattedText extends LitElement {
   @property() text = "";
 
   override render() {
-    return html`<div class="formatted" dir="auto" @click=${this.onFormattedClick}>${unsafeHTML(toSafeMarkdownHtml(this.text))}</div>`;
+    return html`<div class="formatted" dir="auto" @click=${this.onFormattedClick} @keydown=${this.onFormattedKeyDown}>${unsafeHTML(toSafeMarkdownHtml(this.text))}</div>`;
   }
 
   override updated(): void {
@@ -84,6 +84,16 @@ export class FormattedText extends LitElement {
     }
   }
 
+  private readonly onFormattedKeyDown = (event: KeyboardEvent): void => {
+    if (event.key !== " " && event.key !== "Enter") return;
+    if (!(event.target instanceof Element)) return;
+    const optionItem = event.target.closest(".ui-option-item");
+    if (optionItem instanceof HTMLElement) {
+      event.preventDefault();
+      optionItem.click();
+    }
+  };
+
   private readonly onFormattedClick = (event: MouseEvent): void => {
     if (!(event.target instanceof Element)) return;
     // Checkbox / Option Item click
@@ -92,10 +102,9 @@ export class FormattedText extends LitElement {
       const card = optionItem.closest(".ui-options-card");
       const checkbox = optionItem.querySelector<HTMLInputElement>(".ui-option-checkbox");
       if (card instanceof HTMLElement && checkbox instanceof HTMLInputElement) {
-        if (event.target !== checkbox) {
-          checkbox.checked = !checkbox.checked;
-        }
+        checkbox.checked = !checkbox.checked;
         optionItem.classList.toggle("selected", checkbox.checked);
+        optionItem.setAttribute("aria-checked", checkbox.checked ? "true" : "false");
 
         const checked = Array.from(card.querySelectorAll<HTMLInputElement>(".ui-option-checkbox:checked"));
         const labels = checked.map((cb) => cb.dataset["label"] || cb.dataset["value"] || "").filter(Boolean);
@@ -112,6 +121,8 @@ export class FormattedText extends LitElement {
 
         if (labels.length > 0) {
           window.dispatchEvent(new CustomEvent("omp:set-prompt-text", { detail: { text: promptText, append: false } }));
+        } else {
+          window.dispatchEvent(new CustomEvent("omp:set-prompt-text", { detail: { text: "", append: false } }));
         }
       }
       return;

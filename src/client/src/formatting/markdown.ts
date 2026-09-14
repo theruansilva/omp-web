@@ -203,14 +203,14 @@ function expandCustomUiTags(text: string): string {
             const desc = match[2] || "";
             const value = match[3] || label;
             items.push(
-              `<label class="ui-option-item">` +
+              `<div class="ui-option-item" role="checkbox" aria-checked="false" tabindex="0">` +
               `<input type="checkbox" class="ui-option-checkbox" data-value="${escapeHtml(value)}" data-label="${escapeHtml(label)}" />` +
               `<span class="ui-option-box"><span class="ui-option-check">✓</span></span>` +
               `<div class="ui-option-content">` +
               `<strong class="ui-option-label">${escapeHtml(label)}</strong>` +
               (desc ? `<small class="ui-option-desc">${escapeHtml(desc)}</small>` : "") +
               `</div>` +
-              `</label>`
+              `</div>`
             );
           }
 

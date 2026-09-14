@@ -7,9 +7,9 @@ import "./FormattedText";
 export class AskDialog extends LitElement {
   @property({ attribute: false }) requestId = "";
   @property({ attribute: false }) questions: AskDialogQuestion[] = [];
-  @property({ attribute: false }) onSubmit?: (result: AskDialogResult) => void;
-  @property({ attribute: false }) onChat?: () => void;
-  @property({ attribute: false }) onCancel?: () => void;
+  @property({ attribute: false }) onSubmit?: (result: AskDialogResult, requestId?: string) => void;
+  @property({ attribute: false }) onChat?: (requestId?: string) => void;
+  @property({ attribute: false }) onCancel?: (requestId?: string) => void;
   @property({ type: Boolean, reflect: true }) inline = false;
 
   @state() private selections: Record<string, { selectedOptions: string[]; customInput: string }> = {};
@@ -27,8 +27,6 @@ export class AskDialog extends LitElement {
         let defaultSelected: string[] = [];
         if (q.recommended !== undefined && q.options[q.recommended]) {
           defaultSelected = [q.options[q.recommended]!.label];
-        } else if (!q.multi && q.options.length > 0) {
-          defaultSelected = [q.options[0]!.label];
         }
         next[q.id] = { selectedOptions: defaultSelected, customInput: "" };
       }
@@ -48,21 +46,23 @@ export class AskDialog extends LitElement {
   private readonly handleGlobalKeyDown = (event: KeyboardEvent): void => {
     if (event.key === "Escape") {
       event.preventDefault();
-      this.onCancel?.();
+      this.onCancel?.(this.requestId);
     }
   };
 
-  private handleOptionToggle(question: AskDialogQuestion, optionLabel: string, multi: boolean): void {
+  private handleOptionToggle(question: AskDialogQuestion, optionLabel: string): void {
     const current = this.selections[question.id] ?? { selectedOptions: [], customInput: "" };
     let nextOptions: string[];
-    if (multi) {
+    // If multi is explicitly false, behave as single-choice (can still be clicked to unselect)
+    if (question.multi === false) {
+      nextOptions = current.selectedOptions.includes(optionLabel) ? [] : [optionLabel];
+    } else {
+      // Default is checklist: multiple options can be toggled independently
       if (current.selectedOptions.includes(optionLabel)) {
         nextOptions = current.selectedOptions.filter((opt) => opt !== optionLabel);
       } else {
         nextOptions = [...current.selectedOptions, optionLabel];
       }
-    } else {
-      nextOptions = [optionLabel];
     }
     this.selections = {
       ...this.selections,
@@ -81,25 +81,30 @@ export class AskDialog extends LitElement {
   private handleSubmit(): void {
     if (this.submitting) return;
     this.submitting = true;
-    const results = this.questions.map((q) => {
-      const state = this.selections[q.id] ?? { selectedOptions: [], customInput: "" };
-      const customTrimmed = state.customInput.trim();
-      return {
-        id: q.id,
-        question: q.question,
-        options: q.options.map((o) => o.label),
-        multi: q.multi ?? false,
-        selectedOptions: state.selectedOptions,
-        ...(customTrimmed.length > 0 ? { customInput: customTrimmed } : {}),
-      };
-    });
-    this.onSubmit?.({ kind: "submit", results });
+    try {
+      const results = this.questions.map((q) => {
+        const state = this.selections[q.id] ?? { selectedOptions: [], customInput: "" };
+        const customTrimmed = state.customInput.trim();
+        return {
+          id: q.id,
+          question: q.question,
+          options: q.options.map((o) => o.label),
+          multi: q.multi !== false,
+          selectedOptions: state.selectedOptions,
+          ...(customTrimmed.length > 0 ? { customInput: customTrimmed } : {}),
+        };
+      });
+      this.onSubmit?.({ kind: "submit", results }, this.requestId);
+    } catch (err) {
+      this.submitting = false;
+      console.error("Failed to submit ask dialog", err);
+    }
   }
 
   private handleChat(): void {
     if (this.submitting) return;
     this.submitting = true;
-    this.onChat?.();
+    this.onChat?.(this.requestId);
   }
 
   override render() {
@@ -117,7 +122,7 @@ export class AskDialog extends LitElement {
               <span class="ask-badge">Pergunta</span>
               <strong>${title}</strong>
             </div>
-            <button class="close-btn" @click=${() => this.onCancel?.()} aria-label="Dismiss" title="Dismiss">×</button>
+            <button class="close-btn" @click=${() => this.onCancel?.(this.requestId)} aria-label="Dismiss" title="Dismiss">×</button>
           </header>
 
           <div class="body">
@@ -126,10 +131,10 @@ export class AskDialog extends LitElement {
 
           <footer>
             <div class="footer-left">
-              <span class="shortcut-hint">Selecione uma opção</span>
+              <span class="shortcut-hint">Selecione uma ou mais opções</span>
             </div>
             <div class="footer-right">
-              <button class="btn secondary" @click=${() => this.onCancel?.()}>Cancelar</button>
+              <button class="btn secondary" @click=${() => this.onCancel?.(this.requestId)}>Cancelar</button>
               <button class="btn secondary" ?disabled=${this.submitting} @click=${() => { this.handleChat(); }}>
                 Responder no chat
               </button>
@@ -143,13 +148,13 @@ export class AskDialog extends LitElement {
     }
 
     return html`
-      <div class="backdrop" @mousedown=${() => this.onCancel?.()}>
+      <div class="backdrop" @mousedown=${() => this.onCancel?.(this.requestId)}>
         <section @mousedown=${(event: MouseEvent) => { event.stopPropagation(); }}>
           <header>
             <div class="title-wrap">
               <strong>❓ ${title}</strong>
             </div>
-            <button class="close-btn" @click=${() => this.onCancel?.()} aria-label="Close">×</button>
+            <button class="close-btn" @click=${() => this.onCancel?.(this.requestId)} aria-label="Close">×</button>
           </header>
 
           <div class="body">
@@ -161,7 +166,7 @@ export class AskDialog extends LitElement {
               <span class="shortcut-hint">Esc to dismiss</span>
             </div>
             <div class="footer-right">
-              <button class="btn secondary" @click=${() => this.onCancel?.()}>Cancel</button>
+              <button class="btn secondary" @click=${() => this.onCancel?.(this.requestId)}>Cancel</button>
               <button class="btn secondary" ?disabled=${this.submitting} @click=${() => { this.handleChat(); }}>
                 Chat about this
               </button>
@@ -177,7 +182,6 @@ export class AskDialog extends LitElement {
 
   private renderQuestion(q: AskDialogQuestion) {
     const state = this.selections[q.id] ?? { selectedOptions: [], customInput: "" };
-    const isMulti = q.multi ?? false;
 
     return html`
       <div class="question-card">
@@ -189,32 +193,42 @@ export class AskDialog extends LitElement {
       const isSelected = state.selectedOptions.includes(option.label);
       const isRecommended = q.recommended === idx;
       return html`
-              <label class="option-row ${isSelected ? "selected" : ""}">
-                <input
-                  type=${isMulti ? "checkbox" : "radio"}
-                  name=${`question-${q.id}`}
-                  .checked=${isSelected}
-                  @change=${() => { this.handleOptionToggle(q, option.label, isMulti); }}
-                />
+              <div
+                class="option-row ${isSelected ? "selected" : ""}"
+                role="checkbox"
+                aria-checked=${isSelected ? "true" : "false"}
+                tabindex="0"
+                @click=${() => { this.handleOptionToggle(q, option.label); }}
+                @keydown=${(e: KeyboardEvent) => {
+          if (e.key === " " || e.key === "Enter") {
+            e.preventDefault();
+            this.handleOptionToggle(q, option.label);
+          }
+        }}
+              >
+                <div class="custom-checkbox ${isSelected ? "checked" : ""}" aria-hidden="true">
+                  ${isSelected ? html`<span class="check-mark">✓</span>` : null}
+                </div>
                 <div class="option-content">
                   <div class="option-label-wrap">
                     <span class="option-label">${option.label}</span>
-                    ${isRecommended ? html`<span class="recommended-badge">Recommended</span>` : null}
+                    ${isSelected ? html`<span class="selected-badge">✓ Selecionado</span>` : null}
+                    ${isRecommended ? html`<span class="recommended-badge">Recomendado</span>` : null}
                   </div>
                   ${option.description ? html`<div class="option-desc">${option.description}</div>` : null}
                   ${option.preview ? html`<pre class="option-preview">${option.preview}</pre>` : null}
                 </div>
-              </label>
+              </div>
             `;
     })}
         </div>
 
         <div class="custom-input-wrap">
-          <label for=${`custom-${q.id}`}>Other / Custom Response:</label>
+          <label for=${`custom-${q.id}`}>Outra resposta personalizada:</label>
           <input
             id=${`custom-${q.id}`}
             type="text"
-            placeholder="Type your own answer…"
+            placeholder="Digite sua própria resposta (opcional)…"
             .value=${state.customInput}
             @input=${(event: Event) => {
         if (event.target instanceof HTMLInputElement) {
@@ -243,7 +257,7 @@ export class AskDialog extends LitElement {
     :host(:not([inline])) {
       position: fixed;
       inset: 0;
-      z-index: 50;
+      z-index: 1000;
     }
 
     :host([inline]) {
@@ -393,34 +407,78 @@ export class AskDialog extends LitElement {
     .options-group {
       display: flex;
       flex-direction: column;
-      gap: 6px;
+      gap: 8px;
     }
 
     .option-row {
       display: flex;
       align-items: flex-start;
-      gap: 10px;
-      padding: 10px 12px;
-      border: 1px solid var(--pi-border);
-      border-radius: 8px;
-      background: var(--pi-surface);
+      gap: 12px;
+      padding: 12px 14px;
+      border: 1.5px solid var(--pi-border, rgba(255, 255, 255, 0.12));
+      border-radius: 10px;
+      background: var(--pi-surface, #161b22);
       cursor: pointer;
-      transition: background 0.15s, border-color 0.15s;
+      transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
+      user-select: none;
+      outline: none;
     }
 
-    .option-row:hover {
-      border-color: var(--pi-accent);
+    .option-row:hover, .option-row:focus-visible {
+      border-color: rgba(88, 166, 255, 0.5);
+      background: rgba(88, 166, 255, 0.05);
     }
 
     .option-row.selected {
-      border-color: var(--pi-accent);
-      background: var(--pi-accent-subtle, rgba(59, 130, 246, 0.08));
+      border-color: var(--pi-accent, #58a6ff) !important;
+      background: rgba(88, 166, 255, 0.14) !important;
+      box-shadow: 0 0 0 1px var(--pi-accent, #58a6ff), 0 2px 8px rgba(88, 166, 255, 0.15);
     }
 
-    .option-row input {
-      margin-top: 3px;
-      accent-color: var(--pi-accent);
-      cursor: pointer;
+    .option-row.selected .option-label {
+      color: var(--pi-text, #e6edf3);
+      font-weight: 600;
+    }
+
+    .custom-checkbox {
+      width: 20px;
+      height: 20px;
+      min-width: 20px;
+      margin-top: 1px;
+      border-radius: 5px;
+      border: 2px solid var(--pi-muted, #8b949e);
+      background: var(--pi-bg, #0d1117);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s ease-in-out;
+    }
+
+    .option-row:hover .custom-checkbox {
+      border-color: var(--pi-accent, #58a6ff);
+    }
+
+    .custom-checkbox.checked {
+      background: var(--pi-accent, #58a6ff);
+      border-color: var(--pi-accent, #58a6ff);
+      box-shadow: 0 0 6px rgba(88, 166, 255, 0.4);
+    }
+
+    .check-mark {
+      color: #ffffff;
+      font-size: 13px;
+      font-weight: 800;
+      line-height: 1;
+    }
+
+    .selected-badge {
+      font-size: 10.5px;
+      font-weight: 600;
+      padding: 1px 6px;
+      border-radius: 4px;
+      background: var(--pi-accent, #58a6ff);
+      color: #ffffff;
+      margin-left: 6px;
     }
 
     .option-content {
@@ -451,26 +509,26 @@ export class AskDialog extends LitElement {
     }
 
     .option-desc {
-      font-size: 12px;
+      font-size: 13px;
       color: var(--pi-text-muted);
-      line-height: 1.3;
+      line-height: 1.4;
     }
 
     .option-preview {
-      margin: 4px 0 0 0;
-      padding: 6px;
-      font-size: 11px;
-      border-radius: 4px;
+      margin: 4px 0 0;
+      padding: 6px 8px;
+      border-radius: 6px;
       background: var(--pi-bg);
-      border: 1px solid var(--pi-border);
+      font-size: 11px;
       overflow-x: auto;
     }
 
     .custom-input-wrap {
       display: flex;
       flex-direction: column;
-      gap: 4px;
-      margin-top: 4px;
+      gap: 6px;
+      padding-top: 8px;
+      border-top: 1px dashed var(--pi-border);
     }
 
     .custom-input-wrap label {
@@ -479,12 +537,12 @@ export class AskDialog extends LitElement {
     }
 
     .custom-input-wrap input {
-      padding: 8px 12px;
+      padding: 8px 10px;
       border: 1px solid var(--pi-border);
       border-radius: 6px;
-      background: var(--pi-surface);
+      background: var(--pi-bg);
       color: var(--pi-text);
-      font: inherit;
+      font-size: 13px;
       outline: none;
     }
 
@@ -496,54 +554,53 @@ export class AskDialog extends LitElement {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 14px 18px;
+      padding: 12px 18px;
       border-top: 1px solid var(--pi-border);
       background: var(--pi-surface);
     }
 
-    .footer-left {
-      font-size: 11px;
+    .shortcut-hint {
+      font-size: 12px;
       color: var(--pi-text-muted);
     }
 
     .footer-right {
       display: flex;
-      align-items: center;
       gap: 8px;
     }
 
     .btn {
-      padding: 7px 14px;
-      border-radius: 8px;
-      font: inherit;
+      padding: 6px 14px;
+      border-radius: 6px;
+      font-size: 13px;
       font-weight: 500;
       cursor: pointer;
-      border: 1px solid transparent;
-      transition: background 0.15s, opacity 0.15s;
+      transition: background 0.15s, border-color 0.15s, opacity 0.15s;
     }
 
     .btn:disabled {
-      opacity: 0.6;
+      opacity: 0.5;
       cursor: not-allowed;
     }
 
+    .btn.secondary {
+      border: 1px solid var(--pi-border);
+      background: transparent;
+      color: var(--pi-text);
+    }
+
+    .btn.secondary:hover:not(:disabled) {
+      background: var(--pi-surface-hover, rgba(255, 255, 255, 0.05));
+    }
+
     .btn.primary {
+      border: 1px solid var(--pi-accent, #3b82f6);
       background: var(--pi-accent, #3b82f6);
       color: #fff;
     }
 
-    .btn.primary:not(:disabled):hover {
-      filter: brightness(1.1);
-    }
-
-    .btn.secondary {
-      background: var(--pi-surface);
-      border-color: var(--pi-border);
-      color: var(--pi-text);
-    }
-
-    .btn.secondary:not(:disabled):hover {
-      background: var(--pi-surface-variant, rgba(128, 128, 128, 0.1));
+    .btn.primary:hover:not(:disabled) {
+      opacity: 0.9;
     }
   `;
 }
