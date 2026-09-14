@@ -234,14 +234,27 @@ export class AskDialog extends LitElement {
   }
 
   static override styles = css`
-    :host([inline]) {
-      position: static;
+    :host {
       display: block;
-      width: 100%;
-      margin: 16px 0;
-      z-index: 1;
+      color: var(--pi-text);
       font: 14px system-ui, sans-serif;
     }
+
+    :host(:not([inline])) {
+      position: fixed;
+      inset: 0;
+      z-index: 50;
+    }
+
+    :host([inline]) {
+      position: static !important;
+      inset: auto !important;
+      display: block !important;
+      width: 100% !important;
+      margin: 16px 0 !important;
+      z-index: auto !important;
+    }
+
     :host([inline]) .inline-card {
       width: 100%;
       max-height: none;
@@ -252,6 +265,34 @@ export class AskDialog extends LitElement {
       box-sizing: border-box;
       overflow: hidden;
     }
+
+    :host([inline]) header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--pi-border);
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    :host([inline]) .body {
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      max-height: none;
+      overflow: visible;
+    }
+
+    :host([inline]) footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+      border-top: 1px solid var(--pi-border);
+      background: rgba(255, 255, 255, 0.02);
+    }
+
     .ask-badge {
       display: inline-flex;
       align-items: center;
@@ -264,13 +305,6 @@ export class AskDialog extends LitElement {
       background: rgba(88, 166, 255, 0.15);
       color: var(--pi-accent, #58a6ff);
       border: 1px solid rgba(88, 166, 255, 0.3);
-    }
-    :host {
-      position: fixed;
-      inset: 0;
-      z-index: 50;
-      color: var(--pi-text);
-      font: 14px system-ui, sans-serif;
     }
 
     .backdrop {

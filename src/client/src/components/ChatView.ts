@@ -596,6 +596,7 @@ export class ChatView extends LitElement {
     return html`
       <div class="pending-ask-wrap" style="margin: 16px 0;">
         <ask-dialog
+          ?inline=${true}
           .inline=${true}
           .requestId=${this.pendingAsk.requestId}
           .questions=${this.pendingAsk.questions}
