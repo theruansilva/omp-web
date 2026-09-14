@@ -19,7 +19,7 @@ import { fallbackSessionName, generateShortSessionName } from "./sessionNameGene
 import { createPiSessionManagerGateway } from "./piSessionManagerGateway.js";
 import { attachmentsToInlineImages, saveAttachmentsToWorkspace } from "./attachmentService.js";
 import { parsePromptAttachments } from "../../shared/promptAttachments.js";
-import type { SavedPromptAttachment, SessionBulkArchiveResponse, SessionBulkDeleteArchivedResponse, SessionBulkFailure, SessionBulkMutationRef } from "../../shared/apiTypes.js";
+import type { ActiveSessionSummary, SavedPromptAttachment, SessionBulkArchiveResponse, SessionBulkDeleteArchivedResponse, SessionBulkFailure, SessionBulkMutationRef } from "../../shared/apiTypes.js";
 
 import { cwdPathsEqual } from "../workingDirectory.js";
 import { errorMessage, isRecord } from "../utils.js";
@@ -361,6 +361,25 @@ export class PiSessionService {
 
  activeCount(): number {
   return this.active.size;
+ }
+
+ activeSessionsSummary(): ActiveSessionSummary[] {
+  const list: ActiveSessionSummary[] = [];
+  for (const active of new Set(this.active.values())) {
+   const { session } = active.runtime;
+   const working = this.hasActiveWork(session);
+   list.push({
+    sessionId: session.sessionId,
+    sessionName: session.sessionName,
+    cwd: active.runtime.cwd,
+    status: working ? "working" : "idle",
+    isStreaming: session.isStreaming,
+    isBashRunning: session.isBashRunning,
+    isCompacting: session.isCompacting,
+    pendingMessageCount: session.pendingMessageCount,
+   });
+  }
+  return list;
  }
 
  async cleanupPreview(request: NormalizedSessionCleanupRequest): Promise<ClientSessionCleanupPreviewResponse> {

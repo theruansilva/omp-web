@@ -2,7 +2,7 @@ import { mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from "node
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "bun:test";
-import { codingAgentCommandWithVersionCheck, commandWithVersionCheck, isCliEntrypoint } from "./cli.js";
+import { codingAgentCommandWithVersionCheck, commandWithVersionCheck, isCliEntrypoint, sessionsCommand } from "./cli.js";
 
 const originalShell = process.env["SHELL"];
 
@@ -72,5 +72,33 @@ describe("isCliEntrypoint", () => {
 
   it("does not match unrelated paths", () => {
     expect(isCliEntrypoint("/tmp/omp-web", "/tmp/other-omp-web")).toBe(false);
+  });
+});
+
+describe("sessionsCommand", () => {
+  it("prints message when no sessions are active or daemon is unreachable", async () => {
+    const logs: string[] = [];
+    const origLog = console.log;
+    console.log = (...args: unknown[]) => logs.push(args.join(" "));
+    try {
+      await sessionsCommand([]);
+      expect(logs.length).toBeGreaterThan(0);
+    } finally {
+      console.log = origLog;
+    }
+  });
+
+  it("outputs valid json with --json flag", async () => {
+    const logs: string[] = [];
+    const origLog = console.log;
+    console.log = (...args: unknown[]) => logs.push(args.join(" "));
+    try {
+      await sessionsCommand(["--json"]);
+      expect(logs.length).toBe(1);
+      const parsed = JSON.parse(logs[0]!);
+      expect(Array.isArray(parsed)).toBe(true);
+    } finally {
+      console.log = origLog;
+    }
   });
 });

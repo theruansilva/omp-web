@@ -12,10 +12,15 @@ export function registerSessionProxyRoutes(
   prefix = "/api",
   upgradeWebSocket?: UpgradeWebSocket,
 ): void {
-  const proxy = async (c: { req: { method: string; url: string; raw: Request } }): Promise<Response> => {
+  const proxy = async (c: { req: { method: string; url: string; raw: Request } }, explicitPath?: string): Promise<Response> => {
     try {
-      const url = new URL(c.req.url);
-      const strippedPath = stripPrefix(url.pathname + url.search, prefix);
+      let strippedPath: string;
+      if (explicitPath !== undefined) {
+        strippedPath = explicitPath;
+      } else {
+        const url = new URL(c.req.url);
+        strippedPath = stripPrefix(url.pathname + url.search, prefix);
+      }
       const method = c.req.method;
       const body = method === "GET" || method === "HEAD" ? undefined : await c.req.raw.json().catch(() => undefined);
       const upstream = await daemon.request(method, strippedPath, body);
@@ -31,8 +36,8 @@ export function registerSessionProxyRoutes(
     }
   };
 
-  app.get(`${prefix}/sessiond/health`, (c) => proxy({ req: { method: "GET", url: `${prefix}/health`, raw: c.req.raw } }));
-  app.get(`${prefix}/sessiond/runtime`, (c) => proxy({ req: { method: "GET", url: `${prefix}/runtime`, raw: c.req.raw } }));
+  app.get(`${prefix}/sessiond/health`, (c) => proxy(c, "/health"));
+  app.get(`${prefix}/sessiond/runtime`, (c) => proxy(c, "/runtime"));
 
   if (upgradeWebSocket !== undefined) {
     app.get(`${prefix}/sessions/:sessionId/events`, upgradeWebSocket((c) => {

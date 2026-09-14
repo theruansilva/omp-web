@@ -8,6 +8,14 @@ The user manages the application lifecycle using the `omp-web` CLI:
 - **Production Update**: When changes are validated, build and update via `omp-web update`, then restart with `omp-web start`.
 - **Production Bundles**: Always ensure `bun run build` succeeds when modifying features or fixes so compiled artifacts in `dist/` remain up to date.
 
+## Service Restarts & Concurrent Active Chats Safeguard
+
+Before stopping or restarting `omp-web` (`omp-web restart`, `omp-web stop`, or `systemctl --user restart ...`):
+- **NEVER restart blindly**: Restarting the session daemon kills all active agent sessions across workspaces.
+- **Check active chats first**: Run `omp-web sessions` (or `omp-web sessions --json`).
+- **Wait if any chat is working**: If any session has status `[working]` (streaming, bash running, compacting, or pending messages), wait until it finishes (`[idle]` or completed) before restarting.
+- **Automated wait**: You can use `omp-web restart --wait`, which automatically polls until all working sessions are idle before restarting. Do NOT use `--force` unless explicitly authorized by the user.
+
 ## Configuration conventions
 
 - `$OMP_WEB_DATA_DIR` (`~/.omp-web` by default) contains PI WEB-managed state such as `projects.json` and `machines.json`; do not treat it as the user-editable config API.

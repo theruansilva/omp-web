@@ -5,6 +5,8 @@ import { homedir, userInfo } from "node:os";
 import { basename, dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { defaultOmpWebConfigPath, defaultOmpWebDataDir, exampleOmpWebConfig } from "./config.js";
+import { SessionDaemonClient } from "./sessiond/sessionDaemonClient.js";
+import type { ActiveSessionSummary } from "./shared/apiTypes.js";
 import { packageVersion, printOmpWebVersionReport } from "./ompWebVersionReport.js";
 import { isRecord } from "./server/utils.js";
 import { runDoctor, runChecks, printPathSetupAdvice } from "./cli/doctor.js";
@@ -928,6 +930,83 @@ function doctorChecks(): Check[] {
   return checks;
 }
 
+export async function getActiveSessions(): Promise<ActiveSessionSummary[]> {
+  try {
+    const client = new SessionDaemonClient();
+    const res = await client.request("GET", "/sessions/active");
+    if (res.statusCode === 200) {
+      return JSON.parse(res.body) as ActiveSessionSummary[];
+    }
+  } catch {
+    // sessiond may be stopped or older version
+  }
+  return [];
+}
+
+export async function sessionsCommand(args: string[]): Promise<void> {
+  const asJson = args.includes("--json");
+  const active = await getActiveSessions();
+
+  if (asJson) {
+    console.log(JSON.stringify(active, null, 2));
+    return;
+  }
+
+  if (active.length === 0) {
+    console.log("No active chats in omp-web.");
+    return;
+  }
+
+  console.log(`Active chats in omp-web (${active.length}):`);
+  for (const s of active) {
+    const statusTag = s.status === "working" ? "[working]" : "[idle]";
+    const details = [];
+    if (s.isStreaming) details.push("streaming");
+    if (s.isBashRunning) details.push("bash running");
+    if (s.isCompacting) details.push("compacting");
+    if (s.pendingMessageCount > 0) details.push(`${s.pendingMessageCount} pending`);
+    const detailStr = details.length > 0 ? ` (${details.join(", ")})` : "";
+    const name = s.sessionName ? `"${s.sessionName}" ` : "";
+    console.log(`- ${statusTag} ${name}${s.sessionId} in ${s.cwd}${detailStr}`);
+  }
+}
+
+export async function restartCommand(args: string[]): Promise<void> {
+  const force = args.includes("--force") || args.includes("-f");
+  const wait = args.includes("--wait") || args.includes("-w");
+  const pollIntervalMs = 3000;
+
+  if (!force) {
+    let active = await getActiveSessions();
+    let working = active.filter((s) => s.status === "working");
+
+    if (working.length > 0) {
+      if (wait) {
+        console.log(`Waiting for ${working.length} active chat(s) to finish before restarting...`);
+        while (working.length > 0) {
+          for (const s of working) {
+            console.log(`  - Waiting for "${s.sessionName ?? s.sessionId}" in ${s.cwd}...`);
+          }
+          await new Promise((resolve) => setTimeout(resolve, pollIntervalMs));
+          active = await getActiveSessions();
+          working = active.filter((s) => s.status === "working");
+        }
+        console.log("All chats are idle. Proceeding with restart.");
+      } else {
+        console.error(`Cannot restart: ${working.length} chat(s) currently working:`);
+        for (const s of working) {
+          console.error(`  - "${s.sessionName ?? s.sessionId}" in ${s.cwd}`);
+        }
+        console.error("Wait until they finish, use `omp-web restart --wait`, or `omp-web restart --force`.");
+        process.exitCode = 1;
+        return;
+      }
+    }
+  }
+
+  serviceAction("restart");
+}
+
 async function doctor(): Promise<void> {
   await runDoctor({
     platformLabel,
@@ -952,9 +1031,10 @@ Usage:
   omp-web install [--dev] [--host 127.0.0.1] [--port 8504] [--config ~/.config/omp-web/config.json]
   omp-web update
   omp-web uninstall
-  omp-web start|stop|restart|status|logs
+  omp-web start|stop|status|logs
+  omp-web restart [--force] [--wait]
+  omp-web sessions [--json]
   omp-web doctor
-  else if (command === "update") update();
 
 Recommended install:
   bun add -g @theruansilva/omp-web
@@ -970,7 +1050,9 @@ async function main(): Promise<void> {
   if (command === "install") await install(args);
   else if (command === "update") update();
   else if (command === "uninstall") await uninstall();
-  else if (command === "start" || command === "stop" || command === "restart" || command === "status") serviceAction(command);
+  else if (command === "sessions" || command === "chats") await sessionsCommand(args);
+  else if (command === "restart") await restartCommand(args);
+  else if (command === "start" || command === "stop" || command === "status") serviceAction(command);
   else if (command === "logs") logs();
   else if (command === "doctor") await doctor();
   else if (command === "version") await printOmpWebVersionReport();

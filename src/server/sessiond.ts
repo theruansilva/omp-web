@@ -52,9 +52,11 @@ registerPushRoutes(app, pushService);
 
 app.get("/health", (c) => {
   const runtime = getOmpWebRuntimeComponent("sessiond", SESSIOND_RUNTIME_CAPABILITIES);
+  const activeSummaries = sessions.activeSessionsSummary();
   return c.json({
     ok: true,
-    activeSessions: sessions.activeCount(),
+    activeSessions: activeSummaries.length,
+    activeWorkingSessions: activeSummaries.filter((s) => s.status === "working").length,
     checkedAt: new Date().toISOString(),
     version: {
       component: runtime.component,

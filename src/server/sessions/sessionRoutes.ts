@@ -30,6 +30,10 @@ export function registerSessionRoutes(
   prefix = "",
   upgradeWebSocket?: UpgradeWebSocket,
 ): void {
+  app.get(`${prefix}/sessions/active`, (c) => {
+    return c.json(sessions.activeSessionsSummary());
+  });
+
   app.get(`${prefix}/sessions`, async (c) => {
     const cwd = c.req.query("cwd");
     if (cwd === undefined || cwd === "") return c.json({ error: "cwd query parameter is required" }, 400);

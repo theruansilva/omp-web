@@ -237,6 +237,12 @@ describe("session routes", () => {
       await routeApp.close();
     }
   });
+
+  it("returns active sessions summary via /sessions/active", async () => {
+    const response = await app.inject({ method: "GET", url: "/sessions/active" });
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toEqual([]);
+  });
 });
 
 class CapturingRouteSessionService extends PiSessionService {

@@ -279,6 +279,17 @@ export interface SessionActivity {
  at: string;
 }
 
+export interface ActiveSessionSummary {
+ sessionId: string;
+ sessionName?: string | undefined;
+ cwd: string;
+ status: "working" | "idle";
+ isStreaming: boolean;
+ isBashRunning: boolean;
+ isCompacting: boolean;
+ pendingMessageCount: number;
+}
+
 export interface QueuedSessionMessage {
  kind: "steer" | "followUp";
  text: string;
