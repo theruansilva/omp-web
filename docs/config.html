@@ -95,6 +95,7 @@
             <a href="#global-config">Global config</a>
             <a href="#project-config">Project config</a>
             <a href="#keys">Config matrix</a>
+            <a href="#vim-mode">Vim mode</a>
             <a href="#path-access">External path access</a>
             <a href="#manual-uploads">Manual uploads</a>
             <a href="#session-tools">Session tools</a>
@@ -113,9 +114,9 @@
                 Each PI WEB machine has its own config. When using Fleet/machine federation, Settings uses the selected
                 machine for config that affects work running there: session daemon tools, PI WEB plugin enablement,
                 external path access, and upload defaults. Gateway/browser-only settings stay local to the gateway:
-                keyboard shortcuts, remote machine registry/tokens, and gateway host/port/allowed-hosts. Remote servers
-                that do not advertise selected-machine settings support report those settings as unavailable instead of
-                silently falling back to the gateway.
+                Vim mode defaults, keyboard shortcuts, remote machine registry/tokens, and gateway host/port/allowed-hosts.
+                Remote servers that do not advertise selected-machine settings support report those settings as unavailable
+                instead of silently falling back to the gateway.
               </p>
               <p>
                 Pi package settings are separate from PI WEB config. They live in Pi's package-manager settings on the
@@ -157,6 +158,7 @@
                 <li><code>plugins</code>: reload the browser tab after changing PI WEB plugin enablement.</li>
                 <li>Pi package install/remove/update: not a PI WEB config key; after a mutation, type <code>/reload</code> in each idle PI WEB session on the target machine to refresh Pi runtime resources such as extensions, skills, prompt templates, themes, and context/system prompt files as supported by Pi. Reload the browser page separately for PI WEB browser plugin changes. A routine session daemon restart is not required.</li>
                 <li><code>shortcuts</code>: saved settings apply in the browser after config refresh/save.</li>
+                <li><code>vimMode</code>: applies after config refresh; a saved browser preference overrides it.</li>
               </ul>
             </section>
 
@@ -177,6 +179,7 @@
                 <pre id="global-config-example"><code>{
   "host": "127.0.0.1",
   "port": 8504,
+  "vimMode": true,
   "pathAccess": {
     "allowedPaths": ["~/SDKs", "/opt/reference"]
   },
@@ -283,6 +286,14 @@
                       <td>Global</td>
                       <td>Not supported locally</td>
                       <td>Restart dev web/UI</td>
+                    </tr>
+                    <tr>
+                      <td>Vim keybindings default</td>
+                      <td><code>vimMode</code></td>
+                      <td>—</td>
+                      <td>Global/browser</td>
+                      <td>Not supported locally</td>
+                      <td>Applies after config refresh; saved browser preference wins</td>
                     </tr>
                     <tr>
                       <td>External filesystem roots</td>
@@ -440,6 +451,24 @@
                   </tbody>
                 </table>
               </div>
+            </section>
+
+            <section id="vim-mode">
+              <h2>Vim mode default</h2>
+              <p>
+                <code>vimMode</code> sets the initial Vim keybinding state for browsers without a saved preference. It
+                defaults to <code>false</code>. Set it to <code>true</code> in the global config for hands-off deployments
+                that should start in Vim mode:
+              </p>
+              <div class="code-card">
+                <pre><code>{
+  "vimMode": true
+}</code></pre>
+              </div>
+              <p>
+                Users can still enable or disable Vim keybindings in <strong>Settings → General</strong>. That
+                browser-local preference persists and overrides the config default.
+              </p>
             </section>
 
             <section id="path-access">

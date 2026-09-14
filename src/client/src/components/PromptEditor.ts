@@ -1,7 +1,8 @@
 import { defaultKeymap, history, historyKeymap, indentWithTab, insertNewlineAndIndent } from "@codemirror/commands";
 import { markdown, deleteMarkupBackward, insertNewlineContinueMarkup } from "@codemirror/lang-markdown";
 import { EditorSelection, EditorState, Compartment } from "@codemirror/state";
-import { EditorView, keymap, placeholder } from "@codemirror/view";
+import { EditorView, drawSelection, keymap, placeholder } from "@codemirror/view";
+import { vim } from "@replit/codemirror-vim";
 import { defaultHighlightStyle, indentOnInput, indentUnit, syntaxHighlighting } from "@codemirror/language";
 import { LitElement, html, type PropertyValues } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
@@ -61,11 +62,13 @@ export class PromptEditor extends LitElement {
   @state() private hasContent = false;
   @state() private chatPreferences: ChatPreferences = loadChatPreferences();
   private readonly handleChatPreferencesChanged = (event: Event): void => {
+    const previousVimMode = this.chatPreferences.vimMode;
     if (event instanceof CustomEvent && isChatPreferences(event.detail)) {
       this.chatPreferences = event.detail;
     } else {
       this.chatPreferences = loadChatPreferences();
     }
+    if (previousVimMode !== this.chatPreferences.vimMode) this.updateEditorVimMode();
     this.requestUpdate();
   };
   @state() private completions: CompletionItem[] = [];
@@ -79,6 +82,7 @@ export class PromptEditor extends LitElement {
   private editor: EditorView | undefined;
   private readonly editableCompartment = new Compartment();
   private readonly readOnlyCompartment = new Compartment();
+  private readonly vimCompartment = new Compartment();
   private readonly mobilePromptEnterMedia = createMobilePromptEnterMedia();
   private explicitShiftKeyActive = false;
   override connectedCallback(): void {
@@ -378,6 +382,7 @@ export class PromptEditor extends LitElement {
       state: EditorState.create({
         doc: this.draft,
         extensions: [
+          this.vimCompartment.of(this.chatPreferences.vimMode ? [vim(), drawSelection()] : []),
           EditorView.theme({
             "&": {
               minHeight: "44px",
@@ -467,6 +472,12 @@ export class PromptEditor extends LitElement {
         this.editableCompartment.reconfigure(EditorView.editable.of(!this.disabled)),
         this.readOnlyCompartment.reconfigure(EditorState.readOnly.of(this.disabled)),
       ],
+    });
+  }
+
+  private updateEditorVimMode() {
+    this.editor?.dispatch({
+      effects: this.vimCompartment.reconfigure(this.chatPreferences.vimMode ? [vim(), drawSelection()] : []),
     });
   }
 

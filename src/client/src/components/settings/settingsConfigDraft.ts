@@ -62,6 +62,7 @@ export function machineAccessConfigPatchFromDraft(draft: MachineAccessConfigDraf
 function preservedGatewayConfigRemainder(baseConfig: OmpWebConfigValues): OmpWebConfigValues {
   return {
     ...(baseConfig.shortcuts === undefined ? {} : { shortcuts: baseConfig.shortcuts }),
+    ...(baseConfig.vimMode === undefined ? {} : { vimMode: baseConfig.vimMode }),
     ...(baseConfig.plugins === undefined ? {} : { plugins: baseConfig.plugins }),
     ...(baseConfig.pathAccess === undefined ? {} : { pathAccess: baseConfig.pathAccess }),
     ...(baseConfig.uploads === undefined ? {} : { uploads: baseConfig.uploads }),

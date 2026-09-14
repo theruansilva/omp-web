@@ -69,6 +69,8 @@ export interface OmpWebConfigValues {
  port?: number;
  allowedHosts?: string[] | true;
  shortcuts?: OmpWebShortcutConfig;
+ /** Default Vim keybinding state when the browser has no saved preference. */
+ vimMode?: boolean;
  plugins?: OmpWebPluginConfigMap;
  /** External filesystem roots PI WEB may expose outside a workspace. */
  pathAccess?: OmpWebPathAccessConfig;

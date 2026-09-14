@@ -89,6 +89,7 @@ export function effectiveOmpWebConfig(options: LoadOptions = {}): LoadedOmpWebCo
    ...(allowedHosts !== undefined && allowedHosts !== "" ? { allowedHosts: parseAllowedHostsEnv(allowedHosts) } : {}),
    ...(maxUpload !== undefined && maxUpload !== "" ? { maxUploadBytes: parseMaxUploadBytes(maxUpload, "OMP_WEB_MAX_UPLOAD_BYTES") } : {}),
    uploads: effectiveUploadsConfig(loaded.config),
+   vimMode: loaded.config.vimMode ?? false,
    // Always resolved (on by default) so the effective config is the single
    // source of truth for the runtime state and the settings UI toggle.
    spawnSessions: spawnSessionsEnabled(env, loaded.config),
@@ -108,6 +109,7 @@ export function saveOmpWebConfig(config: OmpWebConfigValues, options: LoadOption
  delete existing["allowedHosts"];
  delete existing["shortcuts"];
  delete existing["plugins"];
+ delete existing["vimMode"];
  delete existing["pathAccess"];
  delete existing["uploads"];
  delete existing["maxUploadBytes"];
@@ -132,6 +134,7 @@ function ompWebConfigRecord(config: OmpWebConfigValues): Record<string, unknown>
   ...(config.port !== undefined ? { port: config.port } : {}),
   ...(config.allowedHosts !== undefined ? { allowedHosts: config.allowedHosts } : {}),
   ...(config.shortcuts !== undefined ? { shortcuts: config.shortcuts } : {}),
+  ...(config.vimMode !== undefined ? { vimMode: config.vimMode } : {}),
   ...(config.plugins !== undefined ? { plugins: config.plugins } : {}),
   ...(config.pathAccess !== undefined ? { pathAccess: config.pathAccess } : {}),
   ...(config.uploads !== undefined ? { uploads: config.uploads } : {}),
@@ -147,13 +150,19 @@ function parseOmpWebConfig(value: Record<string, unknown>, path: string): OmpWeb
   ...(value["port"] !== undefined ? { port: parsePort(value["port"], "port", path) } : {}),
   ...(value["allowedHosts"] !== undefined ? { allowedHosts: parseAllowedHosts(value["allowedHosts"], path) } : {}),
   ...(value["shortcuts"] !== undefined ? { shortcuts: parseShortcuts(value["shortcuts"], path) } : {}),
+  ...(value["vimMode"] !== undefined ? { vimMode: parseBooleanConfig(value["vimMode"], "vimMode", path) } : {}),
   ...(value["plugins"] !== undefined ? { plugins: parsePlugins(value["plugins"], path) } : {}),
   ...(value["pathAccess"] !== undefined ? { pathAccess: parsePathAccessConfig(value["pathAccess"], path) } : {}),
   ...(value["uploads"] !== undefined ? { uploads: parseUploadsConfig(value["uploads"], path) } : {}),
   ...(value["maxUploadBytes"] !== undefined ? { maxUploadBytes: parseMaxUploadBytes(value["maxUploadBytes"], "maxUploadBytes", path) } : {}),
-  ...(value["spawnSessions"] !== undefined ? { spawnSessions: parseSpawnSessions(value["spawnSessions"], path) } : {}),
-  ...(value["subsessions"] !== undefined ? { subsessions: parseSubsessions(value["subsessions"], path) } : {}),
+  ...(value["spawnSessions"] !== undefined ? { spawnSessions: parseBooleanConfig(value["spawnSessions"], "spawnSessions", path) } : {}),
+  ...(value["subsessions"] !== undefined ? { subsessions: parseBooleanConfig(value["subsessions"], "subsessions", path) } : {}),
  };
+}
+
+function parseBooleanConfig(value: unknown, key: string, path: string): boolean {
+ if (typeof value !== "boolean") throw new Error(`PI WEB config ${key} must be a boolean: ${path}`);
+ return value;
 }
 
 function parseMaxUploadBytes(value: unknown, key: string, path = "environment"): number {
@@ -162,10 +171,6 @@ function parseMaxUploadBytes(value: unknown, key: string, path = "environment"):
  return bytes;
 }
 
-function parseSpawnSessions(value: unknown, path: string): boolean {
- if (typeof value !== "boolean") throw new Error(`PI WEB config spawnSessions must be a boolean: ${path}`);
- return value;
-}
 
 /**
  * Whether LLMs may start new sessions via the spawn_session tool. On by default
@@ -179,10 +184,6 @@ export function spawnSessionsEnabled(env: NodeJS.ProcessEnv = process.env, confi
  return config.spawnSessions ?? true;
 }
 
-function parseSubsessions(value: unknown, path: string): boolean {
- if (typeof value !== "boolean") throw new Error(`PI WEB config subsessions must be a boolean: ${path}`);
- return value;
-}
 
 /**
  * Beta: whether LLMs may start tracked child sessions via the spawn_subsession

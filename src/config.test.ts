@@ -23,6 +23,7 @@ describe("PI WEB config persistence", () => {
       port: 9000,
       allowedHosts: ["example.local"],
       shortcuts: { "core:view.chat": "mod+1", "core:session.stop": null },
+      vimMode: true,
       plugins: {},
       pathAccess: { allowedPaths: ["/tmp", "~/SDKs"] },
       uploads: { defaultFolder: "manual\\incoming" },
@@ -65,6 +66,17 @@ describe("PI WEB config persistence", () => {
 
   it("exposes the default upload folder in the effective config", () => {
     expect(effectiveOmpWebConfig(testOptions()).config.uploads).toEqual({ defaultFolder: DEFAULT_UPLOADS_FOLDER });
+  });
+
+  it("defaults Vim mode off and honors an explicit config default", () => {
+    expect(effectiveOmpWebConfig(testOptions()).config.vimMode).toBe(false);
+    saveOmpWebConfig({ vimMode: true }, testOptions());
+    expect(effectiveOmpWebConfig(testOptions()).config.vimMode).toBe(true);
+  });
+
+  it("rejects a non-boolean Vim mode default", async () => {
+    await writeFile(configPath, `${JSON.stringify({ vimMode: "yes" }, null, 2)}\n`, "utf8");
+    expect(() => loadOmpWebConfig(testOptions())).toThrow("PI WEB config vimMode must be a boolean");
   });
 
   it("rejects upload defaults that are not workspace-relative", async () => {

@@ -11,7 +11,7 @@ PI WEB uses two config files:
 - **Global PI WEB config:** `$OMP_WEB_CONFIG`, or `$XDG_CONFIG_HOME/omp-web/config.json`, or `~/.config/omp-web/config.json`.
 - **Project-local PI WEB config:** `<project>/.omp-web/config.json` for commit-able project settings.
 
-Each PI WEB machine has its own config. When using Fleet/machine federation, Settings uses the selected machine for config that affects work running there: session daemon tools, PI WEB plugin enablement, external path access, and upload defaults. Gateway/browser-only settings stay local to the gateway: keyboard shortcuts, remote machine registry/tokens, and gateway host/port/allowed-hosts. Remote servers that do not advertise selected-machine settings support report those settings as unavailable instead of silently falling back to the gateway.
+Each PI WEB machine has its own config. When using Fleet/machine federation, Settings uses the selected machine for config that affects work running there: session daemon tools, PI WEB plugin enablement, external path access, and upload defaults. Gateway/browser-only settings stay local to the gateway: Vim mode defaults, keyboard shortcuts, remote machine registry/tokens, and gateway host/port/allowed-hosts. Remote servers that do not advertise selected-machine settings support report those settings as unavailable instead of silently falling back to the gateway.
 
 Pi package settings are separate from PI WEB config. They live in Pi's package-manager settings on the target machine and are managed by Pi (`pi install`, `pi remove`, `pi update`) or **Settings → Pi packages**. In a federated setup, **Settings → Pi packages** targets the currently selected machine. The PI WEB `plugins` config key only enables or disables discovered PI WEB browser plugins on the machine whose config you are editing; it does not install, remove, or update Pi packages.
 
@@ -39,6 +39,7 @@ Process restarts depend on the key:
 - `plugins`: reload the browser tab after changing PI WEB plugin enablement.
 - Pi package install/remove/update: not a PI WEB config key; after a mutation, type `/reload` in each idle PI WEB session on the target machine to refresh Pi runtime resources such as extensions, skills, prompt templates, themes, and context/system prompt files as supported by Pi. Reload the browser page separately for PI WEB browser plugin changes. A routine session daemon restart is not required.
 - `shortcuts`: saved settings apply in the browser after config refresh/save.
+- `vimMode`: applies after config refresh; a saved browser preference overrides it.
 
 ## Global config example
 
@@ -46,6 +47,7 @@ Process restarts depend on the key:
 {
   "host": "127.0.0.1",
   "port": 8504,
+  "vimMode": true,
   "pathAccess": {
     "allowedPaths": ["~/SDKs", "/opt/reference"]
   },
@@ -98,6 +100,7 @@ Rows with JSON key `—` are runtime-only environment variables, not config-file
 | Web/API bind host | `host` | `OMP_WEB_HOST` | Global | Not supported locally | Restart web/API |
 | Web/API port | `port` | `OMP_WEB_PORT`, `PORT` | Global | Not supported locally | Restart web/API |
 | Dev-server allowed hosts | `allowedHosts` | `OMP_WEB_ALLOWED_HOSTS` | Global | Not supported locally | Restart dev web/UI |
+| Vim keybindings default | `vimMode` | — | Global/browser | Not supported locally | Applies after config refresh; saved browser preference wins |
 | External filesystem roots | `pathAccess.allowedPaths` | — | Global + project | **Merges**: global roots first, then project roots; duplicates removed | Next file request; refresh existing views if needed |
 | Manual file upload default folder | `uploads.defaultFolder` | — | Global + project | **Overrides**: project value wins for workspaces in that project; otherwise global/default applies | New Upload dialogs and direct drag/drop batches after config/workspace refresh |
 | Upload/body limit | `maxUploadBytes` | `OMP_WEB_MAX_UPLOAD_BYTES` | Global | Not supported locally | Restart web/API and session daemon on that machine |
@@ -120,6 +123,18 @@ Rows with JSON key `—` are runtime-only environment variables, not config-file
 | Skip update checks | — | `OMP_WEB_SKIP_VERSION_CHECK`, `OMP_WEB_OFFLINE`, `PI_SKIP_VERSION_CHECK`, `PI_OFFLINE` | Web/API env | Not supported locally | Restart web/API after env changes |
 
 ## Key details
+
+### Vim mode default
+
+`vimMode` sets the initial Vim keybinding state for browsers without a saved preference. It defaults to `false`. Set it to `true` in the global config for hands-off deployments that should start in Vim mode:
+
+```json
+{
+  "vimMode": true
+}
+```
+
+Users can still enable or disable Vim keybindings in **Settings → General**. That browser-local preference persists and overrides the config default.
 
 ### External path access
 

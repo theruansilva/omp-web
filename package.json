@@ -60,6 +60,7 @@
     "@codemirror/view": "^6.42.1",
     "@oh-my-pi/pi-catalog": "^18.1.11",
     "@progmruansilva/squircles": "^1.2.0",
+    "@replit/codemirror-vim": "^6.4.0",
     "@sinclair/typebox": "^0.34.52",
     "@xterm/addon-fit": "^0.11.0",
     "@xterm/xterm": "^6.0.0",

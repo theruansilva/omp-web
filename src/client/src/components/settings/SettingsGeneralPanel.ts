@@ -19,7 +19,7 @@ import {
   isChatPreferences,
   loadChatPreferences,
   preferencesEventTarget,
-  saveChatPreferences,
+  saveChatPreferenceOverrides,
   type ChatPreferences,
 } from "../../chatPreferences";
 
@@ -189,6 +189,13 @@ export class SettingsGeneralPanel extends LitElement {
             </div>
           </label>
           <label class="toggle-row">
+            <input type="checkbox" .checked=${this.chatPrefs.vimMode} @change=${(e: Event) => { this.updateChatPref("vimMode", e); }} />
+            <div class="toggle-copy">
+              <strong>Vim keybindings</strong>
+              <small>Use Vim motions and modes in the prompt editor</small>
+            </div>
+          </label>
+          <label class="toggle-row">
             <input type="checkbox" .checked=${this.chatPrefs.showStatusBar} @change=${(e: Event) => { this.updateChatPref("showStatusBar", e); }} />
             <div class="toggle-copy">
               <strong>Show status bar</strong>
@@ -226,7 +233,7 @@ export class SettingsGeneralPanel extends LitElement {
     if (!(input instanceof HTMLInputElement)) return;
     const next = { ...this.chatPrefs, [key]: input.checked };
     this.chatPrefs = next;
-    saveChatPreferences(next);
+    saveChatPreferenceOverrides({ [key]: input.checked });
   }
 
   private renderSelectedMachineAccessSettings(): TemplateResult {
