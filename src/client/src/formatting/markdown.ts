@@ -188,6 +188,47 @@ function expandCustomUiTags(text: string): string {
         .replace(/<callout(?:\s+type="([^"]*)")?\s*>([\s\S]*?)<\/callout>/gi, (_, type, content) => {
           const t = type ?? "info";
           return `<div class="ui-callout ui-callout-${t}">\n\n${content.trim()}\n\n</div>`;
+        })
+        .replace(/<(?:checklist|options)(?:\s+title="([^"]*)")?(?:\s+badge="([^"]*)")?(?:\s+color="([^"]*)")?(?:\s+subtitle="([^"]*)")?\s*>([\s\S]*?)<\/(?:checklist|options)>/gi, (_, title, badge, color, subtitle, blockContent) => {
+          const colorClass = color ? ` ui-badge-${color}` : " ui-badge-blue";
+          const badgeHtml = badge ? `<span class="ui-badge${colorClass}">${badge}</span>` : `<span class="ui-badge ui-badge-blue">Opções</span>`;
+          const headerHtml = `<div class="ui-card-header"><h3 class="ui-card-title">${title || "Selecione as opções desejadas"}</h3>${badgeHtml}</div>`;
+          const subtitleHtml = subtitle ? `<p class="ui-card-subtitle">${subtitle}</p>` : "";
+
+          const items: string[] = [];
+          const itemRegex = /<(?:item|opt)(?:\s+label="([^"]*)")?(?:\s+desc="([^"]*)")?(?:\s+value="([^"]*)")?\s*(?:\/>|>([\s\S]*?)<\/(?:item|opt)>)/gi;
+          let match;
+          while ((match = itemRegex.exec(blockContent)) !== null) {
+            const label = match[1] || match[4] || "";
+            const desc = match[2] || "";
+            const value = match[3] || label;
+            items.push(
+              `<label class="ui-option-item">` +
+              `<input type="checkbox" class="ui-option-checkbox" data-value="${escapeHtml(value)}" data-label="${escapeHtml(label)}" />` +
+              `<span class="ui-option-box"><span class="ui-option-check">✓</span></span>` +
+              `<div class="ui-option-content">` +
+              `<strong class="ui-option-label">${escapeHtml(label)}</strong>` +
+              (desc ? `<small class="ui-option-desc">${escapeHtml(desc)}</small>` : "") +
+              `</div>` +
+              `</label>`
+            );
+          }
+
+          if (items.length === 0) {
+            return `<div class="ui-card ui-options-card">\n\n${headerHtml}\n\n${subtitleHtml}\n\n${blockContent.trim()}\n\n</div>`;
+          }
+
+          return (
+            `<div class="ui-card ui-options-card">` +
+            headerHtml +
+            subtitleHtml +
+            `<div class="ui-options-list">${items.join("")}</div>` +
+            `<div class="ui-options-actions">` +
+            `<button type="button" class="ui-options-btn ui-options-apply-btn" title="Inserir seleção no campo de prompt">Inserir no prompt</button>` +
+            `<button type="button" class="ui-options-btn ui-options-submit-btn primary" title="Enviar seleção diretamente para o assistente">Enviar seleção</button>` +
+            `</div>` +
+            `</div>`
+          );
         });
     }
   }

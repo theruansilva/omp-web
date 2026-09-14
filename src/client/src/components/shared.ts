@@ -587,6 +587,127 @@ export const formattedTextStyles = css`
   .ui-callout-warning { border-left-color: #f0883e; }
   .ui-callout-success { border-left-color: #3fb950; }
   .ui-callout-danger { border-left-color: #f85149; }
+
+  /* Options & Checklist Card */
+  .ui-options-card {
+    border: 1px solid var(--pi-border);
+    border-radius: 12px;
+    background: var(--pi-surface);
+    padding: 16px 18px;
+    margin: 14px 0;
+  }
+  .ui-options-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin: 12px 0 14px;
+  }
+  .ui-option-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    background: var(--pi-bg);
+    border: 1px solid var(--pi-border);
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+    user-select: none;
+  }
+  .ui-option-item:hover {
+    border-color: var(--pi-accent, #58a6ff);
+    background: rgba(88, 166, 255, 0.04);
+  }
+  .ui-option-item.selected {
+    border-color: var(--pi-accent, #58a6ff);
+    background: rgba(88, 166, 255, 0.08);
+  }
+  .ui-option-checkbox {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+    width: 0;
+    height: 0;
+    margin: 0;
+  }
+  .ui-option-box {
+    width: 18px;
+    height: 18px;
+    border-radius: 4px;
+    border: 1.5px solid var(--pi-muted);
+    background: var(--pi-bg);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-top: 2px;
+    transition: all 0.15s;
+  }
+  .ui-option-item.selected .ui-option-box {
+    background: var(--pi-accent, #58a6ff);
+    border-color: var(--pi-accent, #58a6ff);
+  }
+  .ui-option-check {
+    color: #fff;
+    font-size: 11px;
+    font-weight: 700;
+    display: none;
+    line-height: 1;
+  }
+  .ui-option-item.selected .ui-option-check {
+    display: block;
+  }
+  .ui-option-content {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+    flex: 1;
+  }
+  .ui-option-label {
+    font-size: 13.5px;
+    color: var(--pi-text);
+    font-weight: 600;
+    line-height: 1.35;
+  }
+  .ui-option-desc {
+    font-size: 12px;
+    color: var(--pi-muted);
+    line-height: 1.3;
+  }
+  .ui-options-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+    padding-top: 10px;
+    border-top: 1px solid var(--pi-border);
+  }
+  .ui-options-btn {
+    border: 1px solid var(--pi-border);
+    border-radius: 6px;
+    background: var(--pi-bg);
+    color: var(--pi-text);
+    padding: 6px 14px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    font-family: inherit;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+  }
+  .ui-options-btn:hover {
+    border-color: var(--pi-accent);
+    color: var(--pi-accent);
+  }
+  .ui-options-btn.primary {
+    background: var(--pi-accent, #58a6ff);
+    color: #fff;
+    border-color: var(--pi-accent, #58a6ff);
+    font-weight: 600;
+  }
+  .ui-options-btn.primary:hover {
+    opacity: 0.9;
+  }
 `;
 
 export const statusBarStyles = css`

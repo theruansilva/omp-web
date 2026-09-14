@@ -85,6 +85,37 @@ export class PromptEditor extends LitElement {
     super.connectedCallback();
     this.chatPreferences = loadChatPreferences();
     preferencesEventTarget()?.addEventListener(CHAT_PREFERENCES_CHANGED_EVENT, this.handleChatPreferencesChanged);
+    window.addEventListener("omp:set-prompt-text", this.handleSetPromptText);
+  }
+
+
+
+  private readonly handleSetPromptText = (event: Event): void => {
+    const custom = event as CustomEvent<{ text: string; append?: boolean; submit?: boolean }>;
+    if (typeof custom.detail?.text !== "string") return;
+    this.setText(custom.detail.text, { append: custom.detail.append ?? false });
+    if (custom.detail.submit && this.hasContent && !this.disabled && !this.isAgentWorking()) {
+      this.send();
+    }
+  };
+
+  setText(text: string, options?: { focus?: boolean | undefined; append?: boolean | undefined }): void {
+    if (!this.editor) {
+      this.draft = text;
+      this.hasContent = text.trim().length > 0;
+      return;
+    }
+    const current = this.editor.state.doc.toString();
+    const newText = options?.append && current.trim().length > 0 ? `${current}\n${text}` : text;
+    this.editor.dispatch({
+      changes: { from: 0, to: this.editor.state.doc.length, insert: newText },
+      selection: { anchor: newText.length },
+    });
+    this.updateDraft(newText);
+    this.hasContent = newText.trim().length > 0 || this.attachments.length > 0;
+    if (options?.focus !== false) {
+      this.editor.focus();
+    }
   }
 
 
@@ -124,6 +155,7 @@ export class PromptEditor extends LitElement {
 
   override disconnectedCallback(): void {
     preferencesEventTarget()?.removeEventListener(CHAT_PREFERENCES_CHANGED_EVENT, this.handleChatPreferencesChanged);
+    window.removeEventListener("omp:set-prompt-text", this.handleSetPromptText);
     this.editor?.destroy();
     this.editor = undefined;
     super.disconnectedCallback();

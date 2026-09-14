@@ -162,4 +162,24 @@ Importante: monitorar CTR na primeira semana.
     expect(html).toContain("ui-callout ui-callout-warning");
     expect(html).toContain("Importante: monitorar CTR");
   });
+
+  it("renders generative UI checklist and option cards", () => {
+    const markdown = `
+<checklist title="Quais recursos incluir?" badge="Próximos passos">
+  <item label="Autenticação JWT" desc="Tokens seguros stateless" />
+  <item label="Suporte a OAuth2" desc="Google e GitHub" />
+</checklist>
+`;
+    const html = toSafeMarkdownHtml(markdown);
+
+    expect(html).toContain("ui-options-card");
+    expect(html).toContain("Quais recursos incluir?");
+    expect(html).toContain("Próximos passos");
+    expect(html).toContain("ui-option-item");
+    expect(html).toContain("Autenticação JWT");
+    expect(html).toContain("Tokens seguros stateless");
+    expect(html).toContain("Suporte a OAuth2");
+    expect(html).toContain("ui-options-apply-btn");
+    expect(html).toContain("ui-options-submit-btn");
+  });
 });

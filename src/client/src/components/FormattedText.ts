@@ -86,6 +86,67 @@ export class FormattedText extends LitElement {
 
   private readonly onFormattedClick = (event: MouseEvent): void => {
     if (!(event.target instanceof Element)) return;
+    // Checkbox / Option Item click
+    const optionItem = event.target.closest(".ui-option-item");
+    if (optionItem instanceof HTMLElement) {
+      const card = optionItem.closest(".ui-options-card");
+      const checkbox = optionItem.querySelector<HTMLInputElement>(".ui-option-checkbox");
+      if (card instanceof HTMLElement && checkbox instanceof HTMLInputElement) {
+        if (event.target !== checkbox) {
+          checkbox.checked = !checkbox.checked;
+        }
+        optionItem.classList.toggle("selected", checkbox.checked);
+
+        const checked = Array.from(card.querySelectorAll<HTMLInputElement>(".ui-option-checkbox:checked"));
+        const labels = checked.map((cb) => cb.dataset["label"] || cb.dataset["value"] || "").filter(Boolean);
+        const promptText = labels.length === 1 ? labels[0]! : labels.join(", ");
+
+        const applyBtn = card.querySelector<HTMLButtonElement>(".ui-options-apply-btn");
+        const submitBtn = card.querySelector<HTMLButtonElement>(".ui-options-submit-btn");
+        if (applyBtn) {
+          applyBtn.textContent = labels.length > 0 ? `Inserir no prompt (${labels.length})` : "Inserir no prompt";
+        }
+        if (submitBtn) {
+          submitBtn.textContent = labels.length > 0 ? `Enviar seleção (${labels.length})` : "Enviar seleção";
+        }
+
+        if (labels.length > 0) {
+          window.dispatchEvent(new CustomEvent("omp:set-prompt-text", { detail: { text: promptText, append: false } }));
+        }
+      }
+      return;
+    }
+
+    // Apply button click
+    const applyBtn = event.target.closest(".ui-options-apply-btn");
+    if (applyBtn instanceof HTMLButtonElement) {
+      const card = applyBtn.closest(".ui-options-card");
+      if (card instanceof HTMLElement) {
+        const checked = Array.from(card.querySelectorAll<HTMLInputElement>(".ui-option-checkbox:checked"));
+        const labels = checked.map((cb) => cb.dataset["label"] || cb.dataset["value"] || "").filter(Boolean);
+        const promptText = labels.length === 1 ? labels[0]! : labels.join(", ");
+        if (promptText) {
+          window.dispatchEvent(new CustomEvent("omp:set-prompt-text", { detail: { text: promptText, append: false, focus: true } }));
+        }
+      }
+      return;
+    }
+
+    // Submit button click
+    const submitBtn = event.target.closest(".ui-options-submit-btn");
+    if (submitBtn instanceof HTMLButtonElement) {
+      const card = submitBtn.closest(".ui-options-card");
+      if (card instanceof HTMLElement) {
+        const checked = Array.from(card.querySelectorAll<HTMLInputElement>(".ui-option-checkbox:checked"));
+        const labels = checked.map((cb) => cb.dataset["label"] || cb.dataset["value"] || "").filter(Boolean);
+        const promptText = labels.length === 1 ? labels[0]! : labels.join(", ");
+        if (promptText) {
+          window.dispatchEvent(new CustomEvent("omp:set-prompt-text", { detail: { text: promptText, submit: true } }));
+        }
+      }
+      return;
+    }
+
     const zoomButton = event.target.closest(".diagram-zoom-button");
     if (zoomButton instanceof HTMLButtonElement) {
       const wrapper = zoomButton.closest(".mermaid-diagram-wrapper");
