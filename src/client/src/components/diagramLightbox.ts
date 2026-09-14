@@ -16,13 +16,13 @@ export function openDiagramLightbox(svgContent: string, title = "Diagram Preview
  overlay.setAttribute("aria-modal", "true");
  overlay.setAttribute("aria-label", title);
 
- // State
  let scale = 1.0;
  let translateX = 0;
  let translateY = 0;
  let isDragging = false;
  let dragStartX = 0;
  let dragStartY = 0;
+ let hasDragged = false;
 
  overlay.innerHTML = `
     <style>
@@ -32,7 +32,7 @@ export function openDiagramLightbox(svgContent: string, title = "Diagram Preview
         z-index: 99999;
         display: flex;
         flex-direction: column;
-        background: rgba(10, 14, 20, 0.92);
+        background: rgba(10, 14, 20, 0.95);
         backdrop-filter: blur(8px);
         -webkit-backdrop-filter: blur(8px);
         color: var(--pi-text, #e6edf3);
@@ -115,25 +115,30 @@ export function openDiagramLightbox(svgContent: string, title = "Diagram Preview
         flex: 1;
         position: relative;
         overflow: hidden;
-        display: flex;
-        align-items: center;
-        justify-content: center;
         cursor: grab;
+        background: radial-gradient(circle at center, rgba(22, 27, 34, 0.7) 0%, rgba(10, 14, 20, 0.98) 100%);
       }
       .diagram-lightbox-viewport.is-dragging {
         cursor: grabbing;
       }
       .diagram-lightbox-canvas {
-        display: inline-block;
+        position: absolute;
+        top: 0;
+        left: 0;
         transform-origin: 0 0;
         will-change: transform;
-        transition: none;
+        padding: 20px;
+        border-radius: 12px;
+        background: var(--pi-surface, #161b22);
+        border: 1px solid var(--pi-border, rgba(255, 255, 255, 0.12));
+        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);
+        box-sizing: content-box;
       }
       .diagram-lightbox-canvas svg {
+        display: block !important;
         max-width: none !important;
         max-height: none !important;
-        display: block;
-        filter: drop-shadow(0 8px 24px rgba(0, 0, 0, 0.25));
+        overflow: visible !important;
       }
       .diagram-lightbox-hint {
         position: absolute;
@@ -142,7 +147,7 @@ export function openDiagramLightbox(svgContent: string, title = "Diagram Preview
         transform: translateX(-50%);
         padding: 6px 14px;
         border-radius: 20px;
-        background: rgba(0, 0, 0, 0.6);
+        background: rgba(0, 0, 0, 0.65);
         border: 1px solid rgba(255, 255, 255, 0.1);
         color: rgba(255, 255, 255, 0.65);
         font-size: 11px;
@@ -184,34 +189,53 @@ export function openDiagramLightbox(svgContent: string, title = "Diagram Preview
  if (!viewport || !canvas || !zoomLabel) return;
 
  const svg = canvas.querySelector("svg");
+ let naturalWidth = 800;
+ let naturalHeight = 600;
+
  if (svg) {
-  // Remove fixed inline width/height constraints on the SVG root so it renders sharply at any scale
-  svg.removeAttribute("width");
-  svg.removeAttribute("height");
+  const vb = svg.viewBox?.baseVal;
+  if (vb && vb.width > 0 && vb.height > 0) {
+   naturalWidth = vb.width;
+   naturalHeight = vb.height;
+  } else {
+   const widthAttr = parseFloat(svg.getAttribute("width") || "");
+   const heightAttr = parseFloat(svg.getAttribute("height") || "");
+   if (!isNaN(widthAttr) && widthAttr > 0) naturalWidth = widthAttr;
+   if (!isNaN(heightAttr) && heightAttr > 0) naturalHeight = heightAttr;
+  }
+
+  svg.style.width = `${naturalWidth}px`;
+  svg.style.height = `${naturalHeight}px`;
+  svg.setAttribute("width", `${naturalWidth}`);
+  svg.setAttribute("height", `${naturalHeight}`);
+  svg.style.maxWidth = "none";
+  svg.style.maxHeight = "none";
   svg.style.overflow = "visible";
  }
 
+ const pad = 40;
+ const totalWidth = naturalWidth + pad;
+ const totalHeight = naturalHeight + pad;
+ canvas.style.width = `${naturalWidth}px`;
+ canvas.style.height = `${naturalHeight}px`;
+
  function updateTransform(): void {
   if (!canvas || !zoomLabel) return;
-  canvas.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
+  canvas.style.transform = `translate3d(${translateX}px, ${translateY}px, 0) scale(${scale})`;
   zoomLabel.textContent = `${Math.round(scale * 100)}%`;
  }
 
  function centerAndFit(): void {
   if (!viewport || !canvas) return;
-  const vpRect = viewport.getBoundingClientRect();
-  const cvRect = canvas.getBoundingClientRect();
+  const vpWidth = viewport.clientWidth || window.innerWidth;
+  const vpHeight = viewport.clientHeight || (window.innerHeight - 50);
 
-  // Natural dimensions without transform
-  const naturalWidth = svg?.viewBox?.baseVal?.width || cvRect.width || 800;
-  const naturalHeight = svg?.viewBox?.baseVal?.height || cvRect.height || 600;
+  const scaleX = (vpWidth * 0.85) / totalWidth;
+  const scaleY = (vpHeight * 0.85) / totalHeight;
+  scale = Math.min(Math.max(Math.min(scaleX, scaleY), 0.2), 2.0);
 
-  const scaleX = (vpRect.width * 0.85) / naturalWidth;
-  const scaleY = (vpRect.height * 0.85) / naturalHeight;
-  scale = Math.min(Math.max(Math.min(scaleX, scaleY), 0.3), 1.5);
-
-  translateX = (vpRect.width - naturalWidth * scale) / 2;
-  translateY = (vpRect.height - naturalHeight * scale) / 2;
+  translateX = (vpWidth - totalWidth * scale) / 2;
+  translateY = (vpHeight - totalHeight * scale) / 2;
   updateTransform();
  }
 
@@ -235,6 +259,9 @@ export function openDiagramLightbox(svgContent: string, title = "Diagram Preview
  requestAnimationFrame(() => {
   centerAndFit();
  });
+ window.setTimeout(() => {
+  centerAndFit();
+ }, 50);
 
  // Wheel zoom
  const onWheel = (e: WheelEvent): void => {
@@ -246,8 +273,9 @@ export function openDiagramLightbox(svgContent: string, title = "Diagram Preview
 
  // Drag pan
  const onPointerDown = (e: PointerEvent): void => {
-  if (e.button !== 0) return; // Left mouse button only
+  if (e.button !== 0) return;
   isDragging = true;
+  hasDragged = false;
   dragStartX = e.clientX - translateX;
   dragStartY = e.clientY - translateY;
   viewport.setPointerCapture(e.pointerId);
@@ -256,6 +284,7 @@ export function openDiagramLightbox(svgContent: string, title = "Diagram Preview
 
  const onPointerMove = (e: PointerEvent): void => {
   if (!isDragging) return;
+  hasDragged = true;
   translateX = e.clientX - dragStartX;
   translateY = e.clientY - dragStartY;
   updateTransform();
@@ -284,6 +313,13 @@ export function openDiagramLightbox(svgContent: string, title = "Diagram Preview
   }
  };
  viewport.addEventListener("dblclick", onDblClick);
+
+ // Close on backdrop click if not dragged
+ viewport.addEventListener("click", (e) => {
+  if (e.target === viewport && !hasDragged) {
+   closeDiagramLightbox();
+  }
+ });
 
  // Toolbar buttons
  btnZoomIn?.addEventListener("click", () => { zoomBy(1.25); });
