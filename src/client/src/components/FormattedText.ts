@@ -1,6 +1,8 @@
-import { LitElement, html } from "lit";
+import { LitElement, html, unsafeCSS } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { unsafeHTML } from "lit/directives/unsafe-html.js";
+import katexStyles from "katex/dist/katex.min.css?inline";
+import mermaid from "mermaid";
 import { toSafeMarkdownHtml } from "../formatting/markdown";
 import { formattedTextStyles } from "./shared";
 
@@ -14,6 +16,7 @@ export class FormattedText extends LitElement {
 
   override updated(): void {
     this.enhanceCodeBlocks();
+    void this.renderMermaidDiagrams();
   }
 
   private enhanceCodeBlocks(): void {
@@ -37,22 +40,65 @@ export class FormattedText extends LitElement {
     });
   }
 
+  private async renderMermaidDiagrams(): Promise<void> {
+    const wrappers = this.renderRoot.querySelectorAll<HTMLElement>(".mermaid-diagram-wrapper:not([data-rendered])");
+    if (wrappers.length === 0) return;
+
+    wrappers.forEach((w) => { w.setAttribute("data-rendered", "pending"); });
+
+    const isDark = document.documentElement.style.colorScheme !== "light";
+    try {
+      mermaid.initialize({
+        startOnLoad: false,
+        securityLevel: "loose",
+        theme: isDark ? "dark" : "default",
+        fontFamily: "inherit",
+      });
+    } catch {
+      // Ignore re-initialization errors
+    }
+
+    for (const wrapper of wrappers) {
+      const sourceCode = wrapper.querySelector("pre.mermaid-source code")?.textContent;
+      const svgContainer = wrapper.querySelector<HTMLElement>(".mermaid-svg-container");
+      const asciiPre = wrapper.querySelector<HTMLElement>("pre.ascii-diagram");
+      if (!sourceCode || !svgContainer) {
+        wrapper.setAttribute("data-rendered", "failed");
+        continue;
+      }
+
+      const id = `mermaid-${Math.random().toString(36).slice(2, 9)}`;
+      try {
+        const { svg } = await mermaid.render(id, sourceCode.trim());
+        svgContainer.innerHTML = svg;
+        if (asciiPre) asciiPre.style.display = "none";
+        wrapper.setAttribute("data-rendered", "true");
+      } catch {
+        wrapper.setAttribute("data-rendered", "failed");
+        if (!asciiPre) {
+          const sourcePre = wrapper.querySelector<HTMLElement>("pre.mermaid-source");
+          if (sourcePre) sourcePre.style.display = "";
+        }
+      }
+    }
+  }
+
   private readonly onFormattedClick = (event: MouseEvent): void => {
     if (!(event.target instanceof Element)) return;
     const toggleButton = event.target.closest(".diagram-toggle-button");
     if (toggleButton instanceof HTMLButtonElement) {
       const wrapper = toggleButton.closest(".mermaid-diagram-wrapper");
       if (wrapper instanceof HTMLElement) {
-        const asciiPre = wrapper.querySelector<HTMLElement>("pre.ascii-diagram");
+        const diagramContainer = wrapper.querySelector<HTMLElement>(".mermaid-diagram-container") ?? wrapper.querySelector<HTMLElement>("pre.ascii-diagram");
         const sourcePre = wrapper.querySelector<HTMLElement>("pre.mermaid-source");
-        if (asciiPre !== null && sourcePre !== null) {
+        if (diagramContainer !== null && sourcePre !== null) {
           const showingSource = sourcePre.style.display !== "none";
           if (showingSource) {
             sourcePre.style.display = "none";
-            asciiPre.style.display = "";
+            diagramContainer.style.display = "";
             toggleButton.textContent = "Source";
           } else {
-            asciiPre.style.display = "none";
+            diagramContainer.style.display = "none";
             sourcePre.style.display = "";
             toggleButton.textContent = "Diagram";
           }
@@ -66,14 +112,15 @@ export class FormattedText extends LitElement {
     if (!(wrapper instanceof HTMLElement)) return;
     let codeText = "";
     if (wrapper.classList.contains("mermaid-diagram-wrapper")) {
-      const visiblePre = Array.from(wrapper.querySelectorAll<HTMLElement>("pre")).find((pre) => pre.style.display !== "none");
-      codeText = visiblePre?.querySelector("code")?.textContent ?? "";
+      const sourcePre = wrapper.querySelector<HTMLElement>("pre.mermaid-source");
+      codeText = sourcePre?.querySelector("code")?.textContent ?? "";
     } else {
       const code = wrapper.querySelector("pre code");
-      if (code instanceof HTMLElement) codeText = code.textContent;
+      if (code instanceof HTMLElement) codeText = code.textContent ?? "";
     }
     void this.copyCode(codeText, button);
   };
+
   private async copyCode(text: string, button: HTMLButtonElement): Promise<void> {
     const ok = await writeClipboard(text);
     this.setCopyButtonState(button, ok ? "copied" : "failed");
@@ -83,20 +130,27 @@ export class FormattedText extends LitElement {
   }
 
   private setCopyButtonState(button: HTMLButtonElement, state: "idle" | "copied" | "failed"): void {
+    button.dataset["copyState"] = state;
+    button.setAttribute("aria-label", state === "copied" ? "Copied" : state === "failed" ? "Copy failed" : "Copy code block");
     const icon = button.querySelector("span");
-    if (icon !== null) icon.textContent = state === "copied" ? "✓" : "⧉";
-    const label = state === "copied" ? "Copied code block" : state === "failed" ? "Failed to copy code block" : "Copy code block";
-    button.title = label;
-    button.setAttribute("aria-label", label);
+    if (icon instanceof HTMLElement) {
+      icon.textContent = state === "copied" ? "✓" : state === "failed" ? "✖" : "⧉";
+    }
   }
 
-  static override styles = formattedTextStyles;
+  static override styles = [
+    unsafeCSS(katexStyles),
+    formattedTextStyles,
+  ];
 }
 
 async function writeClipboard(text: string): Promise<boolean> {
   try {
-    await navigator.clipboard.writeText(text);
-    return true;
+    if (typeof navigator !== "undefined" && typeof navigator.clipboard?.writeText === "function") {
+      await navigator.clipboard.writeText(text);
+      return true;
+    }
+    return false;
   } catch {
     return false;
   }

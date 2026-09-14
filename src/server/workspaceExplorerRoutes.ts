@@ -120,18 +120,26 @@ export function registerWorkspaceExplorerRoutes(app: Hono, projects: ProjectServ
       const projectId = c.req.param("projectId");
       const workspaceId = c.req.param("workspaceId");
       const path = c.req.query("path");
+      const range = c.req.header("range");
       const context = await resolveWorkspaceContext(projects, workspaces, projectId, workspaceId);
-      const preview = await readWorkspaceImagePreview(context.root, path, await pathAccessForWorkspaceContext(context, options.config));
+      const preview = await readWorkspaceImagePreview(context.root, path, await pathAccessForWorkspaceContext(context, options.config), range);
+
+      const headers: Record<string, string> = {
+        "Content-Type": preview.mimeType,
+        "Cache-Control": "private, max-age=3600",
+        "Content-Length": String(preview.size),
+        "Accept-Ranges": "bytes",
+        "Content-Security-Policy": "sandbox; default-src 'none'; img-src 'self' data: blob:; media-src 'self' data: blob:; style-src 'unsafe-inline'",
+        "Last-Modified": new Date(preview.modifiedAt).toUTCString(),
+        "X-Content-Type-Options": "nosniff",
+      };
+      if (preview.contentRange) {
+        headers["Content-Range"] = preview.contentRange;
+      }
 
       return new Response(preview.stream as unknown as ReadableStream, {
-        headers: {
-          "Content-Type": preview.mimeType,
-          "Cache-Control": "private, max-age=3600",
-          "Content-Length": String(preview.size),
-          "Content-Security-Policy": "sandbox; default-src 'none'; img-src 'self' data: blob:; style-src 'unsafe-inline'",
-          "Last-Modified": new Date(preview.modifiedAt).toUTCString(),
-          "X-Content-Type-Options": "nosniff",
-        },
+        status: preview.status,
+        headers,
       });
     } catch (error) {
       return c.json({ error: error instanceof Error ? error.message : String(error) }, 400);

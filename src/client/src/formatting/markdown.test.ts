@@ -88,4 +88,25 @@ describe("toSafeMarkdownHtml", () => {
     expect(html).toContain('width="300"');
     expect(html).toContain('alt=""');
   });
+
+  it("renders video files as video elements with controls", () => {
+    const markdown = "![demo video](/api/preview?path=demo.mp4)";
+    const html = toSafeMarkdownHtml(markdown);
+
+    expect(html).toContain('<video class="markdown-video" controls preload="metadata"');
+    expect(html).toContain('<source src="/api/preview?path=demo.mp4">');
+    expect(html).toContain("demo video");
+  });
+
+  it("renders LaTeX math using KaTeX", () => {
+    const inlineMath = toSafeMarkdownHtml("Formula: $E = mc^2$");
+    expect(inlineMath).toContain("katex");
+    expect(inlineMath).toContain("annotation");
+
+    const delimiterMath = toSafeMarkdownHtml("Formula: \\(a^2 + b^2 = c^2\\)");
+    expect(delimiterMath).toContain("katex");
+
+    const blockMath = toSafeMarkdownHtml("$$\\int x dx$$");
+    expect(blockMath).toContain("katex-display");
+  });
 });

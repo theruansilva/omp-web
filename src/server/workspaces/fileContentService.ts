@@ -2,7 +2,7 @@ import { createReadStream, type ReadStream } from "node:fs";
 import { lstat, mkdir, open, realpath, rename, stat, unlink, writeFile } from "node:fs/promises";
 import { basename, dirname, join } from "node:path";
 import type { DeleteWorkspaceFileResponse, FileContentResponse, MoveWorkspaceFileOptions, MoveWorkspaceFileResponse, OmpWebPathAccessConfig, WriteWorkspaceFileOptions, WriteWorkspaceFileResponse } from "../../shared/apiTypes.js";
-import { imageMimeTypeForPath } from "./imagePreviewService.js";
+import { imageMimeTypeForPath, videoMimeTypeForPath } from "./imagePreviewService.js";
 import { resolveWorkspacePathAccessTarget } from "./pathAccessPolicy.js";
 import { ensureInside, isNodeErrorWithCode, resolveInsideWorkspace, resolveParentInsideWorkspace } from "./pathSafety.js";
 
@@ -16,7 +16,7 @@ export async function readWorkspaceFile(rootPath: string, path: string | undefin
   const bytesToRead = Math.min(s.size, MAX_BYTES);
   const buffer = await readFilePrefix(target, bytesToRead);
   const media = mediaForPath(displayPath);
-  const binary = media.mediaType === "image" || isProbablyBinary(buffer);
+  const binary = media.mediaType !== undefined || isProbablyBinary(buffer);
   return {
     path: displayPath,
     ...languageForPath(displayPath),
@@ -200,7 +200,10 @@ function languageForPath(path: string): { language?: string } {
   return language === undefined ? {} : { language };
 }
 
-function mediaForPath(path: string): { mediaType?: "image"; mimeType?: string } {
-  const mimeType = imageMimeTypeForPath(path);
-  return mimeType === undefined ? {} : { mediaType: "image", mimeType };
+function mediaForPath(path: string): { mediaType?: "image" | "video"; mimeType?: string } {
+  const imageMime = imageMimeTypeForPath(path);
+  if (imageMime !== undefined) return { mediaType: "image", mimeType: imageMime };
+  const videoMime = videoMimeTypeForPath(path);
+  if (videoMime !== undefined) return { mediaType: "video", mimeType: videoMime };
+  return {};
 }

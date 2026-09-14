@@ -87,6 +87,29 @@ describe("readWorkspaceFile", () => {
     expect(file.size).toBe(9);
   });
 
+  it("marks supported videos as previewable binary media", async () => {
+    const root = await tempWorkspace();
+    await writeFile(join(root, "clip.mp4"), Buffer.from("fake-mp4-video-content-here"));
+
+    const file = await readWorkspaceFile(root, "clip.mp4");
+
+    expect(file).toMatchObject({ mediaType: "video", mimeType: "video/mp4", content: "", binary: true, truncated: false });
+    expect(file.size).toBe(27);
+
+    const fullPreview = await readWorkspaceImagePreview(root, "clip.mp4");
+    expect(fullPreview.status).toBe(200);
+    expect(fullPreview.mimeType).toBe("video/mp4");
+    expect(fullPreview.size).toBe(27);
+    fullPreview.stream.destroy();
+
+    const rangePreview = await readWorkspaceImagePreview(root, "clip.mp4", undefined, "bytes=0-9");
+    expect(rangePreview.status).toBe(206);
+    expect(rangePreview.mimeType).toBe("video/mp4");
+    expect(rangePreview.size).toBe(10);
+    expect(rangePreview.contentRange).toBe("bytes 0-9/27");
+    rangePreview.stream.destroy();
+  });
+
   it("opens image preview streams only for supported images within the preview size limit", async () => {
     const root = await tempWorkspace();
     await writeFile(join(root, "diagram.svg"), "<svg xmlns=\"http://www.w3.org/2000/svg\"></svg>");

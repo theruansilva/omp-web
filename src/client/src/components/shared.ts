@@ -401,6 +401,10 @@ export const formattedTextStyles = css`
   pre.ascii-diagram, .mermaid-diagram-wrapper pre.ascii-diagram { font-family: ui-monospace, SFMono-Regular, "Cascadia Code", "DejaVu Sans Mono", Menlo, Consolas, monospace; font-size: 12.5px; line-height: 1.18; letter-spacing: 0; font-variant-ligatures: none; white-space: pre; overflow-x: auto; }
   .mermaid-diagram-wrapper { position: relative; border: 1px solid var(--pi-border); border-radius: 8px; background: var(--pi-bg); margin: 0 0 10px; overflow: hidden; }
   .mermaid-diagram-wrapper pre { border: none; border-radius: 0; margin: 0; padding: 12px 14px; }
+  .mermaid-diagram-container { width: 100%; overflow-x: auto; }
+  .mermaid-svg-container { display: flex; justify-content: center; align-items: center; padding: 16px; min-height: 40px; }
+  .mermaid-svg-container:empty { display: none; }
+  .mermaid-svg-container svg { max-width: 100%; height: auto; display: block; }
   .diagram-header { display: flex; align-items: center; justify-content: space-between; padding: 6px 12px; border-bottom: 1px solid var(--pi-border); background: var(--pi-surface); font-size: 11px; color: var(--pi-muted); }
   .diagram-badge { font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--pi-accent); }
   .diagram-actions { display: flex; align-items: center; gap: 6px; }
@@ -420,7 +424,9 @@ export const formattedTextStyles = css`
   table { border-collapse: collapse; display: block; overflow-x: auto; overflow-y: hidden; }
   th, td { border: 1px solid var(--pi-border); padding: 4px 8px; }
   th { background: var(--pi-surface); }
-  img { max-width: 100%; height: auto; border-radius: 8px; margin: 6px 0; }
+  img, video { max-width: 100%; height: auto; border-radius: 8px; margin: 6px 0; }
+  .markdown-video { max-width: 100%; max-height: 70vh; display: block; margin: 8px 0; border-radius: 8px; background: #000; }
+  .katex-display { overflow-x: auto; overflow-y: hidden; padding: 4px 0; margin: 8px 0; }
 `;
 
 export const statusBarStyles = css`

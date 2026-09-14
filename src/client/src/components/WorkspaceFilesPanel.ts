@@ -128,6 +128,7 @@ export class WorkspaceFilesPanel extends LitElement {
     const filename = filenameForPath(file.path);
 
     if (file.mediaType === "image") return this.renderImageViewer(context, file, downloadUrl, filename);
+    if (file.mediaType === "video") return this.renderVideoViewer(context, file, downloadUrl, filename);
     if (file.binary) return html`
       <div class="viewer-header">
         <strong>${file.path}</strong>
@@ -151,6 +152,26 @@ export class WorkspaceFilesPanel extends LitElement {
         </div>
       </div>
       <code-viewer .content=${file.content} .language=${file.language}></code-viewer>
+    `;
+  }
+
+  private renderVideoViewer(context: WorkspacePanelContext, file: FileContentResponse, downloadUrl: string, filename: string): TemplateResult {
+    const metadata = `${file.mimeType ?? "video"} · ${formatFileSize(file.size)}`;
+    const src = workspaceImagePreviewUrl(context.workspace.projectId, context.workspace.id, file.path, { modifiedAt: file.modifiedAt, machineId: context.machine.id });
+    return html`
+      <div class="viewer-header">
+        <strong>${file.path}</strong>
+        <div class="viewer-actions">
+          <small>${metadata}</small>
+          <a class="download-button" href=${downloadUrl} download=${filename} target="_blank" rel="noopener">Download</a>
+        </div>
+      </div>
+      <div class="video-preview" style="display: flex; justify-content: center; align-items: center; padding: 20px; background: var(--pi-bg); overflow: auto;">
+        <video controls preload="metadata" style="max-width: 100%; max-height: 70vh; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
+          <source src=${src} type=${file.mimeType ?? "video/mp4"}>
+          Your browser does not support the video tag.
+        </video>
+      </div>
     `;
   }
 
