@@ -6,8 +6,8 @@ import type { SessionUiEvent } from "./sessionSocket";
 
 export function applyTranscriptEvent(messages: ChatLine[], event: SessionUiEvent): ChatLine[] | undefined {
   if (event.type === "message.append") return appendNewMessage(messages, event.message);
-  if (event.type === "assistant.delta") return appendText(messages, "assistant", event.text);
-  if (event.type === "assistant.thinking.delta") return appendThinking(messages, event.text);
+  if (event.type === "assistant.delta") return appendText(messages, "assistant", event.text, event.fullText);
+  if (event.type === "assistant.thinking.delta") return appendThinking(messages, event.text, event.fullText);
   if (event.type === "tool.start") return appendToolExecutionStart(messages, event);
   if (event.type === "tool.update") return updateToolExecution(messages, event.toolCallId, (part) => mergeToolExecutionUpdate(part, event));
   if (event.type === "tool.end") return finalizeToolExecution(messages, event.toolCallId, event.toolName, summarizeArgs(event.content), event.text, event.isError, event.content, event.details);

@@ -24,18 +24,6 @@ import {
 const shortTimestampFormatter = new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
 const fullTimestampFormatter = new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "medium" });
 
-const partialStreamNoticeBodies = [
-  "You opened this chat while the assistant was already replying. The complete answer will appear shortly.",
-  "We joined mid-sentence. Holding the curtain until the full reply is ready.",
-  "The assistant started before this tab arrived. We’ll show the full answer when it lands.",
-  "Catching the reply in one piece — no spoilers, no half-answers.",
-  "The tokens are still assembling themselves. Full answer incoming.",
-  "We arrived fashionably late to this response. The complete version will appear soon.",
-] as const;
-
-function randomPartialStreamNoticeBody(): string {
-  return partialStreamNoticeBodies[Math.floor(Math.random() * partialStreamNoticeBodies.length)] ?? partialStreamNoticeBodies[0];
-}
 
 function clampPercent(value: number): number {
   return clampNumber(value, 0, 100);
@@ -68,7 +56,6 @@ export class ChatView extends LitElement {
   @property({ type: Number }) messageTotal = 0;
   @property({ type: Boolean }) hasMore = false;
   @property({ type: Boolean }) loadingMore = false;
-  @property({ type: Boolean }) isReceivingPartialStream = false;
   @property({ type: Boolean }) isSendingPrompt = false;
   @property({ type: Boolean }) isCompacting = false;
   @property({ type: Number }) pendingMessageCount = 0;
@@ -97,7 +84,6 @@ export class ChatView extends LitElement {
   private groupedMessagesCache: ChatGroup[] = [];
   private readonly messageMetaCache = new WeakMap<ChatLine, { short: string; full: string }>();
   private readonly messageCopyTextCache = new WeakMap<ChatLine, string>();
-  private partialStreamNoticeBody: string | undefined;
   private lastScrollTop = 0;
   private lastClientHeight = 0;
   private touchStartY: number | undefined;
@@ -174,7 +160,6 @@ export class ChatView extends LitElement {
       this.savePreviousSessionScrollPosition(changed.get("sessionId"));
       this.prepareSessionUiState();
     }
-    if (changed.has("isReceivingPartialStream") || (changed.has("sessionId") && this.isReceivingPartialStream)) this.syncPartialStreamNoticeBody();
     if (changed.has("messages")) this.pinnedToBottom = this.pinnedToBottom && (this.didChatHeightChange() || this.isNearBottom());
   }
 
@@ -290,12 +275,6 @@ export class ChatView extends LitElement {
   }
 
   private renderSessionActivity() {
-    if (this.isReceivingPartialStream) return html`
-      <aside class="session-activity receiving" aria-live="polite">
-        <strong>Catching up…</strong>
-        <span>${this.currentPartialStreamNoticeBody()}</span>
-      </aside>
-    `;
     if (!this.isCompacting) return null;
     return html`
       <aside class="session-activity compacting" aria-live="polite">
@@ -306,14 +285,6 @@ export class ChatView extends LitElement {
     `;
   }
 
-  private syncPartialStreamNoticeBody(): void {
-    this.partialStreamNoticeBody = this.isReceivingPartialStream ? randomPartialStreamNoticeBody() : undefined;
-  }
-
-  private currentPartialStreamNoticeBody(): string {
-    this.partialStreamNoticeBody ??= randomPartialStreamNoticeBody();
-    return this.partialStreamNoticeBody;
-  }
 
   private activityState(): string | undefined {
     const status = this.status;
@@ -841,10 +812,7 @@ export class ChatView extends LitElement {
   }
 
   private shouldFallbackToBottomForMissingAnchor(): boolean {
-    // While catching up to a stream, history can temporarily omit the in-flight
-    // assistant message that a previous scroll save anchored to. Keep retrying
-    // until the final refreshed transcript has a chance to render that anchor.
-    return !this.hasMore && !this.isReceivingPartialStream;
+    return !this.hasMore;
   }
 
   private updatePinnedToBottomAfterRestore(status: Exclude<ChatScrollRestoreResult["status"], "missing">): void {

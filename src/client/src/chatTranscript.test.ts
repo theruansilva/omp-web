@@ -293,4 +293,26 @@ describe("applyTranscriptEvent", () => {
       { ...textMessage("user", "sent prompt"), meta: { timestamp: "2026-05-09T12:00:00.000Z" } },
     ]);
   });
+  it("applies fullText updates idempotently without duplicating text when replayed", () => {
+    let messages: ChatLine[] = [{ role: "assistant", parts: [{ type: "text", text: "Hello" }] }];
+    messages = applyTranscriptEvent(messages, { type: "assistant.delta", text: " world", fullText: "Hello world" }) ?? messages;
+    expect(messages).toEqual([{ role: "assistant", parts: [{ type: "text", text: "Hello world" }] }]);
+
+    // Replay with earlier/same fullText does not duplicate
+    messages = applyTranscriptEvent(messages, { type: "assistant.delta", text: " world", fullText: "Hello world" }) ?? messages;
+    expect(messages).toEqual([{ role: "assistant", parts: [{ type: "text", text: "Hello world" }] }]);
+
+    // Advance fullText
+    messages = applyTranscriptEvent(messages, { type: "assistant.delta", text: "!", fullText: "Hello world!" }) ?? messages;
+    expect(messages).toEqual([{ role: "assistant", parts: [{ type: "text", text: "Hello world!" }] }]);
+  });
+
+  it("applies fullText thinking updates idempotently without duplicating thinking when replayed", () => {
+    let messages: ChatLine[] = [{ role: "assistant", parts: [{ type: "thinking", text: "thinking" }] }];
+    messages = applyTranscriptEvent(messages, { type: "assistant.thinking.delta", text: " more", fullText: "thinking more" }) ?? messages;
+    expect(messages).toEqual([{ role: "assistant", parts: [{ type: "thinking", text: "thinking more" }] }]);
+
+    messages = applyTranscriptEvent(messages, { type: "assistant.thinking.delta", text: " more", fullText: "thinking more" }) ?? messages;
+    expect(messages).toEqual([{ role: "assistant", parts: [{ type: "thinking", text: "thinking more" }] }]);
+  });
 });

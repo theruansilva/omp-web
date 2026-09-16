@@ -42,7 +42,6 @@ export class SessionController {
   private readonly api: typeof defaultApi;
   private readonly transcripts: ChatTranscriptStore;
   private selectionSeq = 0;
-  private catchupStreamSessionId: string | undefined;
   private pendingTranscriptEvents: SessionUiEvent[] = [];
   private pendingStatusBySession = new Map<string, SessionStatus>();
   private pendingActivityBySession = new Map<string, SessionActivity>();
@@ -75,13 +74,12 @@ export class SessionController {
   clearActiveSession() {
     this.selectionSeq += 1;
     this.socket.close();
-    this.catchupStreamSessionId = undefined;
     this.clearPendingUpdates();
     // Note: sendingPrompts is intentionally NOT cleared here. Deselecting a
     // session must not cancel the in-flight upload indicator of the session
     // that is still sending; the per-session entry is cleared by send()'s
     // finally block when the request settles.
-    this.setState({ selectedSession: undefined, messages: [], messagePageStart: 0, messagePageEnd: 0, messagePageTotal: 0, isLoadingEarlierMessages: false, isReceivingPartialStream: false, status: undefined, activity: undefined, availableThinkingLevels: [] });
+    this.setState({ selectedSession: undefined, messages: [], messagePageStart: 0, messagePageEnd: 0, messagePageTotal: 0, isLoadingEarlierMessages: false, status: undefined, activity: undefined, availableThinkingLevels: [] });
   }
 
   deselectSession(options?: { forgetRememberedSelection?: boolean | undefined; updateUrl?: boolean | undefined }) {
@@ -130,7 +128,6 @@ export class SessionController {
     this.sessionSelection.rememberSession({ ...session, cwd: this.workspaceSelectionKey(session.cwd) });
     const seq = ++this.selectionSeq;
     this.socket.close();
-    this.catchupStreamSessionId = undefined;
     this.clearPendingUpdates();
     const transcriptKey = this.sessionCacheKey(session.id);
     const cached = this.transcripts.cachedView(transcriptKey);
@@ -138,7 +135,6 @@ export class SessionController {
       selectedSession: session,
       ...cached,
       isLoadingEarlierMessages: false,
-      isReceivingPartialStream: false,
       status: session.archived === true ? undefined : this.getState().sessionStatuses[session.id],
       activity: session.archived === true ? undefined : this.getState().sessionActivities[session.id],
     });
@@ -147,7 +143,7 @@ export class SessionController {
         const page = await this.api.messages(session, { limit: MESSAGE_PAGE_SIZE }, selectedMachineId(this.getState()));
         if (seq !== this.selectionSeq || this.getState().selectedSession?.id !== session.id) return;
         const history = this.transcripts.mergeHistory(transcriptKey, page);
-        this.setState({ ...history, isLoadingEarlierMessages: false, isReceivingPartialStream: false, status: undefined, activity: undefined });
+        this.setState({ ...history, isLoadingEarlierMessages: false, status: undefined, activity: undefined });
         if (options?.updateUrl !== false) this.updateUrl();
         return;
       }
@@ -161,7 +157,7 @@ export class SessionController {
       const [page, status] = await Promise.all([this.api.messages(session, { limit: MESSAGE_PAGE_SIZE }, selectedMachineId(this.getState())), this.api.status(session, selectedMachineId(this.getState()))]);
       if (seq !== this.selectionSeq || this.getState().selectedSession?.id !== session.id) return;
       const history = this.transcripts.mergeHistory(transcriptKey, page);
-      this.setState({ ...history, isLoadingEarlierMessages: false, ...this.setStreamCatchup(status.isStreaming ? session.id : undefined), status, activity: this.getState().sessionActivities[session.id], availableThinkingLevels: [] });
+      this.setState({ ...history, isLoadingEarlierMessages: false, status, activity: this.getState().sessionActivities[session.id], availableThinkingLevels: [] });
       this.applyStatus(status);
       void this.refreshAvailableThinkingLevels();
       for (const event of buffered) this.applyEvent(event);
@@ -712,7 +708,6 @@ export class SessionController {
         ...history,
         status,
         activity: this.getState().sessionActivities[sessionId],
-        ...this.setStreamCatchup(status.isStreaming ? sessionId : undefined),
       });
       this.applyStatus(status);
     } catch (error) {
@@ -806,7 +801,15 @@ export class SessionController {
   private applyStatus(status: SessionStatus) {
     const state = this.getState();
     const clearsStaleActivity = state.sessionActivities[status.sessionId]?.phase === "active" && !isSessionActive(status);
+    let nextSessions = state.sessions;
+    if (status.archived === true) {
+      nextSessions = markSessionsArchived(nextSessions, [status.sessionId], new Date().toISOString());
+    } else if (status.dormant !== undefined) {
+      nextSessions = nextSessions.map((session) => session.id === status.sessionId ? { ...session, dormant: status.dormant } : session);
+    }
     this.setState({
+      sessions: nextSessions,
+      selectedSession: state.selectedSession?.id === status.sessionId ? (nextSessions.find((s) => s.id === status.sessionId) ?? state.selectedSession) : state.selectedSession,
       sessionStatuses: { ...state.sessionStatuses, [status.sessionId]: status },
       ...sessionMessageCountPatch(state, status.sessionId, status.messageCount),
       ...(clearsStaleActivity ? { sessionActivities: omitSessionActivity(state.sessionActivities, status.sessionId) } : {}),
@@ -817,7 +820,6 @@ export class SessionController {
       ...(state.selectedSession?.id === status.sessionId && status.planMode?.proposedPlan && !state.planReviewDialog ? { planReviewDialog: status.planMode.proposedPlan } : {}),
       ...(state.selectedSession?.id === status.sessionId && !status.planMode?.proposedPlan && state.planReviewDialog ? { planReviewDialog: undefined } : {}),
     });
-    if (!status.isStreaming) this.finishStreamCatchup(status.sessionId);
   }
 
   private applySessionName(sessionId: string, name: string | undefined) {
@@ -836,15 +838,6 @@ export class SessionController {
   }
 
   private applyEvent(event: SessionUiEvent) {
-    const selectedSessionId = this.getState().selectedSession?.id;
-    if (this.catchupStreamSessionId !== undefined && this.catchupStreamSessionId === selectedSessionId) {
-      if (event.type === "message.end" || event.type === "agent.end") {
-        this.finishStreamCatchup(this.catchupStreamSessionId);
-        return;
-      }
-      if (isTranscriptEvent(event)) return;
-    }
-
     // Status and activity arrive once per token (the server republishes them on
     // every transcript event). Buffer them alongside high-frequency transcript
     // deltas so the host component renders at most once per animation frame
@@ -973,38 +966,6 @@ export class SessionController {
     this.pendingFrame = undefined;
   }
 
-  // Stream catch-up is a single mode with two coupled facets that must never
-  // drift: the private `catchupStreamSessionId` guard (which suppresses live
-  // transcript events while we lack the in-flight message prefix) and the
-  // public `isReceivingPartialStream` flag (which drives the "Catching up…"
-  // badge). Route every mutation of the mode through this helper so the guard
-  // and the badge can never disagree. Catch-up only ever applies to the
-  // selected session, so an active session id always implies the badge is on.
-  private setStreamCatchup(sessionId: string | undefined): Pick<AppState, "isReceivingPartialStream"> {
-    this.catchupStreamSessionId = sessionId;
-    return { isReceivingPartialStream: sessionId !== undefined };
-  }
-
-  private finishStreamCatchup(sessionId: string) {
-    const isSelected = this.getState().selectedSession?.id === sessionId;
-    const wasCatchingUp = this.catchupStreamSessionId === sessionId || (isSelected && this.getState().isReceivingPartialStream);
-    if (!wasCatchingUp) return;
-    this.catchupStreamSessionId = undefined;
-    if (isSelected) this.setState({ isReceivingPartialStream: false });
-    void this.refreshMessages(sessionId);
-  }
-
-  private async refreshMessages(sessionId: string) {
-    try {
-      const session = this.getState().selectedSession;
-      if (session?.id !== sessionId) return;
-      const page = await this.api.messages(session, { limit: MESSAGE_PAGE_SIZE }, selectedMachineId(this.getState()));
-      if (this.getState().selectedSession?.id !== sessionId) return;
-      this.setState(this.transcripts.mergeHistory(this.sessionCacheKey(sessionId), page));
-    } catch (error) {
-      if (this.getState().selectedSession?.id === sessionId) this.setState({ error: String(error) });
-    }
-  }
 }
 
 function omitSessionActivity(activities: Record<string, SessionActivity>, sessionId: string): Record<string, SessionActivity> {
@@ -1097,9 +1058,6 @@ function sessionMessageCountPatch(state: AppState, sessionId: string, messageCou
   };
 }
 
-function isTranscriptEvent(event: SessionUiEvent): boolean {
-  return ["message.append", "assistant.delta", "assistant.thinking.delta", "tool.start", "tool.update", "tool.end", "shell.start", "shell.chunk", "shell.end", "command.output", "session.error"].includes(event.type);
-}
 
 function isHighFrequencyTranscriptEvent(event: SessionUiEvent): boolean {
   return event.type === "assistant.delta" || event.type === "assistant.thinking.delta" || event.type === "shell.chunk";
