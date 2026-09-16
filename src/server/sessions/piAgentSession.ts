@@ -60,6 +60,7 @@ export interface PiAgentSession {
  model: AgentModel | undefined;
  thinkingLevel: ClientThinkingLevel;
  isStreaming: boolean;
+ streamMessage?: unknown;
  isCompacting: boolean;
  isBashRunning: boolean;
  pendingMessageCount: number;
@@ -75,6 +76,7 @@ export interface PiAgentSession {
  getContextUsage(): ClientSessionStatus["contextUsage"] | undefined;
  getExtensionStatuses?(): Record<string, string> | undefined;
  onExtensionStatusChange?: () => void;
+ onShutdown?: () => void;
  prompt(text: string, options?: { streamingBehavior?: "steer" | "followUp"; images?: ImageContent[] }): Promise<void>;
  sendCustomMessage(message: { customType: string; content: string; display: boolean; details?: unknown }, options?: { triggerTurn?: boolean; deliverAs?: "steer" | "followUp" | "nextTurn" }): Promise<void>;
  executeBash(command: string, onChunk?: (chunk: string) => void, options?: { excludeFromContext?: boolean }): Promise<{ output: string; exitCode: number | undefined; cancelled: boolean; truncated: boolean }>;
@@ -136,6 +138,7 @@ export class DefaultPiAgentSession implements PiAgentSession {
  private _isBashRunning = false;
  private readonly _extensionStatuses = new Map<string, string>();
  onExtensionStatusChange?: () => void;
+ onShutdown?: () => void;
  onPlanProposed?: (plan: { planFilePath: string; title: string; planContent: string }) => void;
  onPlanCleared?: () => void;
  onAskRequested?: (ask: { requestId: string; questions: AskDialogQuestion[] }) => void;
@@ -176,6 +179,7 @@ export class DefaultPiAgentSession implements PiAgentSession {
   return configured !== undefined && isKnownThinkingLevel(configured) ? configured : "off";
  }
  get isStreaming(): boolean { return this.ompSession.isStreaming; }
+ get streamMessage(): unknown | undefined { return this.ompSession.state.streamMessage ?? undefined; }
  get isCompacting(): boolean { return this.ompSession.isCompacting; }
  get isBashRunning(): boolean { return this._isBashRunning; }
  get pendingMessageCount(): number { return this.ompSession.queuedMessageCount; }
@@ -468,7 +472,7 @@ export class DefaultPiAgentSession implements PiAgentSession {
      isIdle: () => !this.ompSession.isStreaming,
      abort: () => { void this.ompSession.abort(); },
      hasPendingMessages: () => this.ompSession.queuedMessageCount > 0,
-     shutdown: () => {},
+     shutdown: () => { this.onShutdown?.(); },
      getContextUsage: () => this.ompSession.getContextUsage(),
      getSystemPrompt: () => this.ompSession.systemPrompt,
      compact: async (opts) => { await this.ompSession.compact(typeof opts === "string" ? opts : undefined); },

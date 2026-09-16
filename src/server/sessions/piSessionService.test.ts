@@ -39,6 +39,7 @@ interface TestSession extends PiAgentSession {
   sessionName: string | undefined;
   model: PiAgentSession["model"];
   isStreaming: boolean;
+  streamMessage?: unknown;
   isCompacting: boolean;
   isBashRunning: boolean;
   pendingMessageCount: number;
@@ -83,6 +84,7 @@ function fakeRuntime(sessionId = "session-1", patch: Partial<TestSession> = {}) 
     model: undefined,
     thinkingLevel: "off",
     isStreaming: false,
+    streamMessage: undefined,
     isCompacting: false,
     isBashRunning: false,
     pendingMessageCount: 0,
@@ -196,6 +198,26 @@ async function waitFor(fn: () => void | Promise<void>, timeoutMs = 2000): Promis
 }
 
 describe("PiSessionService", () => {
+    it("includes in-flight streamMessage when session is streaming", async () => {
+      const hub = new CapturingSessionEventHub();
+      const fake = fakeRuntime("stream-session", {
+        isStreaming: true,
+        streamMessage: { role: "assistant", content: [{ type: "text", text: "in-flight partial" }] },
+        sessionManager: fakeSessionManager("/workspace", {
+          getBranch: () => [{ type: "message", message: { role: "user", content: "hello" } }],
+        }),
+      });
+      const service = new PiSessionService(hub, {
+        createAgentRuntime: runtimeCreator(fake.runtime),
+        sessionManager: sessionGateway([sessionRecord("stream-session")]),
+      });
+
+      const messages = await service.messages(sessionRef("stream-session"));
+      expect(messages).toEqual([
+        { role: "user", content: "hello" },
+        { role: "assistant", content: [{ type: "text", text: "in-flight partial" }] },
+      ]);
+    });
   it("starts sessions through an injected runtime creator", async () => {
     const hub = new CapturingSessionEventHub();
     const fake = fakeRuntime();
@@ -2153,4 +2175,224 @@ describe("PiSessionService", () => {
       await service.dispose();
     });
   });
+  describe("lifecycle: idle eviction and auto-archive", () => {
+    it("marks unarchived sessions as dormant when not active in memory, and not dormant when open", async () => {
+      const hub = new CapturingSessionEventHub();
+      const fake = fakeRuntime("session-1");
+      const service = new PiSessionService(hub, {
+        createAgentRuntime: runtimeCreator(fake.runtime),
+        sessionManager: sessionGateway([sessionRecord("session-1", "/workspace")]),
+        heartbeatIntervalMs: 60_000,
+      });
+
+      // Before opening, listed session from disk is dormant
+      const initialList = await service.list("/workspace");
+      expect(initialList).toHaveLength(1);
+      expect(initialList[0]?.dormant).toBe(true);
+
+      // Open session
+      const status = await service.status(sessionRef("session-1", "/workspace"));
+      expect(status.dormant).toBe(false);
+
+      // Now listed session is in memory, so dormant is not true
+      const afterOpenList = await service.list("/workspace");
+      expect(afterOpenList[0]?.dormant).toBeUndefined();
+
+      await service.dispose();
+    });
+
+    it("evicts idle session from memory after idleEvictionMs and emits dormant status", async () => {
+      const hub = new CapturingSessionEventHub();
+      const fake = fakeRuntime("session-evict");
+      let currentTime = 1000;
+      const originalNow = Date.now;
+      Date.now = () => currentTime;
+
+      try {
+        const service = new PiSessionService(hub, {
+          createAgentRuntime: runtimeCreator(fake.runtime),
+          sessionManager: sessionGateway([sessionRecord("session-evict", "/workspace")]),
+          idleEvictionMs: 500,
+          heartbeatIntervalMs: 20,
+        });
+
+        // Open session
+        await service.status(sessionRef("session-evict", "/workspace"));
+        expect(fake.calls.dispose).toBe(0);
+
+        // Advance time past idleEvictionMs
+        currentTime += 600;
+        await new Promise((resolve) => setTimeout(resolve, 50));
+
+        // Session should be disposed/evicted
+        expect(fake.calls.dispose).toBe(1);
+
+        // Global status update with dormant: true should have been published
+        const dormantEvent = hub.globalEvents.find((e) => e.type === "status.update" && e.status.sessionId === "session-evict" && e.status.dormant === true);
+        expect(dormantEvent).toBeDefined();
+
+        await service.dispose();
+      } finally {
+        Date.now = originalNow;
+      }
+    });
+
+    it("does not evict active session if it has active work", async () => {
+      const hub = new CapturingSessionEventHub();
+      const fake = fakeRuntime("session-busy", { isStreaming: true });
+      let currentTime = 1000;
+      const originalNow = Date.now;
+      Date.now = () => currentTime;
+
+      try {
+        const service = new PiSessionService(hub, {
+          createAgentRuntime: runtimeCreator(fake.runtime),
+          sessionManager: sessionGateway([sessionRecord("session-busy", "/workspace")]),
+          idleEvictionMs: 500,
+          heartbeatIntervalMs: 20,
+        });
+
+        await service.status(sessionRef("session-busy", "/workspace"));
+
+        // Advance time past idleEvictionMs
+        currentTime += 600;
+        await new Promise((resolve) => setTimeout(resolve, 50));
+
+        // Still busy with isStreaming, so not evicted
+        expect(fake.calls.dispose).toBe(0);
+
+        await service.dispose();
+      } finally {
+        Date.now = originalNow;
+      }
+    });
+
+    it("resets idle timer on user activity", async () => {
+      const hub = new CapturingSessionEventHub();
+      let listener: ((event: unknown) => void) | undefined;
+      const fake = fakeRuntime("session-active", {
+        subscribe: (next) => { listener = next; return () => {}; },
+      });
+      let currentTime = 1000;
+      const originalNow = Date.now;
+      Date.now = () => currentTime;
+
+      try {
+        const service = new PiSessionService(hub, {
+          createAgentRuntime: runtimeCreator(fake.runtime),
+          sessionManager: sessionGateway([sessionRecord("session-active", "/workspace")]),
+          idleEvictionMs: 500,
+          heartbeatIntervalMs: 20,
+        });
+
+        await service.status(sessionRef("session-active", "/workspace"));
+
+        // Advance time partially (300ms)
+        currentTime += 300;
+        // User/agent activity event occurs
+        listener?.({ type: "tool_start", toolName: "bash" });
+
+        // Advance time another 300ms (total 600ms from start, but only 300ms from activity)
+        currentTime += 300;
+        await new Promise((resolve) => setTimeout(resolve, 50));
+
+        // Should NOT have evicted yet
+        expect(fake.calls.dispose).toBe(0);
+
+        // Advance time past 500ms since last activity
+        currentTime += 300;
+        await new Promise((resolve) => setTimeout(resolve, 50));
+
+        // Now evicted
+        expect(fake.calls.dispose).toBe(1);
+
+        await service.dispose();
+      } finally {
+        Date.now = originalNow;
+      }
+    });
+
+    it("auto-archives sessions inactive for more than autoArchiveIdleMs", async () => {
+      const hub = new CapturingSessionEventHub();
+      const archivedInputs: string[] = [];
+      const oldRecord = {
+        ...sessionRecord("old-session", "/workspace"),
+        modified: new Date("2026-01-01T00:00:00.000Z"),
+      };
+
+      const service = new PiSessionService(hub, {
+        sessionManager: {
+          create: () => { throw new Error("not used"); },
+          list: () => Promise.resolve([oldRecord]),
+          listAll: () => Promise.resolve([oldRecord]),
+          open: () => Promise.resolve(fakeSessionManager()),
+        },
+        archiveStore: {
+          list: () => Promise.resolve([]),
+          get: () => Promise.resolve(undefined),
+          archive: (input) => {
+            archivedInputs.push(input.sessionId);
+            return Promise.resolve({ sessionId: input.sessionId, cwd: input.cwd, archivedAt: new Date().toISOString() });
+          },
+          restore: () => Promise.resolve(),
+        },
+        autoArchiveIdleMs: 1000,
+        autoArchiveIntervalMs: 10,
+        heartbeatIntervalMs: 20,
+      });
+
+      await new Promise((resolve) => setTimeout(resolve, 60));
+
+      expect(archivedInputs).toContain("old-session");
+      const archivedEvent = hub.globalEvents.find((e) => e.type === "status.update" && e.status.sessionId === "old-session" && e.status.archived === true);
+      expect(archivedEvent).toBeDefined();
+
+      await service.dispose();
+    });
+
+    it("closing mutex serializes getActive while closeActive is in flight", async () => {
+      const hub = new CapturingSessionEventHub();
+      let disposeResolve: (() => void) | undefined;
+      let disposeCalled = false;
+      let disposeCount = 0;
+      const fake = fakeRuntime("session-race");
+      fake.runtime.dispose = () => new Promise<void>((resolve) => {
+        disposeCount += 1;
+        if (disposeCount === 1) {
+          disposeCalled = true;
+          disposeResolve = resolve;
+        } else {
+          resolve();
+        }
+      });
+
+      const service = new PiSessionService(hub, {
+        createAgentRuntime: runtimeCreator(fake.runtime),
+        sessionManager: sessionGateway([sessionRecord("session-race", "/workspace")]),
+        heartbeatIntervalMs: 60_000,
+      });
+
+      // Open session
+      await service.status(sessionRef("session-race", "/workspace"));
+
+      // Trigger reload or close
+      let reloadFinished = false;
+      const reloadPromise = service.reload(sessionRef("session-race", "/workspace")).then(() => {
+        reloadFinished = true;
+      });
+
+      // Give event loop a tick so closeActive begins
+      await new Promise((resolve) => setTimeout(resolve, 10));
+      expect(disposeCalled).toBe(true);
+      expect(reloadFinished).toBe(false);
+
+      // Finish dispose
+      disposeResolve?.();
+      await reloadPromise;
+      expect(reloadFinished).toBe(true);
+
+      await service.dispose();
+    });
+  });
+
 });

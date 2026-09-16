@@ -5,10 +5,24 @@ export function toClientEvent(event: unknown): SessionUiEvent {
   const eventType = getString(event, "type");
   const assistantMessageEvent = getProperty(event, "assistantMessageEvent");
   if (eventType === "message_update" && getString(assistantMessageEvent, "type") === "text_delta") {
-    return { type: "assistant.delta", text: getString(assistantMessageEvent, "delta") ?? "" };
+    const partial = getProperty(assistantMessageEvent, "partial");
+    const contentIndex = getNumber(assistantMessageEvent, "contentIndex");
+    const fullText = extractContentText(partial, contentIndex);
+    return {
+      type: "assistant.delta",
+      text: getString(assistantMessageEvent, "delta") ?? "",
+      ...(fullText !== undefined ? { fullText } : {}),
+    };
   }
   if (eventType === "message_update" && getString(assistantMessageEvent, "type") === "thinking_delta") {
-    return { type: "assistant.thinking.delta", text: getString(assistantMessageEvent, "delta") ?? "" };
+    const partial = getProperty(assistantMessageEvent, "partial");
+    const contentIndex = getNumber(assistantMessageEvent, "contentIndex");
+    const fullText = extractContentText(partial, contentIndex);
+    return {
+      type: "assistant.thinking.delta",
+      text: getString(assistantMessageEvent, "delta") ?? "",
+      ...(fullText !== undefined ? { fullText } : {}),
+    };
   }
   if (eventType === "tool_execution_start") {
     const args = getProperty(event, "args");
@@ -100,4 +114,24 @@ function stringifyPrimitive(value: unknown): string {
   if (typeof value === "string") return value;
   if (typeof value === "number" || typeof value === "boolean" || typeof value === "bigint") return String(value);
   return "";
+}
+
+function extractContentText(partial: unknown, contentIndex?: number): string | undefined {
+  if (!isRecord(partial)) return undefined;
+  const content = getProperty(partial, "content");
+  if (!Array.isArray(content)) return undefined;
+  if (contentIndex !== undefined && isRecord(content[contentIndex])) {
+    const item = content[contentIndex];
+    return typeof item["text"] === "string" ? item["text"] : (typeof item["thinking"] === "string" ? item["thinking"] : undefined);
+  }
+  const last = content.at(-1);
+  if (isRecord(last)) {
+    return typeof last["text"] === "string" ? last["text"] : (typeof last["thinking"] === "string" ? last["thinking"] : undefined);
+  }
+  return undefined;
+}
+
+function getNumber(value: unknown, key: string): number | undefined {
+  const property = getProperty(value, key);
+  return typeof property === "number" ? property : undefined;
 }

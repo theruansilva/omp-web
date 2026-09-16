@@ -196,6 +196,7 @@ export interface SessionInfo extends SessionRef {
  parentSessionPath?: string;
  archived?: boolean;
  archivedAt?: string;
+ dormant?: boolean;
 }
 
 export interface ArchiveSessionsResponse {
@@ -461,6 +462,8 @@ export interface SessionStatus {
   requestId: string;
   questions: AskDialogQuestion[];
  } | undefined;
+ dormant?: boolean;
+ archived?: boolean;
 }
 
 export interface WorkspaceActivity {
@@ -734,8 +737,8 @@ export type CommandResult =
 
 export type SessionUiEvent =
  | { type: "message.append"; message: unknown }
- | { type: "assistant.delta"; text: string }
- | { type: "assistant.thinking.delta"; text: string }
+ | { type: "assistant.delta"; text: string; fullText?: string }
+ | { type: "assistant.thinking.delta"; text: string; fullText?: string }
  | { type: "tool.start"; toolName: string; toolCallId: string; summary: string; args?: unknown }
  | { type: "tool.update"; toolName: string; toolCallId: string; text: string; content?: unknown; details?: unknown }
  | { type: "tool.end"; toolName: string; toolCallId: string; text: string; isError: boolean; content?: unknown; details?: unknown }

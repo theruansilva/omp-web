@@ -249,6 +249,12 @@ export interface PiSessionServiceDependencies {
  createAgentRuntime?: CreateAgentRuntime;
  modelRegistry?: ModelRegistryInstance;
  heartbeatIntervalMs?: number;
+ /** Inactivity threshold (ms) before an idle in-memory session is evicted/dormant. Defaults to 1 hour. */
+ idleEvictionMs?: number;
+ /** Inactivity threshold (ms) before an inactive session is automatically archived. Defaults to 24 hours. */
+ autoArchiveIdleMs?: number;
+ /** Interval (ms) between auto-archive background checks. Defaults to 1 minute. */
+ autoArchiveIntervalMs?: number;
  workspaceActivity?: Pick<WorkspaceActivityService, "applySessionStatus" | "applySessionActivity" | "removeSession" | "reconcileSessionActivity">;
  /**
   * When provided, the `spawn_session` tool is registered on every session,
@@ -276,6 +282,12 @@ export class PiSessionService {
  private readonly active = new Map<string, ActiveSession<PiSessionRuntime>>();
  private readonly activities = new Map<string, { phase: "active" | "idle" | "error"; label: string; detail?: string; at: string }>();
  private readonly heartbeat: NodeJS.Timeout;
+ private readonly idleEvictionMs: number;
+ private readonly autoArchiveIdleMs: number;
+ private readonly autoArchiveIntervalMs: number;
+ private lastAutoArchiveSweepAt = 0;
+ private readonly sessionLastActivity = new Map<string, number>();
+ private readonly closingSessions = new Map<string, Promise<void>>();
  private readonly commandService: SessionCommandService<PiAgentSession>;
  private readonly compactionPromptQueues = new Map<string, QueuedPrompt[]>();
  private readonly schedulePromptService = new SchedulePromptService();
@@ -339,6 +351,9 @@ export class PiSessionService {
    );
   this.createAgentRuntime = deps.createAgentRuntime ?? defaultCreateAgentRuntime;
   this.workspaceActivity = deps.workspaceActivity;
+  this.idleEvictionMs = deps.idleEvictionMs ?? (60 * 60 * 1000);
+  this.autoArchiveIdleMs = deps.autoArchiveIdleMs ?? (24 * 60 * 60 * 1000);
+  this.autoArchiveIntervalMs = deps.autoArchiveIntervalMs ?? (60 * 1000);
   this.heartbeat = setInterval(() => { this.publishHeartbeats(); }, deps.heartbeatIntervalMs ?? 2000);
   this.commandService = new SessionCommandService(
    (sessionId) => this.getActive(sessionId),
@@ -434,6 +449,8 @@ export class PiSessionService {
   this.clearCompactionDrainTimers();
   const activeSessions = Array.from(new Set(this.active.values()));
   this.active.clear();
+  this.sessionLastActivity.clear();
+  this.closingSessions.clear();
   this.activities.clear();
   this.compactionPromptQueues.clear();
   this.authLossWarnings.clear();
@@ -465,6 +482,9 @@ export class PiSessionService {
    const activeName = active?.runtime.session.sessionName;
    if (activeName !== undefined && activeName !== "") {
     clientSession.name = activeName;
+   }
+   if (active === undefined) {
+    clientSession.dormant = true;
    }
    return clientSession;
   });
@@ -1491,24 +1511,38 @@ export class PiSessionService {
  }
 
  private async closeActive(sessionId: string): Promise<void> {
+  const existing = this.closingSessions.get(sessionId);
+  if (existing !== undefined) return existing;
+
   const active = this.active.get(sessionId);
   if (!active) return;
-  this.active.delete(sessionId);
-  this.schedulePromptService.stopForSession(sessionId);
-  this.activities.delete(sessionId);
-  this.workspaceActivity?.removeSession(sessionId, active.runtime.session.sessionManager.getCwd());
-  this.clearAuthLossWarningsForSession(sessionId);
-  this.clearCompactionPromptQueue(sessionId);
-  // Disarm subsession notification before teardown so the abort below cannot
-  // emit a "stopped working" event that notifies the parent (e.g. on archive).
-  // The parent/children link is kept so the parent can still see the child.
-  if (this.subsessionLinkForActiveChild(active.runtime.session) !== undefined) this.subsessionNotifyArmed.delete(sessionId);
-  clearSessionQueue(active.runtime.session);
-  active.unsubscribe();
+
+  const closePromise = (async () => {
+   this.active.delete(sessionId);
+   this.sessionLastActivity.delete(sessionId);
+   this.schedulePromptService.stopForSession(sessionId);
+   this.activities.delete(sessionId);
+   this.workspaceActivity?.removeSession(sessionId, active.runtime.session.sessionManager.getCwd());
+   this.clearAuthLossWarningsForSession(sessionId);
+   this.clearCompactionPromptQueue(sessionId);
+   // Disarm subsession notification before teardown so the abort below cannot
+   // emit a "stopped working" event that notifies the parent (e.g. on archive).
+   // The parent/children link is kept so the parent can still see the child.
+   if (this.subsessionLinkForActiveChild(active.runtime.session) !== undefined) this.subsessionNotifyArmed.delete(sessionId);
+   clearSessionQueue(active.runtime.session);
+   active.unsubscribe();
+   try {
+    await active.runtime.session.abort();
+   } finally {
+    await active.runtime.dispose();
+   }
+  })();
+
+  this.closingSessions.set(sessionId, closePromise);
   try {
-   await active.runtime.session.abort();
+   await closePromise;
   } finally {
-   await active.runtime.dispose();
+   this.closingSessions.delete(sessionId);
   }
  }
 
@@ -1544,8 +1578,17 @@ export class PiSessionService {
  }
 
  private async getActive(ref: PiSessionLookup): Promise<ActiveSession<PiSessionRuntime>> {
+  const sessionId = sessionIdFromLookup(ref);
+  for (const [id, closing] of this.closingSessions.entries()) {
+   if (id === sessionId || id.startsWith(sessionId) || sessionId.startsWith(id)) {
+    await closing.catch(() => undefined);
+   }
+  }
   const active = this.activeForLookup(ref);
-  if (active !== undefined) return active;
+  if (active !== undefined) {
+   this.touchSessionActivity(active.runtime.session.sessionId);
+   return active;
+  }
 
   const archived = await this.getArchived(ref);
   if (archived?.archivePath !== undefined) return this.create(await this.sessionManager.open(archived.archivePath), archived.cwd);
@@ -1582,6 +1625,7 @@ export class PiSessionService {
   });
   const active: ActiveSession<PiSessionRuntime> = { runtime, unsubscribe: noop };
   const attachSessionListeners = (session: PiAgentSession) => {
+   session.onShutdown = () => { void this.closeActive(session.sessionId); };
    session.onExtensionStatusChange = () => { this.publishStatus(session); };
    session.onPlanProposed = (plan) => {
     this.events.publish(session.sessionId, { type: "plan.proposed", plan });
@@ -1610,6 +1654,7 @@ export class PiSessionService {
    await this.recoverSubsessionTrackingForOpenedSession(session);
   });
   this.active.set(runtime.session.sessionId, active);
+  this.touchSessionActivity(runtime.session.sessionId);
   await this.recoverSubsessionTrackingForOpenedSession(runtime.session);
   this.publishStatus(runtime.session);
   return active;
@@ -1635,6 +1680,7 @@ export class PiSessionService {
    }
   }
   active.unsubscribe = session.subscribe((event) => {
+   this.touchSessionActivity(session.sessionId);
    this.events.publish(session.sessionId, toClientEvent(event));
    this.publishActivityForEvent(session, event);
    const eventType = getString(event, "type");
@@ -1772,6 +1818,8 @@ export class PiSessionService {
  }
 
  private publishHeartbeats(): void {
+  this.sweepIdleSessions();
+  void this.sweepAutoArchive();
   for (const active of this.active.values()) {
    const { session } = active.runtime;
    // Re-evaluate subsession completion here too: agent_end can arrive while
@@ -1866,6 +1914,105 @@ export class PiSessionService {
   this.events.publishGlobal({ type: "activity.update", activity });
  }
 
+
+ private touchSessionActivity(sessionId: string): void {
+  this.sessionLastActivity.set(sessionId, Date.now());
+ }
+
+ private sweepIdleSessions(): void {
+  const now = Date.now();
+  for (const active of this.active.values()) {
+   const { session } = active.runtime;
+   const sessionId = session.sessionId;
+   if (this.hasActiveWork(session)) continue;
+   const lastActivity = this.sessionLastActivity.get(sessionId) ?? now;
+   if (now - lastActivity >= this.idleEvictionMs) {
+    this.logger.info({ sessionId, idleMs: now - lastActivity }, "Session reached idle timeout, evicting from memory (dormant)");
+    void this.evictIdleSession(sessionId);
+   }
+  }
+ }
+
+ private async evictIdleSession(sessionId: string): Promise<void> {
+  if (this.closingSessions.has(sessionId)) return;
+  const active = this.active.get(sessionId);
+  if (!active || this.hasActiveWork(active.runtime.session)) return;
+
+  const session = active.runtime.session;
+  const cwd = session.sessionManager.getCwd();
+
+  await this.closeActive(sessionId);
+
+  const dormantStatus: ClientSessionStatus = {
+   sessionId,
+   isStreaming: false,
+   isCompacting: false,
+   isBashRunning: false,
+   pendingMessageCount: 0,
+   queuedMessages: [],
+   tokens: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, total: 0 },
+   cost: 0,
+   dormant: true,
+  };
+  this.events.publish(sessionId, { type: "status.update", status: dormantStatus });
+  this.events.publishGlobal({ type: "status.update", status: dormantStatus });
+  this.workspaceActivity?.applySessionStatus(cwd, dormantStatus);
+ }
+
+ private async sweepAutoArchive(): Promise<void> {
+  const now = Date.now();
+  if (now - this.lastAutoArchiveSweepAt < this.autoArchiveIntervalMs) return;
+  this.lastAutoArchiveSweepAt = now;
+
+  try {
+   const [sessions, archivedRecords] = await Promise.all([
+    this.sessionManager.listAll?.() ?? [],
+    this.archiveStore.list(),
+   ]);
+   const archivedIds = new Set(archivedRecords.map((r) => r.sessionId));
+   const archiveInputs: ArchiveSessionInput[] = [];
+
+   for (const session of sessions) {
+    if (archivedIds.has(session.id)) continue;
+    if (this.activeSessionHasWork(session.id)) continue;
+
+    const active = this.active.get(session.id);
+    const lastActivity = active !== undefined
+     ? (this.sessionLastActivity.get(session.id) ?? session.modified.getTime())
+     : session.modified.getTime();
+
+    if (now - lastActivity >= this.autoArchiveIdleMs) {
+     if (active !== undefined) {
+      await this.closeActive(session.id);
+     }
+     archiveInputs.push(archiveInputFromListEntry(session));
+    }
+   }
+
+   if (archiveInputs.length > 0) {
+    this.logger.info({ count: archiveInputs.length }, "Auto-archiving sessions idle for more than 24h");
+    await this.archiveStoreArchiveMany(archiveInputs);
+    for (const input of archiveInputs) {
+     const archivedStatus: ClientSessionStatus = {
+      sessionId: input.sessionId,
+      isStreaming: false,
+      isCompacting: false,
+      isBashRunning: false,
+      pendingMessageCount: 0,
+      queuedMessages: [],
+      tokens: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, total: 0 },
+      cost: 0,
+      archived: true,
+     };
+     this.events.publish(input.sessionId, { type: "status.update", status: archivedStatus });
+     this.events.publishGlobal({ type: "status.update", status: archivedStatus });
+    }
+   }
+  } catch (error) {
+   this.logger.info({ error: String(error) }, "Error during auto-archive sweep");
+  }
+ }
+
  private statusFromSession(session: PiAgentSession): ClientSessionStatus {
   const stats = session.getSessionStats();
   const model = session.model === undefined ? undefined : modelToClientModel(session.model);
@@ -1890,6 +2037,7 @@ export class PiSessionService {
    messageCount: session.messages.length,
    tokens: stats.tokens,
    cost: stats.cost,
+   dormant: false,
    ...(contextUsage === undefined ? {} : { contextUsage }),
    ...(planMode !== undefined ? { planMode } : {}),
    ...(extensionStatuses !== undefined ? { extensionStatuses } : {}),
@@ -1967,6 +2115,9 @@ function historyMessages(session: PiAgentSession): unknown[] {
   else if (entry["type"] === "custom_message" && entry["display"] === true) messages.push({ role: "custom", content: entry["content"], customType: entry["customType"], details: entry["details"] });
   else if (entry["type"] === "compaction") messages.push({ role: "system", source: "compaction", content: `Compacted history:\n\n${stringValue(entry["summary"])}` });
   else if (entry["type"] === "branch_summary") messages.push({ role: "system", source: "branch_summary", content: `Branch summary:\n\n${stringValue(entry["summary"])}` });
+ }
+ if (session.isStreaming && session.streamMessage !== undefined) {
+  messages.push(session.streamMessage);
  }
  return messages;
 }
