@@ -258,12 +258,19 @@ function escapeHtml(text: string): string {
 function sanitizeHtml(html: string): string {
   const template = document.createElement("template");
   template.innerHTML = html;
-  template.content.querySelectorAll("script, style, iframe, object, embed").forEach((node) => { node.remove(); });
+  template.content.querySelectorAll("script, style, iframe, object, embed, base, meta, form, input").forEach((node) => { node.remove(); });
   template.content.querySelectorAll("*").forEach((element) => {
     for (const attribute of [...element.attributes]) {
       const name = attribute.name.toLowerCase();
-      if (name.startsWith("on")) element.removeAttribute(attribute.name);
-      if ((name === "href" || name === "src" || name === "poster") && !isSafeUrl(attribute.value)) element.removeAttribute(attribute.name);
+      if (name.startsWith("on")) {
+        element.removeAttribute(attribute.name);
+        continue;
+      }
+      if (name === "href" || name === "src" || name === "poster" || name === "action" || name === "formaction" || name === "xlink:href" || name.endsWith(":href") || name.endsWith(":src")) {
+        if (!isSafeUrl(attribute.value)) {
+          element.removeAttribute(attribute.name);
+        }
+      }
     }
     if (element.tagName === "A") {
       element.setAttribute("target", "_blank");
