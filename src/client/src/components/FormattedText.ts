@@ -100,23 +100,38 @@ export class FormattedText extends LitElement {
     const optionItem = event.target.closest(".ui-option-item");
     if (optionItem instanceof HTMLElement) {
       const card = optionItem.closest(".ui-options-card");
-      const checkbox = optionItem.querySelector<HTMLInputElement>(".ui-option-checkbox");
-      if (card instanceof HTMLElement && checkbox instanceof HTMLInputElement) {
-        checkbox.checked = !checkbox.checked;
-        optionItem.classList.toggle("selected", checkbox.checked);
-        optionItem.setAttribute("aria-checked", checkbox.checked ? "true" : "false");
+      if (card instanceof HTMLElement) {
+        const isSingle = card.getAttribute("data-mode") === "single" || optionItem.getAttribute("role") === "radio";
+        const wasSelected = optionItem.classList.contains("selected");
 
-        const checked = Array.from(card.querySelectorAll<HTMLInputElement>(".ui-option-checkbox:checked"));
-        const labels = checked.map((cb) => cb.dataset["label"] || cb.dataset["value"] || "").filter(Boolean);
+        if (isSingle) {
+          card.querySelectorAll<HTMLElement>(".ui-option-item").forEach((item) => {
+            if (item !== optionItem) {
+              item.classList.remove("selected");
+              item.setAttribute("aria-checked", "false");
+              const cb = item.querySelector<HTMLInputElement>(".ui-option-checkbox");
+              if (cb) cb.checked = false;
+            }
+          });
+          const nextSelected = !wasSelected;
+          optionItem.classList.toggle("selected", nextSelected);
+          optionItem.setAttribute("aria-checked", nextSelected ? "true" : "false");
+          const checkbox = optionItem.querySelector<HTMLInputElement>(".ui-option-checkbox");
+          if (checkbox) checkbox.checked = nextSelected;
+        } else {
+          const nextSelected = !wasSelected;
+          optionItem.classList.toggle("selected", nextSelected);
+          optionItem.setAttribute("aria-checked", nextSelected ? "true" : "false");
+          const checkbox = optionItem.querySelector<HTMLInputElement>(".ui-option-checkbox");
+          if (checkbox) checkbox.checked = nextSelected;
+        }
+
+        const labels = getSelectedOptionLabels(card);
         const promptText = labels.length === 1 ? labels[0]! : labels.join(", ");
 
-        const applyBtn = card.querySelector<HTMLButtonElement>(".ui-options-apply-btn");
         const submitBtn = card.querySelector<HTMLButtonElement>(".ui-options-submit-btn");
-        if (applyBtn) {
-          applyBtn.textContent = labels.length > 0 ? `Inserir no prompt (${labels.length})` : "Inserir no prompt";
-        }
         if (submitBtn) {
-          submitBtn.textContent = labels.length > 0 ? `Enviar seleção (${labels.length})` : "Enviar seleção";
+          submitBtn.textContent = labels.length > 1 ? `Enviar seleção (${labels.length})` : "Enviar seleção";
         }
 
         if (labels.length > 0) {
@@ -128,28 +143,12 @@ export class FormattedText extends LitElement {
       return;
     }
 
-    // Apply button click
-    const applyBtn = event.target.closest(".ui-options-apply-btn");
-    if (applyBtn instanceof HTMLButtonElement) {
-      const card = applyBtn.closest(".ui-options-card");
-      if (card instanceof HTMLElement) {
-        const checked = Array.from(card.querySelectorAll<HTMLInputElement>(".ui-option-checkbox:checked"));
-        const labels = checked.map((cb) => cb.dataset["label"] || cb.dataset["value"] || "").filter(Boolean);
-        const promptText = labels.length === 1 ? labels[0]! : labels.join(", ");
-        if (promptText) {
-          window.dispatchEvent(new CustomEvent("omp:set-prompt-text", { detail: { text: promptText, append: false, focus: true } }));
-        }
-      }
-      return;
-    }
-
     // Submit button click
     const submitBtn = event.target.closest(".ui-options-submit-btn");
     if (submitBtn instanceof HTMLButtonElement) {
       const card = submitBtn.closest(".ui-options-card");
       if (card instanceof HTMLElement) {
-        const checked = Array.from(card.querySelectorAll<HTMLInputElement>(".ui-option-checkbox:checked"));
-        const labels = checked.map((cb) => cb.dataset["label"] || cb.dataset["value"] || "").filter(Boolean);
+        const labels = getSelectedOptionLabels(card);
         const promptText = labels.length === 1 ? labels[0]! : labels.join(", ");
         if (promptText) {
           window.dispatchEvent(new CustomEvent("omp:set-prompt-text", { detail: { text: promptText, submit: true } }));
@@ -245,4 +244,12 @@ async function writeClipboard(text: string): Promise<boolean> {
   } catch {
     return false;
   }
+}
+
+function getSelectedOptionLabels(card: HTMLElement): string[] {
+  const selectedItems = Array.from(card.querySelectorAll<HTMLElement>(".ui-option-item.selected"));
+  return selectedItems.map((item) => {
+    const cb = item.querySelector<HTMLInputElement>(".ui-option-checkbox");
+    return item.dataset["label"] || item.dataset["value"] || cb?.dataset["label"] || cb?.dataset["value"] || "";
+  }).filter(Boolean);
 }

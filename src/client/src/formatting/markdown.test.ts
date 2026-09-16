@@ -173,14 +173,54 @@ Importante: monitorar CTR na primeira semana.
     const html = toSafeMarkdownHtml(markdown);
 
     expect(html).toContain("ui-options-card");
+    expect(html).toContain('data-mode="multi"');
     expect(html).toContain("Quais recursos incluir?");
     expect(html).toContain("Próximos passos");
     expect(html).toContain("ui-option-item");
-    expect(html).toContain("Autenticação JWT");
+    expect(html).toContain('role="checkbox"');
+    expect(html).toContain('data-value="Autenticação JWT"');
+    expect(html).toContain('data-label="Autenticação JWT"');
     expect(html).toContain("Tokens seguros stateless");
     expect(html).toContain("Suporte a OAuth2");
-    expect(html).toContain("ui-options-apply-btn");
+    expect(html).toContain("✓");
+    expect(html).not.toContain("ui-options-apply-btn");
     expect(html).toContain("ui-options-submit-btn");
+  });
+
+  it("differentiates single-choice options and multi-choice checklist with overrides", () => {
+    const singleMd = `
+<options title="Qual arquitetura?">
+  <option label="Monólito" desc="Simples" />
+  <option label="Microserviços" desc="Escalável" />
+</options>
+`;
+    const singleHtml = toSafeMarkdownHtml(singleMd);
+    expect(singleHtml).toContain('data-mode="single"');
+    expect(singleHtml).toContain('role="radio"');
+    expect(singleHtml).toContain("●");
+    expect(singleHtml).toContain("Opções");
+
+    const multiOverrideMd = `
+<options multi="true" title="Selecione múltiplos">
+  <option label="Opt A" />
+  <option label="Opt B" />
+</options>
+`;
+    const multiHtml = toSafeMarkdownHtml(multiOverrideMd);
+    expect(multiHtml).toContain('data-mode="multi"');
+    expect(multiHtml).toContain('role="checkbox"');
+    expect(multiHtml).toContain("✓");
+
+    const singleOverrideChecklist = `
+<checklist single="true" title="Escolha um só">
+  <item label="Item 1" />
+  <item label="Item 2" />
+</checklist>
+`;
+    const singleChecklistHtml = toSafeMarkdownHtml(singleOverrideChecklist);
+    expect(singleChecklistHtml).toContain('data-mode="single"');
+    expect(singleChecklistHtml).toContain('role="radio"');
+    expect(singleChecklistHtml).toContain("●");
   });
 
   it("renders flexible options with arbitrary attribute order and <option> tags", () => {

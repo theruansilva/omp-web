@@ -670,6 +670,15 @@ export const formattedTextStyles = css`
   .ui-option-item.selected .ui-option-check {
     display: block;
   }
+  .ui-options-card[data-mode="single"] .ui-option-box,
+  .ui-option-item[role="radio"] .ui-option-box {
+    border-radius: 50%;
+  }
+  .ui-options-card[data-mode="single"] .ui-option-check,
+  .ui-option-item[role="radio"] .ui-option-check {
+    font-size: 8px;
+    line-height: 1;
+  }
   .ui-option-content {
     display: flex;
     flex-direction: column;

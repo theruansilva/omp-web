@@ -214,16 +214,28 @@ function expandCustomUiTags(text: string): string {
           const t = attrs["type"] ?? "info";
           return `<div class="ui-callout ui-callout-${t}">\n\n${inner.trim()}\n\n</div>`;
         })
-        .replace(/<(checklist|options|option-cards|options-card)(\s+[^>]*)?>([\s\S]*?)<\/\1>/gi, (_, _tag, attrStr, blockContent) => {
+        .replace(/<(checklist|options|option-cards|options-card)(\s+[^>]*)?>([\s\S]*?)<\/\1>/gi, (_, tag, attrStr, blockContent) => {
           const attrs = parseAttributes(attrStr);
+          const isChecklist = tag.toLowerCase() === "checklist";
+          const hasMultiAttr = attrs["multi"] === "true" || attrs["multiple"] !== undefined || attrs["mode"] === "multi";
+          const hasSingleAttr = attrs["multi"] === "false" || attrs["single"] !== undefined || attrs["mode"] === "single";
+          const isSingle = hasSingleAttr || (!isChecklist && !hasMultiAttr);
+          const mode = isSingle ? "single" : "multi";
+
           const title = attrs["title"];
           const badge = attrs["badge"];
           const color = attrs["color"];
           const subtitle = attrs["subtitle"] || attrs["sub"];
           const colorClass = color ? ` ui-badge-${color}` : " ui-badge-blue";
-          const badgeHtml = badge ? `<span class="ui-badge${colorClass}">${badge}</span>` : `<span class="ui-badge ui-badge-blue">Opções</span>`;
-          const headerHtml = `<div class="ui-card-header"><h3 class="ui-card-title">${title || "Selecione as opções desejadas"}</h3>${badgeHtml}</div>`;
+          const defaultBadge = isChecklist ? "Checklist" : "Opções";
+          const defaultTitle = isChecklist ? "Selecione as opções desejadas" : (isSingle ? "Escolha uma opção" : "Selecione as opções");
+          const badgeHtml = badge ? `<span class="ui-badge${colorClass}">${badge}</span>` : `<span class="ui-badge ui-badge-blue">${defaultBadge}</span>`;
+          const headerHtml = `<div class="ui-card-header"><h3 class="ui-card-title">${title || defaultTitle}</h3>${badgeHtml}</div>`;
           const subtitleHtml = subtitle ? `<p class="ui-card-subtitle">${subtitle}</p>` : "";
+
+          const role = isSingle ? "radio" : "checkbox";
+          const checkIcon = isSingle ? "●" : "✓";
+          const inputType = isSingle ? "radio" : "checkbox";
 
           const items: string[] = [];
           const itemRegex = /<(item|opt|option)(\s+[^>]*)?(?:\/>|>([\s\S]*?)<\/\1>)/gi;
@@ -235,9 +247,9 @@ function expandCustomUiTags(text: string): string {
             const desc = itemAttrs["desc"] || itemAttrs["description"] || (itemAttrs["label"] ? innerText : "");
             const value = itemAttrs["value"] || label;
             items.push(
-              `<div class="ui-option-item" role="checkbox" aria-checked="false" tabindex="0">` +
-              `<input type="checkbox" class="ui-option-checkbox" data-value="${escapeHtml(value)}" data-label="${escapeHtml(label)}" />` +
-              `<span class="ui-option-box"><span class="ui-option-check">✓</span></span>` +
+              `<div class="ui-option-item" role="${role}" aria-checked="false" tabindex="0" data-value="${escapeHtml(value)}" data-label="${escapeHtml(label)}">` +
+              `<input type="${inputType}" class="ui-option-checkbox" data-value="${escapeHtml(value)}" data-label="${escapeHtml(label)}" />` +
+              `<span class="ui-option-box"><span class="ui-option-check">${checkIcon}</span></span>` +
               `<div class="ui-option-content">` +
               `<strong class="ui-option-label">${escapeHtml(label)}</strong>` +
               (desc ? `<small class="ui-option-desc">${escapeHtml(desc)}</small>` : "") +
@@ -255,9 +267,9 @@ function expandCustomUiTags(text: string): string {
               const desc = (bmatch[4] || "").trim();
               if (label) {
                 items.push(
-                  `<div class="ui-option-item" role="checkbox" aria-checked="false" tabindex="0">` +
-                  `<input type="checkbox" class="ui-option-checkbox" data-value="${escapeHtml(label)}" data-label="${escapeHtml(label)}" />` +
-                  `<span class="ui-option-box"><span class="ui-option-check">✓</span></span>` +
+                  `<div class="ui-option-item" role="${role}" aria-checked="false" tabindex="0" data-value="${escapeHtml(label)}" data-label="${escapeHtml(label)}">` +
+                  `<input type="${inputType}" class="ui-option-checkbox" data-value="${escapeHtml(label)}" data-label="${escapeHtml(label)}" />` +
+                  `<span class="ui-option-box"><span class="ui-option-check">${checkIcon}</span></span>` +
                   `<div class="ui-option-content">` +
                   `<strong class="ui-option-label">${escapeHtml(label)}</strong>` +
                   (desc ? `<small class="ui-option-desc">${escapeHtml(desc)}</small>` : "") +
@@ -269,16 +281,15 @@ function expandCustomUiTags(text: string): string {
           }
 
           if (items.length === 0) {
-            return `<div class="ui-card ui-options-card">\n\n${headerHtml}\n\n${subtitleHtml}\n\n${blockContent.trim()}\n\n</div>`;
+            return `<div class="ui-card ui-options-card" data-mode="${mode}">\n\n${headerHtml}\n\n${subtitleHtml}\n\n${blockContent.trim()}\n\n</div>`;
           }
 
           return (
-            `<div class="ui-card ui-options-card">` +
+            `<div class="ui-card ui-options-card" data-mode="${mode}">` +
             headerHtml +
             subtitleHtml +
             `<div class="ui-options-list">${items.join("")}</div>` +
             `<div class="ui-options-actions">` +
-            `<button type="button" class="ui-options-btn ui-options-apply-btn" title="Inserir seleção no campo de prompt">Inserir no prompt</button>` +
             `<button type="button" class="ui-options-btn ui-options-submit-btn primary" title="Enviar seleção diretamente para o assistente">Enviar seleção</button>` +
             `</div>` +
             `</div>`
@@ -312,7 +323,7 @@ function escapeHtml(text: string): string {
 function sanitizeHtml(html: string): string {
   const template = document.createElement("template");
   template.innerHTML = html;
-  template.content.querySelectorAll("script, style, iframe, object, embed, base, meta, form, input").forEach((node) => { node.remove(); });
+  template.content.querySelectorAll("script, style, iframe, object, embed, base, meta, form, input:not(.ui-option-checkbox)").forEach((node) => { node.remove(); });
   template.content.querySelectorAll("*").forEach((element) => {
     for (const attribute of [...element.attributes]) {
       const name = attribute.name.toLowerCase();
