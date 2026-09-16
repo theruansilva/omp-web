@@ -129,6 +129,7 @@ function parseConfigRequest(value: unknown): OmpWebConfigValues {
   const port = value["port"];
   const allowedHosts = value["allowedHosts"];
   const shortcuts = value["shortcuts"];
+  const vimMode = value["vimMode"];
   const plugins = value["plugins"];
   const pathAccess = value["pathAccess"];
   const uploads = value["uploads"];
@@ -145,6 +146,10 @@ function parseConfigRequest(value: unknown): OmpWebConfigValues {
   }
   if (allowedHosts !== undefined) config.allowedHosts = parseAllowedHostsRequest(allowedHosts);
   if (shortcuts !== undefined) config.shortcuts = parseShortcutsRequest(shortcuts);
+  if (vimMode !== undefined) {
+    if (typeof vimMode !== "boolean") throw new Error("PI WEB config vimMode must be a boolean");
+    config.vimMode = vimMode;
+  }
   if (plugins !== undefined) config.plugins = parsePluginsRequest(plugins);
   if (pathAccess !== undefined) config.pathAccess = parsePathAccessRequest(pathAccess);
   if (uploads !== undefined) config.uploads = parseUploadsConfig(uploads, "request");

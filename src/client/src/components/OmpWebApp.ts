@@ -50,6 +50,7 @@ import {
   isChatPreferences,
   loadChatPreferences,
   preferencesEventTarget,
+  setChatPreferenceDefaults,
   type ChatPreferences,
 } from "../chatPreferences";
 import { classifyModelSource } from "../modelCategories";
@@ -417,6 +418,7 @@ export class OmpWebApp extends LitElement {
   private applyClientConfig(config: OmpWebConfigValues): void {
     this.shortcutConfig = config.shortcuts ?? {};
     this.workspaceUploadDefaultFolder = effectiveWorkspaceUploadFolder(config);
+    setChatPreferenceDefaults({ vimMode: config.vimMode ?? false });
   }
 
   private async refreshAppData(): Promise<void> {
