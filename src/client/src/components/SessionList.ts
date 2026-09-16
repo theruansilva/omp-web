@@ -237,9 +237,10 @@ export class SessionList extends LitElement implements KeyboardNavigableSection 
   const canArchive = isArchivableSessionInfo(session, status);
   const canDeleteTransient = isTransientNewSessionInfo(session, status);
   const canReloadSession = canArchive && this.canReload;
+  const isDormant = session.dormant === true || status?.dormant === true;
   return html`
       <div
-        class="action-row ${this.selected?.id === session.id ? "selected" : ""} ${bulkSelected ? "bulk-selected" : ""} ${session.archived === true ? "archived" : ""} ${selectionActive ? "selecting" : ""} ${this.openMenuSessionId === session.id ? "menu-open" : ""}"
+        class="action-row ${this.selected?.id === session.id ? "selected" : ""} ${bulkSelected ? "bulk-selected" : ""} ${session.archived === true ? "archived" : ""} ${isDormant ? "dormant" : ""} ${selectionActive ? "selecting" : ""} ${this.openMenuSessionId === session.id ? "menu-open" : ""}"
         style=${`--depth:${String(cappedDepth)}`}
         tabindex="0"
         title=${session.path}
@@ -405,6 +406,7 @@ export class SessionList extends LitElement implements KeyboardNavigableSection 
    return "new · ";
   }
   if (session.archived === true) return "read-only · ";
+  if (session.dormant === true || status?.dormant === true) return "dormant · ";
   return "";
  }
 

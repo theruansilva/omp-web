@@ -238,7 +238,7 @@ export const listStyles = css`
   .action-row { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) auto; margin: 6px 0; cursor: pointer; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
   .action-row:focus-visible { outline: 2px solid var(--pi-accent); outline-offset: 2px; border-radius: 8px; }
   .action-row.selected .action-main, .action-row.selected .action-menu-toggle { border-color: var(--pi-accent); background: var(--pi-selection-bg); }
-  .action-row.archived .action-main { color: var(--pi-muted); }
+  .action-row.archived .action-main, .action-row.dormant .action-main { color: var(--pi-muted); }
   .action-main { position: relative; box-sizing: border-box; min-width: 0; width: 100%; border: 1px solid var(--pi-border); border-radius: 8px; background: var(--pi-surface); color: var(--pi-text); padding: 7px 22px 7px calc(9px + var(--depth, 0) * 16px); text-align: left; transition: border-radius .1s ease; }
   .action-name { display: -webkit-box; max-height: 2.5em; overflow: hidden; overflow-wrap: anywhere; line-height: 1.25; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
   .action-row:not(.selected):hover .action-main { background: var(--pi-surface-hover); }

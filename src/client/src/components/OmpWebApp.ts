@@ -1346,6 +1346,17 @@ export class OmpWebApp extends LitElement {
       state: this.state,
       files: this.createWorkspaceFiles(workspace, machine.id),
       host: this.createWorkspaceHost(),
+      apiFetch: this.createWorkspaceApiFetch(machine.id),
+    };
+  }
+
+  private createWorkspaceApiFetch(machineId: string): (path: string, init?: RequestInit) => Promise<Response> {
+    return (path: string, init?: RequestInit) => {
+      const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+      const endpoint = machineId === "local" || !machineId
+        ? `/api${normalizedPath}`
+        : `/api/machines/${encodeURIComponent(machineId)}${normalizedPath}`;
+      return fetch(endpoint, init);
     };
   }
 
@@ -1386,6 +1397,7 @@ export class OmpWebApp extends LitElement {
         workspace,
         state: this.state,
         files: this.createWorkspaceFiles(workspace, machineId),
+        apiFetch: this.createWorkspaceApiFetch(machineId),
         prompt: this.createPromptEditor(),
         terminal: {
           open: (options) => { void this.openRuntimeTerminal(machineId, workspace, options); },
@@ -2084,7 +2096,7 @@ export class OmpWebApp extends LitElement {
           ${state.error ? html`<div class="error">${state.error}</div>` : null}
           <div class="mobile-navigation-panel">${this.appShell.isMobileNavigationLayout ? this.renderNavigationPanel() : null}</div>
           ${state.selectedSession ? html`
-            <chat-view .onFocusPrompt=${() => { void this.focusChatComposer(); }} .sessionId=${state.selectedSession.id} .pendingAsk=${state.askDialog} .onSubmitAsk=${(result: AskDialogSubmitResult, reqId?: string) => { const targetId = reqId || state.askDialog?.requestId; if (targetId) void this.sessions.submitAsk(targetId, result); }} .onCancelAsk=${(reqId?: string) => { const targetId = reqId || state.askDialog?.requestId; if (targetId) void this.sessions.cancelAsk(targetId); }} .messages=${state.messages} .messageStart=${state.messagePageStart} .messageEnd=${state.messagePageEnd} .messageTotal=${state.messagePageTotal} .hasMore=${state.messagePageStart > 0} .loadingMore=${state.isLoadingEarlierMessages} .isReceivingPartialStream=${state.isReceivingPartialStream} .isSendingPrompt=${state.sendingPrompts[state.selectedSession.id] === true} .isCompacting=${state.status?.isCompacting === true} .pendingMessageCount=${state.status?.pendingMessageCount ?? 0} .clientQueuedMessages=${state.clientQueuedSessionMessages[state.selectedSession.id] ?? []} .status=${state.status} .activity=${state.activity} .onLoadMore=${() => this.withChatPrependTransition(() => this.sessions.loadEarlierMessages())}></chat-view>
+            <chat-view .onFocusPrompt=${() => { void this.focusChatComposer(); }} .sessionId=${state.selectedSession.id} .pendingAsk=${state.askDialog} .onSubmitAsk=${(result: AskDialogSubmitResult, reqId?: string) => { const targetId = reqId || state.askDialog?.requestId; if (targetId) void this.sessions.submitAsk(targetId, result); }} .onCancelAsk=${(reqId?: string) => { const targetId = reqId || state.askDialog?.requestId; if (targetId) void this.sessions.cancelAsk(targetId); }} .messages=${state.messages} .messageStart=${state.messagePageStart} .messageEnd=${state.messagePageEnd} .messageTotal=${state.messagePageTotal} .hasMore=${state.messagePageStart > 0} .loadingMore=${state.isLoadingEarlierMessages} .isSendingPrompt=${state.sendingPrompts[state.selectedSession.id] === true} .isCompacting=${state.status?.isCompacting === true} .pendingMessageCount=${state.status?.pendingMessageCount ?? 0} .clientQueuedMessages=${state.clientQueuedSessionMessages[state.selectedSession.id] ?? []} .status=${state.status} .activity=${state.activity} .onLoadMore=${() => this.withChatPrependTransition(() => this.sessions.loadEarlierMessages())}></chat-view>
             <prompt-editor .sessionId=${state.selectedSession.id} .cwd=${state.selectedWorkspace?.path} .machineId=${selectedMachineId(state)} .projectId=${state.selectedWorkspace?.projectId} .workspaceId=${state.selectedWorkspace?.id} .workspaceScopedFileSuggestions=${this.supportsWorkspaceFileSuggestions()} .disabled=${state.selectedSession.archived === true} .canSteer=${state.status?.isStreaming === true} .isCompacting=${state.status?.isCompacting === true} .canStop=${state.status?.isStreaming === true || state.status?.isBashRunning === true || state.status?.isCompacting === true || (state.status?.pendingMessageCount ?? 0) > 0} .status=${state.status} .availableThinkingLevels=${state.availableThinkingLevels} .sending=${state.sendingPrompts[state.selectedSession.id] === true} .onTogglePlanMode=${() => { this.sessions.togglePlanMode(); }} .onOpenPlanReview=${() => { this.sessions.openPlanReview(); }} .onSend=${this.handleSendPrompt} .onStop=${this.handleStopActiveWork} .onSelectModel=${this.handleSelectModel} .onSelectThinking=${this.handleSelectThinking} .onEscape=${this.handlePromptEscape}></prompt-editor>
             ${this.chatPreferences.showStatusBar ? html`<status-bar .status=${state.status}></status-bar>` : null}
           ` : html`<div class="empty">${this.sessionEmptyMessage()}</div>`}
