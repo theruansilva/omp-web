@@ -51,7 +51,8 @@ export function validateHostHeader(hostHeader: string | undefined, allowedHosts:
   const requestHost = parseHostHeader(hostHeader);
   if (requestHost === undefined) return false;
 
-  const allowedList = allowedHosts ?? ["127.0.0.1", "localhost", "::1"];
+  const baseAllowed = ["127.0.0.1", "localhost", "::1"];
+  const allowedList = Array.isArray(allowedHosts) ? [...baseAllowed, ...allowedHosts] : baseAllowed;
   const normalizedAllowed = allowedList.map((h) => h.toLowerCase().trim());
   return normalizedAllowed.includes(requestHost);
 }
@@ -76,7 +77,8 @@ export function validateOriginHeader(originHeader: string | undefined, hostHeade
   }
 
   // Check against allowedHosts
-  const allowedList = allowedHosts ?? ["127.0.0.1", "localhost", "::1"];
+  const baseAllowed = ["127.0.0.1", "localhost", "::1"];
+  const allowedList = Array.isArray(allowedHosts) ? [...baseAllowed, ...allowedHosts] : baseAllowed;
   const normalizedAllowed = allowedList.map((h) => h.toLowerCase().trim());
   return normalizedAllowed.includes(originHost);
 }
