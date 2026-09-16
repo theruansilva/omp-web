@@ -29,7 +29,23 @@ import { registerPushRoutes } from "./push/pushRoutes.js";
 const { config } = effectiveOmpWebConfig();
 const { upgradeWebSocket, websocket } = createBunWebSocket();
 const app = new Hono();
-app.use("*", createSecurityMiddleware({ allowedHosts: config.allowedHosts }));
+
+let cachedAllowedHosts = config.allowedHosts;
+let lastCheck = 0;
+
+const getAllowedHosts = (): string[] | true | undefined => {
+  const now = Date.now();
+  if (now - lastCheck < 1000) return cachedAllowedHosts;
+  lastCheck = now;
+  try {
+    cachedAllowedHosts = effectiveOmpWebConfig().config.allowedHosts;
+  } catch {
+    // keep cached
+  }
+  return cachedAllowedHosts;
+};
+
+app.use("*", createSecurityMiddleware({ allowedHosts: getAllowedHosts }));
 
 const eventHub = new SessionEventHub();
 const workspaceActivity = new WorkspaceActivityService(eventHub);

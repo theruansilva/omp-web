@@ -148,8 +148,23 @@ export async function buildApp(deps: AppDependencies = {}): Promise<BuiltApp> {
   const configService = deps.config ?? createFileOmpWebConfigService();
   const effectiveConfig = (await configService.read()).effectiveConfig;
 
+  let cachedAllowedHosts = effectiveConfig.allowedHosts;
+  let lastCheck = 0;
+
+  const getAllowedHosts = async (): Promise<string[] | true | undefined> => {
+    const now = Date.now();
+    if (now - lastCheck < 1000) return cachedAllowedHosts;
+    lastCheck = now;
+    try {
+      cachedAllowedHosts = (await configService.read()).effectiveConfig.allowedHosts;
+    } catch {
+      // keep cached
+    }
+    return cachedAllowedHosts;
+  };
+
   app.use("*", createSecurityMiddleware({
-    allowedHosts: effectiveConfig.allowedHosts,
+    allowedHosts: getAllowedHosts,
   }));
   const { upgradeWebSocket, websocket } = createBunWebSocket();
 

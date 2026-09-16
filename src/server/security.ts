@@ -45,6 +45,28 @@ export function parseHostHeader(hostHeader: string | undefined): string | undefi
   return colonIdx !== -1 ? raw.slice(0, colonIdx) : raw;
 }
 
+export function normalizeAllowedHost(entry: string): string {
+  const trimmed = entry.trim().toLowerCase();
+  if (trimmed === "*") return "*";
+  if (trimmed.includes("://")) {
+    try {
+      return new URL(trimmed).hostname.toLowerCase();
+    } catch {
+      // fallback
+    }
+  }
+  return parseHostHeader(trimmed) ?? trimmed;
+}
+
+export function matchAllowedHost(requestHost: string, allowedPattern: string): boolean {
+  if (allowedPattern === "*") return true;
+  if (allowedPattern.startsWith("*.")) {
+    const suffix = allowedPattern.slice(2);
+    return requestHost === suffix || requestHost.endsWith(`.${suffix}`);
+  }
+  return requestHost === allowedPattern;
+}
+
 export function validateHostHeader(hostHeader: string | undefined, allowedHosts: string[] | true | undefined): boolean {
   if (allowedHosts === true) return true;
   if (hostHeader === undefined || hostHeader.trim() === "") return true;
@@ -53,8 +75,7 @@ export function validateHostHeader(hostHeader: string | undefined, allowedHosts:
 
   const baseAllowed = ["127.0.0.1", "localhost", "::1"];
   const allowedList = Array.isArray(allowedHosts) ? [...baseAllowed, ...allowedHosts] : baseAllowed;
-  const normalizedAllowed = allowedList.map((h) => h.toLowerCase().trim());
-  return normalizedAllowed.includes(requestHost);
+  return allowedList.some((h) => matchAllowedHost(requestHost, normalizeAllowedHost(h)));
 }
 
 export function validateOriginHeader(originHeader: string | undefined, hostHeader: string | undefined, allowedHosts: string[] | true | undefined): boolean {
@@ -79,8 +100,7 @@ export function validateOriginHeader(originHeader: string | undefined, hostHeade
   // Check against allowedHosts
   const baseAllowed = ["127.0.0.1", "localhost", "::1"];
   const allowedList = Array.isArray(allowedHosts) ? [...baseAllowed, ...allowedHosts] : baseAllowed;
-  const normalizedAllowed = allowedList.map((h) => h.toLowerCase().trim());
-  return normalizedAllowed.includes(originHost);
+  return allowedList.some((h) => matchAllowedHost(originHost, normalizeAllowedHost(h)));
 }
 
 export function isPrivateOrReservedHost(hostname: string, env: NodeJS.ProcessEnv = process.env): boolean {
@@ -115,7 +135,7 @@ export function isPrivateOrReservedHost(hostname: string, env: NodeJS.ProcessEnv
 }
 
 export interface SecurityMiddlewareOptions {
-  allowedHosts?: string[] | true | undefined;
+  allowedHosts?: string[] | true | (() => string[] | true | undefined | Promise<string[] | true | undefined>) | undefined;
   authToken?: string | undefined;
   authRequired?: boolean | undefined;
 }
@@ -126,13 +146,17 @@ export function createSecurityMiddleware(options: SecurityMiddlewareOptions = {}
     const hostHeader = c.req.header("host");
     const originHeader = c.req.header("origin");
 
+    const allowedHosts = typeof options.allowedHosts === "function"
+      ? await options.allowedHosts()
+      : options.allowedHosts;
+
     // 1. Host header validation
-    if (!validateHostHeader(hostHeader, options.allowedHosts)) {
+    if (!validateHostHeader(hostHeader, allowedHosts)) {
       return c.json({ error: "Forbidden: Host not allowed" }, 403);
     }
 
     // 2. Origin header validation for WebSockets / CSRF
-    if (!validateOriginHeader(originHeader, hostHeader, options.allowedHosts)) {
+    if (!validateOriginHeader(originHeader, hostHeader, allowedHosts)) {
       return c.json({ error: "Forbidden: Cross-Origin request blocked" }, 403);
     }
 
@@ -151,6 +175,7 @@ export function createSecurityMiddleware(options: SecurityMiddlewareOptions = {}
       }
     }
 
-    return await next();
+    await next();
+    return;
   };
 }
