@@ -2,6 +2,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { Hono } from "hono";
+import { createSecurityMiddleware } from "./security.js";
 import { createBunWebSocket } from "hono/bun";
 import { serveStatic } from "hono/bun";
 import { ProjectStore } from "./storage/projectStore.js";
@@ -30,6 +31,7 @@ import { registerMachineProxyRoutes } from "./machines/machineProxyRoutes.js";
 import { proxyMachinePluginAsset, registerMachinePluginProxyRoutes } from "./machines/machinePluginProxyRoutes.js";
 import { PushNotificationService } from "./push/PushNotificationService.js";
 import { registerPushRoutes } from "./push/pushRoutes.js";
+import { registerMcpRoutes } from "./mcpRoutes.js";
 import type { Project, Workspace } from "./types.js";
 
 export interface AppDependencies {
@@ -143,13 +145,18 @@ function registerLocalFileSuggestionRoutes(app: Hono, projects: ProjectService, 
 
 export async function buildApp(deps: AppDependencies = {}): Promise<BuiltApp> {
   const app = new Hono();
+  const configService = deps.config ?? createFileOmpWebConfigService();
+  const effectiveConfig = (await configService.read()).effectiveConfig;
+
+  app.use("*", createSecurityMiddleware({
+    allowedHosts: effectiveConfig.allowedHosts,
+  }));
   const { upgradeWebSocket, websocket } = createBunWebSocket();
 
   const projects = deps.projects ?? new ProjectService(new ProjectStore());
   const workspaces = deps.workspaces ?? new WorkspaceService();
   const ompWebPlugins = deps.ompWebPlugins ?? new OmpWebPluginService();
   const piPackages = deps.piPackages ?? createDefaultPiPackageService();
-  const configService = deps.config ?? createFileOmpWebConfigService();
   const sessionDaemon = deps.sessionDaemon ?? new SessionDaemonClient();
   const ompWebStatusCache = createOmpWebStatusCache(() => getOmpWebStatus(sessionDaemon), {
     onError: (error) => { console.warn("failed to refresh PI WEB status cache", error); },
@@ -202,6 +209,9 @@ export async function buildApp(deps: AppDependencies = {}): Promise<BuiltApp> {
 
   registerLocalFileSuggestionRoutes(app, projects, workspaces, "/api", { config: configService });
   registerLocalFileSuggestionRoutes(app, projects, workspaces, "/api/machines/local", { config: configService });
+
+  registerMcpRoutes(app, "/api");
+  registerMcpRoutes(app, "/api/machines/local");
 
   registerMachineProxyRoutes(app, machines, upgradeWebSocket);
 
