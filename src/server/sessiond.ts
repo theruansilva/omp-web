@@ -1,5 +1,7 @@
 #!/usr/bin/env bun
 import { mkdir, rm } from "node:fs/promises";
+import { chmodSync } from "node:fs";
+import { createSecurityMiddleware } from "./security.js";
 import { dirname } from "node:path";
 import type { Server } from "bun";
 import { Hono } from "hono";
@@ -27,6 +29,7 @@ import { registerPushRoutes } from "./push/pushRoutes.js";
 const { config } = effectiveOmpWebConfig();
 const { upgradeWebSocket, websocket } = createBunWebSocket();
 const app = new Hono();
+app.use("*", createSecurityMiddleware({ allowedHosts: config.allowedHosts }));
 
 const eventHub = new SessionEventHub();
 const workspaceActivity = new WorkspaceActivityService(eventHub);
@@ -109,5 +112,11 @@ if (port !== undefined) {
     websocket,
     maxRequestBodySize,
   });
+  if (process.platform !== "win32") {
+    try {
+      chmodSync(dirname(path), 0o700);
+      chmodSync(path, 0o600);
+    } catch {}
+  }
   process.on("exit", () => void rm(path, { force: true }));
 }

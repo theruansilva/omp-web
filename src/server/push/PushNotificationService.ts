@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { chmodSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import webPush from "web-push";
 import { ompWebDataDir } from "../../config.js";
@@ -28,7 +28,8 @@ function loadOrGenerateVapidKeys(): VapidKeys {
   const keys = webPush.generateVAPIDKeys();
   const pair: VapidKeys = { publicKey: keys.publicKey, privateKey: keys.privateKey };
   mkdirSync(ompWebDataDir(), { recursive: true });
-  writeFileSync(path, `${JSON.stringify(pair, null, 2)}\n`, "utf8");
+  writeFileSync(path, `${JSON.stringify(pair, null, 2)}\n`, { encoding: "utf8", mode: 0o600 });
+  if (process.platform !== "win32") { try { chmodSync(path, 0o600); } catch {} }
   return pair;
 }
 
@@ -62,7 +63,9 @@ function loadSubscriptions(): StoredSubscription[] {
 
 function saveSubscriptions(subs: StoredSubscription[]): void {
   mkdirSync(ompWebDataDir(), { recursive: true });
-  writeFileSync(join(ompWebDataDir(), "push-subscriptions.json"), `${JSON.stringify(subs, null, 2)}\n`, "utf8");
+  const subPath = join(ompWebDataDir(), "push-subscriptions.json");
+  writeFileSync(subPath, `${JSON.stringify(subs, null, 2)}\n`, { encoding: "utf8", mode: 0o600 });
+  if (process.platform !== "win32") { try { chmodSync(subPath, 0o600); } catch {} }
 }
 
 // ── Helpers ──────────────────────────────────────────────────────────────────

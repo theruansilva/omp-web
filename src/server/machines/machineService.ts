@@ -4,6 +4,7 @@ import { getOmpWebRuntime } from "../ompWebStatus.js";
 import { DEFAULT_REMOTE_HEALTH_TIMEOUT_MS, RemoteMachineClient, type MachineClient, validateConfiguredMachineHeaders } from "./machineClient.js";
 import { MachineStore, type StoredMachine } from "./machineStore.js";
 import { errorMessage, isRecord } from "../utils.js";
+import { isPrivateOrReservedHost } from "../security.js";
 
 export interface CreateMachineInput {
   name?: string;
@@ -187,6 +188,7 @@ function validateBaseUrl(value: string | undefined): string {
   if (url.protocol !== "http:" && url.protocol !== "https:") throw new Error("Machine baseUrl must use http or https");
   if (url.username !== "" || url.password !== "") throw new Error("Machine baseUrl must not include credentials");
   if (url.search !== "" || url.hash !== "") throw new Error("Machine baseUrl must not include query or hash");
+  if (isPrivateOrReservedHost(url.hostname)) throw new Error("Machine baseUrl must not use a private, loopback, or cloud metadata host");
   return url.href.replace(/\/$/u, "");
 }
 
