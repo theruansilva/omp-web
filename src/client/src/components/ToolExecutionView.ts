@@ -134,7 +134,7 @@ export class ToolExecutionView extends LitElement {
 
   private renderDiffContent(diff: string, label: string, target: ToolTarget | undefined) {
     const lines = diff.split("\n");
-    const truncated = __omp_shell("this.showFullDiff && lines.length > MAX_COLLAPSED_DIFF_LINES;")
+    const truncated = !this.showFullDiff && lines.length > MAX_COLLAPSED_DIFF_LINES;
     const visibleLines = truncated ? lines.slice(0, MAX_COLLAPSED_DIFF_LINES) : lines;
     return html`
       <div class="diff-content-wrap">

@@ -1,7 +1,7 @@
 export interface PromptEscapeActions {
   closeCompletions: () => void;
-  blur: () => void;
-  onEscape?: () => void;
+  blur?: (() => void) | undefined;
+  onEscape?: (() => void) | undefined;
 }
 
 export function handlePromptEscapeAction(
@@ -12,7 +12,7 @@ export function handlePromptEscapeAction(
     actions.closeCompletions();
     return true;
   }
-  actions.blur();
+  actions.blur?.();
   actions.onEscape?.();
   return true;
 }

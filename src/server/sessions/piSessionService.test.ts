@@ -2335,6 +2335,7 @@ describe("PiSessionService", () => {
             return Promise.resolve({ sessionId: input.sessionId, cwd: input.cwd, archivedAt: new Date().toISOString() });
           },
           restore: () => Promise.resolve(),
+          isArchived: () => Promise.resolve(false),
         },
         autoArchiveIdleMs: 1000,
         autoArchiveIntervalMs: 10,

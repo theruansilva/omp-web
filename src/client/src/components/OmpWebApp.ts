@@ -2039,16 +2039,6 @@ export class OmpWebApp extends LitElement {
 
   private renderContextBar() {
     return null;
-    return html`
-      <app-context-bar
-        .machines=${this.state.machines}
-        .machine=${this.state.selectedMachine}
-        .project=${this.state.selectedProject}
-        .workspace=${this.state.selectedWorkspace}
-        .session=${this.state.selectedSession}
-        .onOpenSection=${(section: NavigationSection) => { this.openNavigationSection(section); }}
-      ></app-context-bar>
-    `;
   }
 
   private renderMobileMainTabs() {

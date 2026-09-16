@@ -65,8 +65,8 @@ export class ChatView extends LitElement {
   @property({ attribute: false }) onCancelAsk?: (requestId?: string) => void;
   @property({ attribute: false }) status?: SessionStatus;
   @property({ attribute: false }) activity?: SessionActivity;
-  @state() private statusStartTime?: number;
-  private statusDurationTimer?: ReturnType<typeof setInterval>;
+  @state() private statusStartTime: number | undefined = undefined;
+  private statusDurationTimer: ReturnType<typeof setInterval> | undefined = undefined;
   @property({ attribute: false }) onLoadMore?: () => void;
   @property({ attribute: false }) onFocusPrompt?: () => void;
   @query(".chat") private chat?: HTMLDivElement;
