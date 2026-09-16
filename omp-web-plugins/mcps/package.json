@@ -1,0 +1,9 @@
+{
+  "name": "@omp-web/mcps-plugin",
+  "private": true,
+  "ompWeb": {
+    "plugins": [
+      { "id": "mcps", "module": "omp-web-plugin.js" }
+    ]
+  }
+}

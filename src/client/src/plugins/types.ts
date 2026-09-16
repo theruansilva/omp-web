@@ -65,6 +65,7 @@ export interface WorkspaceContext {
  state: AppState;
  files: WorkspaceFiles;
  host: WorkspaceHost;
+ apiFetch(path: string, init?: RequestInit): Promise<Response>;
 }
 
 export type WorkspaceTerminalCommandInput = Omit<RunTerminalCommandInput, "workspace">;

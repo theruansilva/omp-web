@@ -156,6 +156,7 @@ export interface WorkspaceContext {
   state?: PluginRuntimeState;
   files: WorkspaceFiles;
   host: WorkspaceHost;
+  apiFetch(path: string, init?: RequestInit): Promise<Response>;
 }
 
 export interface WorkspaceTerminalCommandInput {

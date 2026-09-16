@@ -624,6 +624,7 @@ function createWorkspaceLabelContext(machineId: string, workspace = testWorkspac
     state: { ...initialAppState(), selectedMachine: testMachine(machineId) },
     files,
     host,
+    apiFetch: vi.fn(),
   };
 }
 
@@ -634,6 +635,7 @@ function createWorkspacePanelContext(machineId: string, prompt: WorkspacePanelCo
     workspace,
     state: { ...initialAppState(), selectedMachine: testMachine(machineId) },
     files: { readFile: vi.fn(), writeFile: vi.fn(), deleteFile: vi.fn(), moveFile: vi.fn() },
+    apiFetch: vi.fn(),
     prompt,
     terminal: { open: vi.fn(), runCommand: vi.fn() },
     host: { requestRender: vi.fn() },
