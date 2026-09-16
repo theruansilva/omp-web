@@ -21,7 +21,7 @@ export class AppMobileMainTabs extends LitElement {
   @property({ attribute: false }) onSelect?: (view: AppState["mainView"]) => void;
   @property({ attribute: false }) onShowActions?: () => void;
   @property({ attribute: false }) refreshControl: unknown;
-  @property({ type: Boolean, reflect: true }) bottom = false;
+  @property({ type: Boolean, reflect: true }) bottom = true;
   @query(".mobile-tabs") private mobileTabs?: HTMLElement | null;
   @state() private canScrollLeft = false;
   @state() private canScrollRight = false;

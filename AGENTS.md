@@ -31,3 +31,14 @@ Before stopping or restarting `omp-web` (`omp-web restart`, `omp-web stop`, or `
 ## Commits
 
 - Make atomic commits using the gitmoji convention.
+
+
+## Generative UI
+
+- **Componentes de Generative UI (omp-web)**: Ao apresentar alternativas, opções de escolha, próximos passos ou perguntas com opções para o usuário escolher, utilize os componentes de Generative UI nativos do omp-web ao invés de simples listas em texto:
+  - `<options title="Título" subtitle="Subtítulo opcional">`: Lista de opções interativas clicáveis com botões de "Inserir no prompt" e "Enviar seleção".
+    Use `<option label="Nome da Opção" description="Detalhes da opção" />` para cada alternativa.
+  - `<checklist title="Tarefas">`: Lista de itens/tarefas com `<item label="Item" desc="..." />`.
+  - `<card title="Título" badge="Badge" color="blue|green|orange|purple">`: Cards visuais de conteúdo ou etapas.
+  - `<kpi-grid>` com `<kpi label="Label" value="Valor" color="cor" sub="Detalhe" />`: Exibição de métricas.
+  - `<callout type="info|warning|success|danger">`: Alertas e notas em destaque.

@@ -156,52 +156,84 @@ export function toSafeMarkdownHtml(text: string): string {
   return safeHtml;
 }
 
+function parseAttributes(attrString: string | undefined): Record<string, string> {
+  if (!attrString) return {};
+  const attrs: Record<string, string> = {};
+  const re = /([a-zA-Z0-9_-]+)(?:=(?:"([^"]*)"|'([^']*)'|([^\s>]+)))?/g;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(attrString)) !== null) {
+    const key = m[1]!.toLowerCase();
+    const val = m[2] ?? m[3] ?? m[4] ?? "";
+    attrs[key] = val;
+  }
+  return attrs;
+}
+
 function expandCustomUiTags(text: string): string {
   const parts = text.split(/(```[\s\S]*?```|`[^`\n]*`)/g);
   for (let i = 0; i < parts.length; i += 2) {
     const part = parts[i];
     if (part !== undefined && part.length > 0) {
       parts[i] = part
-        .replace(/<card(?:\s+title="([^"]*)")?(?:\s+badge="([^"]*)")?(?:\s+color="([^"]*)")?(?:\s+subtitle="([^"]*)")?\s*>([\s\S]*?)<\/card>/gi, (_, title, badge, color, subtitle, content) => {
+        .replace(/<card(\s+[^>]*)?>([\s\S]*?)<\/card>/gi, (_, attrStr, inner) => {
+          const attrs = parseAttributes(attrStr);
+          const title = attrs["title"];
+          const badge = attrs["badge"];
+          const color = attrs["color"];
+          const subtitle = attrs["subtitle"] || attrs["sub"];
           const colorClass = color ? ` ui-badge-${color}` : " ui-badge-blue";
           const badgeHtml = badge ? `<span class="ui-badge${colorClass}">${badge}</span>` : "";
           const subtitleHtml = subtitle ? `<p class="ui-card-subtitle">${subtitle}</p>` : "";
           const headerHtml = (title || badgeHtml) ? `<div class="ui-card-header">${title ? `<h3 class="ui-card-title">${title}</h3>` : ""}${badgeHtml}</div>` : "";
-          return `<div class="ui-card">\n\n${headerHtml}\n\n${subtitleHtml}\n\n${content.trim()}\n\n</div>`;
+          return `<div class="ui-card">\n\n${headerHtml}\n\n${subtitleHtml}\n\n${inner.trim()}\n\n</div>`;
         })
-        .replace(/<badge(?:\s+color="([^"]*)")?\s*>([\s\S]*?)<\/badge>/gi, (_, color, content) => {
+        .replace(/<badge(\s+[^>]*)?>([\s\S]*?)<\/badge>/gi, (_, attrStr, inner) => {
+          const attrs = parseAttributes(attrStr);
+          const color = attrs["color"];
           const colorClass = color ? ` ui-badge-${color}` : " ui-badge-blue";
-          return `<span class="ui-badge${colorClass}">${content.trim()}</span>`;
+          return `<span class="ui-badge${colorClass}">${inner.trim()}</span>`;
         })
-        .replace(/<kpi-grid\s*>([\s\S]*?)<\/kpi-grid>/gi, (_, content) => {
-          return `<div class="ui-kpi-grid">\n\n${content.trim()}\n\n</div>`;
+        .replace(/<kpi-grid(\s+[^>]*)?>([\s\S]*?)<\/kpi-grid>/gi, (_, _attrStr, inner) => {
+          return `<div class="ui-kpi-grid">\n\n${inner.trim()}\n\n</div>`;
         })
-        .replace(/<kpi(?:\s+label="([^"]*)")?(?:\s+value="([^"]*)")?(?:\s+color="([^"]*)")?(?:\s+sub="([^"]*)")?\s*(?:\/>|>([\s\S]*?)<\/kpi>)/gi, (_, label, value, color, sub, inner) => {
-          const val = value ?? inner ?? "";
+        .replace(/<kpi(\s+[^>]*)?(?:\/>|>([\s\S]*?)<\/kpi>)/gi, (_, attrStr, inner) => {
+          const attrs = parseAttributes(attrStr);
+          const label = attrs["label"] ?? "";
+          const val = attrs["value"] ?? (inner ? inner.trim() : "");
+          const color = attrs["color"];
+          const sub = attrs["sub"] ?? attrs["subtitle"];
           const colorStyle = color ? ` style="color: ${color};"` : "";
           const subHtml = sub ? `<small class="ui-kpi-sub">${sub}</small>` : "";
-          return `<div class="ui-kpi"><small class="ui-kpi-label">${label ?? ""}</small><strong class="ui-kpi-value"${colorStyle}>${val.trim()}</strong>${subHtml}</div>`;
+          return `<div class="ui-kpi"><small class="ui-kpi-label">${label}</small><strong class="ui-kpi-value"${colorStyle}>${val}</strong>${subHtml}</div>`;
         })
-        .replace(/<qa-card\s*>([\s\S]*?)<\/qa-card>/gi, (_, content) => {
-          return `<div class="ui-qa-card">\n\n${content.trim()}\n\n</div>`;
+        .replace(/<qa-card(\s+[^>]*)?>([\s\S]*?)<\/qa-card>/gi, (_, _attrStr, inner) => {
+          return `<div class="ui-qa-card">\n\n${inner.trim()}\n\n</div>`;
         })
-        .replace(/<callout(?:\s+type="([^"]*)")?\s*>([\s\S]*?)<\/callout>/gi, (_, type, content) => {
-          const t = type ?? "info";
-          return `<div class="ui-callout ui-callout-${t}">\n\n${content.trim()}\n\n</div>`;
+        .replace(/<callout(\s+[^>]*)?>([\s\S]*?)<\/callout>/gi, (_, attrStr, inner) => {
+          const attrs = parseAttributes(attrStr);
+          const t = attrs["type"] ?? "info";
+          return `<div class="ui-callout ui-callout-${t}">\n\n${inner.trim()}\n\n</div>`;
         })
-        .replace(/<(?:checklist|options)(?:\s+title="([^"]*)")?(?:\s+badge="([^"]*)")?(?:\s+color="([^"]*)")?(?:\s+subtitle="([^"]*)")?\s*>([\s\S]*?)<\/(?:checklist|options)>/gi, (_, title, badge, color, subtitle, blockContent) => {
+        .replace(/<(checklist|options|option-cards|options-card)(\s+[^>]*)?>([\s\S]*?)<\/\1>/gi, (_, _tag, attrStr, blockContent) => {
+          const attrs = parseAttributes(attrStr);
+          const title = attrs["title"];
+          const badge = attrs["badge"];
+          const color = attrs["color"];
+          const subtitle = attrs["subtitle"] || attrs["sub"];
           const colorClass = color ? ` ui-badge-${color}` : " ui-badge-blue";
           const badgeHtml = badge ? `<span class="ui-badge${colorClass}">${badge}</span>` : `<span class="ui-badge ui-badge-blue">Opções</span>`;
           const headerHtml = `<div class="ui-card-header"><h3 class="ui-card-title">${title || "Selecione as opções desejadas"}</h3>${badgeHtml}</div>`;
           const subtitleHtml = subtitle ? `<p class="ui-card-subtitle">${subtitle}</p>` : "";
 
           const items: string[] = [];
-          const itemRegex = /<(?:item|opt)(?:\s+label="([^"]*)")?(?:\s+desc="([^"]*)")?(?:\s+value="([^"]*)")?\s*(?:\/>|>([\s\S]*?)<\/(?:item|opt)>)/gi;
+          const itemRegex = /<(item|opt|option)(\s+[^>]*)?(?:\/>|>([\s\S]*?)<\/\1>)/gi;
           let match;
           while ((match = itemRegex.exec(blockContent)) !== null) {
-            const label = match[1] || match[4] || "";
-            const desc = match[2] || "";
-            const value = match[3] || label;
+            const itemAttrs = parseAttributes(match[2]);
+            const innerText = match[3] ? match[3].trim() : "";
+            const label = itemAttrs["label"] || innerText || "";
+            const desc = itemAttrs["desc"] || itemAttrs["description"] || (itemAttrs["label"] ? innerText : "");
+            const value = itemAttrs["value"] || label;
             items.push(
               `<div class="ui-option-item" role="checkbox" aria-checked="false" tabindex="0">` +
               `<input type="checkbox" class="ui-option-checkbox" data-value="${escapeHtml(value)}" data-label="${escapeHtml(label)}" />` +
@@ -212,6 +244,28 @@ function expandCustomUiTags(text: string): string {
               `</div>` +
               `</div>`
             );
+          }
+
+          // Fallback: parse markdown bullets if no XML tags found inside <options>
+          if (items.length === 0) {
+            const bulletRegex = /^(?:[-*]|\d+\.)\s+(?:\[[ xX]\]\s+)?(?:\*\*([^*]+)\*\*|__([^_]+)__|([^:\n]+))(?::\s*([^\n]+)|$)/gm;
+            let bmatch;
+            while ((bmatch = bulletRegex.exec(blockContent)) !== null) {
+              const label = (bmatch[1] || bmatch[2] || bmatch[3] || "").trim();
+              const desc = (bmatch[4] || "").trim();
+              if (label) {
+                items.push(
+                  `<div class="ui-option-item" role="checkbox" aria-checked="false" tabindex="0">` +
+                  `<input type="checkbox" class="ui-option-checkbox" data-value="${escapeHtml(label)}" data-label="${escapeHtml(label)}" />` +
+                  `<span class="ui-option-box"><span class="ui-option-check">✓</span></span>` +
+                  `<div class="ui-option-content">` +
+                  `<strong class="ui-option-label">${escapeHtml(label)}</strong>` +
+                  (desc ? `<small class="ui-option-desc">${escapeHtml(desc)}</small>` : "") +
+                  `</div>` +
+                  `</div>`
+                );
+              }
+            }
           }
 
           if (items.length === 0) {

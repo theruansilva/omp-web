@@ -38,9 +38,12 @@ describe("CronScheduler", () => {
       }
     });
 
-    it("rejects 5-field cron expressions (missing seconds)", () => {
+    it("accepts and normalizes 5-field cron expressions (prepends 0 seconds)", () => {
       const result = CronScheduler.validateSchedule("cron", "* * * * *");
-      expect(result.ok).toBe(false);
+      expect(result.ok).toBe(true);
+      if (result.ok) {
+        expect(result.schedule).toBe("0 * * * * *");
+      }
     });
 
     it("rejects invalid interval format", () => {
@@ -112,9 +115,10 @@ describe("CronScheduler", () => {
       expect(result.valid).toBe(true);
     });
 
-    it("rejects 5-field expression", () => {
+    it("accepts and normalizes 5-field expression", () => {
       const result = CronScheduler.validateCronExpression("*/5 * * * *");
-      expect(result.valid).toBe(false);
+      expect(result.valid).toBe(true);
+      expect(result.normalized).toBe("0 */5 * * * *");
     });
 
     it("rejects invalid cron expression", () => {

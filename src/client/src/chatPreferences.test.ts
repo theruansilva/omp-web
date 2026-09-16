@@ -62,8 +62,8 @@ describe("chatPreferences", () => {
     expect(loaded.showAgentStatus).toBe(true);
     expect(loaded.showStatusBar).toBe(false);
     expect(loaded.hideWorkspaces).toBe(false);
-    expect(loaded.bottomMobileNav).toBe(false);
-    expect(loaded.hideBreadcrumbs).toBe(false);
+    expect(loaded.bottomMobileNav).toBe(true);
+    expect(loaded.hideBreadcrumbs).toBe(true);
   });
 
   it("dispatches custom event on save", () => {

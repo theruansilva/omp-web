@@ -340,6 +340,18 @@ export function summarizeArgs(args: unknown): string {
   if (command !== undefined) return command;
   const path = getString(args, "path");
   if (path !== undefined) return path;
+  const action = getString(args, "action");
+  if (action !== undefined) {
+    const prompt = getString(args, "prompt");
+    const schedule = getString(args, "schedule");
+    if (prompt !== undefined && schedule !== undefined) {
+      const shortPrompt = prompt.length > 35 ? `${prompt.slice(0, 32)}…` : prompt;
+      return `${action}: "${shortPrompt}" (${schedule})`;
+    }
+    const jobId = getString(args, "jobId");
+    if (jobId !== undefined) return `${action}: ${jobId}`;
+    return action;
+  }
   if (typeof args["oldText"] === "string" && typeof args["newText"] === "string") return "edit text replacement";
   const edits = args["edits"];
   if (Array.isArray(edits)) return `${String(edits.length)} edit${edits.length === 1 ? "" : "s"}`;

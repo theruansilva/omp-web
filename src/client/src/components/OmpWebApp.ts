@@ -277,6 +277,8 @@ export class OmpWebApp extends LitElement {
     window.addEventListener("keydown", this.onKeyDown, GLOBAL_SHORTCUT_LISTENER_OPTIONS);
     this.systemLightThemeMedia?.addEventListener("change", this.onSystemLightThemeChange);
     this.applyPreferredTheme(false);
+    window.addEventListener("mousemove", this.onWindowMouseMove, { passive: true, capture: true });
+    document.addEventListener("pointermove", this.onWindowMouseMove, { passive: true, capture: true });
     this.connectRealtime();
     this.ompWebStatusTimer = window.setInterval(() => { this.scheduleOmpWebStatusRefresh(); }, OMP_WEB_STATUS_REFRESH_MS);
     void this.refreshWorkspaceActivity();
@@ -304,9 +306,36 @@ export class OmpWebApp extends LitElement {
     this.clearScheduledOmpWebStatusRefresh();
     if (this.workspaceDeletionPollTimer !== undefined) window.clearInterval(this.workspaceDeletionPollTimer);
     this.workspaceDeletionPollTimer = undefined;
+    window.removeEventListener("mousemove", this.onWindowMouseMove, { capture: true });
+    document.removeEventListener("pointermove", this.onWindowMouseMove, { capture: true });
     this.clearPendingRemoteRouteRestore();
     super.disconnectedCallback();
   }
+
+  private readonly onWindowMouseMove = (event: MouseEvent | PointerEvent): void => {
+    const x = event.clientX;
+    const y = event.clientY;
+    const nearLeftEdge = x <= 40;
+    const nearTopLeft = x <= 80 && y <= 80;
+    const nearBottomLeft = x <= 80 && y >= (window.innerHeight - 80);
+
+    if (!nearLeftEdge && !nearTopLeft && !nearBottomLeft) return;
+
+    if (this.appShell.isMobileNavigationLayout) {
+      if (this.state.mainView !== "navigation") {
+        this.selectMainView("navigation");
+      }
+      return;
+    }
+
+    if (this.panelCollapse.navigationPanelCollapsed || this.panelResize.panelWidth("navigation") < 50) {
+      this.panelCollapse.expandNavigationPanel();
+      if (this.panelResize.panelWidth("navigation") < 180) {
+        this.panelResize.resizePanel("navigation", 340);
+      }
+      this.requestUpdate();
+    }
+  };
 
   private setState(patch: Partial<AppState>) {
     if (!patchChangesState(this.state, patch)) return;
@@ -927,6 +956,8 @@ export class OmpWebApp extends LitElement {
     if (pendingMachineId !== (next.selectedMachine?.id ?? "local")) this.clearPendingRemoteRouteRestore();
     this.sessions.clearActiveSession();
     this.realtime.close();
+    window.addEventListener("mousemove", this.onWindowMouseMove, { passive: true, capture: true });
+    document.addEventListener("pointermove", this.onWindowMouseMove, { passive: true, capture: true });
     this.connectRealtime();
     this.activeTerminalIds.clear();
     this.sessionCleanupDialog = undefined;
@@ -1229,13 +1260,14 @@ export class OmpWebApp extends LitElement {
   }
 
   private async startSessionAndOpenChat(shouldComplete: () => boolean = () => true): Promise<void> {
-    // `startSession()` remains in flight until the backend session resolves;
-    // open the chat as soon as the controller has inserted the temporary row.
-    const start = this.sessions.startSession().catch((error: unknown) => {
+    try {
+      await this.sessions.startSession();
+      if (shouldComplete()) {
+        await this.focusChatComposer();
+      }
+    } catch (error: unknown) {
       if (shouldComplete()) this.setState({ error: String(error) });
-    });
-    if (shouldComplete()) await this.focusChatComposer();
-    void start;
+    }
   }
 
   private async focusNavigationTarget(target: NavigationFocusTarget): Promise<void> {
@@ -1264,6 +1296,9 @@ export class OmpWebApp extends LitElement {
     await this.updateComplete;
     await nextFrame();
     this.promptEditor?.focusInput();
+    window.setTimeout(() => {
+      this.promptEditor?.focusInput();
+    }, 50);
   }
 
   private visibleWorkspacePanels(): QualifiedWorkspacePanelContribution[] {
@@ -2003,7 +2038,7 @@ export class OmpWebApp extends LitElement {
   };
 
   private renderContextBar() {
-    if (!this.appShell.isMobileNavigationLayout || this.chatPreferences.hideBreadcrumbs) return null;
+    return null;
     return html`
       <app-context-bar
         .machines=${this.state.machines}
@@ -2019,7 +2054,7 @@ export class OmpWebApp extends LitElement {
   private renderMobileMainTabs() {
     return html`
       <app-mobile-main-tabs
-        ?bottom=${this.chatPreferences.bottomMobileNav}
+        ?bottom=${true}
         .tabs=${this.mobileMainTabs()}
         .selectedView=${this.state.mainView}
         .refreshControl=${this.appShell.shouldShowAppRefreshInContextBar() ? this.renderAppRefresh() : undefined}
@@ -2085,7 +2120,7 @@ export class OmpWebApp extends LitElement {
     const state = this.state;
     return html`
       <div
-        class=${this.panelCollapse.shellClass(state.mainView, this.chatPreferences.bottomMobileNav, this.chatPreferences.hideBreadcrumbs)}
+        class=${this.panelCollapse.shellClass(state.mainView, true, true)}
         style=${this.panelResize.shellStyle({ navigation: this.resizablePanelConstraints("navigation"), workspace: this.resizablePanelConstraints("workspace") })}
       >
         <aside id="navigation-panel">${this.appShell.isMobileNavigationLayout ? null : this.renderNavigationPanel()}</aside>

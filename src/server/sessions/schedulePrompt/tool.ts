@@ -90,7 +90,17 @@ export function createSchedulePromptToolDefinition(
               );
             }
 
-            const type = p.type ?? "cron";
+            let type = p.type;
+            const trimmedSched = p.schedule.trim();
+            if (!type) {
+              if (trimmedSched.startsWith("+") || (trimmedSched.includes("T") && !Number.isNaN(Date.parse(trimmedSched)))) {
+                type = "once";
+              } else if (/^\d+(s|m|h|d)$/i.test(trimmedSched)) {
+                type = "interval";
+              } else {
+                type = "cron";
+              }
+            }
             const validated = CronScheduler.validateSchedule(type, p.schedule);
             if (!validated.ok) throw new Error(validated.error);
             const schedule = validated.schedule;

@@ -169,7 +169,6 @@ export class PromptEditor extends LitElement {
     return html`
       <footer class=${shellMode ? "shell-mode" : ""} @paste=${(event: ClipboardEvent) => { void this.handlePaste(event); }} @dragover=${(event: DragEvent) => { this.handleDragOver(event); }} @drop=${(event: DragEvent) => { void this.handleDrop(event); }}>
         <div class="input-card">
-          ${this.renderAgentStatusStrip()}
           ${shellMode ? html`<div class="mode-hint">Shell command${shellInputMode.excludeFromContext ? " · excluded from context" : ""}</div>` : null}
           ${this.isCompacting && !shellMode ? html`<div class="mode-hint">Compacting history · message will be queued</div>` : null}
           <div class="editor-wrap">
@@ -208,18 +207,7 @@ export class PromptEditor extends LitElement {
     return this.canStop || this.status?.isStreaming === true || this.status?.isBashRunning === true || this.status?.isCompacting === true;
   }
 
-  private renderAgentStatusStrip() {
-    if (!this.chatPreferences.showAgentStatus || !this.isAgentWorking()) return null;
-    const text = this.status?.isCompacting === true
-      ? "Compacting history..."
-      : (this.status?.isBashRunning === true ? "Running command..." : "Processing...");
-    return html`
-      <div class="agent-status-strip" aria-live="polite">
-        <span class="status-spinner" aria-hidden="true"></span>
-        <span class="status-text">${text}</span>
-      </div>
-    `;
-  }
+
 
   private renderActionButton() {
     const isWorking = this.isAgentWorking();

@@ -182,4 +182,37 @@ Importante: monitorar CTR na primeira semana.
     expect(html).toContain("ui-options-apply-btn");
     expect(html).toContain("ui-options-submit-btn");
   });
+
+  it("renders flexible options with arbitrary attribute order and <option> tags", () => {
+    const markdown = `
+<options badge="Opções" subtitle="Escolha um" title="Qual arquitetura prefere?">
+  <option description="Mais simples" label="Monólito" />
+  <opt label="Microserviços" desc="Escalável" />
+</options>
+`;
+    const html = toSafeMarkdownHtml(markdown);
+    expect(html).toContain("ui-options-card");
+    expect(html).toContain("Qual arquitetura prefere?");
+    expect(html).toContain("Escolha um");
+    expect(html).toContain("Monólito");
+    expect(html).toContain("Mais simples");
+    expect(html).toContain("Microserviços");
+    expect(html).toContain("Escalável");
+  });
+
+  it("renders options with markdown bullet list fallback", () => {
+    const markdown = `
+<options title="Escolha um método">
+- **JWT**: Tokens stateless
+- **OAuth2**: Login com provedor externo
+</options>
+`;
+    const html = toSafeMarkdownHtml(markdown);
+    expect(html).toContain("ui-options-card");
+    expect(html).toContain("Escolha um método");
+    expect(html).toContain("JWT");
+    expect(html).toContain("Tokens stateless");
+    expect(html).toContain("OAuth2");
+    expect(html).toContain("Login com provedor externo");
+  });
 });

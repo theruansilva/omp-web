@@ -201,18 +201,22 @@ export class CronScheduler {
  /**
   * Validate a cron expression (must be 6-field format with seconds)
   */
- static validateCronExpression(expression: string): { valid: boolean; error?: string } {
-  const fields = expression.trim().split(/\s+/);
-  if (fields.length !== 6) {
+ static validateCronExpression(expression: string): { valid: boolean; error?: string; normalized?: string } {
+  const trimmed = expression.trim();
+  const fields = trimmed.split(/\s+/);
+  let normalized = trimmed;
+  if (fields.length === 5) {
+   normalized = `0 ${trimmed}`;
+  } else if (fields.length !== 6) {
    return {
     valid: false,
-    error: `Cron expression must have 6 fields (second minute hour dom month dow), got ${String(fields.length)}. Example: "0 * * * * *" for every minute`,
+    error: `Cron expression must have 5 or 6 fields, got ${String(fields.length)}. Example: "* * * * *" or "0 * * * * *"`,
    };
   }
 
   try {
-   new Cron(expression, () => { /* validate */ });
-   return { valid: true };
+   new Cron(normalized, () => { /* validate */ });
+   return { valid: true, normalized };
   } catch (error) {
    return {
     valid: false,
@@ -255,7 +259,12 @@ export class CronScheduler {
   * Validate and resolve a schedule string for the given type.
   */
  static validateSchedule(type: CronJobType, schedule: string): ValidateScheduleResult {
-  if (type === "interval") {
+  if (schedule.startsWith("+")) {
+   const relative = CronScheduler.parseRelativeTime(schedule);
+   if (relative != null) return { ok: true, schedule: relative };
+  }
+
+  if (type === "interval" || (/^\d+(s|m|h|d)$/i.test(schedule.trim()) && type !== "cron")) {
    const intervalMs = CronScheduler.parseDuration(schedule);
    if (intervalMs == null || intervalMs <= 0) {
     return {
@@ -284,12 +293,6 @@ export class CronScheduler {
      error: `Timestamp is in the past: ${date.toISOString()}. Current time: ${new Date().toISOString()}`,
     };
    }
-   if (delay < 5000) {
-    return {
-     ok: false,
-     error: `Timestamp is too soon (${String(Math.round(delay / 1000))}s). For delays under 5s, use relative time like '+${String(Math.ceil(delay / 1000))}s' instead, or schedule at least 5s in the future.`,
-    };
-   }
    return { ok: true, schedule: date.toISOString() };
   }
 
@@ -297,7 +300,7 @@ export class CronScheduler {
   if (!validation.valid) {
    return { ok: false, error: `Invalid cron expression: ${validation.error ?? ""}` };
   }
-  return { ok: true, schedule };
+  return { ok: true, schedule: validation.normalized ?? schedule };
  }
 
  /**

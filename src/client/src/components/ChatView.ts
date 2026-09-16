@@ -65,6 +65,8 @@ export class ChatView extends LitElement {
   @property({ attribute: false }) onCancelAsk?: (requestId?: string) => void;
   @property({ attribute: false }) status?: SessionStatus;
   @property({ attribute: false }) activity?: SessionActivity;
+  @state() private statusStartTime?: number;
+  private statusDurationTimer?: ReturnType<typeof setInterval>;
   @property({ attribute: false }) onLoadMore?: () => void;
   @property({ attribute: false }) onFocusPrompt?: () => void;
   @query(".chat") private chat?: HTMLDivElement;
@@ -122,6 +124,10 @@ export class ChatView extends LitElement {
   }
 
   override disconnectedCallback(): void {
+    if (this.statusDurationTimer !== undefined) {
+      clearInterval(this.statusDurationTimer);
+      this.statusDurationTimer = undefined;
+    }
     this.saveScrollPosition();
     this.scrollController.dispose();
     this.prependRestoreToken += 1;
@@ -178,6 +184,26 @@ export class ChatView extends LitElement {
     if (changed.has("messages") || changed.has("messageStart") || changed.has("messageTotal") || changed.has("hasMore") || changed.has("loadingMore")) this.scheduleConversationRailUpdate();
     if (changed.has("messages") || changed.has("messageStart") || changed.has("hasMore") || changed.has("loadingMore")) this.continuePendingScrollRestore();
     if (changed.has("messages") || changed.has("hasMore") || changed.has("loadingMore")) this.requestLoadMoreIfNeeded();
+
+    const isLive = this.isSessionLive();
+    if (isLive) {
+      if (this.statusStartTime === undefined) {
+        this.statusStartTime = Date.now();
+      }
+      if (this.statusDurationTimer === undefined) {
+        this.statusDurationTimer = setInterval(() => {
+          if (this.isSessionLive()) {
+            this.requestUpdate();
+          }
+        }, 1000);
+      }
+    } else {
+      if (this.statusDurationTimer !== undefined) {
+        clearInterval(this.statusDurationTimer);
+        this.statusDurationTimer = undefined;
+      }
+      this.statusStartTime = undefined;
+    }
   }
 
   override render() {
@@ -204,8 +230,8 @@ export class ChatView extends LitElement {
           ${this.renderQueuedMessages()}
           ${this.renderSessionActivity()}
           ${this.renderPendingAsk()}
+          ${this.renderAgentStatusInThread()}
         </div>
-        ${this.renderActivityDock()}
       </div>
     `;
   }
@@ -230,24 +256,31 @@ export class ChatView extends LitElement {
       || this.activity?.phase === "active";
   }
 
-  private renderActivityDock() {
+  private formatElapsedTime(): string {
+    if (this.statusStartTime === undefined) return "0s";
+    const elapsedSec = Math.max(0, Math.floor((Date.now() - this.statusStartTime) / 1000));
+    if (elapsedSec < 60) return `${String(elapsedSec)}s`;
+    const mins = Math.floor(elapsedSec / 60);
+    const secs = elapsedSec % 60;
+    return `${String(mins)}m ${String(secs)}s`;
+  }
+
+  private renderAgentStatusInThread() {
     if (!this.chatPreferences.showAgentStatus) return null;
-    if (this.isSendingPrompt) {
-      return html`
-        <div class="activity-dock active" aria-live="polite">
-          <span class="dot"></span>
-          <span class="activity-text">Sending your message…</span>
-        </div>
-      `;
-    }
+    const isSending = this.isSendingPrompt;
     const state = this.activityState();
-    if (state === undefined || state === "idle") return null;
-    const active = state !== "idle" || this.activity?.phase === "active";
+    const active = isSending || (state !== undefined && state !== "idle") || this.activity?.phase === "active";
     if (!active) return null;
+
+    const label = isSending ? "Sending your message…" : this.activityText(state ?? "running");
     return html`
-      <div class="activity-dock active" aria-live="polite">
-        <span class="dot"></span>
-        <span class="activity-text">${this.activityText(state)}</span>
+      <div class="chat-thread-status" aria-live="polite">
+        <span class="pi-status-icon" aria-hidden="true">
+          <svg viewBox="0 0 64 64" width="13" height="13" fill="currentColor">
+            <path d="M14 16h36v8H40v32h-8V24h-6v22h-8V24h-4z" />
+          </svg>
+        </span>
+        <span class="status-label">${label} · ${this.formatElapsedTime()}</span>
       </div>
     `;
   }
@@ -427,6 +460,7 @@ export class ChatView extends LitElement {
             @keydown=${(event: KeyboardEvent) => { this.onMetaKeydown(event, key, expanded); }}
           >${meta.short}</span>
           ${this.renderMessageActions(message, key)}
+        </div>
       </div>
     `;
   }

@@ -1,13 +1,39 @@
 import { LitElement, css, html } from "lit";
-import { isRecord } from "../utils.js";
 import { customElement, property, state } from "lit/decorators.js";
+import { isRecord } from "../utils.js";
 import type { ToolExecutionPart } from "./shared";
 
 const MAX_COLLAPSED_DIFF_LINES = 180;
 
 interface ToolTarget {
-  label: "Command" | "File" | "Input";
+  label: string;
   text: string;
+}
+
+function renderStatusIcon(status: ToolExecutionPart["status"]) {
+  if (status === "running" || status === "pending") {
+    return html`
+      <span class="tool-spinner" aria-hidden="true">
+        <svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+          <circle cx="8" cy="8" r="6" stroke-dasharray="28" stroke-dashoffset="10" />
+        </svg>
+      </span>
+    `;
+  }
+  if (status === "success") {
+    return html`<span class="tool-status-done" aria-hidden="true">✓</span>`;
+  }
+  if (status === "error") {
+    return html`<span class="tool-status-fail" aria-hidden="true">✕</span>`;
+  }
+  return html`<span class="tool-status-done" aria-hidden="true">✓</span>`;
+}
+
+function statusLabel(status: ToolExecutionPart["status"]): string {
+  if (status === "success") return "done";
+  if (status === "error") return "failed";
+  if (status === "running") return "running";
+  return "pending";
 }
 
 @customElement("tool-execution-view")
@@ -15,7 +41,6 @@ export class ToolExecutionView extends LitElement {
   @property({ attribute: false }) execution: ToolExecutionPart | undefined;
   @state() private showFullDiff = false;
   @state() private copied = false;
-  @state() private diffOpen = true;
 
   override render() {
     const execution = this.execution;
@@ -32,10 +57,10 @@ export class ToolExecutionView extends LitElement {
     const target = toolTarget(execution, path);
 
     return html`
-      <section class=${`tool-card ${execution.status}`}>
-        <div class="tool-header">
+      <details class=${`tool-card ${execution.status}`} ?open=${execution.status === "error"}>
+        <summary class="tool-header">
           <div class="tool-title">
-            <span class="status-icon" aria-hidden="true">${statusIcon(execution.status)}</span>
+            ${renderStatusIcon(execution.status)}
             <strong>${execution.toolName}</strong>
             ${this.renderHeaderTarget(target)}
           </div>
@@ -44,12 +69,14 @@ export class ToolExecutionView extends LitElement {
             ${diffStats === undefined ? null : html`<span class="diff-stats"><b class="added">+${diffStats.added}</b><span>/</span><b class="removed">-${diffStats.removed}</b></span>`}
             <span class="status-label">${statusLabel(execution.status)}</span>
           </div>
-        </div>
+        </summary>
 
-        ${previewMismatch ? html`<p class="notice">Applied diff differs from the preview.</p>` : null}
-        ${errorText === undefined || errorText === "" ? null : html`<pre class="error-text">${errorText}</pre>`}
-        ${visibleDiff === undefined ? this.renderTextBody(bodyText, execution.status === "error", target) : this.renderDiffBody(visibleDiff, actualDiff === undefined ? "Preview diff" : "Applied diff", target)}
-      </section>
+        <div class="tool-content">
+          ${previewMismatch ? html`<p class="notice">Applied diff differs from the preview.</p>` : null}
+          ${errorText === undefined || errorText === "" ? null : html`<pre class="error-text">${errorText}</pre>`}
+          ${execution.toolName === "eval" ? this.renderEvalContent(execution) : (visibleDiff === undefined ? this.renderTextContent(bodyText, target, execution.status) : this.renderDiffContent(visibleDiff, actualDiff === undefined ? "Preview diff" : "Applied diff", target))}
+        </div>
+      </details>
     `;
   }
 
@@ -69,50 +96,65 @@ export class ToolExecutionView extends LitElement {
     `;
   }
 
-  private renderTextBody(text: string | undefined, open: boolean, target: ToolTarget | undefined) {
-    if ((text === undefined || text === "") && target === undefined) return null;
+  private renderEvalContent(execution: ToolExecutionPart) {
+    const code = getString(execution.args, "code") ?? "";
+    const lang = getString(execution.args, "language") ?? "py";
+    const title = getString(execution.args, "title");
+    const result = execution.resultText;
+
     return html`
-      <details class="text-body" ?open=${open}>
-        <summary>Details</summary>
-        ${this.renderExpandedTarget(target)}
-        ${text === undefined || text === "" ? null : html`
+      <div class="eval-content">
+        <div class="detail-target">
+          <span class="detail-label">Code (${lang}${title ? ` · ${title}` : ""})</span>
+          <pre class="detail-code-pre">${code}</pre>
+        </div>
+        ${result !== undefined && result !== "" ? html`
           <div class="detail-result">
-            <span class="detail-label">Result</span>
-            <pre>${text}</pre>
+            <span class="detail-label">Output</span>
+            <pre class="detail-result-pre">${result}</pre>
           </div>
-        `}
-      </details>
+        ` : (execution.status === "running" ? html`<div class="detail-running muted">Running in kernel…</div>` : null)}
+      </div>
     `;
   }
 
-  private renderDiffBody(diff: string, label: string, target: ToolTarget | undefined) {
+  private renderTextContent(text: string | undefined, target: ToolTarget | undefined, status: ToolExecutionPart["status"]) {
+    return html`
+      <div class="text-content">
+        ${this.renderExpandedTarget(target)}
+        ${text !== undefined && text !== "" ? html`
+          <div class="detail-result">
+            <span class="detail-label">Result</span>
+            <pre class="detail-result-pre">${text}</pre>
+          </div>
+        ` : (status === "running" ? html`<div class="detail-running muted">Executing…</div>` : null)}
+      </div>
+    `;
+  }
+
+  private renderDiffContent(diff: string, label: string, target: ToolTarget | undefined) {
     const lines = diff.split("\n");
-    const truncated = !this.showFullDiff && lines.length > MAX_COLLAPSED_DIFF_LINES;
+    const truncated = __omp_shell("this.showFullDiff && lines.length > MAX_COLLAPSED_DIFF_LINES;")
     const visibleLines = truncated ? lines.slice(0, MAX_COLLAPSED_DIFF_LINES) : lines;
     return html`
-      <details class="diff-details" ?open=${this.diffOpen} @toggle=${(event: Event) => { this.onDiffToggle(event); }}>
-        <summary>
+      <div class="diff-content-wrap">
+        <div class="diff-header-row">
           <span>${label}</span>
           <small>${String(lines.length)} ${lines.length === 1 ? "line" : "lines"}</small>
-        </summary>
+        </div>
         ${this.renderExpandedTarget(target)}
         <div class="diff-toolbar">
           <span>${truncated ? `Showing ${String(visibleLines.length)} of ${String(lines.length)} lines` : "Full diff"}</span>
-          <button type="button" @click=${() => { void this.copyDiff(diff); }}>${this.copied ? "Copied" : "Copy diff"}</button>
+          <button type="button" @click=${(e: Event) => { e.stopPropagation(); void this.copyDiff(diff); }}>${this.copied ? "Copied" : "Copy diff"}</button>
         </div>
         <pre class="diff" aria-label=${label}><code class="diff-content">${visibleLines.map((line) => html`<span class=${diffLineClass(line)}>${line}</span>`)}</code></pre>
         ${truncated ? html`
-          <button class="show-more" type="button" @click=${() => { this.showFullDiff = true; }}>
+          <button class="show-more" type="button" @click=${(e: Event) => { e.stopPropagation(); this.showFullDiff = true; }}>
             Show all ${String(lines.length)} diff lines
           </button>
         ` : null}
-      </details>
+      </div>
     `;
-  }
-
-  private onDiffToggle(event: Event): void {
-    const details = event.currentTarget;
-    if (details instanceof HTMLDetailsElement) this.diffOpen = details.open;
   }
 
   private async copyDiff(diff: string): Promise<void> {
@@ -127,39 +169,44 @@ export class ToolExecutionView extends LitElement {
 
   static override styles = css`
     :host { display: block; width: 100%; max-width: 100%; min-width: 0; color: var(--pi-text); }
-    .tool-card { display: grid; gap: 8px; width: 100%; max-width: 100%; min-width: 0; box-sizing: border-box; overflow: hidden; border: 1px solid var(--pi-border); border-radius: 8px; background: var(--pi-bg); padding: 9px; color: var(--pi-text); }
-    .tool-card.running, .tool-card.pending { border-color: var(--pi-warning-border); background: var(--pi-warning-surface); }
-    .tool-card.success { border-color: var(--pi-success-border); background: var(--pi-success-bg); }
-    .tool-card.error { border-color: var(--pi-danger); background: color-mix(in srgb, var(--pi-danger) 10%, var(--pi-bg)); }
-    .tool-header { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; min-width: 0; }
-    .tool-title { flex: 1 1 auto; display: inline-flex; align-items: baseline; gap: 7px; min-width: 0; }
-    .status-icon { flex: 0 0 auto; color: var(--pi-muted); }
-    strong { flex: 0 0 auto; color: var(--pi-text); }
-    .path, .summary { display: block; flex: 1 1 auto; min-width: 0; max-width: 100%; overflow-x: auto; overflow-y: hidden; overscroll-behavior-x: contain; scrollbar-width: thin; white-space: pre; color: var(--pi-accent); font: 13px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; direction: ltr; text-align: left; unicode-bidi: isolate; }
-    .summary { color: var(--pi-muted); font-family: inherit; }
-    .tool-meta { flex: 0 0 auto; display: inline-flex; align-items: baseline; gap: 8px; color: var(--pi-muted); font-size: 12px; }
+    details.tool-card { display: block; width: 100%; max-width: 100%; min-width: 0; box-sizing: border-box; overflow: hidden; border: 1px solid var(--pi-border-muted); border-radius: 10px; background: var(--pi-surface); color: var(--pi-text); margin: 4px 0 10px; }
+    details.tool-card.running, details.tool-card.pending { border-color: var(--pi-warning-border); background: var(--pi-warning-surface); }
+    details.tool-card.success { border-color: var(--pi-border-muted); background: var(--pi-surface); }
+    details.tool-card.error { border-color: var(--pi-border-muted); background: var(--pi-surface); }
+    summary.tool-header { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-width: 0; padding: 7px 12px; cursor: pointer; user-select: none; list-style: none; }
+    summary.tool-header::-webkit-details-marker { display: none; }
+    summary.tool-header:hover { background: color-mix(in srgb, var(--pi-text) 4%, transparent); }
+    details.tool-card[open] > summary.tool-header { border-bottom: 1px solid var(--pi-border-muted); }
+    .tool-title { flex: 1 1 auto; display: inline-flex; align-items: center; gap: 8px; min-width: 0; }
+    .tool-spinner { display: inline-flex; align-items: center; justify-content: center; width: 13px; height: 13px; color: var(--pi-warning, #f59e0b); animation: toolSpin 1s linear infinite; flex-shrink: 0; }
+    .tool-spinner svg { display: block; width: 100%; height: 100%; }
+    @keyframes toolSpin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+    .tool-status-done { display: inline-flex; align-items: center; justify-content: center; width: 13px; height: 13px; color: var(--pi-success, #10b981); font-weight: bold; font-size: 13px; flex-shrink: 0; }
+    .tool-status-fail { display: inline-flex; align-items: center; justify-content: center; width: 13px; height: 13px; color: var(--pi-danger, #ef4444); font-weight: bold; font-size: 13px; flex-shrink: 0; }
+    strong { flex: 0 0 auto; color: var(--pi-text); font-size: 13px; }
+    .path, .summary { display: block; flex: 1 1 auto; min-width: 0; max-width: 100%; overflow-x: auto; overflow-y: hidden; overscroll-behavior-x: contain; scrollbar-width: thin; white-space: pre; color: var(--pi-accent); font: 12.5px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; direction: ltr; text-align: left; unicode-bidi: isolate; }
+    .summary { color: var(--pi-muted); font-family: inherit; font-size: 13px; }
+    .tool-meta { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 8px; color: var(--pi-muted); font-size: 12px; }
     .diff-stats { display: inline-flex; gap: 3px; }
     .added, .diff .added { color: var(--pi-success); }
     .removed, .diff .removed { color: var(--pi-danger); }
-    .status-label { text-transform: uppercase; letter-spacing: .04em; color: var(--pi-muted); }
+    .status-label { text-transform: uppercase; letter-spacing: .04em; color: var(--pi-muted); font-size: 11px; }
+    .tool-content { display: grid; gap: 8px; padding: 10px 12px 12px; background: color-mix(in srgb, var(--pi-bg) 40%, transparent); }
     .notice { margin: 0; color: var(--pi-warning); }
-    .muted { margin: 0; color: var(--pi-muted); }
-    .error-text { margin: 0; border: 1px solid var(--pi-danger); border-radius: 7px; background: color-mix(in srgb, var(--pi-danger) 10%, var(--pi-bg)); color: var(--pi-danger); padding: 8px; white-space: pre-wrap; overflow-wrap: anywhere; font: 12px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
-    .text-body { border-top: 1px solid var(--pi-border-muted); padding-top: 6px; }
-    .detail-target, .detail-result { display: grid; gap: 4px; margin-top: 8px; min-width: 0; }
-    .detail-label { color: var(--pi-muted); font-size: 12px; text-transform: uppercase; letter-spacing: .04em; }
-    .text-body pre { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; font: 12px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; color: var(--pi-text); }
-    .detail-result pre { box-sizing: border-box; max-width: 100%; overflow-x: auto; overflow-y: hidden; overscroll-behavior-x: contain; scrollbar-width: thin; border: 1px solid var(--pi-border-muted); border-radius: 7px; background: var(--pi-bg); padding: 8px; white-space: pre; overflow-wrap: normal; direction: ltr; text-align: left; unicode-bidi: isolate; }
-    .detail-target-value { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; color: var(--pi-accent); font: 12px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; direction: ltr; text-align: left; unicode-bidi: isolate; }
-    .diff-details { min-width: 0; max-width: 100%; border-top: 1px solid var(--pi-border-muted); padding-top: 6px; }
-    .diff-details > summary { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; min-width: 0; color: var(--pi-muted); cursor: pointer; }
-    .diff-details > summary span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .diff-details > summary small { flex: 0 0 auto; color: var(--pi-dim); }
-    .diff-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-width: 0; margin-top: 8px; color: var(--pi-muted); font-size: 12px; }
+    .muted { margin: 0; color: var(--pi-muted); font-size: 12px; }
+    .error-text { margin: 0; max-height: 200px; overflow-y: auto; border: 1px solid var(--pi-danger); border-radius: 8px; background: var(--pi-bg); color: var(--pi-danger); padding: 8px; white-space: pre-wrap; overflow-wrap: anywhere; font: 12px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+    .text-content, .eval-content { display: grid; gap: 8px; }
+    .diff-content-wrap { display: grid; gap: 6px; }
+    .diff-header-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; color: var(--pi-muted); font-size: 12px; }
+    .detail-target, .detail-result { display: grid; gap: 4px; min-width: 0; }
+    .detail-label { color: var(--pi-muted); font-size: 11px; text-transform: uppercase; letter-spacing: .04em; font-weight: 600; }
+    .detail-code-pre, .detail-result-pre, .detail-target-value { box-sizing: border-box; max-width: 100%; max-height: 220px; overflow-x: auto; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; border: 1px solid var(--pi-border-muted); border-radius: 8px; background: var(--pi-bg); padding: 8px; font: 12px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; color: var(--pi-text); white-space: pre-wrap; word-break: break-word; line-height: 1.45; }
+    .detail-target-value { color: var(--pi-accent); max-height: 140px; }
+    .diff-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-width: 0; color: var(--pi-muted); font-size: 12px; }
     .diff-toolbar span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    button { border: 1px solid var(--pi-border); border-radius: 6px; background: var(--pi-surface); color: var(--pi-text); padding: 3px 7px; font: 12px system-ui, sans-serif; cursor: pointer; }
+    button { border: 1px solid var(--pi-border); border-radius: 6px; background: var(--pi-surface); color: var(--pi-text); padding: 3px 8px; font: 12px system-ui, sans-serif; cursor: pointer; }
     button:hover, button:focus { border-color: var(--pi-accent); }
-    .diff { box-sizing: border-box; width: 100%; max-width: 100%; min-width: 0; margin: 0; overflow-x: auto; overflow-y: hidden; overscroll-behavior-x: contain; border: 1px solid var(--pi-border-muted); border-radius: 7px; background: var(--pi-bg); padding: 8px 0; color: var(--pi-muted); font: 12px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; line-height: 1.45; }
+    .diff { box-sizing: border-box; width: 100%; max-width: 100%; min-width: 0; max-height: 320px; margin: 0; overflow-x: auto; overflow-y: auto; overscroll-behavior-x: contain; border: 1px solid var(--pi-border-muted); border-radius: 8px; background: var(--pi-bg); padding: 8px 0; color: var(--pi-muted); font: 12px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; line-height: 1.45; }
     .diff-content { display: block; width: max-content; min-width: 100%; }
     .diff span { display: block; min-height: 1.45em; padding: 0 8px; white-space: pre; }
     .diff .context { color: var(--pi-muted); }
@@ -176,9 +223,17 @@ function toolTarget(execution: ToolExecutionPart, path: string | undefined): Too
   if (path !== undefined && path !== "") return { label: "File", text: path };
   const command = getString(execution.args, "command");
   if (command !== undefined && command !== "") return { label: "Command", text: command };
+  if (execution.toolName === "eval") {
+    const title = getString(execution.args, "title");
+    const code = getString(execution.args, "code") ?? "";
+    const firstLine = code.trim().split("\n")[0] ?? "";
+    const display = title ? `${title}: ${firstLine}` : firstLine;
+    if (display) return { label: "Code", text: display.length > 60 ? display.slice(0, 57) + "…" : display };
+  }
   if (execution.summary !== "") return { label: "Input", text: execution.summary };
   return undefined;
 }
+
 
 function pathFromArgs(args: unknown): string | undefined {
   return getString(args, "path") ?? getString(args, "file_path");
@@ -223,19 +278,7 @@ function isRemovedDiffLine(line: string): boolean {
   return line.startsWith("-") && !line.startsWith("---");
 }
 
-function statusIcon(status: ToolExecutionPart["status"]): string {
-  if (status === "success") return "✓";
-  if (status === "error") return "✖";
-  if (status === "running") return "●";
-  return "○";
-}
 
-function statusLabel(status: ToolExecutionPart["status"]): string {
-  if (status === "success") return "done";
-  if (status === "error") return "failed";
-  if (status === "running") return "running";
-  return "pending";
-}
 
 
 function getProperty(value: unknown, key: string): unknown {

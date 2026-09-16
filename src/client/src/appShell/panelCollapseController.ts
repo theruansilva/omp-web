@@ -35,7 +35,7 @@ export class PanelCollapseController implements ReactiveController {
     this.host.requestUpdate();
   }
 
-  shellClass(mainView: AppState["mainView"], bottomMobileNav = false, hideBreadcrumbs = false): string {
+  shellClass(mainView: AppState["mainView"], bottomMobileNav = true, hideBreadcrumbs = true): string {
     return [
       "shell",
       mainViewClass(mainView),

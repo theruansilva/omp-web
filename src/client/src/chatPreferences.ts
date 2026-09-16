@@ -16,8 +16,8 @@ export const DEFAULT_CHAT_PREFERENCES: ChatPreferences = {
   showAgentStatus: true,
   showStatusBar: false,
   hideWorkspaces: false,
-  bottomMobileNav: false,
-  hideBreadcrumbs: false,
+  bottomMobileNav: true,
+  hideBreadcrumbs: true,
 };
 
 export const CHAT_PREFERENCES_CHANGED_EVENT = "omp-web-chat-preferences-changed";
