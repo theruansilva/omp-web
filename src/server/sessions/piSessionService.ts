@@ -33,6 +33,7 @@ import type { CronScheduler } from "./schedulePrompt/scheduler.js";
 import { SchedulePromptService } from "./schedulePrompt/schedulePromptService.js";
 import type { CronStorage } from "./schedulePrompt/storage.js";
 import { createSchedulePromptToolDefinition } from "./schedulePrompt/tool.js";
+import { OMP_WEB_GENERATIVE_UI_PROMPT } from "./generativeUiPrompt.js";
 import type { PushNotificationService } from "../push/PushNotificationService.js";
 import {
   type AgentModel,
@@ -194,7 +195,7 @@ export type PiSessionRef = ClientSessionRef;
 
 type SpawnSessionFn = (input: SpawnSessionInvocation) => Promise<SpawnSessionResult>;
 
-function createDefaultRuntimeFactory(authStorage: AuthStorage, modelRegistry: ModelRegistryInstance, schedulePromptService: SchedulePromptService, spawn?: SpawnSessionFn, subsessions?: SubsessionToolDeps): OmpWebCreateAgentSessionRuntimeFactory {
+export function createDefaultRuntimeFactory(authStorage: AuthStorage, modelRegistry: ModelRegistryInstance, schedulePromptService: SchedulePromptService, spawn?: SpawnSessionFn, subsessions?: SubsessionToolDeps): OmpWebCreateAgentSessionRuntimeFactory {
  return async ({ cwd, agentDir, sessionManager, initialModel }) => {
   if (!(sessionManager instanceof SessionManager)) throw new Error("Default runtime creation requires an SDK SessionManager");
   const model = initialModel;
@@ -225,6 +226,7 @@ function createDefaultRuntimeFactory(authStorage: AuthStorage, modelRegistry: Mo
    sessionManager,
    hasUI: true,
    customTools,
+   appendSystemPrompt: OMP_WEB_GENERATIVE_UI_PROMPT,
    ...(model === undefined ? {} : { model }),
   });
   const piSession = new DefaultPiAgentSession(result.session, sessionManager, result.setToolUIContext);
