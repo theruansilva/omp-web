@@ -18,7 +18,7 @@ describe("bundled PI WEB plugins", () => {
       for (const { pattern, message } of forbiddenPatterns) {
         if (pattern.test(content)) violations.push(`${file}: ${message}`);
       }
-      if (content.includes("ompWebUnstable") && !content.includes("@ProgmRuanSilva/omp-web/plugin-api/unstable")) {
+      if (content.includes("ompWebUnstable") && !content.includes("@ProgmRuanSilva/omp-web/plugin-api/unstable") && !content.includes("@theruansilva/omp-web/plugin-api/unstable")) {
         violations.push(`${file}: ompWebUnstable use without explicit unstable type import`);
       }
     }

@@ -55,7 +55,7 @@ Defaults:
 - install directory: `~/.local/share/omp-web-docker` (or `$XDG_DATA_HOME/omp-web-docker`);
 - persistent data: `<install-dir>/data`, mounted at `/data`;
 - browser URL: <http://127.0.0.1:8504>;
-- packages: latest `@ProgmRuanSilva/omp-web` and latest Pi Coding Agent package unless pinned.
+- packages: latest `@theruansilva/omp-web` and latest Pi Coding Agent package unless pinned.
 
 Updating recreates the Docker `sessiond` container. Active Pi agent runtimes in this Docker install may stop, so update while sessions are idle. Persisted PI WEB state, Pi config, and session history under the data directory are kept.
 
@@ -109,7 +109,7 @@ Common environment variables written to `.env`:
 | `OMP_WEB_DOCKER_HOST_PROFILE`, `HOSTEXEC_MODE` | detected host profile and host-command capability toggle |
 | `OMP_WEB_DOCKER_EXTRA_HOST_PATHS` | optional whitespace-separated existing absolute paths to bind-mount read/write at the same path |
 | `OMP_WEB_BIND_ADDR`, `OMP_WEB_PORT` | host bind address and port |
-| `OMP_WEB_VERSION` | version/range for `@ProgmRuanSilva/omp-web` on npm |
+| `OMP_WEB_VERSION` | version/range for `@theruansilva/omp-web` on npm |
 | `PI_VERSION` | version/range for `@earendil-works/pi-coding-agent` on npm |
 | `OMP_WEB_OPENSUSE_IMAGE` | openSUSE base image used for the runtime build |
 | `OMP_WEB_NODEJS_MAJOR` | Node.js major package to install, defaulting to `22` |

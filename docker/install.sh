@@ -26,7 +26,7 @@ Options:
   --data-dir DIR          Persistent data directory (default: INSTALL_DIR/data)
   --bind-address ADDR     Host bind address (default: 127.0.0.1)
   --port PORT             Host port (default: 8504)
-  --omp-web-version VER    npm @ProgmRuanSilva/omp-web version pin (default: latest)
+  --omp-web-version VER    npm @theruansilva/omp-web version pin (default: latest)
   --pi-version VER        npm @earendil-works/pi-coding-agent version pin
                           (default: latest)
   --opensuse-image IMAGE  openSUSE base image (default: opensuse/tumbleweed)

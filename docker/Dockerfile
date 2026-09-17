@@ -33,7 +33,7 @@ ARG CACHE_BUST=local
 RUN set -eux; \
   echo "PI WEB Docker build cache bust: ${CACHE_BUST}"; \
   bun add -g \
-    "@ProgmRuanSilva/omp-web@${OMP_WEB_VERSION}" \
+    "@theruansilva/omp-web@${OMP_WEB_VERSION}" \
     "@earendil-works/pi-coding-agent@${PI_VERSION}"; \
   bun pm cache rm
 

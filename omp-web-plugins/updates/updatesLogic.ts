@@ -1,4 +1,4 @@
-import type { OmpWebDockerMode, OmpWebInstallationInfo, OmpWebStatusMessage, OmpWebStatusResponse, PluginRuntimeState } from "@ProgmRuanSilva/omp-web/plugin-api";
+import type { OmpWebDockerMode, OmpWebInstallationInfo, OmpWebStatusMessage, OmpWebStatusResponse, PluginRuntimeState } from "@theruansilva/omp-web/plugin-api";
 
 export interface CommandEntry {
   label: string;
@@ -67,13 +67,13 @@ export function fallbackDockerStatus(hint: UpdatesRuntimeHint, generatedAt = "fe
   const commandPrefix = hint.dockerMode === "dev" ? "omp-web-docker --dev" : "omp-web-docker";
   const installation: OmpWebInstallationInfo = { kind: "docker", dockerMode: hint.dockerMode };
   return {
-    packageName: "@ProgmRuanSilva/omp-web",
+    packageName: "@theruansilva/omp-web",
     generatedAt,
     components: {
       web: { component: "web", label: "Web/UI", stale: false, available: true, installation },
       sessiond: { component: "sessiond", label: "Session daemon", stale: false, available: true, installation },
     },
-    release: { packageName: "@ProgmRuanSilva/omp-web", updateAvailable: false, skipped: true },
+    release: { packageName: "@theruansilva/omp-web", updateAvailable: false, skipped: true },
     commands: {
       update: `${commandPrefix} update`,
       restart: `${commandPrefix} restart`,
