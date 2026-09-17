@@ -729,6 +729,8 @@ const DEFAULT_SLASH_COMMANDS: SlashCommand[] = [
   { name: "session", description: "Show session info and stats", source: "builtin" },
   { name: "new", description: "Start a new session", source: "builtin" },
   { name: "reload", description: "Reload Pi runtime resources", source: "builtin" },
+  { name: "exit", description: "Archive and exit session", source: "builtin" },
+  { name: "quit", description: "Archive and exit session", source: "builtin" },
   { name: "hotkeys", description: "Show keyboard shortcuts", source: "builtin" },
   { name: "fork", description: "Fork from a previous user message", source: "builtin" },
   { name: "clone", description: "Duplicate current session", source: "builtin" },

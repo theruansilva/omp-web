@@ -371,6 +371,7 @@ export class PiSessionService {
      this.publishStatus(session);
     },
     reloadSession: (session) => this.reloadSessionRuntime(session),
+    archiveSession: (session) => this.archive(session.sessionId),
    },
    { listSessionNames: (cwd) => this.listSessionNames(cwd) },
   );

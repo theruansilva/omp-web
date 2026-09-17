@@ -249,6 +249,30 @@ describe("SessionCommandService", () => {
     });
     expect(active.runtime.fork).not.toHaveBeenCalled();
   });
+  it("handles /exit and /quit commands to archive the session", async () => {
+    const active = activeSession();
+    const archiveSession = vi.fn(() => Promise.resolve());
+    const serviceWithArchive = new SessionCommandService(() => getActive(active), vi.fn(), eventPublisher(), { archiveSession });
+
+    await expect(serviceWithArchive.run("s1", "/exit")).resolves.toEqual({
+      type: "done",
+      message: "Session archived.",
+    });
+    expect(archiveSession).toHaveBeenCalledWith(active.runtime.session);
+
+    await expect(serviceWithArchive.run("s1", "/quit")).resolves.toEqual({
+      type: "done",
+      message: "Session archived.",
+    });
+    expect(archiveSession).toHaveBeenCalledTimes(2);
+
+    const serviceWithoutArchive = new SessionCommandService(() => getActive(active), vi.fn(), eventPublisher());
+    await expect(serviceWithoutArchive.run("s1", "/exit")).resolves.toEqual({
+      type: "unsupported",
+      message: "Archiving is not available for this session runtime.",
+    });
+  });
+
   it("handles /plan commands (toggle, approve, reject)", async () => {
     let planState: { enabled: boolean; planFilePath: string } | undefined;
     const approvePlan = vi.fn(() => { planState = undefined; return Promise.resolve(); });

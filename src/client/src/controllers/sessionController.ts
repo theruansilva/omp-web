@@ -224,6 +224,12 @@ export class SessionController {
   async runCommand(text: string) {
     const session = this.getState().selectedSession;
     if (!session || session.archived === true) return;
+    const [name = ""] = text.trim().replace(/^\//, "").split(/\s+/);
+    const commandName = name.toLowerCase();
+    if (commandName === "exit" || commandName === "quit") {
+      await this.archiveSession(session);
+      return;
+    }
     await this.deliverCommandToSession(session, text, selectedMachineId(this.getState()), { applyResult: true });
   }
 

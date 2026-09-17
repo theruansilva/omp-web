@@ -63,6 +63,7 @@ export interface SessionCommandLifecycle<TSession extends CommandSession = Comma
   onCompactionStart?: (session: TSession) => void;
   onCompactionEnd?: (session: TSession, result: "success" | "error", detail?: string) => void;
   reloadSession?: (session: TSession) => Promise<void>;
+  archiveSession?: (session: TSession) => Promise<void>;
 }
 
 export interface SessionCommandNaming {
@@ -115,6 +116,7 @@ export class SessionCommandService<TSession extends CommandSession = CommandSess
     if (name === "name") return this.nameSession(active, rest);
     if (name === "compact") return this.compact(session, rest);
     if (name === "reload") return this.reload(session);
+    if (name === "exit" || name === "quit") return this.archive(session);
     if (name === "clone") return this.clone(active);
     if (name === "fork") return this.fork(active);
 
@@ -275,6 +277,20 @@ export class SessionCommandService<TSession extends CommandSession = CommandSess
     }
     return { type: "done", message: "Session runtime resources reloaded. Extensions, skills, prompt templates, themes, and context/system prompt files are refreshed for this session. Reload the browser page separately for PI WEB browser plugin changes." };
   }
+
+  private async archive(session: TSession): Promise<ClientCommandResult> {
+    if (this.lifecycle.archiveSession === undefined) {
+      return { type: "unsupported", message: "Archiving is not available for this session runtime." };
+    }
+    try {
+      await this.lifecycle.archiveSession(session);
+      return { type: "done", message: "Session archived." };
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error);
+      return { type: "unsupported", message: `Archive failed: ${message}` };
+    }
+  }
+
 
   private async clone(active: CommandActiveSession<TSession>): Promise<ClientCommandResult> {
     if (sessionHasActiveWork(active.runtime.session)) return forkActiveUnsupported("clone");
