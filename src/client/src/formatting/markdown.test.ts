@@ -64,6 +64,16 @@ describe("toSafeMarkdownHtml", () => {
     expect(html).toContain('<pre><code class="language-typescript">');
   });
 
+  it("syntax-highlights supported code blocks with tok classes", () => {
+    const markdown = "```javascript\nconst count = 42;\n```";
+    const html = toSafeMarkdownHtml(markdown);
+
+    expect(html).toContain('class="tok-keyword"');
+    expect(html).toContain("const");
+    expect(html).toContain('class="tok-number"');
+    expect(html).toContain("42");
+  });
+
   it("renders image with Obsidian-style width syntax ![alt|300](url)", () => {
     const markdown = "![my image|300](/api/preview?path=img.png)";
     const html = toSafeMarkdownHtml(markdown);

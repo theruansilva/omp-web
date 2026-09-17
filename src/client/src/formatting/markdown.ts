@@ -1,6 +1,7 @@
 import { marked, type MarkedExtension, type Tokens } from "marked";
 import katex from "katex";
 import { renderMermaidAsciiSafe } from "@oh-my-pi/pi-utils/mermaid-ascii";
+import { highlightCodeBlock } from "./syntaxHighlight";
 
 const BOX_CHARS_REGEX = /[─│┌┐└┘├┤┬┴┼═║╔╗╚╝╠╣╦╩╬╭╮╰╯▼▲▶◀►◄]/;
 const VIDEO_EXT_REGEX = /\.(mp4|webm|ogg|ogv|mov|m4v|mkv)(?:[?#]|$)/i;
@@ -103,7 +104,8 @@ renderer.code = ({ text, lang }: { text: string; lang?: string }): string => {
   const isAsciiDiagram = language === "ascii" || language === "diagram" || BOX_CHARS_REGEX.test(text);
   const preClass = isAsciiDiagram ? ' class="ascii-diagram"' : "";
   const codeClass = language ? ` class="language-${escapeHtml(language)}"` : "";
-  return `<pre${preClass}><code${codeClass}>${escapeHtml(text)}</code></pre>`;
+  const content = isAsciiDiagram ? escapeHtml(text) : highlightCodeBlock(text, language);
+  return `<pre${preClass}><code${codeClass}>${content}</code></pre>`;
 };
 
 renderer.image = ({ href, title, text }: { href: string; title?: string | null; text: string }): string => {

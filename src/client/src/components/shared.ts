@@ -401,6 +401,21 @@ export const formattedTextStyles = css`
   .code-block-wrapper pre { margin: 0; padding-right: 40px; }
   pre { border: 1px solid var(--pi-border); border-radius: 8px; background: var(--pi-bg); padding: 10px; overflow-x: auto; overflow-y: hidden; direction: ltr; text-align: left; unicode-bidi: isolate; font: 13px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
   pre code { border: 0; padding: 0; background: transparent; font: inherit; }
+  .tok-keyword { color: var(--pi-danger); font-weight: 500; }
+  .tok-operator { color: var(--pi-danger); }
+  .tok-variableName { color: var(--pi-text); }
+  .tok-definition { color: var(--pi-purple); font-weight: 500; }
+  .tok-propertyName { color: var(--pi-accent); }
+  .tok-typeName, .tok-className, .tok-namespace { color: var(--pi-warning); }
+  .tok-string, .tok-string2 { color: var(--pi-success); }
+  .tok-number, .tok-integer, .tok-float { color: var(--pi-warning); }
+  .tok-bool, .tok-atom, .tok-literal { color: var(--pi-warning); }
+  .tok-comment { color: var(--pi-muted); font-style: italic; }
+  .tok-punctuation { color: var(--pi-dim); }
+  .tok-macroName { color: var(--pi-purple); }
+  .tok-labelName { color: var(--pi-accent); }
+  .tok-meta { color: var(--pi-muted); }
+  .tok-invalid { color: var(--pi-danger); text-decoration: underline; }
   pre.ascii-diagram, .mermaid-diagram-wrapper pre.ascii-diagram { font-family: ui-monospace, SFMono-Regular, "Cascadia Code", "DejaVu Sans Mono", Menlo, Consolas, monospace; font-size: 12.5px; line-height: 1.18; letter-spacing: 0; font-variant-ligatures: none; white-space: pre; overflow-x: auto; }
   .mermaid-diagram-wrapper { position: relative; border: 1px solid var(--pi-border); border-radius: 8px; background: var(--pi-bg); margin: 0 0 10px; overflow: hidden; }
   .mermaid-diagram-wrapper pre { border: none; border-radius: 0; margin: 0; padding: 12px 14px; }
