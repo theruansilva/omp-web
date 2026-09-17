@@ -1,5 +1,10 @@
 # Changelog
 
+## v2.3.1
+
+- ✨ Add `allowPrivateMachines` configuration option to allow adding machines on Tailscale (`100.64.0.0/10`), WireGuard, or private LAN networks.
+- 🐛 Fix compatibility with `@oh-my-pi/pi-catalog` 18.2.4 using `PROVIDER_DESCRIPTORS`.
+
 ## v2.3.0
 
 - 🔒 Hardened application security model with mandatory authentication tokens and HttpOnly cookies.

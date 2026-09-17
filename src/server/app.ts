@@ -186,6 +186,7 @@ export async function buildApp(deps: AppDependencies = {}): Promise<BuiltApp> {
   });
   const machines = deps.machines ?? new MachineService(undefined, {
     localRuntime: () => getOmpWebRuntime(sessionDaemon),
+    allowPrivateMachines: () => effectiveConfig.allowPrivateMachines ?? (process.env["OMP_WEB_ALLOW_PRIVATE_MACHINES"] === "1" || process.env["OMP_WEB_ALLOW_PRIVATE_MACHINES"] === "true"),
   });
 
   app.get("/omp-web-plugins/manifest.json", async (c) => c.json(await ompWebPlugins.manifest()));

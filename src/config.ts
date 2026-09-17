@@ -97,6 +97,7 @@ export function effectiveOmpWebConfig(options: LoadOptions = {}): LoadedOmpWebCo
    spawnSessions: spawnSessionsEnabled(env, loaded.config),
    // Beta capability, resolved off by default.
    subsessions: subsessionsEnabled(env, loaded.config),
+   allowPrivateMachines: allowPrivateMachinesEnabled(env, loaded.config),
    ...(authRequired !== undefined && authRequired !== "" ? { authRequired: authRequired === "1" || authRequired.toLowerCase() === "true" } : {}),
    ...(authToken !== undefined && authToken.trim() !== "" ? { authToken: authToken.trim() } : {}),
   },
@@ -121,6 +122,7 @@ export function saveOmpWebConfig(config: OmpWebConfigValues, options: LoadOption
  delete existing["subsessions"];
  delete existing["authRequired"];
  delete existing["authToken"];
+ delete existing["allowPrivateMachines"];
  const merged = { ...existing, ...ompWebConfigRecord(normalized) };
  mkdirSync(dirname(path), { recursive: true });
  writeFileSync(path, `${JSON.stringify(merged, null, 2)}\n`, "utf8");
@@ -149,6 +151,7 @@ function ompWebConfigRecord(config: OmpWebConfigValues): Record<string, unknown>
   ...(config.subsessions !== undefined ? { subsessions: config.subsessions } : {}),
   ...(config.authRequired !== undefined ? { authRequired: config.authRequired } : {}),
   ...(config.authToken !== undefined ? { authToken: config.authToken } : {}),
+  ...(config.allowPrivateMachines !== undefined ? { allowPrivateMachines: config.allowPrivateMachines } : {}),
  };
 }
 
@@ -167,6 +170,7 @@ function parseOmpWebConfig(value: Record<string, unknown>, path: string): OmpWeb
   ...(value["subsessions"] !== undefined ? { subsessions: parseBooleanConfig(value["subsessions"], "subsessions", path) } : {}),
   ...(value["authRequired"] !== undefined ? { authRequired: parseBooleanConfig(value["authRequired"], "authRequired", path) } : {}),
   ...(value["authToken"] !== undefined ? { authToken: parseString(value["authToken"], "authToken", path) } : {}),
+  ...(value["allowPrivateMachines"] !== undefined ? { allowPrivateMachines: parseBooleanConfig(value["allowPrivateMachines"], "allowPrivateMachines", path) } : {}),
  };
 }
 
@@ -300,3 +304,9 @@ export function exampleOmpWebConfig(config: OmpWebConfigValues = {}): string {
  return `${JSON.stringify({ host: config.host ?? "127.0.0.1", port: config.port ?? 8504, allowedHosts: config.allowedHosts ?? [] }, null, 2)}\n`;
 }
 
+
+export function allowPrivateMachinesEnabled(env: NodeJS.ProcessEnv = process.env, config: OmpWebConfigValues = {}): boolean {
+ const fromEnv = env["OMP_WEB_ALLOW_PRIVATE_MACHINES"];
+ if (fromEnv !== undefined && fromEnv !== "") return fromEnv === "1" || fromEnv.toLowerCase() === "true";
+ return config.allowPrivateMachines ?? false;
+}

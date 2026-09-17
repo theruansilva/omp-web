@@ -105,6 +105,16 @@ describe("MachineService", () => {
     const env: NodeJS.ProcessEnv = { OMP_WEB_MACHINES_FILE: "data/machines.json" };
     expect(machineStorePath(env, "/tmp/omp-web")).toBe(resolve("/tmp/omp-web", "data/machines.json"));
   });
+
+  it("allows private or tailscale machines when allowPrivateMachines is enabled", async () => {
+    await expect(service.add({ name: "Tailscale", baseUrl: "http://100.119.19.76:8504" })).rejects.toThrow("private, loopback, or cloud metadata host");
+
+    const privateService = new MachineService(new MachineStore(storePath), {
+      allowPrivateMachines: true,
+    });
+    const machine = await privateService.add({ name: "Tailscale", baseUrl: "http://100.119.19.76:8504" });
+    expect(machine.baseUrl).toBe("http://100.119.19.76:8504");
+  });
 });
 
 async function expectOwnerOnlyMachineStore(path: string): Promise<void> {

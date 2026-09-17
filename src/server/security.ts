@@ -104,8 +104,8 @@ export function validateOriginHeader(originHeader: string | undefined, hostHeade
   return allowedList.some((h) => matchAllowedHost(originHost, normalizeAllowedHost(h)));
 }
 
-export function isPrivateOrReservedHost(hostname: string, env: NodeJS.ProcessEnv = process.env): boolean {
-  if (env["OMP_WEB_ALLOW_PRIVATE_MACHINES"] === "1" || env["OMP_WEB_ALLOW_PRIVATE_MACHINES"] === "true") {
+export function isPrivateOrReservedHost(hostname: string, env: NodeJS.ProcessEnv = process.env, allowPrivate = false): boolean {
+  if (allowPrivate || env["OMP_WEB_ALLOW_PRIVATE_MACHINES"] === "1" || env["OMP_WEB_ALLOW_PRIVATE_MACHINES"] === "true") {
     return false;
   }
 
@@ -135,15 +135,15 @@ export function isPrivateOrReservedHost(hostname: string, env: NodeJS.ProcessEnv
   return false;
 }
 
-export async function isPrivateOrReservedHostAsync(hostname: string, env: NodeJS.ProcessEnv = process.env): Promise<boolean> {
-  if (isPrivateOrReservedHost(hostname, env)) return true;
-  if (env["OMP_WEB_ALLOW_PRIVATE_MACHINES"] === "1" || env["OMP_WEB_ALLOW_PRIVATE_MACHINES"] === "true") {
+export async function isPrivateOrReservedHostAsync(hostname: string, env: NodeJS.ProcessEnv = process.env, allowPrivate = false): Promise<boolean> {
+  if (isPrivateOrReservedHost(hostname, env, allowPrivate)) return true;
+  if (allowPrivate || env["OMP_WEB_ALLOW_PRIVATE_MACHINES"] === "1" || env["OMP_WEB_ALLOW_PRIVATE_MACHINES"] === "true") {
     return false;
   }
   try {
     const records = await lookup(hostname, { all: true });
     for (const record of records) {
-      if (isPrivateOrReservedHost(record.address, env)) {
+      if (isPrivateOrReservedHost(record.address, env, allowPrivate)) {
         return true;
       }
     }

@@ -18,6 +18,7 @@ export type UpdateMachineInput = Partial<CreateMachineInput>;
 export interface MachineServiceDependencies {
   localRuntime?: () => Promise<OmpWebRuntimeResponse>;
   remoteClientFactory?: (machine: StoredMachine) => MachineClient;
+  allowPrivateMachines?: boolean | (() => boolean | Promise<boolean>);
 }
 
 const LOCAL_MACHINE_TIMESTAMP = "1970-01-01T00:00:00.000Z";
@@ -39,9 +40,17 @@ export class MachineService {
     return machine === undefined ? undefined : publicMachine(machine);
   }
 
+  private async isAllowPrivate(): Promise<boolean> {
+    if (typeof this.deps.allowPrivateMachines === "function") {
+      return await this.deps.allowPrivateMachines();
+    }
+    return this.deps.allowPrivateMachines ?? (process.env["OMP_WEB_ALLOW_PRIVATE_MACHINES"] === "1" || process.env["OMP_WEB_ALLOW_PRIVATE_MACHINES"] === "true");
+  }
+
   async add(input: CreateMachineInput): Promise<Machine> {
     const name = validateName(input.name);
-    const baseUrl = await validateBaseUrlAsync(input.baseUrl);
+    const allowPrivate = await this.isAllowPrivate();
+    const baseUrl = await validateBaseUrlAsync(input.baseUrl, allowPrivate);
     const stored = await this.store.add({ name, baseUrl, ...optionalSecrets(input) });
     return publicMachine(stored);
   }
@@ -50,7 +59,10 @@ export class MachineService {
     if (id === "local") throw new Error("Local machine cannot be changed");
     const patch: Partial<Pick<StoredMachine, "name" | "baseUrl" | "token" | "headers">> = {};
     if (input.name !== undefined) patch.name = validateName(input.name);
-    if (input.baseUrl !== undefined) patch.baseUrl = await validateBaseUrlAsync(input.baseUrl);
+    if (input.baseUrl !== undefined) {
+      const allowPrivate = await this.isAllowPrivate();
+      patch.baseUrl = await validateBaseUrlAsync(input.baseUrl, allowPrivate);
+    }
     if (input.token !== undefined) patch.token = input.token;
     if (input.headers !== undefined) patch.headers = validateHeaders(input.headers);
     const stored = await this.store.update(id, patch);
@@ -176,7 +188,7 @@ function validateName(value: string | undefined): string {
   return name;
 }
 
-async function validateBaseUrlAsync(value: string | undefined): Promise<string> {
+async function validateBaseUrlAsync(value: string | undefined, allowPrivate = false): Promise<string> {
   const raw = value?.trim();
   if (raw === undefined || raw === "") throw new Error("Machine baseUrl is required");
   let url: URL;
@@ -188,7 +200,7 @@ async function validateBaseUrlAsync(value: string | undefined): Promise<string> 
   if (url.protocol !== "http:" && url.protocol !== "https:") throw new Error("Machine baseUrl must use http or https");
   if (url.username !== "" || url.password !== "") throw new Error("Machine baseUrl must not include credentials");
   if (url.search !== "" || url.hash !== "") throw new Error("Machine baseUrl must not include query or hash");
-  if (await isPrivateOrReservedHostAsync(url.hostname)) throw new Error("Machine baseUrl must not use a private, loopback, or cloud metadata host");
+  if (await isPrivateOrReservedHostAsync(url.hostname, process.env, allowPrivate)) throw new Error("Machine baseUrl must not use a private, loopback, or cloud metadata host");
   return url.href.replace(/\/$/u, "");
 }
 

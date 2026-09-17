@@ -89,6 +89,7 @@ export interface OmpWebConfigValues {
  subsessions?: boolean;
  authRequired?: boolean;
  authToken?: string;
+ allowPrivateMachines?: boolean;
 }
 
 export type OmpWebPluginScope = "bundled" | "local" | "user" | "project";
