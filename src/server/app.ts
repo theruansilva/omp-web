@@ -2,7 +2,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { Hono } from "hono";
-import { createSecurityMiddleware } from "./security.js";
+import { createSecurityMiddleware, getOrGenerateAuthToken, parseCookie, safeTokenCompare } from "./security.js";
 import { createBunWebSocket } from "hono/bun";
 import { serveStatic } from "hono/bun";
 import { ProjectStore } from "./storage/projectStore.js";
@@ -47,6 +47,8 @@ export interface AppDependencies {
   logger?: unknown;
   /** Maximum accepted HTTP request body size in bytes. */
   bodyLimit?: number;
+  authRequired?: boolean;
+  authToken?: string;
 }
 
 export interface BuiltApp {
@@ -164,8 +166,13 @@ export async function buildApp(deps: AppDependencies = {}): Promise<BuiltApp> {
     return cachedAllowedHosts;
   };
 
+  const authRequired = deps.authRequired ?? (effectiveConfig.authRequired ?? (process.env["OMP_WEB_AUTH_REQUIRED"] === "1" || process.env["OMP_WEB_AUTH_REQUIRED"] === "true"));
+  const authToken = deps.authToken ?? effectiveConfig.authToken ?? getOrGenerateAuthToken();
+
   app.use("*", createSecurityMiddleware({
     allowedHosts: getAllowedHosts,
+    authRequired,
+    authToken,
   }));
   const { upgradeWebSocket, websocket } = createBunWebSocket();
 
@@ -194,6 +201,35 @@ export async function buildApp(deps: AppDependencies = {}): Promise<BuiltApp> {
     return new Response(asset.content as unknown as BodyInit, {
       headers: { "Content-Type": asset.contentType },
     });
+  });
+
+  app.post("/api/omp-web/auth", async (c) => {
+    try {
+      const body = await c.req.json<{ token?: string }>().catch(() => ({} as { token?: string }));
+      const candidate = body.token?.trim();
+      if (!candidate || !safeTokenCompare(candidate, authToken)) {
+        return c.json({ error: "Invalid auth token" }, 401);
+      }
+      c.header("Set-Cookie", `omp_web_token=${encodeURIComponent(candidate)}; Path=/; HttpOnly; SameSite=Lax`);
+      return c.json({ ok: true });
+    } catch (error) {
+      return c.json({ error: error instanceof Error ? error.message : String(error) }, 400);
+    }
+  });
+
+  app.delete("/api/omp-web/auth", async (c) => {
+    c.header("Set-Cookie", "omp_web_token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; HttpOnly; SameSite=Lax");
+    return c.json({ ok: true });
+  });
+
+  app.get("/api/omp-web/auth", async (c) => {
+    const authHeader = c.req.header("authorization");
+    const bearerToken = authHeader?.startsWith("Bearer ") ? authHeader.slice(7).trim() : undefined;
+    const cookieToken = parseCookie(c.req.header("cookie"), "omp_web_token");
+    const queryToken = c.req.query("token");
+    const token = bearerToken ?? cookieToken ?? queryToken;
+    const authenticated = !authRequired || safeTokenCompare(token, authToken);
+    return c.json({ authenticated, authRequired });
   });
 
   app.get("/api/omp-web/status", async (c) => c.json(await ompWebStatusCache.get()));
@@ -259,6 +295,7 @@ export async function buildApp(deps: AppDependencies = {}): Promise<BuiltApp> {
       const isBuffer = Buffer.isBuffer(options.payload) || options.payload instanceof Uint8Array;
       const isJsonPayload = options.payload !== undefined && !isBuffer && typeof options.payload !== "string";
       const headers: Record<string, string> = {
+        host: "localhost",
         ...(isJsonPayload ? { "content-type": "application/json" } : {}),
         ...options.headers,
       };

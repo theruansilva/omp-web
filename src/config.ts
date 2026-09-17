@@ -79,6 +79,8 @@ export function effectiveOmpWebConfig(options: LoadOptions = {}): LoadedOmpWebCo
  const port = env["OMP_WEB_PORT"] ?? env["PORT"];
  const allowedHosts = env["OMP_WEB_ALLOWED_HOSTS"];
  const maxUpload = env["OMP_WEB_MAX_UPLOAD_BYTES"];
+ const authRequired = env["OMP_WEB_AUTH_REQUIRED"];
+ const authToken = env["OMP_WEB_AUTH_TOKEN"];
 
  return {
   ...loaded,
@@ -95,6 +97,8 @@ export function effectiveOmpWebConfig(options: LoadOptions = {}): LoadedOmpWebCo
    spawnSessions: spawnSessionsEnabled(env, loaded.config),
    // Beta capability, resolved off by default.
    subsessions: subsessionsEnabled(env, loaded.config),
+   ...(authRequired !== undefined && authRequired !== "" ? { authRequired: authRequired === "1" || authRequired.toLowerCase() === "true" } : {}),
+   ...(authToken !== undefined && authToken.trim() !== "" ? { authToken: authToken.trim() } : {}),
   },
  };
 }
@@ -115,6 +119,8 @@ export function saveOmpWebConfig(config: OmpWebConfigValues, options: LoadOption
  delete existing["maxUploadBytes"];
  delete existing["spawnSessions"];
  delete existing["subsessions"];
+ delete existing["authRequired"];
+ delete existing["authToken"];
  const merged = { ...existing, ...ompWebConfigRecord(normalized) };
  mkdirSync(dirname(path), { recursive: true });
  writeFileSync(path, `${JSON.stringify(merged, null, 2)}\n`, "utf8");
@@ -141,6 +147,8 @@ function ompWebConfigRecord(config: OmpWebConfigValues): Record<string, unknown>
   ...(config.maxUploadBytes !== undefined ? { maxUploadBytes: config.maxUploadBytes } : {}),
   ...(config.spawnSessions !== undefined ? { spawnSessions: config.spawnSessions } : {}),
   ...(config.subsessions !== undefined ? { subsessions: config.subsessions } : {}),
+  ...(config.authRequired !== undefined ? { authRequired: config.authRequired } : {}),
+  ...(config.authToken !== undefined ? { authToken: config.authToken } : {}),
  };
 }
 
@@ -157,6 +165,8 @@ function parseOmpWebConfig(value: Record<string, unknown>, path: string): OmpWeb
   ...(value["maxUploadBytes"] !== undefined ? { maxUploadBytes: parseMaxUploadBytes(value["maxUploadBytes"], "maxUploadBytes", path) } : {}),
   ...(value["spawnSessions"] !== undefined ? { spawnSessions: parseBooleanConfig(value["spawnSessions"], "spawnSessions", path) } : {}),
   ...(value["subsessions"] !== undefined ? { subsessions: parseBooleanConfig(value["subsessions"], "subsessions", path) } : {}),
+  ...(value["authRequired"] !== undefined ? { authRequired: parseBooleanConfig(value["authRequired"], "authRequired", path) } : {}),
+  ...(value["authToken"] !== undefined ? { authToken: parseString(value["authToken"], "authToken", path) } : {}),
  };
 }
 

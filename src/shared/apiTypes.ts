@@ -87,6 +87,8 @@ export interface OmpWebConfigValues {
   * while the capability stabilizes. Requires spawnSessions to be enabled.
   */
  subsessions?: boolean;
+ authRequired?: boolean;
+ authToken?: string;
 }
 
 export type OmpWebPluginScope = "bundled" | "local" | "user" | "project";

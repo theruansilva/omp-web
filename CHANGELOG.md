@@ -1,5 +1,14 @@
 # Changelog
 
+## v2.3.0
+
+- 🔒 Hardened application security model with mandatory authentication tokens and HttpOnly cookies.
+- 🔒 Implemented timing-safe token comparison and automatic cookie issuance for authenticated web sessions.
+- 🔒 Added standalone responsive unlock screen for unauthenticated browser access.
+- 🔒 Enforced strict Host header validation and mitigated SSRF via pre-flight DNS resolution against reserved/private IPs.
+- 🛡️ Prevented arbitrary filesystem access by blocking registration of system root directories as project roots.
+- 🛡️ Masked environment variables in MCP server configuration endpoints to prevent secret exposure.
+
 ## v2.0.0
 
 - 🚀 Complete migration of backend services (`sessiond` and `app`) from Fastify to Hono and native `Bun.serve`.

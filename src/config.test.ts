@@ -17,6 +17,26 @@ afterEach(async () => {
 });
 
 describe("PI WEB config persistence", () => {
+  it("persists and reads authRequired and authToken", () => {
+    saveOmpWebConfig({ authRequired: true, authToken: "my-token-123" }, testOptions());
+    const loaded = loadOmpWebConfig(testOptions());
+    expect(loaded.config.authRequired).toBe(true);
+    expect(loaded.config.authToken).toBe("my-token-123");
+  });
+
+  it("reads auth configuration from environment variables", () => {
+    const custom = {
+      env: {
+        OMP_WEB_CONFIG: configPath,
+        OMP_WEB_AUTH_REQUIRED: "1",
+        OMP_WEB_AUTH_TOKEN: "env-token-xyz",
+      },
+    };
+    const effective = effectiveOmpWebConfig(custom);
+    expect(effective.config.authRequired).toBe(true);
+    expect(effective.config.authToken).toBe("env-token-xyz");
+  });
+
   it("writes and reads the configured PI WEB config path", () => {
     const requestedConfig = {
       host: "0.0.0.0",

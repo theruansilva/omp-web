@@ -4,7 +4,7 @@ import { getOmpWebRuntime } from "../ompWebStatus.js";
 import { DEFAULT_REMOTE_HEALTH_TIMEOUT_MS, RemoteMachineClient, type MachineClient, validateConfiguredMachineHeaders } from "./machineClient.js";
 import { MachineStore, type StoredMachine } from "./machineStore.js";
 import { errorMessage, isRecord } from "../utils.js";
-import { isPrivateOrReservedHost } from "../security.js";
+import { isPrivateOrReservedHost, isPrivateOrReservedHostAsync } from "../security.js";
 
 export interface CreateMachineInput {
   name?: string;
@@ -41,7 +41,7 @@ export class MachineService {
 
   async add(input: CreateMachineInput): Promise<Machine> {
     const name = validateName(input.name);
-    const baseUrl = validateBaseUrl(input.baseUrl);
+    const baseUrl = await validateBaseUrlAsync(input.baseUrl);
     const stored = await this.store.add({ name, baseUrl, ...optionalSecrets(input) });
     return publicMachine(stored);
   }
@@ -50,7 +50,7 @@ export class MachineService {
     if (id === "local") throw new Error("Local machine cannot be changed");
     const patch: Partial<Pick<StoredMachine, "name" | "baseUrl" | "token" | "headers">> = {};
     if (input.name !== undefined) patch.name = validateName(input.name);
-    if (input.baseUrl !== undefined) patch.baseUrl = validateBaseUrl(input.baseUrl);
+    if (input.baseUrl !== undefined) patch.baseUrl = await validateBaseUrlAsync(input.baseUrl);
     if (input.token !== undefined) patch.token = input.token;
     if (input.headers !== undefined) patch.headers = validateHeaders(input.headers);
     const stored = await this.store.update(id, patch);
@@ -176,7 +176,7 @@ function validateName(value: string | undefined): string {
   return name;
 }
 
-function validateBaseUrl(value: string | undefined): string {
+async function validateBaseUrlAsync(value: string | undefined): Promise<string> {
   const raw = value?.trim();
   if (raw === undefined || raw === "") throw new Error("Machine baseUrl is required");
   let url: URL;
@@ -188,7 +188,7 @@ function validateBaseUrl(value: string | undefined): string {
   if (url.protocol !== "http:" && url.protocol !== "https:") throw new Error("Machine baseUrl must use http or https");
   if (url.username !== "" || url.password !== "") throw new Error("Machine baseUrl must not include credentials");
   if (url.search !== "" || url.hash !== "") throw new Error("Machine baseUrl must not include query or hash");
-  if (isPrivateOrReservedHost(url.hostname)) throw new Error("Machine baseUrl must not use a private, loopback, or cloud metadata host");
+  if (await isPrivateOrReservedHostAsync(url.hostname)) throw new Error("Machine baseUrl must not use a private, loopback, or cloud metadata host");
   return url.href.replace(/\/$/u, "");
 }
 
@@ -242,4 +242,3 @@ function isOmpWebComponentStatus(value: unknown): value is OmpWebComponentStatus
     && typeof value["stale"] === "boolean"
     && typeof value["available"] === "boolean";
 }
-

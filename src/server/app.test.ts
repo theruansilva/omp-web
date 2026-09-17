@@ -415,6 +415,87 @@ describe("buildApp", () => {
     expect(emptyListResponse.json<Project[]>()).toEqual([]);
   });
 
+  it("rejects adding system root directories as projects", async () => {
+    const rootResponse = await app.inject({
+      method: "POST",
+      url: "/api/projects",
+      payload: { name: "RootFS", path: "/" },
+    });
+    expect(rootResponse.statusCode).toBe(400);
+    expect(rootResponse.json()).toEqual({ error: "Cannot add system root directory as a project" });
+
+    const etcResponse = await app.inject({
+      method: "POST",
+      url: "/api/projects",
+      payload: { name: "Etc", path: "/etc" },
+    });
+    expect(etcResponse.statusCode).toBe(400);
+    expect(etcResponse.json()).toEqual({ error: "Cannot add system root directory as a project" });
+  });
+
+  it("enforces authentication across app endpoints when authRequired is enabled", async () => {
+    const authedApp = await buildApp({
+      authRequired: true,
+      authToken: "test-auth-token-123",
+      projects: new ProjectService(new ProjectStore(join(tempDir, "auth-projects.json"))),
+      workspaces: new WorkspaceService(),
+      config: fakeConfigService(),
+      sessionDaemon: fakeSessionDaemon(),
+      clientDist: false,
+      logger: false,
+    });
+
+    try {
+      // 1. Unauthenticated API call is blocked
+      const unauthedRes = await authedApp.inject({ method: "GET", url: "/api/projects" });
+      expect(unauthedRes.statusCode).toBe(401);
+      expect(unauthedRes.json()).toEqual({ error: "Unauthorized: Invalid or missing auth token" });
+
+      // 2. Auth login with wrong token is rejected
+      const wrongLogin = await authedApp.inject({
+        method: "POST",
+        url: "/api/omp-web/auth",
+        payload: { token: "wrong-token" },
+      });
+      expect(wrongLogin.statusCode).toBe(401);
+
+      // 3. Auth login with valid token sets cookie
+      const validLogin = await authedApp.inject({
+        method: "POST",
+        url: "/api/omp-web/auth",
+        payload: { token: "test-auth-token-123" },
+      });
+      expect(validLogin.statusCode).toBe(200);
+      expect(validLogin.headers["set-cookie"]).toContain("omp_web_token=test-auth-token-123");
+
+      // 4. Authenticated with Bearer header succeeds
+      const bearerRes = await authedApp.inject({
+        method: "GET",
+        url: "/api/projects",
+        headers: { authorization: "Bearer test-auth-token-123" },
+      });
+      expect(bearerRes.statusCode).toBe(200);
+
+      // 5. Authenticated with Cookie succeeds
+      const cookieRes = await authedApp.inject({
+        method: "GET",
+        url: "/api/projects",
+        headers: { cookie: "omp_web_token=test-auth-token-123" },
+      });
+      expect(cookieRes.statusCode).toBe(200);
+
+      // 6. Logout clears cookie
+      const logoutRes = await authedApp.inject({
+        method: "DELETE",
+        url: "/api/omp-web/auth",
+      });
+      expect(logoutRes.statusCode).toBe(200);
+      expect(logoutRes.headers["set-cookie"]).toContain("omp_web_token=;");
+    } finally {
+      await authedApp.close();
+    }
+  });
+
   it("serves local session and terminal proxy routes through machine-scoped aliases", async () => {
     const sessionsResponse = await app.inject({ method: "GET", url: `/api/machines/local/sessions?cwd=${encodeURIComponent(projectDir)}` });
 

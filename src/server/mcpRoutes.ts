@@ -33,6 +33,17 @@ export function defaultGlobalMcpPath(env: NodeJS.ProcessEnv = process.env): stri
   return join(agentDir, "mcp.json");
 }
 
+export function maskMcpServers(servers: Record<string, McpServerConfig>): Record<string, McpServerConfig> {
+  const masked: Record<string, McpServerConfig> = {};
+  for (const [name, config] of Object.entries(servers)) {
+    masked[name] = {
+      ...config,
+      ...(config.env !== undefined ? { env: Object.fromEntries(Object.keys(config.env).map((key) => [key, "***"])) } : {}),
+    };
+  }
+  return masked;
+}
+
 export function readGlobalMcpConfig(mcpPath = defaultGlobalMcpPath()): McpResponse {
   if (!existsSync(mcpPath)) {
     return { path: mcpPath, exists: false, servers: {} };
@@ -44,7 +55,7 @@ export function readGlobalMcpConfig(mcpPath = defaultGlobalMcpPath()): McpRespon
     return {
       path: mcpPath,
       exists: true,
-      servers: parsed.mcpServers ?? {},
+      servers: maskMcpServers(parsed.mcpServers ?? {}),
     };
   } catch {
     return { path: mcpPath, exists: true, servers: {} };

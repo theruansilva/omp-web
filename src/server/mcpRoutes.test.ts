@@ -60,6 +60,27 @@ describe("mcpRoutes", () => {
       expect(result.servers["fetch"]?.enabled).toBe(false);
     });
 
+    it("masks environment variables in mcp config", () => {
+      const payload = {
+        mcpServers: {
+          secretServer: {
+            command: "node",
+            env: {
+              API_KEY: "sk-real-secret-12345",
+              DB_PASS: "super-secret-password",
+            },
+          },
+        },
+      };
+      writeFileSync(mcpPath, JSON.stringify(payload));
+
+      const result = readGlobalMcpConfig(mcpPath);
+      expect(result.servers["secretServer"]?.env).toEqual({
+        API_KEY: "***",
+        DB_PASS: "***",
+      });
+    });
+
     it("handles corrupt JSON gracefully", () => {
       writeFileSync(mcpPath, "invalid json{{{");
       const result = readGlobalMcpConfig(mcpPath);

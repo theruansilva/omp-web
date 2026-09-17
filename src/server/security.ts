@@ -1,5 +1,6 @@
 import { chmodSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import { randomBytes } from "node:crypto";
+import { randomBytes, timingSafeEqual } from "node:crypto";
+import { lookup } from "node:dns/promises";
 import { join } from "node:path";
 import type { MiddlewareHandler } from "hono";
 import { defaultOmpWebDataDir } from "../config.js";
@@ -69,7 +70,7 @@ export function matchAllowedHost(requestHost: string, allowedPattern: string): b
 
 export function validateHostHeader(hostHeader: string | undefined, allowedHosts: string[] | true | undefined): boolean {
   if (allowedHosts === true) return true;
-  if (hostHeader === undefined || hostHeader.trim() === "") return true;
+  if (hostHeader === undefined || hostHeader.trim() === "") return false;
   const requestHost = parseHostHeader(hostHeader);
   if (requestHost === undefined) return false;
 
@@ -134,10 +135,92 @@ export function isPrivateOrReservedHost(hostname: string, env: NodeJS.ProcessEnv
   return false;
 }
 
+export async function isPrivateOrReservedHostAsync(hostname: string, env: NodeJS.ProcessEnv = process.env): Promise<boolean> {
+  if (isPrivateOrReservedHost(hostname, env)) return true;
+  if (env["OMP_WEB_ALLOW_PRIVATE_MACHINES"] === "1" || env["OMP_WEB_ALLOW_PRIVATE_MACHINES"] === "true") {
+    return false;
+  }
+  try {
+    const records = await lookup(hostname, { all: true });
+    for (const record of records) {
+      if (isPrivateOrReservedHost(record.address, env)) {
+        return true;
+      }
+    }
+  } catch {
+    // DNS resolution failure (e.g. offline or unresolvable test domain)
+  }
+  return false;
+}
+
+export function safeTokenCompare(provided: string | undefined, expected: string): boolean {
+  if (provided === undefined || provided === "") return false;
+  const a = Buffer.from(provided);
+  const b = Buffer.from(expected);
+  if (a.length !== b.length) return false;
+  return timingSafeEqual(a, b);
+}
+
+export function parseCookie(cookieHeader: string | undefined, name: string): string | undefined {
+  if (cookieHeader === undefined || cookieHeader.trim() === "") return undefined;
+  const match = cookieHeader.match(new RegExp(`(?:^|;\\s*)${name}=([^;]*)`));
+  const value = match?.[1];
+  return value !== undefined ? decodeURIComponent(value) : undefined;
+}
+
+export function renderLoginPage(): string {
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PI WEB — Authentication</title>
+  <style>
+    body { background: #070912; color: #e1e4ea; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
+    .card { background: #101527; border: 1px solid #1f2742; border-radius: 12px; padding: 2rem; width: 100%; max-width: 400px; box-shadow: 0 8px 24px rgba(0,0,0,0.5); }
+    h1 { font-size: 1.25rem; margin: 0 0 0.5rem; }
+    p { font-size: 0.875rem; color: #8b949e; margin: 0 0 1.5rem; }
+    input[type="password"] { width: 100%; box-sizing: border-box; padding: 0.75rem; background: #070912; border: 1px solid #1f2742; border-radius: 6px; color: #fff; margin-bottom: 1rem; font-family: monospace; font-size: 0.9rem; }
+    button { width: 100%; padding: 0.75rem; background: #238636; border: none; border-radius: 6px; color: #fff; font-weight: 600; cursor: pointer; }
+    button:hover { background: #2ea043; }
+    .hint { font-size: 0.75rem; color: #6e7681; margin-top: 1rem; text-align: center; }
+    code { background: #161b22; padding: 0.15rem 0.3rem; border-radius: 3px; font-size: 0.8rem; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>PI WEB</h1>
+    <p>Authentication required to access this instance.</p>
+    <form id="loginForm">
+      <input type="password" name="token" placeholder="Enter auth token" autofocus required />
+      <button type="submit">Unlock</button>
+    </form>
+    <div class="hint">Token is stored in <code>~/.omp-web/auth-token</code> or <code>OMP_WEB_AUTH_TOKEN</code></div>
+  </div>
+  <script>
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const token = e.target.token.value.trim();
+      const res = await fetch('/api/omp-web/auth', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ token })
+      });
+      if (res.ok) {
+        location.reload();
+      } else {
+        alert('Invalid token');
+      }
+    });
+  </script>
+</body>
+</html>`;
+}
+
 export interface SecurityMiddlewareOptions {
   allowedHosts?: string[] | true | (() => string[] | true | undefined | Promise<string[] | true | undefined>) | undefined;
-  authToken?: string | undefined;
-  authRequired?: boolean | undefined;
+  authToken?: string | (() => string | undefined | Promise<string | undefined>) | undefined;
+  authRequired?: boolean | (() => boolean | undefined | Promise<boolean | undefined>) | undefined;
 }
 
 export function createSecurityMiddleware(options: SecurityMiddlewareOptions = {}): MiddlewareHandler {
@@ -161,16 +244,38 @@ export function createSecurityMiddleware(options: SecurityMiddlewareOptions = {}
     }
 
     // 3. Auth Token validation (if required or authToken provided)
-    if (options.authRequired && options.authToken) {
-      const isExempt = path === "/health" || path === "/runtime" || path === "/api/omp-web/status" || path.startsWith("/omp-web-plugins/");
+    const authRequired = typeof options.authRequired === "function"
+      ? await options.authRequired()
+      : options.authRequired;
+    const authToken = typeof options.authToken === "function"
+      ? await options.authToken()
+      : options.authToken;
+
+    if (authRequired && authToken) {
+      const isExempt = path === "/health"
+        || path === "/runtime"
+        || path === "/api/omp-web/status"
+        || path === "/api/omp-web/version"
+        || path === "/api/omp-web/runtime"
+        || path === "/api/omp-web/auth"
+        || path.startsWith("/omp-web-plugins/");
+
       if (!isExempt) {
         const authHeader = c.req.header("authorization");
         const bearerToken = authHeader?.startsWith("Bearer ") ? authHeader.slice(7).trim() : undefined;
+        const cookieToken = parseCookie(c.req.header("cookie"), "omp_web_token");
         const queryToken = c.req.query("token");
-        const token = bearerToken ?? queryToken;
+        const token = bearerToken ?? cookieToken ?? queryToken;
 
-        if (token !== options.authToken) {
-          return c.json({ error: "Unauthorized: Invalid or missing auth token" }, 401);
+        if (!safeTokenCompare(token, authToken)) {
+          if (path.startsWith("/api/") || c.req.header("upgrade") === "websocket") {
+            return c.json({ error: "Unauthorized: Invalid or missing auth token" }, 401);
+          }
+          return c.html(renderLoginPage(), 401);
+        }
+
+        if (queryToken && safeTokenCompare(queryToken, authToken) && !path.startsWith("/api/")) {
+          c.header("Set-Cookie", `omp_web_token=${encodeURIComponent(queryToken)}; Path=/; HttpOnly; SameSite=Lax`);
         }
       }
     }
