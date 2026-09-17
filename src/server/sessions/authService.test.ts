@@ -33,6 +33,37 @@ describe("AuthService", () => {
     auth.dispose();
     authStorage.close();
   });
+
+  it("returns OAuth providers including google-antigravity for login", async () => {
+    const { auth, authStorage } = await createAuthService();
+
+    const response = await auth.authProviders("login", "oauth");
+    expect(response.providers).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: "google-antigravity",
+          authType: "oauth",
+          name: "Antigravity (Gemini 3, Claude, GPT-OSS)",
+        }),
+      ]),
+    );
+
+    auth.dispose();
+    authStorage.close();
+  });
+
+  it("starts OAuth login for google-antigravity", async () => {
+    const { auth, authStorage } = await createAuthService();
+
+    const flow = auth.startOAuthLogin("google-antigravity");
+    expect(flow.providerId).toBe("google-antigravity");
+    expect(flow.providerName).toBe("Antigravity (Gemini 3, Claude, GPT-OSS)");
+    expect(flow.status).toBe("running");
+
+    auth.cancelOAuthFlow(flow.flowId);
+    auth.dispose();
+    authStorage.close();
+  });
 });
 
 async function createAuthService(data: Record<string, AuthCredentialEntry> = {}) {
