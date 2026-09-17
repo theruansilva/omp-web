@@ -1,5 +1,9 @@
 # Changelog
 
+## v2.3.2
+
+- 🎛️ Add "Allow private & VPN machines" toggle to the Gateway Server settings UI in General Settings.
+
 ## v2.3.1
 
 - ✨ Add `allowPrivateMachines` configuration option to allow adding machines on Tailscale (`100.64.0.0/10`), WireGuard, or private LAN networks.

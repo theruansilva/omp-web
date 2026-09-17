@@ -142,6 +142,14 @@ export class SettingsGeneralPanel extends LitElement {
               <small>Enter one host per line, or choose “Allow every host” to write <code>true</code>.</small>
             </div>
 
+            <label class="toggle-row">
+              <input type="checkbox" .checked=${this.gatewayDraft.allowPrivateMachines} @change=${(event: Event) => { this.updateGatewayDraft({ allowPrivateMachines: inputChecked(event) }); }} />
+              <div class="toggle-copy">
+                <strong>Allow private & VPN machines</strong>
+                <small>Permits registering remote machines on Tailscale (100.64.0.0/10), WireGuard, or private LAN networks.</small>
+              </div>
+            </label>
+
             ${this.renderGatewayEffectiveConfig()}
 
             <footer class="form-actions">
@@ -418,3 +426,7 @@ function textAreaValue(event: Event): string {
   return event.target instanceof HTMLTextAreaElement ? event.target.value : "";
 }
 
+
+function inputChecked(event: Event): boolean {
+  return event.target instanceof HTMLInputElement ? event.target.checked : false;
+}

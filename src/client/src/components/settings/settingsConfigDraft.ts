@@ -5,6 +5,7 @@ export interface GatewayServerConfigDraft {
   port: string;
   allowedHostsMode: "list" | "all";
   allowedHostsText: string;
+  allowPrivateMachines: boolean;
 }
 
 export interface MachineAccessConfigDraft {
@@ -13,7 +14,7 @@ export interface MachineAccessConfigDraft {
 }
 
 export function emptyGatewayServerConfigDraft(): GatewayServerConfigDraft {
-  return { host: "", port: "", allowedHostsMode: "list", allowedHostsText: "" };
+  return { host: "", port: "", allowedHostsMode: "list", allowedHostsText: "", allowPrivateMachines: false };
 }
 
 export function emptyMachineAccessConfigDraft(): MachineAccessConfigDraft {
@@ -26,6 +27,7 @@ export function gatewayServerDraftFromConfig(config: OmpWebConfigValues): Gatewa
     port: config.port === undefined ? "" : String(config.port),
     allowedHostsMode: config.allowedHosts === true ? "all" : "list",
     allowedHostsText: Array.isArray(config.allowedHosts) ? config.allowedHosts.join("\n") : "",
+    allowPrivateMachines: config.allowPrivateMachines ?? false,
   };
 }
 
@@ -47,6 +49,7 @@ export function gatewayServerConfigFromDraft(draft: GatewayServerConfigDraft, ba
     config.port = parsed;
   }
   config.allowedHosts = draft.allowedHostsMode === "all" ? true : parseAllowedHostsText(draft.allowedHostsText);
+  config.allowPrivateMachines = draft.allowPrivateMachines;
   return config;
 }
 
@@ -69,6 +72,9 @@ function preservedGatewayConfigRemainder(baseConfig: OmpWebConfigValues): OmpWeb
     ...(baseConfig.maxUploadBytes === undefined ? {} : { maxUploadBytes: baseConfig.maxUploadBytes }),
     ...(baseConfig.spawnSessions === undefined ? {} : { spawnSessions: baseConfig.spawnSessions }),
     ...(baseConfig.subsessions === undefined ? {} : { subsessions: baseConfig.subsessions }),
+    ...(baseConfig.authRequired === undefined ? {} : { authRequired: baseConfig.authRequired }),
+    ...(baseConfig.authToken === undefined ? {} : { authToken: baseConfig.authToken }),
+    ...(baseConfig.allowPrivateMachines === undefined ? {} : { allowPrivateMachines: baseConfig.allowPrivateMachines }),
   };
 }
 
