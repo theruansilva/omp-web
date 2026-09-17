@@ -1,5 +1,5 @@
 import { getOAuthProviders } from "@oh-my-pi/pi-ai/oauth";
-import { CATALOG_PROVIDERS } from "@oh-my-pi/pi-catalog";
+import { PROVIDER_DESCRIPTORS } from "@oh-my-pi/pi-catalog";
 import { AuthStorage, ModelRegistry, SqliteAuthCredentialStore } from "@oh-my-pi/pi-coding-agent";
 import type { AuthProvidersResponse, AuthType, OAuthFlowState, AuthProviderStatus } from "../../shared/apiTypes.js";
 import { getLoginProviderOptions, getLogoutProviderOptions, type AuthProviderModelRegistry } from "./authProviderOptions.js";
@@ -22,15 +22,9 @@ function toAuthProviderModelRegistry(mr: ModelRegistry): AuthProviderModelRegist
 		getProviderDisplayName: (provider: string) => {
 			const oauth = getOAuthProviders().find((p) => p.id === provider);
 			if (oauth) return oauth.name;
-			const catalog = CATALOG_PROVIDERS.find((p) => p.id === provider);
-			if (
-				catalog !== undefined &&
-				"catalogDiscovery" in catalog &&
-				catalog.catalogDiscovery !== undefined &&
-				"label" in catalog.catalogDiscovery &&
-				typeof catalog.catalogDiscovery.label === "string"
-			) {
-				return catalog.catalogDiscovery.label;
+			const descriptor = PROVIDER_DESCRIPTORS.find((p) => p.providerId === provider);
+			if (descriptor?.catalogDiscovery?.label) {
+				return descriptor.catalogDiscovery.label;
 			}
 			return mr.getProviderBaseUrl(provider) ?? provider;
 		},
