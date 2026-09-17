@@ -1,6 +1,7 @@
 export type TerminalSoftKeyId =
   | "escape"
   | "tab"
+  | "enter"
   | "ctrl-c"
   | "ctrl-d"
   | "ctrl-z"
@@ -35,6 +36,7 @@ export interface TerminalSoftKeyDefinition {
 export const TERMINAL_SOFT_KEYS: readonly TerminalSoftKeyDefinition[] = [
   { id: "escape", label: "Esc", ariaLabel: "Escape", title: "Send Escape" },
   { id: "tab", label: "Tab", ariaLabel: "Tab", title: "Send Tab" },
+  { id: "enter", label: "↵", ariaLabel: "Enter", title: "Send Enter" },
   { id: "ctrl-c", label: "Ctrl+C", ariaLabel: "Control C", title: "Interrupt the foreground process" },
   { id: "ctrl-d", label: "Ctrl+D", ariaLabel: "Control D", title: "Send EOF / close input" },
   { id: "ctrl-z", label: "Ctrl+Z", ariaLabel: "Control Z", title: "Suspend the foreground process" },
@@ -63,6 +65,7 @@ export function terminalSoftKeySequence(key: TerminalSoftKeyId, modes?: Terminal
   switch (key) {
     case "escape": return ESC;
     case "tab": return "\t";
+    case "enter": return "\r";
     case "ctrl-c": return controlSequence("c");
     case "ctrl-d": return controlSequence("d");
     case "ctrl-z": return controlSequence("z");

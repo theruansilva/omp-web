@@ -5,6 +5,7 @@ describe("terminalSoftKeySequence", () => {
   it("maps common control keys to terminal bytes", () => {
     expect(terminalSoftKeySequence("escape")).toBe("\x1b");
     expect(terminalSoftKeySequence("tab")).toBe("\t");
+    expect(terminalSoftKeySequence("enter")).toBe("\r");
     expect(terminalSoftKeySequence("ctrl-c")).toBe("\x03");
     expect(terminalSoftKeySequence("ctrl-d")).toBe("\x04");
     expect(terminalSoftKeySequence("ctrl-z")).toBe("\x1a");

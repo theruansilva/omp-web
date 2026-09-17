@@ -45,6 +45,8 @@ export function registerMachineProxyRoutes(
       app.get(`/api/machines/:machineId${path}`, upgradeWebSocket((c) => {
         const machineId = c.req.param("machineId") ?? "";
         let upstream: WebSocket | undefined;
+        let bridge: { sendToUpstream: (data: unknown) => void } | undefined;
+        const clientMessageQueue: unknown[] = [];
 
         return {
           async onOpen(_evt, ws) {
@@ -59,9 +61,20 @@ export function registerMachineProxyRoutes(
             }
             try {
               upstream = client.connectWebSocket(remoteApiPath(machineId, c.req.url));
-              bridgeHonoSocketToUpstream(ws, upstream);
+              bridge = bridgeHonoSocketToUpstream(ws, upstream);
+              while (clientMessageQueue.length > 0) {
+                const queued = clientMessageQueue.shift();
+                if (queued !== undefined) bridge.sendToUpstream(queued);
+              }
             } catch {
               ws.close(1011, "Remote machine unavailable");
+            }
+          },
+          onMessage(evt) {
+            if (bridge !== undefined) {
+              bridge.sendToUpstream(evt.data);
+            } else {
+              clientMessageQueue.push(evt.data);
             }
           },
           onClose() {

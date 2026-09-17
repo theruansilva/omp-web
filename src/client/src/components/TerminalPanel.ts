@@ -46,6 +46,7 @@ export class TerminalPanel extends LitElement {
   private intersectionObserver: IntersectionObserver | undefined;
   private themeObserver: MutationObserver | undefined;
   private suppressTerminalInput = false;
+  private pendingMessages: Array<{ type: "input"; data: string } | { type: "resize"; cols: number; rows: number }> = [];
   private observedWorkspaceScope: string | undefined;
   private loadedCwd: string | undefined;
   private autoStartConsumedCwd: string | undefined;
@@ -315,6 +316,16 @@ export class TerminalPanel extends LitElement {
       if (this.suppressTerminalInput) return;
       this.sendTerminalInput(data);
     });
+    if (terminal.textarea !== undefined) {
+      terminal.textarea.setAttribute("autocomplete", "off");
+      terminal.textarea.setAttribute("enterkeyhint", "enter");
+      terminal.textarea.addEventListener("beforeinput", (event: InputEvent) => {
+        if (event.inputType === "insertLineBreak" || event.inputType === "insertParagraph") {
+          event.preventDefault();
+          this.sendTerminalInput("\r");
+        }
+      });
+    }
     const initialSize = this.fitTerminal();
     this.connectSocket(workspace.projectId, workspace.id, this.selectedId, terminal, initialSize);
     requestAnimationFrame(() => { this.fitAndNotify(); });
@@ -325,7 +336,13 @@ export class TerminalPanel extends LitElement {
     const socket = terminalSocket(projectId, workspaceId, terminalId, initialSize, this.machineId);
     socket.binaryType = "arraybuffer";
     this.socket = socket;
-    socket.addEventListener("open", () => { this.fitAndNotify(); });
+    socket.addEventListener("open", () => {
+      while (this.pendingMessages.length > 0) {
+        const queued = this.pendingMessages.shift();
+        if (queued !== undefined) this.send(queued);
+      }
+      this.fitAndNotify();
+    });
     socket.addEventListener("message", (event) => {
       void this.handleSocketMessage(event.data, terminalId, terminal);
     });
@@ -419,7 +436,13 @@ export class TerminalPanel extends LitElement {
   }
 
   private send(message: { type: "input"; data: string } | { type: "resize"; cols: number; rows: number }): void {
-    if (this.socket?.readyState === WebSocket.OPEN) this.socket.send(JSON.stringify(message));
+    if (this.socket?.readyState === WebSocket.OPEN) {
+      this.socket.send(JSON.stringify(message));
+      return;
+    }
+    if (this.socket?.readyState === WebSocket.CONNECTING) {
+      this.pendingMessages.push(message);
+    }
   }
 
   private disposeTerminalView(): void {
@@ -427,6 +450,7 @@ export class TerminalPanel extends LitElement {
     this.resizeObserver = undefined;
     this.socket?.close();
     this.socket = undefined;
+    this.pendingMessages = [];
     this.terminal?.dispose();
     this.terminal = undefined;
     this.fitAddon = undefined;
@@ -652,4 +676,3 @@ function terminalSizeFromDimensions(dimensions: ITerminalDimensions | undefined)
 function isValidTerminalSize(cols: number, rows: number): boolean {
   return Number.isFinite(cols) && Number.isFinite(rows) && cols > 0 && rows > 0;
 }
-

@@ -129,6 +129,8 @@ export function registerTerminalProxyRoutes(
       const cols = c.req.query("cols");
       const rows = c.req.query("rows");
       let upstream: WebSocket | undefined;
+      let bridge: { sendToUpstream: (data: unknown) => void } | undefined;
+      const clientMessageQueue: unknown[] = [];
 
       return {
         async onOpen(_evt, ws) {
@@ -136,10 +138,21 @@ export function registerTerminalProxyRoutes(
             await resolveWorkspaceContext(projects, workspaces, projectId, workspaceId);
             const sizeQuery = terminalSizeQuery(cols, rows);
             upstream = daemon.connectWebSocket(`/terminals/${terminalId}/socket${sizeQuery}`);
-            bridgeHonoSocketToUpstream(ws, upstream);
+            bridge = bridgeHonoSocketToUpstream(ws, upstream);
+            while (clientMessageQueue.length > 0) {
+              const queued = clientMessageQueue.shift();
+              if (queued !== undefined) bridge.sendToUpstream(queued);
+            }
           } catch (error) {
             ws.send(JSON.stringify({ type: "error", message: error instanceof Error ? error.message : String(error) }));
             ws.close();
+          }
+        },
+        onMessage(evt) {
+          if (bridge !== undefined) {
+            bridge.sendToUpstream(evt.data);
+          } else {
+            clientMessageQueue.push(evt.data);
           }
         },
         onClose() {

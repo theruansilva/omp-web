@@ -12,7 +12,9 @@ export function bridgeSockets(client: WebSocket, upstream: WebSocket): void {
   client.on("error", () => { upstream.close(); });
 }
 
-export function bridgeHonoSocketToUpstream(ws: WSContext, upstream: WebSocket): void {
+export function bridgeHonoSocketToUpstream(ws: WSContext, upstream: WebSocket): {
+  sendToUpstream: (data: unknown) => void;
+} {
   const sendToUpstream = createBufferedSender(upstream);
 
   upstream.on("message", (data) => {
@@ -34,6 +36,20 @@ export function bridgeHonoSocketToUpstream(ws: WSContext, upstream: WebSocket): 
   upstream.on("error", () => {
     ws.close();
   });
+
+  return {
+    sendToUpstream: (data: unknown) => {
+      if (typeof data === "string" || data instanceof ArrayBuffer || Buffer.isBuffer(data) || Array.isArray(data)) {
+        sendToUpstream(data as Data);
+      } else if (data instanceof Blob) {
+        void data.arrayBuffer().then((buf) => {
+          sendToUpstream(buf);
+        });
+      } else if (data !== undefined && data !== null) {
+        sendToUpstream(String(data));
+      }
+    },
+  };
 }
 
 export function createBufferedSender(socket: WebSocket): (data: Data) => void {
