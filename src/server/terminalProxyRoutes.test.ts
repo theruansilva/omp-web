@@ -14,8 +14,8 @@ let daemon: FakeTerminalDaemon;
 let projects: ProjectService;
 let workspaces: WorkspaceService;
 
-const testProject: Project = { id: "p1", name: "Test Project" };
-const testWorkspace: Workspace = { id: "w1", projectId: "p1", name: "default", path: "/test/workspace" };
+const testProject: Project = { id: "p1", name: "Test Project", path: "/test/project", createdAt: "2026-01-01T00:00:00.000Z" };
+const testWorkspace: Workspace = { id: "w1", projectId: "p1", path: "/test/workspace", label: "default", isMain: true, isGitRepo: false, isGitWorktree: false };
 
 class FakeTerminalDaemon {
   readonly requests: { method: string; path: string; body: unknown }[] = [];
