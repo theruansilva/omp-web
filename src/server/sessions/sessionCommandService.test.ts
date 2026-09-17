@@ -312,7 +312,7 @@ describe("SessionCommandService", () => {
     const service = new SessionCommandService(() => getActive(active), vi.fn(), events);
 
     // Run btw
-    await expect(service.run("s1", "/btw what is this?")).resolves.toEqual({ type: "done", message: "Ephemeral question asked." });
+    await expect(service.run("s1", "/btw what is this?")).resolves.toEqual({ type: "done" });
     expect(events.publish).toHaveBeenCalledWith("s1", { type: "btw.start", question: "what is this?" });
 
     await waitFor(() => {

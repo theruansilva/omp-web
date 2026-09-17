@@ -107,6 +107,13 @@ export interface PiAgentSession {
  approvePlan?(): Promise<void>;
  rejectPlan?(feedback?: string): Promise<void>;
  loadPlanForReview?(): Promise<{ planFilePath: string; title: string; planContent: string } | undefined>;
+ runEphemeralTurn?(args: {
+  promptText: string;
+  question?: string;
+  onTextDelta?: (delta: string) => void;
+  signal?: AbortSignal;
+ }): Promise<{ replyText: string; assistantMessage: unknown }>;
+ getLastBtw?(): { question: string; answer?: string | undefined; assistantMessage?: unknown; leafId?: string | undefined; sessionId?: string | undefined } | undefined;
  getPendingAsk?(): { requestId: string; questions: AskDialogQuestion[] } | undefined;
  resolvePendingAsk?(requestId: string, result: AskDialogResult | undefined): boolean;
  onPlanProposed?: (plan: { planFilePath: string; title: string; planContent: string }) => void;
@@ -120,6 +127,7 @@ export interface PiSessionRuntime {
  readonly session: PiAgentSession;
  setRebindSession(rebindSession?: (session: PiAgentSession) => Promise<void>): void;
  fork(entryId: string, options?: { position?: "before" | "at" }): Promise<{ cancelled: boolean; selectedText?: string }>;
+ branchBtw?(): Promise<{ cancelled: boolean }>;
  dispose(): Promise<void>;
 }
 
@@ -151,6 +159,13 @@ export class DefaultPiAgentSession implements PiAgentSession {
   resolve: (result: AskDialogResult | undefined) => void;
   timer?: ReturnType<typeof setTimeout> | undefined;
  } | undefined;
+ private _lastBtw: {
+  question: string;
+  answer?: string | undefined;
+  assistantMessage?: unknown;
+  leafId?: string | undefined;
+  sessionId?: string | undefined;
+ } | undefined;
  private readonly uiContext: ExtensionUIContext;
 
  constructor(
@@ -179,7 +194,7 @@ export class DefaultPiAgentSession implements PiAgentSession {
   return configured !== undefined && isKnownThinkingLevel(configured) ? configured : "off";
  }
  get isStreaming(): boolean { return this.ompSession.isStreaming; }
- get streamMessage(): unknown | undefined { return this.ompSession.state.streamMessage ?? undefined; }
+ get streamMessage(): unknown { return this.ompSession.state.streamMessage ?? undefined; }
  get isCompacting(): boolean { return this.ompSession.isCompacting; }
  get isBashRunning(): boolean { return this._isBashRunning; }
  get pendingMessageCount(): number { return this.ompSession.queuedMessageCount; }
@@ -315,6 +330,38 @@ export class DefaultPiAgentSession implements PiAgentSession {
  }
  get agent(): { streamFn: StreamFn } {
   return { streamFn: this.ompSession.agent.streamFn };
+ }
+
+ async runEphemeralTurn(args: {
+  promptText: string;
+  question?: string;
+  onTextDelta?: (delta: string) => void;
+  signal?: AbortSignal;
+ }): Promise<{ replyText: string; assistantMessage: unknown }> {
+  const fn = Reflect.get(this.ompSession, "runEphemeralTurn");
+  if (typeof fn !== "function") throw new Error("runEphemeralTurn unavailable on session runtime");
+  const leafId = this.sessionManager.getLeafId() ?? undefined;
+  const sessionId = this.sessionId;
+  /* eslint-disable-next-line @typescript-eslint/consistent-type-assertions */
+  const result = (await fn.call(this.ompSession, args)) as { replyText: string; assistantMessage: unknown };
+  const question = args.question ?? this.extractBtwQuestion(args.promptText);
+  this._lastBtw = {
+   question,
+   answer: result.replyText,
+   assistantMessage: result.assistantMessage,
+   leafId,
+   sessionId,
+  };
+  return result;
+ }
+
+ getLastBtw(): { question: string; answer?: string | undefined; assistantMessage?: unknown; leafId?: string | undefined; sessionId?: string | undefined } | undefined {
+  return this._lastBtw;
+ }
+
+ private extractBtwQuestion(promptText: string): string {
+  const match = /Question:\n([\s\S]*?)\n<\/btw>/i.exec(promptText);
+  return match?.[1]?.trim() ?? promptText.trim();
  }
 
  subscribe(listener: (event: unknown) => void): () => void {
@@ -652,7 +699,35 @@ export class DefaultPiSessionRuntime implements PiSessionRuntime {
  }
 
  async fork(entryId: string): Promise<{ cancelled: boolean; selectedText?: string }> {
-  return this.ompSession.branch(entryId);
+  const result = await this.ompSession.branch(entryId);
+  if (!result.cancelled && this.rebindSessionCallback) {
+   await this.rebindSessionCallback(this.session);
+  }
+  return result;
+ }
+
+ async branchBtw(): Promise<{ cancelled: boolean }> {
+  const lastBtw = this.session.getLastBtw?.();
+  if (!lastBtw || !lastBtw.question || !lastBtw.assistantMessage || !lastBtw.leafId || !lastBtw.sessionId) {
+   throw new Error("Cannot branch /btw: the answer or branch point is unavailable");
+  }
+  const fn = Reflect.get(this.ompSession, "branchFromBtw");
+  if (typeof fn !== "function") {
+   throw new Error("Branching from /btw is not supported by this session runtime");
+  }
+  /* eslint-disable-next-line @typescript-eslint/consistent-type-assertions */
+  const result = (await fn.call(
+   this.ompSession,
+   lastBtw.question,
+   lastBtw.assistantMessage as never,
+   lastBtw.leafId,
+   lastBtw.sessionId,
+  )) as { cancelled: boolean; sessionFile?: string };
+
+  if (!result.cancelled && this.rebindSessionCallback) {
+   await this.rebindSessionCallback(this.session);
+  }
+  return { cancelled: result.cancelled };
  }
 
  async dispose(): Promise<void> {

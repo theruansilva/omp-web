@@ -26,7 +26,7 @@ export class BtwPanel extends LitElement {
     const isError = this.state.status === "error";
 
     return html`
-      <div class="btw-floating-card">
+      <div class="btw-card">
         <header>
           <div class="header-left">
             <span class="icon">💡</span>
@@ -116,33 +116,42 @@ export class BtwPanel extends LitElement {
 
   static override styles = css`
     :host {
-      position: fixed;
-      bottom: 90px;
-      left: 50%;
-      transform: translateX(-50%);
-      z-index: 40;
-      width: min(680px, calc(100vw - 32px));
+      display: flex;
+      justify-content: center;
+      width: 100%;
+      box-sizing: border-box;
+      padding: 6px 24px 0;
+      flex: 0 0 auto;
+      z-index: 10;
       font: 14px system-ui, sans-serif;
       color: var(--pi-text);
-      pointer-events: auto;
     }
 
-    .btw-floating-card {
+    @media (max-width: 760px) {
+      :host {
+        padding: 4px 12px 0;
+      }
+    }
+
+    .btw-card {
       display: flex;
       flex-direction: column;
-      max-height: 480px;
+      width: 100%;
+      max-width: 800px;
+      margin: 0 auto;
+      max-height: 360px;
       border: 1px solid var(--pi-border);
       border-radius: 14px;
-      background: var(--pi-bg);
-      box-shadow: 0 12px 40px var(--pi-shadow-strong, rgba(0, 0, 0, 0.35));
+      background: var(--pi-surface);
+      box-shadow: 0 4px 20px var(--pi-shadow-soft);
       overflow: hidden;
-      animation: slide-up 0.2s ease-out;
+      animation: slide-up 0.15s ease-out;
     }
 
     @keyframes slide-up {
       from {
         opacity: 0;
-        transform: translateY(12px);
+        transform: translateY(6px);
       }
       to {
         opacity: 1;
@@ -235,10 +244,10 @@ export class BtwPanel extends LitElement {
 
     .answer-row {
       flex: 1;
-      min-height: 60px;
-      max-height: 320px;
+      min-height: 48px;
+      max-height: 220px;
       overflow-y: auto;
-      padding: 14px;
+      padding: 12px 14px;
     }
 
     .loading-state {

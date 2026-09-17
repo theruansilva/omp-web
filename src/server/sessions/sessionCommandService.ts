@@ -35,7 +35,7 @@ export interface CommandSession {
   approvePlan?: () => Promise<void>;
   rejectPlan?: (feedback?: string) => Promise<void>;
   loadPlanForReview?: () => Promise<{ planFilePath: string; title: string; planContent: string } | undefined>;
-  runEphemeralTurn?: (args: { promptText: string; onTextDelta?: (delta: string) => void; signal?: AbortSignal }) => Promise<{ replyText: string; assistantMessage: unknown }>;
+  runEphemeralTurn?: (args: { promptText: string; question?: string; onTextDelta?: (delta: string) => void; signal?: AbortSignal }) => Promise<{ replyText: string; assistantMessage: unknown }>;
   getLastBtw?: () => { question: string; answer?: string | undefined; assistantMessage?: unknown; leafId?: string | undefined } | undefined;
   toggleAdvisorEnabled: () => boolean;
   setAdvisorEnabled: (enabled: boolean) => boolean;
@@ -187,17 +187,18 @@ export class SessionCommandService<TSession extends CommandSession = CommandSess
     if (typeof session.runEphemeralTurn !== "function") {
       return { type: "unsupported", message: "/btw is not available for this session runtime." };
     }
-    const promptText = `<btw>\nEphemeral side question for current interactive session.\nAnswer briefly, directly; use conversation context already provided.\nNEVER use tools.\n\nQuestion:\n\${question}\n</btw>`;
+    const promptText = `<btw>\nEphemeral side question for current interactive session.\nAnswer briefly, directly; use conversation context already provided.\nNEVER use tools.\n\nQuestion:\n${question}\n</btw>`;
 
     this.events.publish(session.sessionId, { type: "btw.start", question });
 
     void session.runEphemeralTurn({
       promptText,
+      question,
       onTextDelta: (delta: string) => {
         this.events.publish(session.sessionId, { type: "btw.delta", delta });
       },
     }).then((result) => {
-      const canBranch = session.sessionFile !== undefined && session.sessionFile !== "";
+      const canBranch = typeof active.runtime.branchBtw === "function" && session.sessionFile !== undefined && session.sessionFile !== "";
       this.events.publish(session.sessionId, {
         type: "btw.end",
         question,
@@ -209,7 +210,7 @@ export class SessionCommandService<TSession extends CommandSession = CommandSess
       this.events.publish(session.sessionId, { type: "btw.error", error: message });
     });
 
-    return { type: "done", message: "Ephemeral question asked." };
+    return { type: "done" };
   }
 
   private async branchBtw(active: CommandActiveSession<TSession>): Promise<ClientCommandResult> {
@@ -218,12 +219,21 @@ export class SessionCommandService<TSession extends CommandSession = CommandSess
     if (typeof active.runtime.branchBtw !== "function") {
       return { type: "unsupported", message: "Branching from /btw is not supported." };
     }
+    const originatingSessionId = session.sessionId;
     const relatedName = await this.nextRelatedSessionName(active, "fork");
-    const result = await active.runtime.branchBtw();
-    if (result.cancelled) return { type: "done", message: "Branch cancelled" };
-    this.tryNameRelatedSession(session, relatedName);
-    this.events.publish(session.sessionId, { type: "btw.cleared" });
-    return { type: "done", message: "Session branched from /btw", session: clientSessionFromRuntime(active.runtime) };
+    try {
+      const result = await active.runtime.branchBtw();
+      if (result.cancelled) return { type: "done", message: "Branch cancelled" };
+      this.tryNameRelatedSession(session, relatedName);
+      this.events.publish(originatingSessionId, { type: "btw.cleared" });
+      if (session.sessionId !== originatingSessionId) {
+        this.events.publish(session.sessionId, { type: "btw.cleared" });
+      }
+      return { type: "done", message: "Session branched from /btw", session: clientSessionFromRuntime(active.runtime) };
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error);
+      return { type: "unsupported", message: `Branching from /btw failed: ${message}` };
+    }
   }
 
   private nameSession(active: CommandActiveSession<TSession>, name: string): ClientCommandResult {

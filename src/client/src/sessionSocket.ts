@@ -131,7 +131,36 @@ export class RealtimeSocket {
 
 function isSessionUiEvent(event: unknown): event is SessionUiEvent {
   const type = eventType(event);
-  return ["message.append", "assistant.delta", "assistant.thinking.delta", "tool.start", "tool.update", "tool.end", "shell.start", "shell.chunk", "shell.end", "agent.start", "agent.end", "message.end", "status.update", "activity.update", "command.output", "session.error", "session.name", "session.created", "pi.event"].includes(type);
+  return [
+    "message.append",
+    "assistant.delta",
+    "assistant.thinking.delta",
+    "tool.start",
+    "tool.update",
+    "tool.end",
+    "shell.start",
+    "shell.chunk",
+    "shell.end",
+    "agent.start",
+    "agent.end",
+    "message.end",
+    "status.update",
+    "activity.update",
+    "command.output",
+    "session.error",
+    "session.name",
+    "session.created",
+    "pi.event",
+    "plan.proposed",
+    "plan.cleared",
+    "btw.start",
+    "btw.delta",
+    "btw.end",
+    "btw.error",
+    "btw.cleared",
+    "ask.requested",
+    "ask.cleared",
+  ].includes(type);
 }
 
 function isGlobalSessionEvent(event: unknown): event is GlobalSessionEvent {
