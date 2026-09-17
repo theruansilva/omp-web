@@ -15,6 +15,8 @@ export const FEDERATED_HTTP_ROUTES = [
   { method: "GET", path: "/plugins" },
   { method: "GET", path: "/mcps" },
   { method: "POST", path: "/mcps/check" },
+  { method: "GET", path: "/usage" },
+  { method: "POST", path: "/usage/invalidate" },
   { method: "GET", path: "/pi-packages" },
   { method: "POST", path: "/pi-packages/install", timeoutMs: PI_PACKAGE_MUTATION_PROXY_TIMEOUT_MS },
   { method: "POST", path: "/pi-packages/remove", timeoutMs: PI_PACKAGE_MUTATION_PROXY_TIMEOUT_MS },

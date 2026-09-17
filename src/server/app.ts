@@ -32,6 +32,7 @@ import { proxyMachinePluginAsset, registerMachinePluginProxyRoutes } from "./mac
 import { PushNotificationService } from "./push/PushNotificationService.js";
 import { registerPushRoutes } from "./push/pushRoutes.js";
 import { registerMcpRoutes } from "./mcpRoutes.js";
+import { registerUsageRoutes } from "./usageRoutes.js";
 import type { Project, Workspace } from "./types.js";
 
 export interface AppDependencies {
@@ -227,6 +228,9 @@ export async function buildApp(deps: AppDependencies = {}): Promise<BuiltApp> {
 
   registerMcpRoutes(app, "/api");
   registerMcpRoutes(app, "/api/machines/local");
+
+  registerUsageRoutes(app, "/api");
+  registerUsageRoutes(app, "/api/machines/local");
 
   registerMachineProxyRoutes(app, machines, upgradeWebSocket);
 

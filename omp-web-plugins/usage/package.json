@@ -1,0 +1,9 @@
+{
+  "name": "@omp-web/usage-plugin",
+  "private": true,
+  "ompWeb": {
+    "plugins": [
+      { "id": "usage", "module": "omp-web-plugin.js" }
+    ]
+  }
+}
