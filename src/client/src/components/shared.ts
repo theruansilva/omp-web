@@ -186,6 +186,20 @@ export const workspacePanelStyles = css`
     .tabs button.icon-tab { justify-content: center; padding-inline: 7px; }
     .tabs button.icon-tab .tab-label { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; border: 0; }
   }
+  .workspace-header-actions { flex: 0 0 auto; display: flex; align-items: center; gap: 4px; }
+  .customize-tabs-button { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; padding: 0; border: 1px solid var(--pi-border); border-radius: 7px; background: var(--pi-surface); color: var(--pi-muted); cursor: pointer; }
+  .customize-tabs-button:hover, .customize-tabs-button.selected { color: var(--pi-text); border-color: var(--pi-accent); background: var(--pi-selection-bg); }
+  .plugin-visibility-menu { position: fixed; z-index: 100; box-sizing: border-box; min-width: 190px; max-width: 280px; max-height: 360px; overflow-y: auto; padding: 6px; border: 1px solid var(--pi-border); border-radius: 8px; background: var(--pi-surface); box-shadow: 0 8px 24px var(--pi-shadow); }
+  .plugin-visibility-menu .menu-title { padding: 4px 8px; font-size: 11px; font-weight: 600; text-transform: uppercase; color: var(--pi-muted); letter-spacing: .04em; }
+  .plugin-visibility-menu .menu-items-list { display: flex; flex-direction: column; gap: 2px; }
+  .plugin-visibility-menu .menu-checkbox-item { display: flex; align-items: center; gap: 8px; padding: 5px 8px; border-radius: 6px; cursor: pointer; user-select: none; font-size: 12.5px; color: var(--pi-text); }
+  .plugin-visibility-menu .menu-checkbox-item:hover { background: var(--pi-selection-bg); }
+  .plugin-visibility-menu .menu-checkbox-item input { width: 15px; height: 15px; accent-color: var(--pi-accent); cursor: pointer; margin: 0; }
+  .plugin-visibility-menu .menu-item-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .plugin-visibility-menu .menu-divider { height: 1px; background: var(--pi-border-muted); margin: 4px 0; }
+  .plugin-visibility-menu .menu-action-item { display: flex; align-items: center; width: 100%; padding: 6px 8px; border: 0; border-radius: 6px; background: transparent; color: var(--pi-text); font-size: 12.5px; cursor: pointer; text-align: left; }
+  .plugin-visibility-menu .menu-action-item:hover { background: var(--pi-selection-bg); }
+  .plugin-visibility-menu .show-all-action { color: var(--pi-accent); font-weight: 500; }
   .panel-content { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; overflow: auto; }
   .empty-state { box-sizing: border-box; width: min(100%, 380px); margin: auto; padding: 24px; display: grid; gap: 8px; color: var(--pi-muted); text-align: center; }
   .empty-state h2 { margin: 0; color: var(--pi-text); font-size: 15px; line-height: 1.3; }

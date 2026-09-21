@@ -21,6 +21,7 @@ import { KeyboardShortcutDispatcher } from "../keyboardShortcuts";
 import { selectedMachineId } from "../controllers/types";
 import { sessionCleanupRequestKey, sessionCleanupUnavailableMessage } from "../sessionCleanupUi";
 import { RealtimeSocket } from "../sessionSocket";
+import { isPanelHidden, readStoredHiddenPlugins, resetHiddenPlugins, setPluginHidden } from "../plugins/pluginVisibility";
 import type { OmpWebPluginRegistration, PluginPromptEditor, QualifiedContributionId, QualifiedThemeContribution, QualifiedThemePairContribution, QualifiedWorkspacePanelContribution, PluginRuntimeContext, TerminalCommandRunsInternalRuntime, WorkspaceFiles, WorkspaceHost, WorkspaceLabelContext, WorkspaceLabelItem, WorkspacePanelContext } from "../plugins/types";
 import { CLASSIC_THEME_ID, DEFAULT_THEME_PREFERENCE, applyOmpWebTheme, findThemePairForTheme, readStoredThemePreference, resolveThemePreference, writeStoredThemePreference, type ThemePreference, type ThemePreferenceResolution } from "../theme";
 import { loadExternalPlugins } from "../plugins/external";
@@ -212,6 +213,7 @@ export class OmpWebApp extends LitElement {
   private remoteRouteRestoreAttempt = 0;
   private remoteRouteRestoreInProgress = false;
   private readonly plugins = createPluginRegistry();
+  private hiddenToolIds: Set<string> = readStoredHiddenPlugins();
   private readonly loadedMachinePluginIds = new Set<string>();
   private readonly machinePluginLoadPromises = new Map<string, Promise<void>>();
   private gatewayPluginLoadPromise: Promise<void> | undefined;
@@ -743,6 +745,9 @@ export class OmpWebApp extends LitElement {
   }
 
   private openWorkspaceTool(tool: QualifiedContributionId) {
+    if (this.hiddenToolIds.has(tool)) {
+      this.hiddenToolIds = setPluginHidden(tool, false, this.hiddenToolIds);
+    }
     if (tool === "core:workspace.terminal") this.terminalAutoStartWorkspaceId = this.state.selectedWorkspace?.id;
     this.setState({ workspaceTool: tool, mainView: tool });
     this.updateUrl();
@@ -985,7 +990,11 @@ export class OmpWebApp extends LitElement {
         .emptyState=${emptyState}
         .tool=${this.state.workspaceTool}
         .panels=${this.visibleWorkspacePanels()}
+        .allPanels=${this.allWorkspacePanels()}
+        .hiddenToolIds=${this.hiddenToolIds}
         .onSelectTool=${(tool: QualifiedContributionId) => { this.openWorkspaceTool(tool); }}
+        .onToggleToolVisibility=${(toolId: QualifiedContributionId, hidden: boolean) => { this.togglePluginVisibility(toolId, hidden); }}
+        .onResetToolVisibility=${() => { this.resetPluginVisibility(); }}
       ></workspace-panel>
     `;
   }
@@ -1303,11 +1312,32 @@ export class OmpWebApp extends LitElement {
     }, 50);
   }
 
-  private visibleWorkspacePanels(): QualifiedWorkspacePanelContribution[] {
+  private allWorkspacePanels(): QualifiedWorkspacePanelContribution[] {
     const workspace = this.state.selectedWorkspace;
     if (workspace === undefined) return [];
     const context = this.createWorkspacePanelContext(workspace);
     return this.plugins.getWorkspacePanels().filter((panel) => panel.visible?.(context) ?? true);
+  }
+
+  private visibleWorkspacePanels(): QualifiedWorkspacePanelContribution[] {
+    return this.allWorkspacePanels().filter((panel) => !isPanelHidden(panel, this.hiddenToolIds));
+  }
+
+  private togglePluginVisibility(toolId: QualifiedContributionId, hidden: boolean): void {
+    this.hiddenToolIds = setPluginHidden(toolId, hidden, this.hiddenToolIds);
+    const visible = this.visibleWorkspacePanels();
+    if (hidden && this.state.workspaceTool === toolId) {
+      const first = visible[0];
+      if (first !== undefined) {
+        this.state.workspaceTool = first.id;
+      }
+    }
+    this.requestUpdate();
+  }
+
+  private resetPluginVisibility(): void {
+    this.hiddenToolIds = resetHiddenPlugins();
+    this.requestUpdate();
   }
 
   private workspacePanelEmptyState(): WorkspacePanelEmptyState {
@@ -1515,6 +1545,13 @@ export class OmpWebApp extends LitElement {
         description: "Restore all side panels to their default widths",
         group: "View",
         run: () => { this.resetResizablePanels(); },
+      },
+      {
+        id: "app.layout.show-all-workspace-plugins",
+        title: "Show All Workspace Plugins",
+        description: "Unhide all workspace plugins and tools",
+        group: "View",
+        run: () => { this.resetPluginVisibility(); },
       },
     ];
   }
