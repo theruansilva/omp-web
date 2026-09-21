@@ -1,5 +1,15 @@
 # Changelog
 
+## v2.4.0
+
+- ✨ Add file system category icons and default grid view mode to workspace files panel.
+- ✨ Support direct shell command execution (`target: "command"`) in scheduled tasks without LLM overhead.
+- ⚡ Add REST API endpoints (`/schedule-prompts`) for scheduled tasks and pre-arm workspace schedulers on `sessiond` startup.
+- ✨ Support completed and non-interactive checklist states (`interactive="false"`, `checked="true"`) in Generative UI.
+- 💄 Add custom tool-specific SVG icons and toggle state tracking to ToolExecutionView.
+- 💄 Enhance thinking blocks with single-line preview summaries and refine message spacing in chat timeline.
+- 📝 Document mandatory token authentication, token unlock flow, and private/VPN machine configurations.
+
 ## v2.3.2
 
 - 🎛️ Add "Allow private & VPN machines" toggle to the Gateway Server settings UI in General Settings.
