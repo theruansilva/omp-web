@@ -7,6 +7,7 @@ import type { WorkspaceUploadBatchState, WorkspaceUploadFileState } from "../wor
 import { MAX_IMAGE_PREVIEW_BYTES, MAX_IMAGE_PREVIEW_LABEL } from "../../../shared/workspaceFiles";
 import type { WorkspacePanelContext } from "../plugins/types";
 import { workspacePanelStyles } from "./shared";
+import { renderDownloadIcon, renderFileIcon, renderFolderIcon, renderGridViewIcon, renderListViewIcon, renderTreeChevron, renderUpFolderIcon } from "./fileIcons";
 
 function filenameForPath(path: string): string {
   return path.split("/").pop() ?? path;
@@ -22,10 +23,24 @@ export interface WorkspaceUploadScope {
   machineId: string;
 }
 
+const FILES_VIEW_MODE_STORAGE_KEY = "omp-web:files-view-mode";
+
+export function loadFilesViewMode(): "grid" | "list" {
+  try {
+    const saved = localStorage.getItem(FILES_VIEW_MODE_STORAGE_KEY);
+    if (saved === "list" || saved === "grid") return saved;
+  } catch {
+    // ignore
+  }
+  return "grid";
+}
+
 @customElement("workspace-files-panel")
 export class WorkspaceFilesPanel extends LitElement {
   @property({ attribute: false }) context: WorkspacePanelContext | undefined;
   @query("#workspace-upload-input") private uploadInput?: HTMLInputElement;
+  @state() private viewMode: "grid" | "list" = loadFilesViewMode();
+  @state() private currentDir = "";
   @state() private pendingUpload: PendingWorkspaceUploadReview | undefined;
   @state() private destinationFolder = "";
   @state() private overwrite = false;
@@ -37,7 +52,7 @@ export class WorkspaceFilesPanel extends LitElement {
   protected override willUpdate(changedProperties: PropertyValues<this>): void {
     if (!changedProperties.has("context")) return;
     const previous = changedProperties.get("context");
-    if (previous !== undefined && this.context !== undefined && workspaceContextKey(previous) !== workspaceContextKey(this.context)) this.resetPendingUpload();
+    if (previous !== undefined && this.context !== undefined && workspaceContextKey(previous) !== workspaceContextKey(this.context)) { this.resetPendingUpload(); this.currentDir = ""; }
   }
 
   override render(): TemplateResult {
@@ -55,6 +70,26 @@ export class WorkspaceFilesPanel extends LitElement {
           <strong>Files</strong>
           ${context.fileTreeStale ? html`<span class="stale">stale</span>` : null}
           <div class="toolbar-actions">
+            <div class="view-mode-toggle" role="group" aria-label="View mode">
+              <button
+                class=${this.viewMode === "grid" ? "selected" : ""}
+                title="Grid view"
+                aria-label="Grid view"
+                @click=${() => { this.setViewMode("grid"); }}
+              >
+                ${renderGridViewIcon()}
+                <span>Grid</span>
+              </button>
+              <button
+                class=${this.viewMode === "list" ? "selected" : ""}
+                title="List view"
+                aria-label="List view"
+                @click=${() => { this.setViewMode("list"); }}
+              >
+                ${renderListViewIcon()}
+                <span>List</span>
+              </button>
+            </div>
             <button @click=${this.openFilePicker}>Upload</button>
             <button @click=${context.onRefreshFiles}>Refresh</button>
           </div>
@@ -62,8 +97,10 @@ export class WorkspaceFilesPanel extends LitElement {
         </section>
         ${this.renderUploadProgress(context)}
         <section class="split">
-          <div class="list tree">
-            ${context.fileTree.length === 0 ? html`<p class="muted">No files loaded.</p>` : context.fileTree.map((entry) => this.renderTreeEntry(context, entry, 0))}
+          <div class="file-browser ${this.viewMode}">
+            ${this.viewMode === "grid"
+              ? this.renderGridView(context)
+              : this.renderListView(context)}
           </div>
           <div class="viewer">
             ${this.renderFileViewer(context)}
@@ -80,6 +117,167 @@ export class WorkspaceFilesPanel extends LitElement {
     `;
   }
 
+  private setViewMode(mode: "grid" | "list"): void {
+    this.viewMode = mode;
+    try {
+      localStorage.setItem(FILES_VIEW_MODE_STORAGE_KEY, mode);
+    } catch {
+      // ignore
+    }
+  }
+
+  private renderListView(context: WorkspacePanelContext): TemplateResult {
+    if (context.fileTree.length === 0) return html`<p class="muted" style="padding: 16px;">No files loaded.</p>`;
+    return html`
+      <div class="list tree">
+        ${context.fileTree.map((entry) => this.renderTreeEntry(context, entry, 0))}
+      </div>
+    `;
+  }
+
+  private renderGridView(context: WorkspacePanelContext): TemplateResult {
+    if (context.fileTree.length === 0) {
+      return html`<p class="muted" style="padding: 16px;">No files loaded.</p>`;
+    }
+
+    const entries = this.currentDir === ""
+      ? context.fileTree
+      : context.expandedDirs[this.currentDir];
+
+    if (entries === undefined) {
+      context.onExpandDir(this.currentDir);
+      return html`
+        <div class="grid-container">
+          ${this.renderGridBreadcrumbs(context)}
+          <p class="muted" style="padding: 16px;">Loading ${this.currentDir}…</p>
+        </div>
+      `;
+    }
+
+    const sorted = [...entries].sort((a, b) => {
+      if (a.type === "directory" && b.type !== "directory") return -1;
+      if (a.type !== "directory" && b.type === "directory") return 1;
+      return a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: "base" });
+    });
+
+    return html`
+      <div class="grid-container">
+        ${this.renderGridBreadcrumbs(context)}
+        <div class="grid-items">
+          ${this.currentDir !== "" ? this.renderUpTile(context) : null}
+          ${sorted.length === 0
+            ? html`<p class="muted" style="grid-column: 1 / -1; padding: 12px; margin: 0;">Empty folder.</p>`
+            : sorted.map((entry) => this.renderGridItem(context, entry))}
+        </div>
+      </div>
+    `;
+  }
+
+  private renderUpTile(context: WorkspacePanelContext): TemplateResult {
+    return html`
+      <button
+        class="grid-tile up-dir"
+        @click=${() => { this.navigateUp(context); }}
+        title="Go up to parent directory"
+      >
+        <span class="grid-tile-icon">${renderUpFolderIcon()}</span>
+        <span class="grid-tile-label">..</span>
+      </button>
+    `;
+  }
+
+  private renderGridBreadcrumbs(context: WorkspacePanelContext): TemplateResult {
+    const crumbs = this.getBreadcrumbs();
+    return html`
+      <div class="grid-breadcrumbs">
+        <button
+          class="breadcrumb-btn ${this.currentDir === "" ? "active" : ""}"
+          @click=${() => { this.navigateToDir(context, ""); }}
+          title="Root directory"
+        >
+          ${renderFolderIcon(this.currentDir === "")}
+          <span>/</span>
+        </button>
+        ${crumbs.map((crumb, idx) => html`
+          <span class="breadcrumb-sep">/</span>
+          <button
+            class="breadcrumb-btn ${idx === crumbs.length - 1 ? "active" : ""}"
+            @click=${() => { this.navigateToDir(context, crumb.path); }}
+            title=${crumb.path}
+          >
+            ${crumb.name}
+          </button>
+        `)}
+      </div>
+    `;
+  }
+
+  private renderGridItem(context: WorkspacePanelContext, entry: FileTreeEntry): TemplateResult {
+    const isFile = entry.type !== "directory";
+    const selected = isFile && context.selectedFilePath === entry.path;
+    const downloadUrl = isFile
+      ? workspaceFileRawUrl(context.workspace.projectId, context.workspace.id, entry.path, { machineId: context.machine.id })
+      : undefined;
+
+    return html`
+      <div
+        class="grid-tile ${selected ? "selected" : ""} ${isFile ? "is-file" : "is-folder"}"
+        @click=${() => {
+          if (isFile) {
+            context.onSelectFile(entry.path);
+          } else {
+            this.navigateToDir(context, entry.path);
+          }
+        }}
+        title=${entry.name}
+      >
+        <span class="grid-tile-icon">
+          ${isFile ? renderFileIcon(entry.name) : renderFolderIcon(false)}
+        </span>
+        <span class="grid-tile-label">${entry.name}</span>
+        ${isFile && downloadUrl !== undefined ? html`
+          <a
+            class="grid-tile-download"
+            href=${downloadUrl}
+            download=${entry.name}
+            title=${`Download ${entry.name}`}
+            aria-label=${`Download ${entry.name}`}
+            target="_blank"
+            rel="noopener"
+            @click=${(event: MouseEvent) => { event.stopPropagation(); }}
+          >${renderDownloadIcon()}</a>
+        ` : null}
+      </div>
+    `;
+  }
+
+  private navigateToDir(context: WorkspacePanelContext, path: string): void {
+    this.currentDir = path;
+    if (path !== "" && context.expandedDirs[path] === undefined) {
+      context.onExpandDir(path);
+    }
+  }
+
+  private navigateUp(context: WorkspacePanelContext): void {
+    if (this.currentDir === "") return;
+    const segments = this.currentDir.split("/").filter(Boolean);
+    segments.pop();
+    const parentPath = segments.join("/");
+    this.navigateToDir(context, parentPath);
+  }
+
+  private getBreadcrumbs(): Array<{ name: string; path: string }> {
+    if (this.currentDir === "") return [];
+    const parts = this.currentDir.split("/").filter(Boolean);
+    const crumbs: Array<{ name: string; path: string }> = [];
+    let acc = "";
+    for (const part of parts) {
+      acc = acc === "" ? part : `${acc}/${part}`;
+      crumbs.push({ name: part, path: acc });
+    }
+    return crumbs;
+  }
+
   private renderTreeEntry(context: WorkspacePanelContext, entry: FileTreeEntry, depth: number): TemplateResult {
     const children = context.expandedDirs[entry.path];
     const hasChildren = children !== undefined;
@@ -91,8 +289,11 @@ export class WorkspaceFilesPanel extends LitElement {
     return html`
       <div class=${selected ? "tree-row selected" : "tree-row"}>
         <button class="row" style=${`--depth:${String(depth)}`} @click=${() => { this.selectTreeEntry(context, entry); }}>
-          <span>${entry.type === "directory" ? (hasChildren ? "▾" : "▸") : "·"}</span>
-          <span>${entry.name}</span>
+          <span class=${isFile ? "tree-chevron spacer" : (hasChildren ? "tree-chevron expanded" : "tree-chevron collapsed")}>
+            ${isFile ? null : renderTreeChevron(hasChildren)}
+          </span>
+          <span class="tree-icon">${isFile ? renderFileIcon(entry.name) : renderFolderIcon(hasChildren)}</span>
+          <span class="tree-label">${entry.name}</span>
         </button>
         ${isFile && downloadUrl !== undefined ? html`
           <a
@@ -104,7 +305,7 @@ export class WorkspaceFilesPanel extends LitElement {
             target="_blank"
             rel="noopener"
             @click=${(event: MouseEvent) => { event.stopPropagation(); }}
-          >⤓</a>
+          >${renderDownloadIcon()}</a>
         ` : null}
       </div>
       ${hasChildren ? children.map((child) => this.renderTreeEntry(context, child, depth + 1)) : null}
@@ -120,7 +321,13 @@ export class WorkspaceFilesPanel extends LitElement {
     const file = context.selectedFileContent;
     if (context.selectedFilePath === undefined || context.selectedFilePath === "") return html`<p class="muted">Select a file.</p>`;
     if (context.state.error !== "" && file === undefined) return html`
-      <div class="viewer-header"><strong>${context.selectedFilePath}</strong><small>Error</small></div>
+      <div class="viewer-header">
+        <div class="viewer-title">
+          <span class="tree-icon">${renderFileIcon(context.selectedFilePath)}</span>
+          <strong>${context.selectedFilePath}</strong>
+        </div>
+        <small>Error</small>
+      </div>
       <p class="muted dialog-error" style="margin: 16px;">${context.state.error}</p>
     `;
     if (file === undefined) return html`<p class="muted">Loading ${context.selectedFilePath}…</p>`;
@@ -131,7 +338,10 @@ export class WorkspaceFilesPanel extends LitElement {
     if (file.mediaType === "video") return this.renderVideoViewer(context, file, downloadUrl, filename);
     if (file.binary) return html`
       <div class="viewer-header">
-        <strong>${file.path}</strong>
+        <div class="viewer-title">
+          <span class="tree-icon">${renderFileIcon(file.path)}</span>
+          <strong>${file.path}</strong>
+        </div>
         <div class="viewer-actions">
           <small>binary · ${formatFileSize(file.size)}</small>
           <a class="download-button" href=${downloadUrl} download=${filename} target="_blank" rel="noopener">Download</a>
@@ -145,7 +355,10 @@ export class WorkspaceFilesPanel extends LitElement {
     loadCodeViewer();
     return html`
       <div class="viewer-header">
-        <strong>${file.path}</strong>
+        <div class="viewer-title">
+          <span class="tree-icon">${renderFileIcon(file.path)}</span>
+          <strong>${file.path}</strong>
+        </div>
         <div class="viewer-actions">
           <small>${file.language ?? "text"}${file.truncated ? " · truncated" : ""}</small>
           <a class="download-button" href=${downloadUrl} download=${filename} target="_blank" rel="noopener">Download</a>
@@ -160,7 +373,10 @@ export class WorkspaceFilesPanel extends LitElement {
     const src = workspaceImagePreviewUrl(context.workspace.projectId, context.workspace.id, file.path, { modifiedAt: file.modifiedAt, machineId: context.machine.id });
     return html`
       <div class="viewer-header">
-        <strong>${file.path}</strong>
+        <div class="viewer-title">
+          <span class="tree-icon">${renderFileIcon(file.path)}</span>
+          <strong>${file.path}</strong>
+        </div>
         <div class="viewer-actions">
           <small>${metadata}</small>
           <a class="download-button" href=${downloadUrl} download=${filename} target="_blank" rel="noopener">Download</a>
@@ -180,7 +396,10 @@ export class WorkspaceFilesPanel extends LitElement {
     if (file.size > MAX_IMAGE_PREVIEW_BYTES) {
       return html`
         <div class="viewer-header">
-          <strong>${file.path}</strong>
+          <div class="viewer-title">
+            <span class="tree-icon">${renderFileIcon(file.path)}</span>
+            <strong>${file.path}</strong>
+          </div>
           <div class="viewer-actions">
             <small>${metadata}</small>
             <a class="download-button" href=${downloadUrl} download=${filename} target="_blank" rel="noopener">Download</a>
@@ -195,7 +414,10 @@ export class WorkspaceFilesPanel extends LitElement {
     const src = workspaceImagePreviewUrl(context.workspace.projectId, context.workspace.id, file.path, { modifiedAt: file.modifiedAt, machineId: context.machine.id });
     return html`
       <div class="viewer-header">
-        <strong>${file.path}</strong>
+        <div class="viewer-title">
+          <span class="tree-icon">${renderFileIcon(file.path)}</span>
+          <strong>${file.path}</strong>
+        </div>
         <div class="viewer-actions">
           <small>${metadata}</small>
           <a class="download-button" href=${downloadUrl} download=${filename} target="_blank" rel="noopener">Download</a>
@@ -456,10 +678,253 @@ export class WorkspaceFilesPanel extends LitElement {
       .review-file span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
       .dialog-error { border: 1px solid var(--pi-danger); border-radius: 8px; background: color-mix(in srgb, var(--pi-danger) 10%, transparent); color: var(--pi-danger); padding: 9px; line-height: 1.35; overflow-wrap: anywhere; }
       footer { display: flex; justify-content: flex-end; gap: 8px; padding-top: 4px; }
+      .view-mode-toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 2px;
+        padding: 2px;
+        border: 1px solid var(--pi-border);
+        border-radius: 8px;
+        background: var(--pi-bg);
+      }
+      .view-mode-toggle button {
+        border: 0;
+        border-radius: 6px;
+        background: transparent;
+        padding: 4px 8px;
+        font-size: 12px;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        cursor: pointer;
+        color: var(--pi-muted);
+        line-height: 1;
+      }
+      .view-mode-toggle button:hover {
+        color: var(--pi-text);
+      }
+      .view-mode-toggle button.selected {
+        background: var(--pi-selection-bg);
+        color: var(--pi-text);
+        font-weight: 500;
+      }
+      .view-mode-toggle svg {
+        display: block;
+        width: 13px;
+        height: 13px;
+      }
+      .file-browser {
+        min-height: 0;
+        overflow: auto;
+        border-bottom: 1px solid var(--pi-border);
+        display: flex;
+        flex-direction: column;
+      }
+      .file-browser.list {
+        padding: 6px;
+      }
+      .grid-container {
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+        flex: 1 1 auto;
+      }
+      .grid-breadcrumbs {
+        flex: 0 0 auto;
+        display: flex;
+        align-items: center;
+        gap: 2px;
+        padding: 5px 8px;
+        border-bottom: 1px solid var(--pi-border-muted);
+        background: color-mix(in srgb, var(--pi-surface) 40%, transparent);
+        font-size: 12px;
+        overflow-x: auto;
+        white-space: nowrap;
+      }
+      .breadcrumb-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 2px 6px;
+        border: 0;
+        border-radius: 4px;
+        background: transparent;
+        color: var(--pi-muted);
+        font-size: 12px;
+        cursor: pointer;
+        line-height: 1.4;
+      }
+      .breadcrumb-btn:hover {
+        background: var(--pi-surface);
+        color: var(--pi-text);
+      }
+      .breadcrumb-btn.active {
+        color: var(--pi-text);
+        font-weight: 600;
+      }
+      .breadcrumb-sep {
+        color: var(--pi-dim, var(--pi-muted));
+        font-size: 11px;
+        user-select: none;
+      }
+      .grid-items {
+        flex: 1 1 auto;
+        min-height: 0;
+        overflow-y: auto;
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(88px, 1fr));
+        gap: 6px;
+        padding: 10px;
+        align-content: start;
+      }
+      .grid-tile {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: flex-start;
+        padding: 8px 6px 6px;
+        border: 1px solid transparent;
+        border-radius: 8px;
+        background: transparent;
+        color: var(--pi-text);
+        cursor: pointer;
+        text-align: center;
+        user-select: none;
+        transition: background .12s, border-color .12s;
+        box-sizing: border-box;
+      }
+      .grid-tile:hover {
+        background: var(--pi-surface);
+        border-color: var(--pi-border-muted);
+      }
+      .grid-tile.selected {
+        background: var(--pi-selection-bg);
+        border-color: var(--pi-accent);
+      }
+      .grid-tile.up-dir {
+        color: var(--pi-muted);
+      }
+      .grid-tile-icon {
+        width: 36px;
+        height: 36px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 4px;
+        flex-shrink: 0;
+      }
+      .grid-tile-icon svg {
+        width: 32px !important;
+        height: 32px !important;
+        display: block;
+      }
+      .grid-tile-label {
+        font-size: 11.5px;
+        line-height: 1.25;
+        width: 100%;
+        max-width: 100%;
+        word-break: break-word;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .grid-tile-download {
+        position: absolute;
+        top: 3px;
+        right: 3px;
+        width: 20px;
+        height: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 4px;
+        background: var(--pi-bg);
+        border: 1px solid var(--pi-border-muted);
+        color: var(--pi-muted);
+        text-decoration: none;
+        opacity: 0;
+        transition: opacity .15s, color .15s;
+      }
+      .grid-tile:hover .grid-tile-download,
+      .grid-tile-download:focus-visible {
+        opacity: 1;
+      }
+      .grid-tile-download:hover {
+        color: var(--pi-text);
+        border-color: var(--pi-accent);
+      }
+      .grid-tile-download svg {
+        width: 11px;
+        height: 11px;
+        display: block;
+      }
       .tree-row { position: relative; display: flex; align-items: center; width: 100%; border-radius: 5px; }
       .tree-row:hover, .tree-row.selected { background: var(--pi-selection-bg); }
-      .tree-row .row { flex: 1 1 auto; min-width: 0; border-radius: 5px; }
+      .tree-row .row {
+        flex: 1 1 auto;
+        min-width: 0;
+        border-radius: 5px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 6px 4px calc(6px + var(--depth, 0) * 14px);
+      }
       .tree-row:hover .row, .tree-row.selected .row { background: transparent; }
+      .tree-chevron {
+        flex: 0 0 14px;
+        width: 14px;
+        height: 14px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--pi-muted);
+      }
+      .tree-chevron.spacer {
+        visibility: hidden;
+      }
+      .tree-chevron svg {
+        display: block;
+        width: 12px;
+        height: 12px;
+      }
+      .tree-icon {
+        flex: 0 0 16px;
+        width: 16px;
+        height: 16px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .tree-icon svg {
+        display: block;
+        max-width: 16px;
+        max-height: 16px;
+      }
+      .tree-label {
+        flex: 1 1 auto;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .viewer-title {
+        min-width: 0;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .viewer-title strong {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .viewer-title .tree-icon {
+        flex-shrink: 0;
+      }
       .tree-download-link {
         flex: 0 0 auto;
         display: inline-flex;
@@ -471,10 +936,13 @@ export class WorkspaceFilesPanel extends LitElement {
         border-radius: 4px;
         color: var(--pi-muted);
         text-decoration: none;
-        font-size: 14px;
-        line-height: 1;
         opacity: 0.5;
         transition: opacity .15s, color .15s, background .15s;
+      }
+      .tree-download-link svg {
+        display: block;
+        width: 13px;
+        height: 13px;
       }
       .tree-row:hover .tree-download-link,
       .tree-download-link:focus-visible {
