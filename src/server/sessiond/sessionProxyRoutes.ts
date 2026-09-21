@@ -97,6 +97,8 @@ export function registerSessionProxyRoutes(
   app.all(`${prefix}/auth/*`, (c) => proxy(c));
   app.all(`${prefix}/sessions`, (c) => proxy(c));
   app.all(`${prefix}/sessions/*`, (c) => proxy(c));
+  app.all(`${prefix}/schedule-prompts`, (c) => proxy(c));
+  app.all(`${prefix}/schedule-prompts/*`, (c) => proxy(c));
 }
 
 function stripPrefix(url: string, prefix: string): string {

@@ -377,6 +377,10 @@ export class PiSessionService {
   );
  }
 
+ get schedulePrompts(): SchedulePromptService {
+  return this.schedulePromptService;
+ }
+
  activeCount(): number {
   return this.active.size;
  }

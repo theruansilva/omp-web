@@ -1,12 +1,15 @@
 export type CronJobType = "cron" | "once" | "interval";
 export type JobScope = "session" | "workspace";
 export type CronJobStatus = "success" | "error" | "running";
+export type CronJobTarget = "prompt" | "command";
 
 export interface CronJob {
   id: string;
   name: string;
   schedule: string;
-  prompt: string;
+  target?: CronJobTarget;
+  prompt?: string;
+  command?: string;
   enabled: boolean;
   type: CronJobType;
   intervalMs?: number;

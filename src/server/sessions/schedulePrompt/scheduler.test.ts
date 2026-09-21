@@ -151,4 +151,37 @@ describe("CronScheduler", () => {
       expect(formatISOShort("not-a-date")).toBe("not-a-date");
     });
   });
+
+  describe("runShellCommand", () => {
+    it("executes a valid command successfully", async () => {
+      await expect(CronScheduler.runShellCommand("echo 'test-run'")).resolves.toBeUndefined();
+    });
+
+    it("rejects when command fails", async () => {
+      await expect(CronScheduler.runShellCommand("exit 1")).rejects.toThrow("Command exited with code 1");
+    });
+  });
+
+  describe("runJob", () => {
+    it("executes command job on demand and updates lastStatus", async () => {
+      const storageMock = {
+        getJob: () => ({
+          id: "cmd1",
+          name: "test-cmd",
+          schedule: "0 0 * * * *",
+          target: "command",
+          command: "echo hello",
+          enabled: true,
+          type: "cron",
+          createdAt: new Date().toISOString(),
+          runCount: 0,
+          scope: "workspace",
+        }),
+        updateJob: (_id: string, updates: any) => updates,
+      } as any;
+
+      const scheduler = new CronScheduler(storageMock);
+      await expect(scheduler.runJob("cmd1")).resolves.toBeUndefined();
+    });
+  });
 });

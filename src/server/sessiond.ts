@@ -25,6 +25,7 @@ import { SESSIOND_RUNTIME_CAPABILITIES } from "../shared/capabilities.js";
 import { effectiveOmpWebConfig, maxUploadBytes, spawnSessionsEnabled, subsessionsEnabled } from "../config.js";
 import { PushNotificationService } from "./push/PushNotificationService.js";
 import { registerPushRoutes } from "./push/pushRoutes.js";
+import { registerSchedulePromptRoutes } from "./sessions/schedulePrompt/schedulePromptRoutes.js";
 
 const { config } = effectiveOmpWebConfig();
 const { upgradeWebSocket, websocket } = createBunWebSocket();
@@ -68,6 +69,23 @@ registerAuthRoutes(app, auth);
 registerSessionRoutes(app, sessions, eventHub, "", upgradeWebSocket);
 registerTerminalRoutes(app, terminals, "", upgradeWebSocket);
 registerPushRoutes(app, pushService);
+registerSchedulePromptRoutes(app, sessions.schedulePrompts, "");
+
+// Pre-arm workspace schedulers on sessiond startup
+void (async () => {
+  try {
+    const projectStore = new ProjectStore();
+    const projectService = new ProjectService(projectStore);
+    const workspaceService = new WorkspaceService();
+    for (const p of await projectService.list()) {
+      for (const ws of await workspaceService.list(p)) {
+        sessions.schedulePrompts.getOrCreateForWorkspace(ws.path);
+      }
+    }
+  } catch (e) {
+    console.warn("Failed to pre-arm workspace schedulers:", e);
+  }
+})();
 
 app.get("/health", (c) => {
   const runtime = getOmpWebRuntimeComponent("sessiond", SESSIOND_RUNTIME_CAPABILITIES);

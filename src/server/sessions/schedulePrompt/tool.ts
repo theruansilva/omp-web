@@ -11,6 +11,11 @@ const SchedulePromptParams = Type.Object({
     Type.Literal("enable"), Type.Literal("disable"), Type.Literal("update"),
     Type.Literal("cleanup"),
   ]),
+  target: Type.Optional(Type.Union([
+    Type.Literal("prompt"), Type.Literal("command"),
+  ], {
+    description: "Target: 'prompt' (default) executes prompt with agent; 'command' executes shell command directly without LLM",
+  })),
   name: Type.Optional(Type.String({
     description: "Job name, auto-generated if omitted",
   })),
@@ -18,7 +23,10 @@ const SchedulePromptParams = Type.Object({
     description: "Required for add. Cron expression (6-field with seconds e.g. '0 * * * * *'), ISO timestamp, relative time (+10s, +5m, +1h), or interval (5m, 1h)",
   })),
   prompt: Type.Optional(Type.String({
-    description: "Required for add. The prompt text to execute",
+    description: "Required for add when target is prompt. The prompt text to execute",
+  })),
+  command: Type.Optional(Type.String({
+    description: "Required for add when target is command. The shell command to execute",
   })),
   jobId: Type.Optional(Type.String({
     description: "Job ID for remove, enable, disable, or update actions",
@@ -73,12 +81,13 @@ export function createSchedulePromptToolDefinition(
       try {
         switch (action) {
           case "add": {
-            if (p.schedule === undefined || p.schedule === "" || p.prompt === undefined || p.prompt === "") {
+            const isCommand = p.target === "command" || (Boolean(p.command) && !p.prompt);
+            if (p.schedule === undefined || p.schedule === "" || (isCommand ? (!p.command) : (!p.prompt))) {
               const missing: string[] = [];
               if (p.schedule === undefined || p.schedule === "") missing.push("'schedule'");
-              if (p.prompt === undefined || p.prompt === "") missing.push("'prompt'");
+              if (isCommand ? (!p.command) : (!p.prompt)) missing.push(isCommand ? "'command'" : "'prompt'");
               throw new Error(
-                `Missing required parameters for add action: ${missing.join(" and ")}. You must provide both schedule (e.g., '+10s', '*/5 * * * * *') and prompt (the text to execute).`,
+                `Missing required parameters for add action: ${missing.join(" and ")}. You must provide schedule and ${isCommand ? "command" : "prompt"}.`,
               );
             }
 
@@ -112,7 +121,8 @@ export function createSchedulePromptToolDefinition(
               id: crypto.randomUUID().replace(/-/g, "").slice(0, 10),
               name: jobName,
               schedule,
-              prompt: p.prompt,
+              target: isCommand ? "command" : "prompt",
+              ...(isCommand ? { command: p.command } : { prompt: p.prompt }),
               enabled: true,
               type,
               ...(intervalMs !== undefined ? { intervalMs } : {}),
@@ -294,9 +304,11 @@ export function createSchedulePromptToolDefinition(
 
 interface ParsedSchedulePromptParams {
   action: string;
+  target?: "prompt" | "command";
   name?: string;
   schedule?: string;
   prompt?: string;
+  command?: string;
   jobId?: string;
   type?: "cron" | "once" | "interval";
   description?: string;
@@ -307,9 +319,11 @@ function parseParams(params: unknown): ParsedSchedulePromptParams {
   const p = isRecord(params) ? params : {};
   return {
     action: typeof p["action"] === "string" ? p["action"] : "",
+    ...(p["target"] === "prompt" || p["target"] === "command" ? { target: p["target"] } : {}),
     ...(typeof p["name"] === "string" ? { name: p["name"] } : {}),
     ...(typeof p["schedule"] === "string" ? { schedule: p["schedule"] } : {}),
     ...(typeof p["prompt"] === "string" ? { prompt: p["prompt"] } : {}),
+    ...(typeof p["command"] === "string" ? { command: p["command"] } : {}),
     ...(typeof p["jobId"] === "string" ? { jobId: p["jobId"] } : {}),
     ...(p["type"] === "cron" || p["type"] === "once" || p["type"] === "interval" ? { type: p["type"] } : {}),
     ...(typeof p["description"] === "string" ? { description: p["description"] } : {}),

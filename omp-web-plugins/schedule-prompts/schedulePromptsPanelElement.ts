@@ -25,7 +25,7 @@ export function schedulePromptsBadge(context: WorkspacePanelContext): string | u
 class OmpWebSchedulePromptsPanel extends HTMLElement {
   private contextValue: WorkspacePanelContext | undefined;
   private readonly root: ShadowRoot;
-  private pollTimer: ReturnType<typeof setInterval> | undefined;
+  private pollTimer: NodeJS.Timeout | number | undefined;
 
   constructor() {
     super();
@@ -68,7 +68,7 @@ class OmpWebSchedulePromptsPanel extends HTMLElement {
     this.root.innerHTML = `
       ${panelStyles()}
       <section class="toolbar">
-        <strong>Scheduled Prompts</strong>
+        <strong>Scheduled Tasks</strong>
         <button class="secondary" data-refresh ${isLoading ? "disabled" : ""}>Refresh</button>
       </section>
       <section class="viewer">
@@ -80,32 +80,80 @@ class OmpWebSchedulePromptsPanel extends HTMLElement {
       void this.loadJobs(context);
     });
 
-    this.root.querySelector("button[data-toggle]")?.addEventListener("click", (e) => {
-      const btn = e.currentTarget;
-      if (!(btn instanceof HTMLElement)) return;
-      const jobId = btn.getAttribute("data-job-id");
-      const enabled = btn.getAttribute("data-enabled") === "true";
-      if (jobId !== null && jobId !== "") {
-        context.prompt.insertText(enabled
-          ? `schedule_prompt action="disable" jobId="${jobId}"`
-          : `schedule_prompt action="enable" jobId="${jobId}"`);
-      }
+    this.root.querySelectorAll("button[data-toggle]").forEach((btn) => {
+      btn.addEventListener("click", async (e) => {
+        const target = e.currentTarget;
+        if (!(target instanceof HTMLElement)) return;
+        const jobId = target.getAttribute("data-job-id");
+        const enabled = target.getAttribute("data-enabled") === "true";
+        if (!jobId) return;
+
+        target.setAttribute("disabled", "true");
+        try {
+          const res = await context.apiFetch(`/schedule-prompts/${encodeURIComponent(jobId)}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ cwd: context.workspace.path, updates: { enabled: !enabled } }),
+          });
+          if (!res.ok) throw new Error(`HTTP ${String(res.status)}`);
+          await this.loadJobs(context);
+        } catch (err) {
+          console.error("Failed to toggle job:", err);
+          target.removeAttribute("disabled");
+        }
+      });
     });
 
-    this.root.querySelector("button[data-remove]")?.addEventListener("click", (e) => {
-      const btn = e.currentTarget;
-      if (!(btn instanceof HTMLElement)) return;
-      const jobId = btn.getAttribute("data-job-id");
-      if (jobId !== null && jobId !== "") {
-        context.prompt.insertText(`schedule_prompt action="remove" jobId="${jobId}"`);
-      }
+    this.root.querySelectorAll("button[data-remove]").forEach((btn) => {
+      btn.addEventListener("click", async (e) => {
+        const target = e.currentTarget;
+        if (!(target instanceof HTMLElement)) return;
+        const jobId = target.getAttribute("data-job-id");
+        if (!jobId) return;
+
+        target.setAttribute("disabled", "true");
+        try {
+          const res = await context.apiFetch(`/schedule-prompts/${encodeURIComponent(jobId)}?cwd=${encodeURIComponent(context.workspace.path)}`, {
+            method: "DELETE",
+          });
+          if (!res.ok) throw new Error(`HTTP ${String(res.status)}`);
+          await this.loadJobs(context);
+        } catch (err) {
+          console.error("Failed to remove job:", err);
+          target.removeAttribute("disabled");
+        }
+      });
+    });
+
+    this.root.querySelectorAll("button[data-run]").forEach((btn) => {
+      btn.addEventListener("click", async (e) => {
+        const target = e.currentTarget;
+        if (!(target instanceof HTMLElement)) return;
+        const jobId = target.getAttribute("data-job-id");
+        if (!jobId) return;
+
+        target.setAttribute("disabled", "true");
+        try {
+          const res = await context.apiFetch(`/schedule-prompts/${encodeURIComponent(jobId)}/run`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ cwd: context.workspace.path }),
+          });
+          if (!res.ok) throw new Error(`HTTP ${String(res.status)}`);
+          await this.loadJobs(context);
+        } catch (err) {
+          console.error("Failed to run job:", err);
+        } finally {
+          target.removeAttribute("disabled");
+        }
+      });
     });
   }
 
   private renderState(state: ConfigCacheEntry): string {
     if ("version" in state) {
       if (state.jobs.length === 0) {
-        return `<p class="muted">No scheduled prompts. Use the <code>schedule_prompt</code> tool to add one.</p>`;
+        return `<p class="muted">No scheduled tasks. Use the <code>schedule_prompt</code> tool to add one.</p>`;
       }
       return `<div class="jobs">${state.jobs.map((job) => this.renderJobRow(job)).join("")}</div>`;
     }
@@ -120,23 +168,32 @@ class OmpWebSchedulePromptsPanel extends HTMLElement {
   private renderJobRow(job: CronJob): string {
     const statusIcon = statusIconFor(job.lastStatus, job.enabled);
     const scheduleText = humanizeSchedule(job);
-    const truncatedPrompt = job.prompt.length > 60 ? job.prompt.slice(0, 60) + "…" : job.prompt;
+    const isCommand = job.target === "command" || (Boolean(job.command) && !job.prompt);
+    const content = (isCommand ? job.command : job.prompt) ?? "";
+    const truncatedContent = content.length > 60 ? content.slice(0, 60) + "…" : content;
     const nextRun = job.nextRun !== undefined && job.nextRun !== "" ? formatDate(job.nextRun) : "—";
     const lastRun = job.lastRun !== undefined && job.lastRun !== "" ? formatDate(job.lastRun) : "—";
     const statusLabel = job.lastStatus ?? "pending";
+    const targetBadge = isCommand
+      ? `<span class="badge command">CLI</span>`
+      : `<span class="badge prompt">Prompt</span>`;
 
     return `
       <article class="job-row">
         <div class="job-info">
           <span class="job-icon">${statusIcon}</span>
           <div class="job-details">
-            <strong>${escapeHtml(job.name)}</strong>
+            <div class="job-header">
+              <strong>${escapeHtml(job.name)}</strong>
+              ${targetBadge}
+            </div>
             <span class="schedule">${escapeHtml(scheduleText)}</span>
-            <span class="prompt-text">${escapeHtml(truncatedPrompt)}</span>
+            <span class="prompt-text">${escapeHtml(truncatedContent)}</span>
             <span class="meta">Next: ${nextRun} | Last: ${lastRun} | Runs: ${String(job.runCount)} | ${statusLabel}</span>
           </div>
         </div>
         <div class="job-actions">
+          <button data-job-id="${escapeAttr(job.id)}" data-run class="secondary" title="Execute immediately">Run</button>
           <button data-job-id="${escapeAttr(job.id)}" data-enabled="${String(job.enabled)}" data-toggle class="secondary">${job.enabled ? "Disable" : "Enable"}</button>
           <button data-job-id="${escapeAttr(job.id)}" data-remove class="danger">Remove</button>
         </div>
@@ -146,6 +203,20 @@ class OmpWebSchedulePromptsPanel extends HTMLElement {
 
   private async loadJobs(context: WorkspacePanelContext): Promise<void> {
     const key = cacheKeyForContext(context);
+
+    try {
+      const res = await context.apiFetch(`/schedule-prompts?cwd=${encodeURIComponent(context.workspace.path)}`);
+      if (res.ok) {
+        const data = (await res.json()) as { ok?: boolean; jobs?: CronJob[] };
+        if (data && Array.isArray(data.jobs)) {
+          configCache.set(key, { version: 1, jobs: data.jobs });
+          this.render();
+          return;
+        }
+      }
+    } catch {
+      // Fall back to reading .omp-web/schedule-prompts.json directly
+    }
 
     try {
       const response = await context.files.readFile(SCHEDULE_PROMPTS_CONFIG_PATH);
@@ -188,38 +259,41 @@ function humanizeSchedule(job: CronJob): string {
   return humanizeCron(job.schedule);
 }
 
+const HUMANIZED_CRON_TABLE: Record<string, string> = {
+  "* * * * * *": "every second",
+  "0 * * * * *": "every minute",
+  "0 */5 * * * *": "every 5 min",
+  "0 */10 * * * *": "every 10 min",
+  "0 */15 * * * *": "every 15 min",
+  "0 */30 * * * *": "every 30 min",
+  "0 0 * * * *": "every hour",
+  "0 0 */2 * * *": "every 2 hours",
+  "0 0 */3 * * *": "every 3 hours",
+  "0 0 */6 * * *": "every 6 hours",
+  "0 0 0 * * *": "daily",
+  "0 0 0 * * 0": "weekly",
+  "0 0 0 1 * *": "monthly",
+  "0 0 9 * * 1-5": "9am weekdays",
+  "0 0 0 * * 1-5": "weekdays",
+  "0 0 0 * * 0,6": "weekends",
+};
+
 function humanizeCron(expression: string): string {
-  const known: Record<string, string> = {
-    "* * * * * *": "every second",
-    "0 * * * * *": "every minute",
-    "0 */5 * * * *": "every 5 min",
-    "0 */10 * * * *": "every 10 min",
-    "0 */15 * * * *": "every 15 min",
-    "0 */30 * * * *": "every 30 min",
-    "0 0 * * * *": "every hour",
-    "0 0 */2 * * *": "every 2 hours",
-    "0 0 */3 * * *": "every 3 hours",
-    "0 0 */6 * * *": "every 6 hours",
-    "0 0 0 * * *": "daily",
-    "0 0 0 * * 0": "weekly",
-    "0 0 0 1 * *": "monthly",
-    "0 0 9 * * 1-5": "9am weekdays",
-    "0 0 0 * * 1-5": "weekdays",
-    "0 0 0 * * 0,6": "weekends",
-  };
-  return known[expression] ?? expression;
+  return HUMANIZED_CRON_TABLE[expression] ?? expression;
 }
+
+const MONTHS_LIST = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
 function formatDate(input: string): string {
   const date = new Date(input);
   if (Number.isNaN(date.getTime())) return input;
-  const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-  const month = months[date.getMonth()] ?? "";
+  const month = MONTHS_LIST[date.getMonth()] ?? "";
   const day = String(date.getDate());
   const hours = String(date.getHours()).padStart(2, "0");
   const minutes = String(date.getMinutes()).padStart(2, "0");
   return `${month} ${day} ${hours}:${minutes}`;
 }
+
 function isCronStore(value: unknown): value is CronStore {
   return (
     typeof value === "object" &&
@@ -250,9 +324,13 @@ function panelStyles(): string {
       .job-info { display: grid; grid-template-columns: auto 1fr; gap: 8px; align-items: start; }
       .job-icon { font-size: 16px; line-height: 1.4; }
       .job-details { display: grid; gap: 3px; min-width: 0; }
+      .job-header { display: flex; align-items: center; gap: 6px; }
       .job-details .schedule { color: var(--pi-accent); font-size: 12px; }
-      .job-details .prompt-text { color: var(--pi-text-secondary); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .job-details .prompt-text { color: var(--pi-text-secondary); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: monospace; }
       .job-details .meta { color: var(--pi-muted); font-size: 11px; }
+      .badge { display: inline-block; padding: 1px 5px; border-radius: 4px; font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+      .badge.command { background: rgba(56, 139, 253, 0.15); color: #58a6ff; border: 1px solid rgba(56, 139, 253, 0.4); }
+      .badge.prompt { background: rgba(187, 128, 179, 0.15); color: #bc8cff; border: 1px solid rgba(187, 128, 179, 0.4); }
       .job-actions { display: inline-flex; flex-wrap: wrap; gap: 6px; }
       button { border: 1px solid var(--pi-accent-border); border-radius: 7px; background: var(--pi-accent); color: var(--pi-bg); cursor: pointer; padding: 6px 10px; font: inherit; font-size: 12px; }
       button.secondary { border-color: var(--pi-border); background: var(--pi-surface); color: var(--pi-text); }
@@ -261,8 +339,7 @@ function panelStyles(): string {
       .muted { color: var(--pi-muted); }
       .status { border: 1px solid var(--pi-border); border-radius: 8px; padding: 10px; color: var(--pi-muted); }
       .status.error { border-color: var(--pi-danger); color: var(--pi-danger); }
-      .empty { padding: 16px; color: var(--pi-muted); }
-      code { border: 1px solid var(--pi-border-muted); border-radius: 6px; background: var(--pi-bg); color: var(--pi-text-secondary); font: 12px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; padding: 2px 5px; }
+      .empty { padding: 24px 12px; text-align: center; color: var(--pi-muted); font-size: 13px; }
     </style>
   `;
 }
