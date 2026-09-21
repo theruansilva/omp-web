@@ -46,11 +46,20 @@ omp-web install
 omp-web doctor
 ```
 
-Then open:
+Then get your auth token and open the web interface:
+
+```bash
+# View your generated authentication token
+cat ~/.omp-web/auth-token
+```
+
+Open:
 
 ```text
-http://127.0.0.1:8504
+http://127.0.0.1:8504?token=<YOUR_TOKEN>
 ```
+
+*(If you navigate to `http://127.0.0.1:8504` without a token, enter your token into the Unlock screen).*
 
 Useful commands:
 
@@ -130,6 +139,16 @@ Project-local OMP WEB config lives at:
 Common configuration includes host/port, path access, uploads, OMP WEB plugin enablement, shortcuts, and session daemon options. In Settings, machine-affecting config targets the selected machine; gateway host/port/allowed-hosts, remote machine registration, tokens, and keyboard shortcuts stay local.
 
 Read more: [Configuration reference](https://omp-web.dev/config)
+
+## Authentication
+
+Starting with v2.3.0, OMP WEB requires token-based authentication by default to protect browser access, WebSocket streams, and API endpoints.
+
+- **Automatic token generation**: On startup, OMP WEB generates a cryptographically secure token and saves it to `~/.omp-web/auth-token` (with `0600` permissions).
+- **Browser access & unlock screen**: Visiting `http://127.0.0.1:8504?token=<YOUR_TOKEN>` validates the token and sets a secure `HttpOnly` cookie (`omp_web_token`). If you open the bare URL, an **Unlock** screen prompts for the token.
+- **API and WebSockets**: Authenticate using the `Authorization: Bearer <YOUR_TOKEN>` header, the `omp_web_token` cookie, or the `?token=<YOUR_TOKEN>` query parameter.
+- **Custom token**: Configure `"authToken": "your-token"` in `~/.config/omp-web/config.json` or export `OMP_WEB_AUTH_TOKEN="your-token"`.
+- **Disabling authentication**: If running behind a trusted reverse proxy or private network, you can disable authentication with `"authRequired": false` in `~/.config/omp-web/config.json` or by setting `OMP_WEB_AUTH_REQUIRED=0` (or `"false"`).
 
 ## Development
 

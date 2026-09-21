@@ -27,11 +27,13 @@ defaults → global config file → environment overrides
 
 Supported project-local settings are then applied for that project's workspaces. For upload defaults, `<project>/.omp-web/config.json` overrides the global value.
 
-Environment overrides include `OMP_WEB_HOST`, `OMP_WEB_PORT` / `PORT`, `OMP_WEB_ALLOWED_HOSTS`, `OMP_WEB_MAX_UPLOAD_BYTES`, `OMP_WEB_SPAWN_SESSIONS`, and `OMP_WEB_SUBSESSIONS`.
+Environment overrides include `OMP_WEB_HOST`, `OMP_WEB_PORT` / `PORT`, `OMP_WEB_ALLOWED_HOSTS`, `OMP_WEB_AUTH_REQUIRED`, `OMP_WEB_AUTH_TOKEN`, `OMP_WEB_ALLOW_PRIVATE_MACHINES`, `OMP_WEB_MAX_UPLOAD_BYTES`, `OMP_WEB_SPAWN_SESSIONS`, and `OMP_WEB_SUBSESSIONS`.
 
 Process restarts depend on the key:
 
 - `host` / `port`: restart the gateway web/API service or process.
+- `authRequired` / `authToken`: restart the web/API process.
+- `allowPrivateMachines`: restart the web/API process.
 - `maxUploadBytes`: restart both the web/API process and the session daemon on that machine.
 - `spawnSessions` / `subsessions`: restart the session daemon on that machine.
 - `pathAccess`: applies on the next request; existing file views may need a browser refresh.
@@ -47,6 +49,8 @@ Process restarts depend on the key:
 {
   "host": "127.0.0.1",
   "port": 8504,
+  "authRequired": true,
+  "authToken": "your-secret-token",
   "vimMode": true,
   "pathAccess": {
     "allowedPaths": ["~/SDKs", "/opt/reference"]
@@ -100,6 +104,9 @@ Rows with JSON key `—` are runtime-only environment variables, not config-file
 | Web/API bind host | `host` | `OMP_WEB_HOST` | Global | Not supported locally | Restart web/API |
 | Web/API port | `port` | `OMP_WEB_PORT`, `PORT` | Global | Not supported locally | Restart web/API |
 | Dev-server allowed hosts | `allowedHosts` | `OMP_WEB_ALLOWED_HOSTS` | Global | Not supported locally | Restart dev web/UI |
+| Authentication required | `authRequired` | `OMP_WEB_AUTH_REQUIRED` | Global | Not supported locally | Restart web/API |
+| Authentication token | `authToken` | `OMP_WEB_AUTH_TOKEN` | Global | Not supported locally | Restart web/API |
+| Allow private/VPN machines | `allowPrivateMachines` | `OMP_WEB_ALLOW_PRIVATE_MACHINES` | Global | Not supported locally | Restart web/API |
 | Vim keybindings default | `vimMode` | — | Global/browser | Not supported locally | Applies after config refresh; saved browser preference wins |
 | External filesystem roots | `pathAccess.allowedPaths` | — | Global + project | **Merges**: global roots first, then project roots; duplicates removed | Next file request; refresh existing views if needed |
 | Manual file upload default folder | `uploads.defaultFolder` | — | Global + project | **Overrides**: project value wins for workspaces in that project; otherwise global/default applies | New Upload dialogs and direct drag/drop batches after config/workspace refresh |
@@ -123,6 +130,17 @@ Rows with JSON key `—` are runtime-only environment variables, not config-file
 | Skip update checks | — | `OMP_WEB_SKIP_VERSION_CHECK`, `OMP_WEB_OFFLINE`, `PI_SKIP_VERSION_CHECK`, `PI_OFFLINE` | Web/API env | Not supported locally | Restart web/API after env changes |
 
 ## Key details
+
+### Authentication (token and unlock)
+
+Starting with v2.3.0, PI WEB enforces token authentication by default for the web interface, WebSocket event streams, and REST API endpoints.
+
+- **Default token generation**: If no custom token is configured, PI WEB automatically generates a cryptographically secure 32-byte hex token and stores it at `~/.omp-web/auth-token` with restricted `0600` permissions.
+- **Viewing the token**: Read the file directly (`cat ~/.omp-web/auth-token`) or check the server startup logs (`omp-web logs`), which output the full URL: `http://127.0.0.1:8504?token=<token>`.
+- **Browser access & unlock**: Navigating to `http://127.0.0.1:8504?token=<token>` validates the token and sets a secure `HttpOnly`, `SameSite=Lax` cookie (`omp_web_token`). If you navigate to the URL without a token or cookie, PI WEB displays a standalone Unlock screen where you can submit the token.
+- **API & WebSocket authentication**: Include the header `Authorization: Bearer <token>`, the `omp_web_token` cookie, or pass the query parameter `?token=<token>`.
+- **Custom token**: Configure `"authToken": "<secret>"` in your global config file or export `OMP_WEB_AUTH_TOKEN="<secret>"`.
+- **Disabling authentication**: Set `"authRequired": false` in `~/.config/omp-web/config.json` or export `OMP_WEB_AUTH_REQUIRED=0` (or `"false"`). Only disable authentication if your instance is protected by an external VPN, firewall, or authenticated reverse proxy.
 
 ### Vim mode default
 

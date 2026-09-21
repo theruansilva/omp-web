@@ -95,6 +95,7 @@
             <a href="#global-config">Global config</a>
             <a href="#project-config">Project config</a>
             <a href="#keys">Config matrix</a>
+            <a href="#authentication">Authentication</a>
             <a href="#vim-mode">Vim mode</a>
             <a href="#path-access">External path access</a>
             <a href="#manual-uploads">Manual uploads</a>
@@ -146,11 +147,14 @@
               </p>
               <p>
                 Environment overrides include <code>OMP_WEB_HOST</code>, <code>OMP_WEB_PORT</code> / <code>PORT</code>,
-                <code>OMP_WEB_ALLOWED_HOSTS</code>, <code>OMP_WEB_MAX_UPLOAD_BYTES</code>, <code>OMP_WEB_SPAWN_SESSIONS</code>,
-                and <code>OMP_WEB_SUBSESSIONS</code>.
+                <code>OMP_WEB_ALLOWED_HOSTS</code>, <code>OMP_WEB_AUTH_REQUIRED</code>, <code>OMP_WEB_AUTH_TOKEN</code>,
+                <code>OMP_WEB_ALLOW_PRIVATE_MACHINES</code>, <code>OMP_WEB_MAX_UPLOAD_BYTES</code>,
+                <code>OMP_WEB_SPAWN_SESSIONS</code>, and <code>OMP_WEB_SUBSESSIONS</code>.
               </p>
               <ul>
                 <li><code>host</code> / <code>port</code>: restart the gateway web/API service or process.</li>
+                <li><code>authRequired</code> / <code>authToken</code>: restart the web/API process.</li>
+                <li><code>allowPrivateMachines</code>: restart the web/API process.</li>
                 <li><code>maxUploadBytes</code>: restart both the web/API process and the session daemon on that machine.</li>
                 <li><code>spawnSessions</code> / <code>subsessions</code>: restart the session daemon on that machine.</li>
                 <li><code>pathAccess</code>: applies on the next request; existing file views may need a browser refresh.</li>
@@ -179,6 +183,8 @@
                 <pre id="global-config-example"><code>{
   "host": "127.0.0.1",
   "port": 8504,
+  "authRequired": true,
+  "authToken": "your-secret-token",
   "vimMode": true,
   "pathAccess": {
     "allowedPaths": ["~/SDKs", "/opt/reference"]
@@ -286,6 +292,30 @@
                       <td>Global</td>
                       <td>Not supported locally</td>
                       <td>Restart dev web/UI</td>
+                    </tr>
+                    <tr>
+                      <td>Authentication required</td>
+                      <td><code>authRequired</code></td>
+                      <td><code>OMP_WEB_AUTH_REQUIRED</code></td>
+                      <td>Global</td>
+                      <td>Not supported locally</td>
+                      <td>Restart web/API</td>
+                    </tr>
+                    <tr>
+                      <td>Authentication token</td>
+                      <td><code>authToken</code></td>
+                      <td><code>OMP_WEB_AUTH_TOKEN</code></td>
+                      <td>Global</td>
+                      <td>Not supported locally</td>
+                      <td>Restart web/API</td>
+                    </tr>
+                    <tr>
+                      <td>Allow private/VPN machines</td>
+                      <td><code>allowPrivateMachines</code></td>
+                      <td><code>OMP_WEB_ALLOW_PRIVATE_MACHINES</code></td>
+                      <td>Global</td>
+                      <td>Not supported locally</td>
+                      <td>Restart web/API</td>
                     </tr>
                     <tr>
                       <td>Vim keybindings default</td>
@@ -451,6 +481,22 @@
                   </tbody>
                 </table>
               </div>
+            </section>
+
+            <section id="authentication">
+              <h2>Authentication (token and unlock)</h2>
+              <p>
+                Starting with v2.3.0, PI WEB enforces token authentication by default for the web interface,
+                WebSocket event streams, and REST API endpoints.
+              </p>
+              <ul>
+                <li><strong>Default token generation:</strong> If no custom token is configured, PI WEB generates a cryptographically secure 32-byte hex token and stores it at <code>~/.omp-web/auth-token</code> with restricted <code>0600</code> permissions.</li>
+                <li><strong>Viewing the token:</strong> Read the file directly (<code>cat ~/.omp-web/auth-token</code>) or check the startup logs (<code>omp-web logs</code>), which output the full URL: <code>http://127.0.0.1:8504?token=&lt;token&gt;</code>.</li>
+                <li><strong>Browser access &amp; unlock:</strong> Navigating to <code>http://127.0.0.1:8504?token=&lt;token&gt;</code> validates the token and sets a secure <code>HttpOnly</code>, <code>SameSite=Lax</code> cookie (<code>omp_web_token</code>). If you navigate without a token or cookie, PI WEB displays a standalone Unlock screen where you can submit the token.</li>
+                <li><strong>API &amp; WebSocket clients:</strong> Include the header <code>Authorization: Bearer &lt;token&gt;</code>, the <code>omp_web_token</code> cookie, or pass the query parameter <code>?token=&lt;token&gt;</code>.</li>
+                <li><strong>Custom token:</strong> Configure <code>"authToken": "&lt;secret&gt;"</code> in your global config file or export <code>OMP_WEB_AUTH_TOKEN="&lt;secret&gt;"</code>.</li>
+                <li><strong>Disabling authentication:</strong> Set <code>"authRequired": false</code> in <code>~/.config/omp-web/config.json</code> or export <code>OMP_WEB_AUTH_REQUIRED=0</code> (or <code>"false"</code>) if your instance is protected by a trusted VPN or authenticated reverse proxy.</li>
+              </ul>
             </section>
 
             <section id="vim-mode">

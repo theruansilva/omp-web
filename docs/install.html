@@ -133,7 +133,11 @@
 <span class="prompt">$</span> omp-web install
 <span class="prompt">$</span> omp-web doctor</code></pre>
               </div>
-              <p>Then open <a href="http://127.0.0.1:8504">http://127.0.0.1:8504</a>.</p>
+              <p>
+                Then open <a href="http://127.0.0.1:8504">http://127.0.0.1:8504</a>. Starting with v2.3.0, authentication is
+                enabled by default. View your token with <code>cat ~/.omp-web/auth-token</code> (or check <code>omp-web logs</code>)
+                and enter it on the Unlock screen, or visit <code>http://127.0.0.1:8504?token=&lt;YOUR_TOKEN&gt;</code>.
+              </p>
               <p>On Linux servers, also consider <code>sudo loginctl enable-linger "$USER"</code> so user services survive logout/reboot.</p>
             </section>
 
@@ -210,7 +214,7 @@
                   <button class="copy-button" data-copy="#ssh-tunnel">Copy</button>
                 </div>
                 <pre id="ssh-tunnel"><code><span class="prompt">$</span> ssh -L 8504:127.0.0.1:8504 user@your-server
-<span class="comment"># Open http://127.0.0.1:8504 on your local machine</span></code></pre>
+<span class="comment"># Open http://127.0.0.1:8504?token=&lt;YOUR_TOKEN&gt; on your local machine</span></code></pre>
               </div>
               <div class="callout danger">
                 PI WEB is designed for trusted users and trusted server paths. Do not expose it directly to the public
@@ -272,6 +276,7 @@
                 <pre id="config-example"><code>{
   "host": "127.0.0.1",
   "port": 8504,
+  "authRequired": true,
   "pathAccess": {
     "allowedPaths": ["~/SDKs", "/opt/reference"]
   },
