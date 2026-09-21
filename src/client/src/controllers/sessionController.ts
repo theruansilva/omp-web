@@ -1,4 +1,4 @@
-import { api as defaultApi, type AskDialogResult, type CommandResult, type PromptAttachment, type SessionActivity, type SessionBulkFailure, type SessionCleanupExecuteResponse, type SessionInfo, type SessionRef, type SessionStatus } from "../api";
+import { api as defaultApi, type AskDialogResult, type CommandResult, type PromptAttachment, type SavedPromptAttachment, type SessionActivity, type SessionBulkFailure, type SessionCleanupExecuteResponse, type SessionInfo, type SessionRef, type SessionStatus } from "../api";
 import type { AppState } from "../appState";
 import { errorMessage } from "../utils.js";
 import { forgetCachedNewSession, isCachedNewSessionInfo, markCachedNewSessionInfo, mergeCachedNewSessions, rememberCachedNewSession, stripCachedNewSessionMarker } from "../cachedNewSessions";
@@ -295,7 +295,8 @@ export class SessionController {
     try {
       if (hasAttachments && delivery === "folder") {
         const saved = await this.api.saveAttachments(session, attachments, machineId);
-        const references = saved.map((file) => fileCompletionInsertText(file.path, false)).join(" ");
+        const files = Array.isArray(saved) ? saved : ((saved as { attachments?: SavedPromptAttachment[] })?.attachments ?? []);
+        const references = files.map((file) => fileCompletionInsertText(file.path, false)).join(" ");
         const body = text === "" ? references : `${text}\n\n${references}`;
         await this.api.prompt(session, body, streamingBehavior, machineId);
       } else {

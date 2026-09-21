@@ -344,6 +344,10 @@ export interface SavedPromptAttachment {
  size: number;
 }
 
+export interface SavePromptAttachmentsResponse {
+ attachments: SavedPromptAttachment[];
+}
+
 export interface SessionModel {
  provider?: string;
  id?: string;

@@ -236,6 +236,32 @@ describe("session API compatibility", () => {
     expect(url).toBe("/api/machines/remote%20a/sessions/s%201/prompt");
     expect(JSON.parse(requestBody(init))).toEqual({ cwd: "/repo", text: "hello" });
   });
+
+  it("saves prompt attachments and unwraps the attachments array", async () => {
+    const saved = [{ path: "uploads/shot.png", mimeType: "image/png", size: 3 }];
+    const fetchMock = stubJsonFetch({ attachments: saved });
+
+    const result = await sessionsApi.saveAttachments({ id: "s 1", cwd: "/repo" }, [{ kind: "image", mimeType: "image/png", data: "QUJD", name: "shot.png" }], "remote a", "uploads");
+
+    expect(result).toEqual(saved);
+    expect(fetchMock).toHaveBeenCalledOnce();
+    const [url, init] = fetchCall(fetchMock, 0);
+    expect(url).toBe("/api/machines/remote%20a/sessions/s%201/attachments");
+    expect(JSON.parse(requestBody(init))).toEqual({
+      cwd: "/repo",
+      attachments: [{ kind: "image", mimeType: "image/png", data: "QUJD", name: "shot.png" }],
+      folder: "uploads",
+    });
+  });
+
+  it("handles array responses directly when saving prompt attachments", async () => {
+    const saved = [{ path: "uploads/doc.pdf", mimeType: "application/pdf", size: 10 }];
+    stubJsonFetch(saved);
+
+    const result = await sessionsApi.saveAttachments("s 1", [{ kind: "file", mimeType: "application/pdf", data: "QUJD", name: "doc.pdf" }], "remote a");
+
+    expect(result).toEqual(saved);
+  });
 });
 
 describe("machine-scoped file suggestion API", () => {

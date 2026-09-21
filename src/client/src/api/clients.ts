@@ -31,6 +31,7 @@ import type {
   Project,
   PromptAttachment,
   RunTerminalCommandInput,
+  SavePromptAttachmentsResponse,
   SavedPromptAttachment,
   SessionBulkArchiveResponse,
   SessionBulkDeleteArchivedResponse,
@@ -254,8 +255,13 @@ export const sessionsApi = {
     request<SlashCommand[]>(sessionQueryUrl(session, "commands", machineId)),
   prompt: (session: SessionLookup, text: string, streamingBehavior?: "steer" | "followUp", machineId = "local", attachments?: PromptAttachment[]) =>
     request<{ accepted: true }>(sessionUrl(session, "prompt", machineId), { method: "POST", body: sessionBody(session, { text, ...(streamingBehavior === undefined ? {} : { streamingBehavior }), ...(attachments !== undefined && attachments.length > 0 ? { attachments } : {}) }) }),
-  saveAttachments: (session: SessionLookup, attachments: PromptAttachment[], machineId = "local", folder?: string) =>
-    request<SavedPromptAttachment[]>(sessionUrl(session, "attachments", machineId), { method: "POST", body: sessionBody(session, { attachments, ...(folder === undefined ? {} : { folder }) }) }),
+  saveAttachments: async (session: SessionLookup, attachments: PromptAttachment[], machineId = "local", folder?: string): Promise<SavedPromptAttachment[]> => {
+    const response = await request<SavePromptAttachmentsResponse | SavedPromptAttachment[]>(
+      sessionUrl(session, "attachments", machineId),
+      { method: "POST", body: sessionBody(session, { attachments, ...(folder === undefined ? {} : { folder }) }) },
+    );
+    return Array.isArray(response) ? response : (response.attachments ?? []);
+  },
   shell: (session: SessionLookup, text: string, machineId = "local") =>
     request<{ accepted: true }>(sessionUrl(session, "shell", machineId), { method: "POST", body: sessionBody(session, { text }) }),
   runCommand: (session: SessionLookup, text: string, machineId = "local") =>

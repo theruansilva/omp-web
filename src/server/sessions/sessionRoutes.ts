@@ -1,6 +1,6 @@
 import type { Hono } from "hono";
 import type { UpgradeWebSocket } from "hono/ws";
-import type { SessionBulkMutationRequest, SessionBulkMutationRef, SessionCleanupRequest, AskDialogResult } from "../../shared/apiTypes.js";
+import type { SessionBulkMutationRequest, SessionBulkMutationRef, SessionCleanupRequest, AskDialogResult, SavePromptAttachmentsResponse } from "../../shared/apiTypes.js";
 import { normalizeRequestCwd } from "../workingDirectory.js";
 import type { SessionEventHub } from "../realtime/sessionEventHub.js";
 import { createHonoRealtimeSocket, type HonoRealtimeSocket } from "../realtime/honoRealtimeSocket.js";
@@ -207,7 +207,7 @@ export function registerSessionRoutes(
       const folder = body["folder"];
       if (folder !== undefined && typeof folder !== "string") throw new Error("folder field must be a string");
       const attachments = await sessions.saveAttachments(sessionLookupFromBody(sessionId, body), body["attachments"], folder);
-      return c.json({ attachments });
+      return c.json<SavePromptAttachmentsResponse>({ attachments });
     } catch (error) {
       return c.json({ error: errorMessage(error) }, mutationErrorStatus(error));
     }
