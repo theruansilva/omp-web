@@ -89,6 +89,10 @@ export class FormattedText extends LitElement {
     if (!(event.target instanceof Element)) return;
     const optionItem = event.target.closest(".ui-option-item");
     if (optionItem instanceof HTMLElement) {
+      const card = optionItem.closest(".ui-options-card");
+      if (card instanceof HTMLElement && card.getAttribute("data-interactive") === "false") {
+        return;
+      }
       event.preventDefault();
       optionItem.click();
     }
@@ -101,6 +105,9 @@ export class FormattedText extends LitElement {
     if (optionItem instanceof HTMLElement) {
       const card = optionItem.closest(".ui-options-card");
       if (card instanceof HTMLElement) {
+        if (card.getAttribute("data-interactive") === "false") {
+          return;
+        }
         const isSingle = card.getAttribute("data-mode") === "single" || optionItem.getAttribute("role") === "radio";
         const wasSelected = optionItem.classList.contains("selected");
 

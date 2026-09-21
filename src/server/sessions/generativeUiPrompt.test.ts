@@ -16,5 +16,9 @@ describe("OMP_WEB_GENERATIVE_UI_PROMPT", () => {
     expect(OMP_WEB_GENERATIVE_UI_PROMPT).toContain("<kpi-grid");
     expect(OMP_WEB_GENERATIVE_UI_PROMPT).toContain("<kpi");
     expect(OMP_WEB_GENERATIVE_UI_PROMPT).toContain("<callout");
+
+    // Verify completed/non-interactive checklist instructions
+    expect(OMP_WEB_GENERATIVE_UI_PROMPT).toContain('interactive="false"');
+    expect(OMP_WEB_GENERATIVE_UI_PROMPT).toContain('checked="true"');
   });
 });

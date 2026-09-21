@@ -224,22 +224,26 @@ function expandCustomUiTags(text: string): string {
           const isSingle = hasSingleAttr || (!isChecklist && !hasMultiAttr);
           const mode = isSingle ? "single" : "multi";
 
-          const title = attrs["title"];
-          const badge = attrs["badge"];
-          const color = attrs["color"];
-          const subtitle = attrs["subtitle"] || attrs["sub"];
-          const colorClass = color ? ` ui-badge-${color}` : " ui-badge-blue";
-          const defaultBadge = isChecklist ? "Checklist" : "Opções";
-          const defaultTitle = isChecklist ? "Selecione as opções desejadas" : (isSingle ? "Escolha uma opção" : "Selecione as opções");
-          const badgeHtml = badge ? `<span class="ui-badge${colorClass}">${badge}</span>` : `<span class="ui-badge ui-badge-blue">${defaultBadge}</span>`;
-          const headerHtml = `<div class="ui-card-header"><h3 class="ui-card-title">${title || defaultTitle}</h3>${badgeHtml}</div>`;
-          const subtitleHtml = subtitle ? `<p class="ui-card-subtitle">${subtitle}</p>` : "";
+          const hasInteractiveAttr = attrs["interactive"];
+          const hasReadonlyAttr = attrs["readonly"] !== undefined || attrs["static"] !== undefined || attrs["mode"] === "readonly" || attrs["mode"] === "static" || attrs["done"] !== undefined || attrs["completed"] !== undefined;
+          const explicitlyNonInteractive = hasInteractiveAttr === "false" || hasInteractiveAttr === "no" || hasReadonlyAttr;
+          const explicitlyInteractive = hasInteractiveAttr === "true" || hasInteractiveAttr === "yes";
 
           const role = isSingle ? "radio" : "checkbox";
-          const checkIcon = isSingle ? "●" : "✓";
+          const checkIcon = isSingle
+            ? "●"
+            : `<svg viewBox="0 0 16 16" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 8.5l3 3 6-6"/></svg><span style="display:none">✓</span>`;
           const inputType = isSingle ? "radio" : "checkbox";
 
-          const items: string[] = [];
+          interface ParsedOptionItem {
+            label: string;
+            desc: string;
+            value: string;
+            isChecked: boolean;
+            isDone: boolean;
+          }
+
+          const parsedItems: ParsedOptionItem[] = [];
           const itemRegex = /<(item|opt|option)(\s+[^>]*)?(?:\/>|>([\s\S]*?)<\/\1>)/gi;
           let match;
           while ((match = itemRegex.exec(blockContent)) !== null) {
@@ -248,52 +252,87 @@ function expandCustomUiTags(text: string): string {
             const label = itemAttrs["label"] || innerText || "";
             const desc = itemAttrs["desc"] || itemAttrs["description"] || (itemAttrs["label"] ? innerText : "");
             const value = itemAttrs["value"] || label;
-            items.push(
-              `<div class="ui-option-item" role="${role}" aria-checked="false" tabindex="0" data-value="${escapeHtml(value)}" data-label="${escapeHtml(label)}">` +
-              `<input type="${inputType}" class="ui-option-checkbox" data-value="${escapeHtml(value)}" data-label="${escapeHtml(label)}" />` +
-              `<span class="ui-option-box"><span class="ui-option-check">${checkIcon}</span></span>` +
-              `<div class="ui-option-content">` +
-              `<strong class="ui-option-label">${escapeHtml(label)}</strong>` +
-              (desc ? `<small class="ui-option-desc">${escapeHtml(desc)}</small>` : "") +
-              `</div>` +
-              `</div>`
-            );
+            const isItemDone = itemAttrs["done"] === "true" || itemAttrs["done"] === "" || itemAttrs["status"] === "done" || itemAttrs["status"] === "completed";
+            const isItemChecked = isItemDone || itemAttrs["checked"] === "true" || itemAttrs["checked"] === "" || itemAttrs["selected"] === "true";
+            parsedItems.push({ label, desc, value, isChecked: isItemChecked, isDone: isItemDone });
           }
 
           // Fallback: parse markdown bullets if no XML tags found inside <options>
-          if (items.length === 0) {
-            const bulletRegex = /^(?:[-*]|\d+\.)\s+(?:\[[ xX]\]\s+)?(?:\*\*([^*]+)\*\*|__([^_]+)__|([^:\n]+))(?::\s*([^\n]+)|$)/gm;
+          if (parsedItems.length === 0) {
+            const bulletRegex = /^(?:[-*]|\d+\.)\s+(?:\[([ xX])\]\s+)?(?:\*\*([^*]+)\*\*|__([^_]+)__|([^:\n]+))(?::\s*([^\n]+)|$)/gm;
             let bmatch;
             while ((bmatch = bulletRegex.exec(blockContent)) !== null) {
-              const label = (bmatch[1] || bmatch[2] || bmatch[3] || "").trim();
-              const desc = (bmatch[4] || "").trim();
+              const checkedChar = bmatch[1];
+              const label = (bmatch[2] || bmatch[3] || bmatch[4] || "").trim();
+              const desc = (bmatch[5] || "").trim();
               if (label) {
-                items.push(
-                  `<div class="ui-option-item" role="${role}" aria-checked="false" tabindex="0" data-value="${escapeHtml(label)}" data-label="${escapeHtml(label)}">` +
-                  `<input type="${inputType}" class="ui-option-checkbox" data-value="${escapeHtml(label)}" data-label="${escapeHtml(label)}" />` +
-                  `<span class="ui-option-box"><span class="ui-option-check">${checkIcon}</span></span>` +
-                  `<div class="ui-option-content">` +
-                  `<strong class="ui-option-label">${escapeHtml(label)}</strong>` +
-                  (desc ? `<small class="ui-option-desc">${escapeHtml(desc)}</small>` : "") +
-                  `</div>` +
-                  `</div>`
-                );
+                const isBulletChecked = checkedChar !== undefined && checkedChar.toLowerCase() === "x";
+                parsedItems.push({
+                  label,
+                  desc,
+                  value: label,
+                  isChecked: isBulletChecked,
+                  isDone: isBulletChecked,
+                });
               }
             }
           }
 
-          if (items.length === 0) {
-            return `<div class="ui-card ui-options-card" data-mode="${mode}">\n\n${headerHtml}\n\n${subtitleHtml}\n\n${blockContent.trim()}\n\n</div>`;
+          const allChecked = parsedItems.length > 0 && parsedItems.every((item) => item.isChecked);
+          let isInteractive = true;
+          if (explicitlyNonInteractive) {
+            isInteractive = false;
+          } else if (!explicitlyInteractive && isChecklist && allChecked) {
+            isInteractive = false;
           }
 
+          const title = attrs["title"];
+          const badge = attrs["badge"];
+          const color = attrs["color"];
+          const subtitle = attrs["subtitle"] || attrs["sub"];
+          const colorClass = color ? ` ui-badge-${color}` : (!isInteractive && isChecklist ? " ui-badge-green" : " ui-badge-blue");
+          const defaultBadge = isChecklist ? (isInteractive ? "Checklist" : "Concluído") : "Opções";
+          const defaultTitle = isChecklist ? (isInteractive ? "Selecione as opções desejadas" : "Tarefas concluídas") : (isSingle ? "Escolha uma opção" : "Selecione as opções");
+          const badgeHtml = badge ? `<span class="ui-badge${colorClass}">${badge}</span>` : `<span class="ui-badge${colorClass}">${defaultBadge}</span>`;
+          const headerHtml = `<div class="ui-card-header"><h3 class="ui-card-title">${title || defaultTitle}</h3>${badgeHtml}</div>`;
+          const subtitleHtml = subtitle ? `<p class="ui-card-subtitle">${subtitle}</p>` : "";
+
+          if (parsedItems.length === 0) {
+            return `<div class="ui-card ui-options-card" data-mode="${mode}" data-interactive="${isInteractive ? "true" : "false"}">\n\n${headerHtml}\n\n${subtitleHtml}\n\n${blockContent.trim()}\n\n</div>`;
+          }
+
+          const itemsHtml = parsedItems.map((item) => {
+            const isDone = item.isDone || (isChecklist && item.isChecked);
+            const isChecked = item.isChecked;
+            const itemClasses = ["ui-option-item"];
+            if (isChecked) itemClasses.push("selected");
+            if (isDone) itemClasses.push("is-done");
+            const ariaChecked = isChecked ? "true" : "false";
+            const checkedInputAttr = isChecked ? " checked" : "";
+            const tabindexAttr = isInteractive ? ' tabindex="0"' : "";
+
+            return (
+              `<div class="${itemClasses.join(" ")}" role="${role}" aria-checked="${ariaChecked}"${tabindexAttr} data-value="${escapeHtml(item.value)}" data-label="${escapeHtml(item.label)}">` +
+              `<input type="${inputType}" class="ui-option-checkbox" data-value="${escapeHtml(item.value)}" data-label="${escapeHtml(item.label)}"${checkedInputAttr} />` +
+              `<span class="ui-option-box"><span class="ui-option-check">${checkIcon}</span></span>` +
+              `<div class="ui-option-content">` +
+              `<strong class="ui-option-label">${escapeHtml(item.label)}</strong>` +
+              (item.desc ? `<small class="ui-option-desc">${escapeHtml(item.desc)}</small>` : "") +
+              `</div>` +
+              `</div>`
+            );
+          }).join("");
+
+          const actionsHtml = isInteractive
+            ? `<div class="ui-options-actions"><button type="button" class="ui-options-btn ui-options-submit-btn primary" title="Enviar seleção diretamente para o assistente">Enviar seleção</button></div>`
+            : "";
+
           return (
-            `<div class="ui-card ui-options-card" data-mode="${mode}">` +
+            `<div class="ui-card ui-options-card" data-mode="${mode}" data-interactive="${isInteractive ? "true" : "false"}">` +
             headerHtml +
             subtitleHtml +
-            `<div class="ui-options-list">${items.join("")}</div>` +
-            `<div class="ui-options-actions">` +
-            `<button type="button" class="ui-options-btn ui-options-submit-btn primary" title="Enviar seleção diretamente para o assistente">Enviar seleção</button>` +
-            `</div>` +
+            `<div class="ui-options-list">${itemsHtml}</div>` +
+            actionsHtml +
             `</div>`
           );
         });

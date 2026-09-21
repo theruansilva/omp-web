@@ -265,4 +265,68 @@ Importante: monitorar CTR na primeira semana.
     expect(html).toContain("OAuth2");
     expect(html).toContain("Login com provedor externo");
   });
+
+  it("renders non-interactive checklist with done items and no submit button", () => {
+    const markdown = `
+<checklist title="Tarefas Concluídas" badge="Concluído" color="green" interactive="false">
+  <item label="Configurar banco" desc="Postgres rodando" checked="true" />
+  <item label="Criar migrações" desc="Tabelas criadas" done="true" />
+</checklist>
+`;
+    const html = toSafeMarkdownHtml(markdown);
+    expect(html).toContain('data-interactive="false"');
+    expect(html).toContain("ui-options-card");
+    expect(html).toContain("Tarefas Concluídas");
+    expect(html).toContain("Concluído");
+    expect(html).toContain("ui-badge-green");
+    expect(html).toContain("is-done");
+    expect(html).toContain("selected");
+    expect(html).toContain('aria-checked="true"');
+    expect(html).toContain(" checked ");
+    expect(html).not.toContain("ui-options-submit-btn");
+  });
+
+  it("auto-detects non-interactive mode when all checklist items are checked", () => {
+    const markdown = `
+<checklist title="Status do Deploy">
+  <item label="Passo 1" checked="true" />
+  <item label="Passo 2" checked="true" />
+</checklist>
+`;
+    const html = toSafeMarkdownHtml(markdown);
+    expect(html).toContain('data-interactive="false"');
+    expect(html).toContain("is-done");
+    expect(html).toContain("selected");
+    expect(html).not.toContain("ui-options-submit-btn");
+  });
+
+  it("renders interactive checklist with submit button when some items are pending", () => {
+    const markdown = `
+<checklist title="Sprint Backlog">
+  <item label="Tarefa Concluída" checked="true" />
+  <item label="Tarefa Pendente" />
+</checklist>
+`;
+    const html = toSafeMarkdownHtml(markdown);
+    expect(html).toContain('data-interactive="true"');
+    expect(html).toContain("ui-options-submit-btn");
+    expect(html).toContain("Tarefa Concluída");
+    expect(html).toContain("Tarefa Pendente");
+  });
+
+  it("supports markdown bullet checkboxes with [x] in checklist", () => {
+    const markdown = `
+<checklist title="Progresso">
+- [x] **Item 1**: Feito
+- [x] **Item 2**: Finalizado
+</checklist>
+`;
+    const html = toSafeMarkdownHtml(markdown);
+    expect(html).toContain('data-interactive="false"');
+    expect(html).toContain("is-done");
+    expect(html).toContain("selected");
+    expect(html).toContain("Item 1");
+    expect(html).toContain("Feito");
+    expect(html).not.toContain("ui-options-submit-btn");
+  });
 });

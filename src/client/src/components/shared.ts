@@ -446,7 +446,9 @@ export const formattedTextStyles = css`
   .mermaid-diagram-wrapper .code-copy-button { position: static; }
   .code-copy-button { position: absolute; top: 6px; right: 6px; z-index: 1; display: inline-grid; place-items: center; width: 24px; height: 24px; border: 1px solid var(--pi-border); border-radius: 6px; background: var(--pi-surface); color: var(--pi-muted); padding: 0; font: 14px system-ui, sans-serif; line-height: 1; cursor: pointer; }
   .code-copy-button:hover, .code-copy-button:focus { color: var(--pi-text); border-color: var(--pi-accent); }
-  blockquote { border-left: 3px solid var(--pi-border); padding-left: 10px; color: var(--pi-muted); }
+  blockquote { border-left: 1px solid var(--pi-border); padding-left: 12px; margin: 0 0 10px; color: var(--pi-muted); }
+  blockquote strong, blockquote b { color: var(--pi-text); }
+  hr { border: 0; border-top: 1px solid var(--pi-border-muted); margin: 12px 0; }
   a { color: var(--pi-accent); }
   h1, h2, h3, h4 { margin: 14px 0 8px; line-height: 1.2; }
   h1:first-child, h2:first-child, h3:first-child, h4:first-child { margin-top: 0; }
@@ -610,15 +612,15 @@ export const formattedTextStyles = css`
 
   /* Callouts */
   .ui-callout {
-    border-left: 3px solid var(--pi-accent);
+    border: 1px solid var(--pi-border);
     background: var(--pi-surface);
-    border-radius: 4px 8px 8px 4px;
+    border-radius: 8px;
     padding: 10px 14px;
     margin: 10px 0;
   }
-  .ui-callout-warning { border-left-color: #f0883e; }
-  .ui-callout-success { border-left-color: #3fb950; }
-  .ui-callout-danger { border-left-color: #f85149; }
+  .ui-callout-warning { border-color: var(--pi-warning-border, #6e5200); background: var(--pi-warning-surface, #1f1a10); }
+  .ui-callout-success { border-color: var(--pi-success-border, #238636); background: var(--pi-success-surface, #0f2a16); }
+  .ui-callout-danger { border-color: #ff7b7244; background: #2f1519; }
 
   /* Options & Checklist Card */
   .ui-options-card {
@@ -696,8 +698,37 @@ export const formattedTextStyles = css`
     display: none;
     line-height: 1;
   }
-  .ui-option-item.selected .ui-option-check {
+  .ui-option-item.selected .ui-option-check,
+  .ui-option-item.is-done .ui-option-check {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .ui-option-check svg {
     display: block;
+  }
+  .ui-option-item.is-done .ui-option-box,
+  .ui-option-item.selected.is-done .ui-option-box {
+    background: var(--pi-success, #2ea043) !important;
+    border-color: var(--pi-success, #2ea043) !important;
+    box-shadow: 0 0 6px rgba(46, 160, 67, 0.4) !important;
+  }
+  .ui-option-item.is-done.selected {
+    border-color: rgba(46, 160, 67, 0.4) !important;
+    background: rgba(46, 160, 67, 0.08) !important;
+    box-shadow: 0 0 0 1px rgba(46, 160, 67, 0.4), 0 2px 8px rgba(46, 160, 67, 0.15);
+  }
+  .ui-options-card[data-interactive="false"] .ui-option-item {
+    cursor: default;
+  }
+  .ui-options-card[data-interactive="false"] .ui-option-item:hover,
+  .ui-options-card[data-interactive="false"] .ui-option-item:focus-visible {
+    border-color: var(--pi-border);
+    background: var(--pi-bg);
+  }
+  .ui-options-card[data-interactive="false"] .ui-option-item.selected.is-done:hover {
+    border-color: rgba(46, 160, 67, 0.4) !important;
+    background: rgba(46, 160, 67, 0.08) !important;
   }
   .ui-options-card[data-mode="single"] .ui-option-box,
   .ui-option-item[role="radio"] .ui-option-box {
