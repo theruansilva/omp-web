@@ -187,9 +187,6 @@ export class PromptEditor extends LitElement {
               ${this.renderCompactStatus()}
             </div>
             <div class="toolbar-right">
-              ${this.canSteer && !this.isCompacting && this.hasContent ? html`
-                <button class="icon-button steer-button" ?disabled=${busy} title="Steer the current response before the next model call" aria-label="Steer current response" @click=${() => { this.send("steer"); }}>${renderSteerIcon()}</button>
-              ` : null}
               ${this.renderActionButton()}
             </div>
           </div>

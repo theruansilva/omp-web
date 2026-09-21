@@ -2119,7 +2119,7 @@ function historyMessages(session: PiAgentSession): unknown[] {
  for (const entry of session.sessionManager.getBranch()) {
   if (!isRecord(entry)) continue;
   if (entry["type"] === "message") messages.push(entry["message"]);
-  else if (entry["type"] === "custom_message" && entry["display"] === true) messages.push({ role: "custom", content: entry["content"], customType: entry["customType"], details: entry["details"] });
+  else if (entry["type"] === "custom_message" && entry["display"] !== false) messages.push({ role: "custom", content: entry["content"], customType: entry["customType"], details: entry["details"], ...(typeof entry["timestamp"] === "string" || typeof entry["timestamp"] === "number" ? { timestamp: entry["timestamp"] } : {}) });
   else if (entry["type"] === "compaction") messages.push({ role: "system", source: "compaction", content: `Compacted history:\n\n${stringValue(entry["summary"])}` });
   else if (entry["type"] === "branch_summary") messages.push({ role: "system", source: "branch_summary", content: `Branch summary:\n\n${stringValue(entry["summary"])}` });
  }

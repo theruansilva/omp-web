@@ -387,12 +387,18 @@ export class ChatView extends LitElement {
     return html`
       ${this.renderScrollMarker(this.messageScrollMarkerId(index))}
       <article class=${toolOnly ? "msg tool-execution-shell" : `msg ${message.role}`} data-index=${index} data-scroll-anchor-id=${this.messageAnchorKey(index)}>
-        ${!toolOnly && message.role !== "user" ? this.renderMessageHeader(message, String(index)) : null}
+        ${!toolOnly && !this.isExecutionMessage(message) && message.role !== "user" ? this.renderMessageHeader(message, String(index)) : null}
         <div class="msg-content">
           ${message.parts.map((part) => this.renderPart(part, message))}
         </div>
       </article>
     `;
+  }
+
+  private isExecutionMessage(message: ChatLine): boolean {
+    return message.parts.length > 0 && message.parts.every((part) =>
+      part.type === "thinking" || part.type === "toolCall" || part.type === "toolExecution" || part.type === "toolResult"
+    );
   }
 
   private isToolExecutionOnlyMessage(message: ChatLine): boolean {
@@ -424,7 +430,6 @@ export class ChatView extends LitElement {
       const toolOnly = this.isToolExecutionOnlyMessage(message);
       return html`
               <section class=${toolOnly ? "group-msg tool-execution-shell" : `group-msg ${message.role}`} data-index=${startIndex + offset} data-scroll-anchor-id=${this.eventAnchorKey(startIndex + offset)}>
-                ${toolOnly ? null : this.renderMessageHeader(message, `${String(startIndex)}:${String(offset)}`)}
                 ${message.parts.map((part) => this.renderPart(part, message))}
               </section>
             `;
@@ -522,16 +527,13 @@ export class ChatView extends LitElement {
     const cached = this.messageMetaCache.get(message);
     if (cached !== undefined) return cached;
     const timestamp = message.meta?.timestamp;
-    const model = this.modelLabel(message);
-    if (timestamp === undefined && model === undefined) {
+    if (timestamp === undefined) {
       const empty = { short: "no info", full: "No Pi message metadata available" };
       this.messageMetaCache.set(message, empty);
       return empty;
     }
-    const time = timestamp === undefined ? undefined : this.formatTimestamp(timestamp);
-    const parts = [time?.short, model].filter((part): part is string => part !== undefined && part !== "");
-    const fullParts = [time?.full, model === undefined ? undefined : `Model: ${model}`].filter((part): part is string => part !== undefined && part !== "");
-    const label = { short: parts.join(" · "), full: fullParts.join(" · ") };
+    const time = this.formatTimestamp(timestamp);
+    const label = { short: time?.short ?? "", full: time?.full ?? "" };
     this.messageMetaCache.set(message, label);
     return label;
   }
@@ -555,7 +557,27 @@ export class ChatView extends LitElement {
     if (part.type === "text") return html`<formatted-text class="part" .text=${part.text}></formatted-text>`;
     if (part.type === "thinking") {
       if (!this.chatPreferences.showThinking) return null;
-      return html`<details class="part thinking-block"><summary><span class="thinking-label">thinking</span></summary><formatted-text .text=${part.text}></formatted-text></details>`;
+      const firstLine = part.text.trim().split("\n")[0]?.replace(/^\*+|\*+$/g, "").trim() || "";
+      const summary = firstLine.length > 55 ? firstLine.slice(0, 52) + "…" : firstLine;
+      return html`
+        <details class="part thinking-block">
+          <summary class="thinking-header">
+            <div class="thinking-title">
+              <span class="thinking-icon" aria-hidden="true">
+                <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M8 2a4.5 4.5 0 0 0-3 7.8c.7.7 1 1.4 1 2.2h4c0-.8.3-1.5 1-2.2A4.5 4.5 0 0 0 8 2z" />
+                  <path d="M6 13h4M6.5 14.5h3" />
+                </svg>
+              </span>
+              <strong>thinking</strong>
+              ${summary ? html`<span class="thinking-summary">${summary}</span>` : null}
+            </div>
+          </summary>
+          <div class="thinking-content">
+            <formatted-text .text=${part.text}></formatted-text>
+          </div>
+        </details>
+      `;
     }
     if (part.type === "skillInvocation") return html`
       <details class="part skill-invocation">

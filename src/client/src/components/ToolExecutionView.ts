@@ -10,30 +10,49 @@ interface ToolTarget {
   text: string;
 }
 
-function renderStatusIcon(status: ToolExecutionPart["status"]) {
+function renderToolIcon(toolName: string, status: ToolExecutionPart["status"]) {
   if (status === "running" || status === "pending") {
     return html`
-      <span class="tool-spinner" aria-hidden="true">
-        <svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+      <span class="tool-icon tool-spinner" aria-hidden="true">
+        <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
           <circle cx="8" cy="8" r="6" stroke-dasharray="28" stroke-dashoffset="10" />
         </svg>
       </span>
     `;
   }
-  if (status === "success") {
-    return html`<span class="tool-status-done" aria-hidden="true">✓</span>`;
-  }
-  if (status === "error") {
-    return html`<span class="tool-status-fail" aria-hidden="true">✕</span>`;
-  }
-  return html`<span class="tool-status-done" aria-hidden="true">✓</span>`;
-}
 
-function statusLabel(status: ToolExecutionPart["status"]): string {
-  if (status === "success") return "done";
-  if (status === "error") return "failed";
-  if (status === "running") return "running";
-  return "pending";
+  const name = toolName.toLowerCase();
+  let iconSvg;
+  let color = "var(--pi-accent, #58a6ff)";
+
+  if (name === "eval") {
+    color = "#f59e0b";
+    iconSvg = html`<svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 3.5L8 8l-4 4.5" /><path d="M8.5 12.5h4" /></svg>`;
+  } else if (name === "bash" || name === "sh" || name === "terminal") {
+    color = "#10b981";
+    iconSvg = html`<svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2.5" width="12" height="11" rx="2" /><path d="M5 6l2.5 2L5 10M9 10.5h2" /></svg>`;
+  } else if (name === "read" || name === "cat") {
+    color = "#38bdf8";
+    iconSvg = html`<svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2.5h6.5l3.5 3.5V13.5a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1v-10a1 1 0 0 1 1-1z" /><path d="M9.5 2.5V6H13" /></svg>`;
+  } else if (name === "edit" || name === "patch") {
+    color = "#818cf8";
+    iconSvg = html`<svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 2.5a1.4 1.4 0 0 1 2 2L5.5 12 2 13l1-3.5L10.5 2.5z" /></svg>`;
+  } else if (name === "write") {
+    color = "#14b8a6";
+    iconSvg = html`<svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2.5h7l3 3V13.5a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1v-10a1 1 0 0 1 1-1z" /><path d="M8 8v4M6 10h4" /></svg>`;
+  } else if (name === "grep" || name === "glob" || name.includes("search")) {
+    color = "#ec4899";
+    iconSvg = html`<svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="7" cy="7" r="4.5" /><path d="M10.5 10.5L14 14" /></svg>`;
+  } else if (name === "task" || name === "todo") {
+    color = "#f97316";
+    iconSvg = html`<svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="2.5" width="11" height="11" rx="2" /><path d="M5.5 8l2 2 3.5-4" /></svg>`;
+  } else {
+    color = "var(--pi-accent, #58a6ff)";
+    iconSvg = html`<svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 5.5l4 3.5-4 3.5M9.5 12.5h3" /></svg>`;
+  }
+
+  const isErr = status === "error";
+  return html`<span class=${isErr ? "tool-icon error" : "tool-icon"} style=${isErr ? "" : `color: ${color};`} aria-hidden="true">${iconSvg}</span>`;
 }
 
 @customElement("tool-execution-view")
@@ -57,17 +76,16 @@ export class ToolExecutionView extends LitElement {
     const target = toolTarget(execution, path);
 
     return html`
-      <details class=${`tool-card ${execution.status}`} ?open=${execution.status === "error"}>
+      <details class=${`tool-card ${execution.status}`} @toggle=${this.onToggle}>
         <summary class="tool-header">
           <div class="tool-title">
-            ${renderStatusIcon(execution.status)}
+            ${renderToolIcon(execution.toolName, execution.status)}
             <strong>${execution.toolName}</strong>
             ${this.renderHeaderTarget(target)}
           </div>
           <div class="tool-meta">
             ${editCountLabel(execution) === undefined ? null : html`<span>${editCountLabel(execution)}</span>`}
             ${diffStats === undefined ? null : html`<span class="diff-stats"><b class="added">+${diffStats.added}</b><span>/</span><b class="removed">-${diffStats.removed}</b></span>`}
-            <span class="status-label">${statusLabel(execution.status)}</span>
           </div>
         </summary>
 
@@ -78,6 +96,11 @@ export class ToolExecutionView extends LitElement {
         </div>
       </details>
     `;
+  }
+
+  private onToggle(e: Event) {
+    const details = e.currentTarget as HTMLDetailsElement;
+    this.toggleAttribute("open", details.open);
   }
 
   private renderHeaderTarget(target: ToolTarget | undefined) {
@@ -168,30 +191,35 @@ export class ToolExecutionView extends LitElement {
   }
 
   static override styles = css`
-    :host { display: block; width: 100%; max-width: 100%; min-width: 0; color: var(--pi-text); }
-    details.tool-card { display: block; width: 100%; max-width: 100%; min-width: 0; box-sizing: border-box; overflow: hidden; border: 1px solid var(--pi-border-muted); border-radius: 10px; background: var(--pi-surface); color: var(--pi-text); margin: 4px 0 10px; }
-    details.tool-card.running, details.tool-card.pending { border-color: var(--pi-warning-border); background: var(--pi-warning-surface); }
-    details.tool-card.success { border-color: var(--pi-border-muted); background: var(--pi-surface); }
-    details.tool-card.error { border-color: var(--pi-border-muted); background: var(--pi-surface); }
-    summary.tool-header { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-width: 0; padding: 7px 12px; cursor: pointer; user-select: none; list-style: none; }
+    :host { display: block; width: 100%; max-width: 100%; min-width: 0; color: var(--pi-text); font-family: inherit; }
+    details.tool-card { display: block; width: 100%; max-width: 100%; min-width: 0; box-sizing: border-box; overflow: hidden; border: none; border-radius: 7px; background: transparent; color: var(--pi-text); margin: 0; transition: background 200ms cubic-bezier(0.23, 1, 0.32, 1), transform 200ms cubic-bezier(0.23, 1, 0.32, 1); }
+    details.tool-card:hover:not([open]) { background: color-mix(in srgb, var(--pi-text) 4%, transparent); transform: translateX(2px); }
+    details.tool-card.running, details.tool-card.pending { background: transparent; }
+    details.tool-card.error { background: transparent; }
+    details.tool-card[open] { background: var(--pi-surface); border: 1px solid var(--pi-border-muted); border-radius: 8px; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05); margin: 6px 0; transform: none; }
+    details.tool-card[open] .tool-content { animation: bmContentSlide 260ms cubic-bezier(0.23, 1, 0.32, 1); }
+    @keyframes bmContentSlide { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
+    summary.tool-header { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-width: 0; height: 32px; padding: 0 8px; cursor: pointer; user-select: none; list-style: none; outline: none; -webkit-tap-highlight-color: transparent; border-radius: 6px; transition: color 200ms ease; }
     summary.tool-header::-webkit-details-marker { display: none; }
-    summary.tool-header:hover { background: color-mix(in srgb, var(--pi-text) 4%, transparent); }
-    details.tool-card[open] > summary.tool-header { border-bottom: 1px solid var(--pi-border-muted); }
+    details.tool-card[open] > summary.tool-header { height: 36px; padding: 0 12px; border-bottom: 1px solid var(--pi-border-muted); border-radius: 7px 7px 0 0; }
     .tool-title { flex: 1 1 auto; display: inline-flex; align-items: center; gap: 8px; min-width: 0; }
-    .tool-spinner { display: inline-flex; align-items: center; justify-content: center; width: 13px; height: 13px; color: var(--pi-warning, #f59e0b); animation: toolSpin 1s linear infinite; flex-shrink: 0; }
-    .tool-spinner svg { display: block; width: 100%; height: 100%; }
+    .tool-icon { display: inline-flex; align-items: center; justify-content: center; width: 16px; height: 16px; flex-shrink: 0; opacity: 1; transition: transform 150ms ease; }
+    .tool-icon svg { display: block; width: 14px; height: 14px; }
+    summary.tool-header:hover .tool-icon { transform: scale(1.08); }
+    .tool-icon.error { color: var(--pi-danger, #ef4444) !important; }
+    .tool-spinner { display: inline-flex; align-items: center; justify-content: center; width: 14px; height: 14px; color: var(--pi-warning, #f59e0b); animation: toolSpin 1s linear infinite; flex-shrink: 0; }
+    .tool-spinner svg { display: block; width: 14px; height: 14px; }
     @keyframes toolSpin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-    .tool-status-done { display: inline-flex; align-items: center; justify-content: center; width: 13px; height: 13px; color: var(--pi-success, #10b981); font-weight: bold; font-size: 13px; flex-shrink: 0; }
-    .tool-status-fail { display: inline-flex; align-items: center; justify-content: center; width: 13px; height: 13px; color: var(--pi-danger, #ef4444); font-weight: bold; font-size: 13px; flex-shrink: 0; }
-    strong { flex: 0 0 auto; color: var(--pi-text); font-size: 13px; }
-    .path, .summary { display: block; flex: 1 1 auto; min-width: 0; max-width: 100%; overflow-x: auto; overflow-y: hidden; overscroll-behavior-x: contain; scrollbar-width: thin; white-space: pre; color: var(--pi-accent); font: 12.5px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; direction: ltr; text-align: left; unicode-bidi: isolate; }
-    .summary { color: var(--pi-muted); font-family: inherit; font-size: 13px; }
-    .tool-meta { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 8px; color: var(--pi-muted); font-size: 12px; }
-    .diff-stats { display: inline-flex; gap: 3px; }
+    strong { flex: 0 0 auto; color: color-mix(in srgb, var(--pi-text) 85%, transparent); font-size: 13px; font-weight: 500; letter-spacing: -0.01em; transition: color 150ms ease; }
+    summary.tool-header:hover strong, details.tool-card[open] summary.tool-header strong { color: var(--pi-text); }
+    .path, .summary { display: block; flex: 1 1 auto; min-width: 0; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; pointer-events: none; color: var(--pi-muted); font: 12px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; direction: ltr; text-align: left; unicode-bidi: isolate; opacity: 0.85; transition: opacity 150ms ease, color 150ms ease; }
+    summary.tool-header:hover .path, details.tool-card[open] .path { color: var(--pi-accent); opacity: 1; }
+    .summary { color: var(--pi-muted); font-family: inherit; font-size: 12.5px; }
+    .tool-meta { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 6px; color: var(--pi-muted); font-size: 11.5px; }
+    .diff-stats { display: inline-flex; gap: 2px; font-size: 11px; font-weight: 500; }
     .added, .diff .added { color: var(--pi-success); }
     .removed, .diff .removed { color: var(--pi-danger); }
-    .status-label { text-transform: uppercase; letter-spacing: .04em; color: var(--pi-muted); font-size: 11px; }
-    .tool-content { display: grid; gap: 8px; padding: 10px 12px 12px; background: color-mix(in srgb, var(--pi-bg) 40%, transparent); }
+    .tool-content { display: grid; gap: 8px; padding: 12px; background: color-mix(in srgb, var(--pi-bg) 40%, transparent); }
     .notice { margin: 0; color: var(--pi-warning); }
     .muted { margin: 0; color: var(--pi-muted); font-size: 12px; }
     .error-text { margin: 0; max-height: 200px; overflow-y: auto; border: 1px solid var(--pi-danger); border-radius: 8px; background: var(--pi-bg); color: var(--pi-danger); padding: 8px; white-space: pre-wrap; overflow-wrap: anywhere; font: 12px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
