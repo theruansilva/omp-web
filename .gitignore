@@ -14,4 +14,3 @@ dist/
 
 # Local runtime attachment uploads (created by the chat composer "save to folder" mode).
 .omp-web/
-bun.lock

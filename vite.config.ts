@@ -93,6 +93,11 @@ function devDocsPlugin(): Plugin {
 export default defineConfig({
   plugins: [devDocsPlugin()],
   root: "src/client",
+  resolve: {
+    alias: {
+      "@oh-my-pi/pi-natives": resolve("src/client/src/formatting/emptyStub.ts"),
+    },
+  },
   build: {
     outDir: "../../dist/client",
     emptyOutDir: true,
