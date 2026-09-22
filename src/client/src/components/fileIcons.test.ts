@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "bun:test";
 import { getFileCategory, renderDownloadIcon, renderFileIcon, renderFolderIcon, renderGridViewIcon, renderListViewIcon, renderTreeChevron, renderUpFolderIcon } from "./fileIcons";
 
 describe("fileIcons", () => {
