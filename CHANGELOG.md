@@ -2,6 +2,7 @@
 
 ## v2.4.0
 
+- 🐛 Fix attachment delivery failing with TypeError when saving files to workspace.
 - ✨ Add file system category icons and default grid view mode to workspace files panel.
 - ✨ Support direct shell command execution (`target: "command"`) in scheduled tasks without LLM overhead.
 - ⚡ Add REST API endpoints (`/schedule-prompts`) for scheduled tasks and pre-arm workspace schedulers on `sessiond` startup.
