@@ -135,12 +135,12 @@ export class CopilotImagineView extends LitElement {
             </p>
           </div>
 
-          <!-- 2x4 Gallery Grid -->
+          <!-- 2x4 Gallery Grid with exact 24px rounded compact cards -->
           <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             ${this.items.map(
       (item) => html`
                 <div
-                  class="copilot-card group relative flex flex-col overflow-hidden rounded-[22px] shadow-xs hover:shadow-lg transition-all duration-300 hover:-translate-y-1 cursor-pointer"
+                  class="copilot-card-compact group relative flex flex-col cursor-pointer"
                   @click=${() => this.selectCard(item.prompt)}
                 >
                   <!-- Card Image / Artwork -->

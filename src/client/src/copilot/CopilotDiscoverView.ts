@@ -77,7 +77,7 @@ export class CopilotDiscoverView extends LitElement {
               ${this.trendingCards.map(
       (card) => html`
                   <div
-                    class="copilot-card group relative flex flex-col overflow-hidden rounded-[24px] cursor-pointer transition-all duration-200 hover:-translate-y-0.5 shadow-sm"
+                    class="copilot-card-hero group relative flex flex-col cursor-pointer transition-all duration-200 hover:-translate-y-0.5"
                     @click=${() => this.handleCardClick(card.prompt)}
                   >
                     <!-- Thumbnail with overlay -->
@@ -92,7 +92,7 @@ export class CopilotDiscoverView extends LitElement {
                       <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
                     </div>
                     <!-- Body -->
-                    <div class="p-4 flex flex-col justify-between flex-1 gap-2">
+                    <div class="p-5 flex flex-col justify-between flex-1 gap-2">
                       <h3 class="copilot-card-title text-base font-semibold leading-snug group-hover:text-blue-500 transition-colors font-ginto">
                         ${card.title}
                       </h3>
@@ -115,7 +115,7 @@ export class CopilotDiscoverView extends LitElement {
               ${this.creativeCards.map(
       (card) => html`
                   <div
-                    class="copilot-card group relative flex flex-col overflow-hidden rounded-[24px] cursor-pointer transition-all duration-200 hover:-translate-y-0.5 shadow-sm"
+                    class="copilot-card-grid group relative flex flex-col cursor-pointer transition-all duration-200 hover:-translate-y-0.5"
                     @click=${() => this.handleCardClick(card.prompt)}
                   >
                     <div class="relative h-44 w-full overflow-hidden bg-black/20">
@@ -128,7 +128,7 @@ export class CopilotDiscoverView extends LitElement {
                       />
                       <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
                     </div>
-                    <div class="p-4 flex flex-col justify-between flex-1 gap-2">
+                    <div class="p-5 flex flex-col justify-between flex-1 gap-2">
                       <h3 class="copilot-card-title text-base font-semibold leading-snug group-hover:text-blue-500 transition-colors font-ginto">
                         ${card.title}
                       </h3>

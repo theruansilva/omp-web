@@ -62,12 +62,9 @@ export class CopilotChatView extends LitElement {
       (msg) => html`
               ${msg.role === "user"
           ? html`
-                    <!-- User Message Bubble (Right aligned, signature peach/tan squircle) -->
+                    <!-- User Message Bubble (Right aligned, signature peach/tan rounded bubble) -->
                     <div class="flex justify-end">
-                      <div
-                        class="max-w-[85%] md:max-w-[75%] px-4 py-2.5 rounded-[20px] bg-[#F5E7DA] dark:bg-[#2C2723] text-[#241F1B] dark:text-[#F3EDE6] text-[15px] leading-relaxed shadow-sm font-sans break-words"
-                        style="clip-path: var(--clip-path-squircle-20, none);"
-                      >
+                      <div class="copilot-user-bubble max-w-[85%] md:max-w-[75%] px-4 py-2.5 text-[15px] leading-relaxed font-sans break-words">
                         ${msg.text}
                       </div>
                     </div>

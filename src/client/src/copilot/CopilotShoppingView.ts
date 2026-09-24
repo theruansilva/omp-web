@@ -79,7 +79,7 @@ export class CopilotShoppingView extends LitElement {
             </p>
           </div>
 
-          <!-- Product Recommendation Cards -->
+          <!-- Product Recommendation Cards with 24px rounded corners -->
           <div class="flex flex-col gap-4">
             <h2 class="text-xs font-bold uppercase tracking-wider text-foreground-500 font-ginto">
               Trending Product Guides
@@ -88,7 +88,7 @@ export class CopilotShoppingView extends LitElement {
               ${this.products.map(
       (p) => html`
                   <div
-                    class="copilot-card group relative flex flex-col overflow-hidden rounded-[22px] cursor-pointer shadow-xs hover:shadow-md transition-all duration-200 hover:-translate-y-0.5"
+                    class="copilot-card-compact group relative flex flex-col cursor-pointer"
                     @click=${() => this.handleProductClick(p.prompt)}
                   >
                     <!-- Product Image -->
@@ -103,7 +103,7 @@ export class CopilotShoppingView extends LitElement {
                     </div>
 
                     <!-- Info -->
-                    <div class="p-3.5 flex flex-col justify-between flex-1 gap-2">
+                    <div class="p-4 flex flex-col justify-between flex-1 gap-2">
                       <div class="flex flex-col gap-1">
                         <span class="text-[10px] font-semibold text-foreground-500 uppercase tracking-wide">
                           ${p.category}
