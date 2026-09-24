@@ -207,7 +207,7 @@ export class CopilotApp extends LitElement {
 
   override render() {
     return html`
-      <!-- Microsoft Copilot Shell Architecture with Contents-based Sidebar -->
+      <!-- Microsoft Copilot Shell Architecture -->
       <div
         class="flex h-screen w-screen overflow-hidden bg-sidebar-light dark:bg-sidebar-dark font-sans select-none relative"
         data-theme="${this.theme}"
@@ -222,9 +222,12 @@ export class CopilotApp extends LitElement {
             `
         : nothing}
 
-        <!-- 1. Sidebar Navigation (Uses display: contents so collapsed state occupies 0px) -->
+        <!-- 1. Sidebar Navigation (Original smooth transition directly on sidebar host) -->
         <copilot-sidebar
-          class="contents"
+          class="h-full shrink-0 will-change-auto transition-all duration-300 ease-[cubic-bezier(0.43,0.195,0.02,1)] ${this
+        .isSidebarOpen
+        ? "w-[260px] min-w-[260px]"
+        : "w-0 min-w-0 p-0 m-0 overflow-hidden pointer-events-none"}"
           .activeTab=${this.activeTab}
           .isOpen=${this.isSidebarOpen}
           @nav-select=${(e: CustomEvent<{ tab: string }>) => this.handleNavSelect(e.detail.tab)}
