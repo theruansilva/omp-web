@@ -24,6 +24,17 @@ Before stopping or restarting `omp-web` (`omp-web restart`, `omp-web stop`, or `
 - Core features should add keys to these config files, not create one project file per feature.
 - Plugins may own separate project config files, such as `.omp-web/tasks.json`.
 
+## UI & Front-end Conventions (Lit, Tailwind & Squircles)
+
+- **Light DOM for Tailwind & Global Styling**: When authoring new presentation components or adapting screens with Tailwind utilities, disable Shadow DOM by declaring:
+  ```ts
+  protected override createRenderRoot() {
+    return this;
+  }
+  ```
+  This allows Tailwind classes and global theme tokens (`[data-theme=dark]`) to style elements directly without Shadow DOM encapsulation barriers.
+- **Squircles**: For containers, pills, and input docks requiring smooth superellipse corners, use `@progmruansilva/squircles` via `clip-path: var(--clip-path-squircle-28, none)` paired with `filter: drop-shadow(...)`.
+
 ## Plugin & Extension Conventions
 
 - In `package.json` for extensions or plugins, the manifest key MUST be `"omp"` (never legacy `"pi"`).
@@ -31,5 +42,3 @@ Before stopping or restarting `omp-web` (`omp-web restart`, `omp-web stop`, or `
 ## Commits
 
 - Make atomic commits using the gitmoji convention.
-
-
