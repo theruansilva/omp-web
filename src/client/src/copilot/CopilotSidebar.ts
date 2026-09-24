@@ -73,20 +73,16 @@ export class CopilotSidebar extends LitElement {
 
   override render() {
     return html`
-      <!-- First, pure, smooth sidebar from m3-poc.ts -->
       <aside
-        class="relative h-full flex flex-col justify-between border-e border-black/10 dark:border-white/10 bg-sidebar-light dark:bg-sidebar-dark transition-all duration-300 ease-[cubic-bezier(0.43,0.195,0.02,1)] ${this
-        .isOpen
-        ? "w-[260px] min-w-[260px] p-3"
-        : "w-0 min-w-0 p-0 overflow-hidden opacity-0 border-none pointer-events-none"}"
+        class="w-full h-full flex flex-col justify-between border-e border-black/10 dark:border-white/10 bg-sidebar-light dark:bg-sidebar-dark p-3 select-none pointer-events-auto"
         role="navigation"
         aria-label="Copilot Navigation"
       >
-        <div>
+        <div class="w-full overflow-hidden">
           <!-- Header: Copilot Wordmark + Collapse Toggle -->
           <div class="flex items-center justify-between px-2 pt-1 pb-3 mb-2">
             <div
-              class="flex items-center gap-2.5 cursor-pointer"
+              class="flex items-center gap-2.5 cursor-pointer pointer-events-auto"
               @click=${() => this.handleSelect("new-chat")}
             >
               ${renderCopilotLogo()}
@@ -97,7 +93,7 @@ export class CopilotSidebar extends LitElement {
             <button
               type="button"
               aria-label="Close sidebar"
-              class="flex items-center justify-center size-8 rounded-xl text-foreground-800 hover:bg-black/5 dark:hover:bg-white/8 transition-colors"
+              class="flex items-center justify-center size-8 rounded-xl text-foreground-800 hover:bg-black/5 dark:hover:bg-white/8 transition-colors cursor-pointer pointer-events-auto"
               @click=${() => this.dispatchEvent(new CustomEvent("toggle-sidebar", { bubbles: true, composed: true }))}
             >
               ${renderToggleSidebarIcon()}
@@ -107,14 +103,14 @@ export class CopilotSidebar extends LitElement {
           <!-- Primary Nav: New Chat, Library, Tasks -->
           <div class="flex flex-col gap-0.5" role="menu">
             ${this.primaryNav.map(
-          (item) => html`
+      (item) => html`
                 <button
                   type="button"
                   role="menuitem"
-                  class="group relative flex w-full items-center justify-between px-3 py-2 rounded-xl text-sm font-medium transition-colors ${this
-              .activeTab === item.id
-              ? "bg-black/8 dark:bg-white/10 text-foreground-900 font-semibold"
-              : "text-foreground-800 hover:bg-black/5 dark:hover:bg-white/8"}"
+                  class="group relative flex w-full items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium transition-colors cursor-pointer pointer-events-auto ${this
+          .activeTab === item.id
+          ? "bg-black/8 dark:bg-white/10 text-foreground-900 font-semibold"
+          : "text-foreground-800 hover:bg-black/5 dark:hover:bg-white/8"}"
                   @click=${() => this.handleSelect(item.id)}
                 >
                   <div class="flex items-center gap-3 min-w-0">
@@ -122,14 +118,14 @@ export class CopilotSidebar extends LitElement {
                     <span class="truncate">${item.label}</span>
                   </div>
                   ${item.badge
-              ? html`<span
+          ? html`<span
                         class="text-[9px] font-bold tracking-wider px-1.5 py-0.5 rounded border border-black/15 dark:border-white/20 text-foreground-600 leading-none"
                         >${item.badge}</span
                       >`
-              : ""}
+          : ""}
                 </button>
               `
-        )}
+    )}
           </div>
 
           <!-- Divider -->
@@ -138,32 +134,32 @@ export class CopilotSidebar extends LitElement {
           <!-- Secondary Nav: Discover, Shopping, Imagine, Labs -->
           <div class="flex flex-col gap-0.5" role="menu">
             ${this.secondaryNav.map(
-          (item) => html`
+      (item) => html`
                 <button
                   type="button"
                   role="menuitem"
-                  class="flex w-full items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium transition-colors ${this
-              .activeTab === item.id
-              ? "bg-black/8 dark:bg-white/10 text-foreground-900 font-semibold"
-              : "text-foreground-800 hover:bg-black/5 dark:hover:bg-white/8"}"
+                  class="flex w-full items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors cursor-pointer pointer-events-auto ${this
+          .activeTab === item.id
+          ? "bg-black/8 dark:bg-white/10 text-foreground-900 font-semibold"
+          : "text-foreground-800 hover:bg-black/5 dark:hover:bg-white/8"}"
                   @click=${() => this.handleSelect(item.id)}
                 >
                   ${this.renderNavIcon(item.id)}
                   <span class="truncate">${item.label}</span>
                 </button>
               `
-        )}
+    )}
           </div>
         </div>
 
         <!-- Bottom Auth Callout -->
-        <div class="px-2 pb-2 pt-4 flex flex-col gap-3">
+        <div class="w-full overflow-hidden px-2 pb-2 pt-4 flex flex-col gap-3">
           <p class="text-[12px] leading-relaxed text-foreground-500">
             Conversations with Copilot will be shown here. Sign in to keep your conversations.
           </p>
           <button
             type="button"
-            class="copilot-btn-signin w-full py-2.5 px-4 rounded-full font-semibold text-xs text-center transition-all shadow-sm hover:opacity-90 active:scale-98"
+            class="copilot-btn-signin w-full py-2.5 px-4 rounded-full font-semibold text-xs text-center transition-all shadow-sm hover:opacity-90 active:scale-98 cursor-pointer pointer-events-auto"
             @click=${() => this.dispatchEvent(new CustomEvent("sign-in", { bubbles: true, composed: true }))}
           >
             Sign in

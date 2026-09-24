@@ -25,6 +25,7 @@ export class CopilotApp extends LitElement {
 
   override connectedCallback() {
     super.connectedCallback();
+    // On mobile screens (< 768px), start with sidebar drawer closed
     if (typeof window !== "undefined" && window.innerWidth < 768) {
       this.isSidebarOpen = false;
     }
@@ -41,6 +42,8 @@ export class CopilotApp extends LitElement {
     const sidebarParam = params.get("sidebar");
     if (sidebarParam === "closed") {
       this.isSidebarOpen = false;
+    } else if (sidebarParam === "open") {
+      this.isSidebarOpen = true;
     }
     if (params.get("mock") === "chat") {
       this.messages = [
@@ -69,6 +72,7 @@ export class CopilotApp extends LitElement {
 
   private handleNavSelect(tab: string) {
     this.activeTab = tab;
+    // On mobile, automatically close drawer upon selecting a link
     if (typeof window !== "undefined" && window.innerWidth < 768) {
       this.isSidebarOpen = false;
     }
@@ -212,7 +216,7 @@ export class CopilotApp extends LitElement {
         class="flex h-screen w-screen overflow-hidden bg-sidebar-light dark:bg-sidebar-dark font-sans select-none relative"
         data-theme="${this.theme}"
       >
-        <!-- Mobile Backdrop Overlay when Drawer is open -->
+        <!-- Mobile Backdrop Overlay when Drawer is open (z-40) -->
         ${this.isSidebarOpen
         ? html`
               <div
@@ -222,12 +226,12 @@ export class CopilotApp extends LitElement {
             `
         : nothing}
 
-        <!-- 1. Sidebar Navigation (Original smooth transition directly on sidebar host) -->
+        <!-- 1. Sidebar Navigation: z-50 fixed on mobile (above backdrop), relative on desktop -->
         <copilot-sidebar
-          class="h-full shrink-0 will-change-auto transition-all duration-300 ease-[cubic-bezier(0.43,0.195,0.02,1)] ${this
+          class="h-full shrink-0 will-change-auto transition-all duration-300 ease-[cubic-bezier(0.43,0.195,0.02,1)] fixed md:relative inset-y-0 left-0 z-50 md:z-auto shadow-2xl md:shadow-none ${this
         .isSidebarOpen
-        ? "w-[260px] min-w-[260px]"
-        : "w-0 min-w-0 p-0 m-0 overflow-hidden pointer-events-none"}"
+        ? "w-[280px] md:w-[260px] min-w-[260px] translate-x-0 opacity-100"
+        : "-translate-x-full md:translate-x-0 w-0 md:w-0 min-w-0 p-0 m-0 overflow-hidden md:opacity-0 pointer-events-none"}"
           .activeTab=${this.activeTab}
           .isOpen=${this.isSidebarOpen}
           @nav-select=${(e: CustomEvent<{ tab: string }>) => this.handleNavSelect(e.detail.tab)}
@@ -244,7 +248,7 @@ export class CopilotApp extends LitElement {
         >
           <!-- Canvas stage with background-150 and md:rounded-container -->
           <div class="relative size-full overflow-hidden md:rounded-container bg-background-150 flex flex-col">
-            <!-- Topbar Controls -->
+            <!-- Topbar Controls (Sidebar toggle ONLY appears when sidebar is closed) -->
             <copilot-header
               .isSidebarOpen=${this.isSidebarOpen}
               .theme=${this.theme}

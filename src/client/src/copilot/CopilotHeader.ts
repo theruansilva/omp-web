@@ -16,18 +16,19 @@ export class CopilotHeader extends LitElement {
     return html`
       <header class="absolute top-0 inset-x-0 h-14 px-4 flex items-center justify-between z-30 pointer-events-none">
         <div class="flex items-center gap-3 pointer-events-auto">
-          <!-- Toggle sidebar button: visible when sidebar is closed OR on mobile devices -->
-          <button
-            type="button"
-            aria-label="Open sidebar"
-            class="flex items-center justify-center size-9 rounded-xl text-foreground-800 bg-sidebar-light dark:bg-sidebar-dark hover:bg-black/5 dark:hover:bg-white/8 border border-black/10 dark:border-white/10 transition-colors shadow-sm ${this
-        .isSidebarOpen
-        ? "flex md:hidden"
-        : "flex"}"
-            @click=${() => this.dispatchEvent(new CustomEvent("toggle-sidebar", { bubbles: true, composed: true }))}
-          >
-            ${renderToggleSidebarIcon()}
-          </button>
+          <!-- Toggle sidebar button: ONLY rendered when sidebar is closed -->
+          ${!this.isSidebarOpen
+        ? html`
+                <button
+                  type="button"
+                  aria-label="Open sidebar"
+                  class="flex items-center justify-center size-9 rounded-xl text-foreground-800 bg-sidebar-light dark:bg-sidebar-dark hover:bg-black/5 dark:hover:bg-white/8 border border-black/10 dark:border-white/10 transition-colors shadow-sm cursor-pointer"
+                  @click=${() => this.dispatchEvent(new CustomEvent("toggle-sidebar", { bubbles: true, composed: true }))}
+                >
+                  ${renderToggleSidebarIcon()}
+                </button>
+              `
+        : nothing}
 
           ${this.title
         ? html`<h2 class="text-sm font-semibold text-foreground-800 font-ginto opacity-90">${this.title}</h2>`
