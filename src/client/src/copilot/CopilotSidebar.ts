@@ -75,10 +75,10 @@ export class CopilotSidebar extends LitElement {
   override render() {
     return html`
       <aside
-        class="relative h-full flex flex-col justify-between border-e border-black/10 dark:border-white/10 bg-sidebar-light dark:bg-sidebar-dark transition-all duration-300 ease-[cubic-bezier(0.43,0.195,0.02,1)] ${this
+        class="h-full flex flex-col justify-between border-e border-black/10 dark:border-white/10 bg-sidebar-light dark:bg-sidebar-dark transition-all duration-300 ease-[cubic-bezier(0.43,0.195,0.02,1)] fixed md:relative inset-y-0 left-0 z-50 md:z-auto shadow-2xl md:shadow-none ${this
         .isOpen
-        ? "w-[260px] min-w-[260px] p-3"
-        : "w-0 min-w-0 p-0 overflow-hidden opacity-0 border-none pointer-events-none"}"
+        ? "w-[280px] md:w-[260px] min-w-[260px] p-3 translate-x-0"
+        : "-translate-x-full md:translate-x-0 md:w-0 md:min-w-0 p-0 overflow-hidden md:opacity-0 md:border-none pointer-events-none"}"
         role="navigation"
         aria-label="Copilot Navigation"
       >

@@ -1,31 +1,31 @@
-/* Copilot UI Adaptive Theme & Exact Squircles */
+/* Copilot UI Adaptive Theme, Acrylic Translucency & Squircles */
 @import "./squircles.css";
 
 :root {
   --copilot-bg: #FAF7F5;
-  --copilot-card-bg: #FFFFFF;
-  --copilot-card-border: rgba(0, 0, 0, 0.12);
-  --copilot-card-hover-border: rgba(0, 0, 0, 0.22);
+  --copilot-card-bg: rgba(255, 255, 255, 0.72);
+  --copilot-card-border: rgba(0, 0, 0, 0.08);
+  --copilot-card-hover-border: rgba(0, 0, 0, 0.18);
   --copilot-text-primary: #1C1B1A;
   --copilot-text-secondary: #666666;
   --copilot-text-muted: #888888;
-  --copilot-composer-bg: #FFFFFF;
-  --copilot-composer-border: rgba(0, 0, 0, 0.12);
-  --copilot-bubble-bg: #F5E7DA;
+  --copilot-composer-bg: rgba(255, 255, 255, 0.92);
+  --copilot-composer-border: rgba(0, 0, 0, 0.08);
+  --copilot-bubble-bg: rgba(245, 231, 218, 0.85);
   --copilot-bubble-text: #241F1B;
 }
 
 .dark, [data-theme="dark"] {
-  --copilot-bg: #0F121B;
-  --copilot-card-bg: #1A1E2B;
-  --copilot-card-border: rgba(255, 255, 255, 0.14);
-  --copilot-card-hover-border: rgba(255, 255, 255, 0.28);
+  --copilot-bg: #0B0E14;
+  --copilot-card-bg: rgba(26, 30, 43, 0.55);
+  --copilot-card-border: rgba(255, 255, 255, 0.1);
+  --copilot-card-hover-border: rgba(255, 255, 255, 0.25);
   --copilot-text-primary: #F8FAFC;
   --copilot-text-secondary: #94A3B8;
   --copilot-text-muted: #64748B;
-  --copilot-composer-bg: #181C26;
-  --copilot-composer-border: rgba(255, 255, 255, 0.15);
-  --copilot-bubble-bg: #2C2723;
+  --copilot-composer-bg: rgba(24, 28, 38, 0.75);
+  --copilot-composer-border: rgba(255, 255, 255, 0.12);
+  --copilot-bubble-bg: rgba(44, 39, 35, 0.9);
   --copilot-bubble-text: #F3EDE6;
 }
 
@@ -51,48 +51,30 @@
 .squircle-stroke-28 { clip-path: var(--clip-path-squircle-stroke-28) !important; }
 .squircle-stroke-36-24 { clip-path: var(--clip-path-squircle-stroke-36-24) !important; }
 .squircle-stroke-48-32 { clip-path: var(--clip-path-squircle-stroke-48-32) !important; }
+.squircle-stroke-60 { clip-path: var(--clip-path-squircle-stroke-60) !important; }
 
-/* Squircle Card Container */
-.copilot-squircle-card {
-  background-color: #FFFFFF !important;
-  color: #1C1B1A !important;
-  position: relative;
-  overflow: hidden;
-  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+/* Frosted Glass Acrylic Card Base */
+.copilot-acrylic-card {
+  background-color: var(--copilot-card-bg);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border: 1px solid var(--copilot-card-border);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.dark .copilot-squircle-card,
-[data-theme="dark"] .copilot-squircle-card {
-  background-color: #1A1E2B !important;
-  color: #F8FAFC !important;
+.copilot-acrylic-card:hover {
+  border-color: var(--copilot-card-hover-border);
+  transform: translateY(-2px);
+  box-shadow: 0 12px 28px -6px rgba(0, 0, 0, 0.12);
 }
 
-/* Titles and descriptions inside squircle cards */
-.copilot-squircle-card .copilot-card-title,
-.copilot-squircle-card h2,
-.copilot-squircle-card h3 {
-  color: #1C1B1A !important;
+/* Titles and descriptions */
+.copilot-card-title {
+  color: var(--copilot-text-primary) !important;
 }
 
-.dark .copilot-squircle-card .copilot-card-title,
-.dark .copilot-squircle-card h2,
-.dark .copilot-squircle-card h3,
-[data-theme="dark"] .copilot-squircle-card .copilot-card-title,
-[data-theme="dark"] .copilot-squircle-card h2,
-[data-theme="dark"] .copilot-squircle-card h3 {
-  color: #F8FAFC !important;
-}
-
-.copilot-squircle-card .copilot-card-desc,
-.copilot-squircle-card p {
-  color: #666666 !important;
-}
-
-.dark .copilot-squircle-card .copilot-card-desc,
-.dark .copilot-squircle-card p,
-[data-theme="dark"] .copilot-squircle-card .copilot-card-desc,
-[data-theme="dark"] .copilot-squircle-card p {
-  color: #94A3B8 !important;
+.copilot-card-desc {
+  color: var(--copilot-text-secondary) !important;
 }
 
 /* Squircle Stroke Overlay */
@@ -100,31 +82,26 @@
   pointer-events: none;
   position: absolute;
   inset: 0;
-  background-color: rgba(0, 0, 0, 0.14) !important;
+  background-color: rgba(0, 0, 0, 0.12);
   will-change: transform;
   z-index: 20;
 }
 
 .dark .copilot-squircle-stroke,
 [data-theme="dark"] .copilot-squircle-stroke {
-  background-color: rgba(255, 255, 255, 0.22) !important;
+  background-color: rgba(255, 255, 255, 0.18);
 }
 
 /* Buttons */
 .copilot-btn-pill {
   border-radius: 9999px !important;
-  border: 1px solid rgba(0, 0, 0, 0.15) !important;
-  color: #1C1B1A !important;
+  border: 1px solid var(--copilot-card-border);
+  color: var(--copilot-text-primary);
   transition: all 0.15s ease;
 }
 
-.dark .copilot-btn-pill,
-[data-theme="dark"] .copilot-btn-pill {
-  border: 1px solid rgba(255, 255, 255, 0.22) !important;
-  color: #F8FAFC !important;
-}
-
 .copilot-btn-pill:hover {
+  border-color: var(--copilot-card-hover-border);
   background-color: rgba(128, 128, 128, 0.08);
 }
 

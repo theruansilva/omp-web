@@ -6,8 +6,12 @@ interface ProductItem {
   id: string;
   name: string;
   price: string;
+  originalPrice: string;
+  discount: string;
   category: string;
+  rating: string;
   image: string;
+  description: string;
   prompt: string;
 }
 
@@ -22,35 +26,51 @@ export class CopilotShoppingView extends LitElement {
   private readonly products: ProductItem[] = [
     {
       id: "prod-1",
-      name: "Ergonomic High-Back Task Chair",
-      price: "$289.00",
-      category: "Home Office",
-      image: "/static/cmc/images/product-chair.jpg",
-      prompt: "Find reviews, ergonomic comparisons, and best prices for high-back mesh task chairs.",
+      name: "Sony WH-1000XM5 Wireless Headphones",
+      price: "$299.99",
+      originalPrice: "$399.99",
+      discount: "-25%",
+      category: "Lowest price in 30 days",
+      rating: "★ 4.8 (14.2k)",
+      image: "/static/cmc/images/product-headphones.jpg",
+      description: "Industry-leading noise canceling with Auto NC Optimizer, crystal clear hands-free calling, up to 30hr battery life.",
+      prompt: "Find reviews, price history, and best deals for Sony WH-1000XM5 headphones.",
     },
     {
       id: "prod-2",
-      name: "Wireless ANC Studio Headphones",
-      price: "$199.99",
-      category: "Audio",
-      image: "/static/cmc/images/product-headphones.jpg",
-      prompt: "Compare active noise-canceling studio headphones under $200 with 30+ hour battery life.",
+      name: 'LG UltraWide 34" Curved WQHD Monitor',
+      price: "$379.99",
+      originalPrice: "$549.99",
+      discount: "-31%",
+      category: "Price drop verified",
+      rating: "★ 4.9 (8.5k)",
+      image: "/static/cmc/images/product-monitor.jpg",
+      description: "21:9 Curved UltraWide QHD display with HDR10, sRGB 99% color gamut, USB Type-C connectivity, AMD FreeSync.",
+      prompt: 'Compare 34" curved ultrawide monitors for programming and productivity under $400.',
     },
     {
       id: "prod-3",
-      name: "Minimalist Articulated Desk Lamp",
-      price: "$65.00",
-      category: "Lighting",
-      image: "/static/cmc/images/product-lamp.jpg",
-      prompt: "Recommend warm LED minimalist desk lamps with dimmer touch controls and USB charging ports.",
+      name: "Ergonomic Mesh Executive Task Chair",
+      price: "$279.00",
+      originalPrice: "$399.00",
+      discount: "-30%",
+      category: "Trending deal",
+      rating: "★ 4.7 (3.1k)",
+      image: "/static/cmc/images/product-chair.jpg",
+      description: "Dynamic lumbar support, 3D adjustable armrests, breathable elastomeric mesh, heavy-duty aluminum base.",
+      prompt: "Show me ergonomic mesh task chair comparisons and user reviews.",
     },
     {
       id: "prod-4",
-      name: '34" Curved WQHD Ultrawide Monitor',
-      price: "$449.00",
-      category: "Displays",
-      image: "/static/cmc/images/product-monitor.jpg",
-      prompt: "What are the top rated 34-inch curved ultrawide monitors for productivity and programming?",
+      name: "Smart Home Ambient Architecture Lamp",
+      price: "$49.99",
+      originalPrice: "$79.99",
+      discount: "-38%",
+      category: "Staff pick",
+      rating: "★ 4.6 (1.9k)",
+      image: "/static/cmc/images/product-lamp.jpg",
+      description: "Stepless touch dimming, dual warm/cool temperature spectrum, integrated wireless charging pad and timer.",
+      prompt: "Recommend modern architectural desk lamps with warm LEDs and phone charging.",
     },
   ];
 
@@ -66,61 +86,77 @@ export class CopilotShoppingView extends LitElement {
 
   override render() {
     return html`
-      <div class="relative flex flex-col h-full w-full overflow-hidden">
-        <!-- Scrollable Area -->
-        <div class="flex-1 overflow-y-auto px-4 pt-14 pb-36 max-w-4xl mx-auto w-full flex flex-col gap-8">
+      <!-- Microsoft Copilot Exact Shopping View from templates/shopping.html -->
+      <div class="scrollbar-stable t-custom-scrollbar relative flex size-full flex-col items-center overflow-y-auto overflow-x-hidden overscroll-contain">
+        <div class="w-full max-w-labs px-4 sm:px-6 pt-16 pb-48 flex flex-col items-center mx-auto">
           <!-- Page Header -->
-          <div class="flex flex-col gap-1 text-center md:text-left select-none">
-            <h1 class="text-2xl md:text-3xl font-bold tracking-tight text-foreground-900 font-ginto">
+          <div class="flex flex-col gap-2 text-center md:text-left select-none w-full mb-8">
+            <h1 class="text-3xl sm:text-4xl font-semibold tracking-tight text-foreground-800 font-ginto">
               Nice to see you, Guest. What’s new?
             </h1>
-            <p class="text-sm text-foreground-600 font-sans">
+            <p class="text-sm sm:text-base text-foreground-600 font-sans">
               Discover curated products, price comparisons, and intelligent shopping advice.
             </p>
           </div>
 
-          <!-- Product Recommendation Cards with Squircle-24 -->
-          <div class="flex flex-col gap-4">
+          <!-- Product Recommendation Cards -->
+          <div class="flex flex-col gap-4 w-full">
             <h2 class="text-xs font-bold uppercase tracking-wider text-foreground-500 font-ginto">
               Trending Product Guides
             </h2>
-            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 w-full">
               ${this.products.map(
       (p) => html`
                   <div
-                    class="relative drop-shadow-xs hover:drop-shadow-md transition-all duration-200 hover:-translate-y-0.5 cursor-pointer"
+                    class="relative flex flex-col overflow-hidden rounded-2xl bg-white/70 dark:bg-background-200/50 border border-black/5 dark:border-white/10 shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-md cursor-pointer backdrop-blur-xl"
                     @click=${() => this.handleProductClick(p.prompt)}
                   >
-                    <div class="copilot-squircle-card squircle-24 flex flex-col overflow-hidden">
-                      <!-- Product Image -->
-                      <div class="relative aspect-square w-full overflow-hidden bg-black/10">
-                        <img
-                          src="${p.image}"
-                          alt="${p.name}"
-                          class="size-full object-cover transition-transform duration-500 hover:scale-105"
-                          loading="lazy"
-                          onerror="this.style.display='none'"
-                        />
-                      </div>
+                    <!-- Product Image with Discount Badge -->
+                    <div class="relative h-48 w-full overflow-hidden bg-black/5">
+                      <img
+                        src="${p.image}"
+                        alt="${p.name}"
+                        class="size-full object-cover transition-transform duration-300 hover:scale-105"
+                        loading="lazy"
+                        onerror="this.style.display='none'"
+                      />
+                      <span class="absolute start-3 top-3 rounded-md bg-emerald-600 px-2 py-0.5 text-xs font-semibold text-white shadow-sm">
+                        ${p.discount}
+                      </span>
+                    </div>
 
-                      <!-- Info -->
-                      <div class="p-4 flex flex-col justify-between flex-1 gap-2">
-                        <div class="flex flex-col gap-1">
-                          <span class="text-[10px] font-semibold text-foreground-500 uppercase tracking-wide">
+                    <!-- Card Body -->
+                    <div class="flex flex-1 flex-col p-4 justify-between">
+                      <div>
+                        <div class="flex items-center justify-between text-xs text-foreground-800/70 mb-1">
+                          <span class="font-medium text-emerald-600 dark:text-emerald-400">
                             ${p.category}
                           </span>
-                          <h3 class="copilot-card-title text-xs font-semibold hover:text-blue-500 transition-colors line-clamp-2 leading-snug font-ginto">
-                            ${p.name}
-                          </h3>
+                          <span class="opacity-80">
+                            ${p.rating}
+                          </span>
                         </div>
-                        <div class="flex items-center justify-between pt-1">
-                          <span class="text-xs font-bold text-foreground-900">${p.price}</span>
-                          <span class="text-[11px] font-medium text-blue-500 hover:underline">Compare →</span>
-                        </div>
+                        <h3 class="text-base font-semibold text-foreground-800 line-clamp-1 font-ginto">
+                          ${p.name}
+                        </h3>
+                        <p class="mt-1 text-xs text-foreground-600 line-clamp-2 leading-relaxed">
+                          ${p.description}
+                        </p>
                       </div>
 
-                      <!-- Squircle-24 Stroke Overlay -->
-                      <div class="copilot-squircle-stroke squircle-stroke-24"></div>
+                      <div class="mt-4 flex items-center justify-between pt-2 border-t border-black/5 dark:border-white/10">
+                        <div class="flex items-baseline gap-2">
+                          <span class="text-lg font-bold text-foreground-800">
+                            ${p.price}
+                          </span>
+                          <span class="text-xs text-foreground-500 line-through">
+                            ${p.originalPrice}
+                          </span>
+                        </div>
+                        <span class="text-xs font-medium text-blue-600 hover:underline">
+                          Compare →
+                        </span>
+                      </div>
                     </div>
                   </div>
                 `
@@ -130,8 +166,8 @@ export class CopilotShoppingView extends LitElement {
         </div>
 
         <!-- Sticky Bottom Composer Dock -->
-        <div class="absolute bottom-0 inset-x-0 z-20 flex flex-col items-center px-4 pb-4 pt-8 bg-gradient-to-t from-background-light dark:from-background-dark via-background-light/80 dark:via-background-dark/80 to-transparent pointer-events-none">
-          <div class="w-full max-w-[720px] pointer-events-auto">
+        <div class="absolute bottom-0 inset-x-0 z-20 flex flex-col items-center px-4 pb-4 md:pb-6 pt-8 bg-gradient-to-t from-background-150 via-background-150/80 to-transparent pointer-events-none">
+          <div class="w-full max-w-chat pointer-events-auto">
             <copilot-composer
               compact
               placeholder="Ask Copilot about any product, deal, or review..."

@@ -1,4 +1,4 @@
-import { LitElement, html } from "lit";
+import { LitElement, html, nothing } from "lit";
 import { customElement, state } from "lit/decorators.js";
 import "./CopilotSidebar";
 import "./CopilotHeader";
@@ -25,6 +25,11 @@ export class CopilotApp extends LitElement {
 
   override connectedCallback() {
     super.connectedCallback();
+    // Start closed on mobile devices
+    if (typeof window !== "undefined" && window.innerWidth < 768) {
+      this.isSidebarOpen = false;
+    }
+
     const params = new URLSearchParams(window.location.search);
     const tabParam = params.get("tab");
     if (tabParam) {
@@ -37,7 +42,7 @@ export class CopilotApp extends LitElement {
     if (params.get("mock") === "chat") {
       this.messages = [
         { id: "msg-1", role: "user", text: "Olá! Como o Copilot pode me ajudar?", timestamp: "10:30" },
-        { id: "msg-2", role: "assistant", text: "Olá! O Copilot é seu assistente de inteligência artificial recriado com 100% de fidelidade visual, consumindo as classes e tokens originais!", timestamp: "10:30" }
+        { id: "msg-2", role: "assistant", text: "Olá! O Copilot é seu assistente de inteligência artificial recriado com 100% de fidelidade visual, consumindo as classes, fontes e tokens originais da Microsoft!", timestamp: "10:30" }
       ];
     }
     this.applyTheme(this.theme);
@@ -61,6 +66,10 @@ export class CopilotApp extends LitElement {
 
   private handleNavSelect(tab: string) {
     this.activeTab = tab;
+    // Auto-close drawer on mobile upon selection
+    if (typeof window !== "undefined" && window.innerWidth < 768) {
+      this.isSidebarOpen = false;
+    }
     if (tab === "new-chat" && this.messages.length > 0) {
       this.messages = [];
     }
@@ -102,7 +111,7 @@ export class CopilotApp extends LitElement {
     if (lower.includes("shopping") || lower.includes("price") || lower.includes("chair") || lower.includes("headphone")) {
       return `Here are the top considerations based on recent user feedback and verified benchmarks:\n\n- **Build Quality & Durability**: Premium materials with robust warranties.\n- **Value Comparison**: Competitive tier pricing with seasonal discounts available.\n- **Compatibility**: Plug-and-play integration with standard workspaces.\n\nLet me know if you would like a detailed side-by-side spec sheet!`;
     }
-    return `Certainly! Regarding **"${prompt}"**:\n\nCopilot provides straightforward reasoning, real-time research, and creative assistance. Everything is running natively in your Lit components interface with full Light DOM styling and Squircles integration.\n\nHow else can I assist your workflow today?`;
+    return `Certainly! Regarding **"${prompt}"**:\n\nCopilot provides straightforward reasoning, real-time research, and creative assistance. Everything is running natively in your Lit components interface with full Light DOM styling, responsive mobile drawer, and Squircles integration.\n\nHow else can I assist your workflow today?`;
   }
 
   private getHeaderTitle(): string {
@@ -196,12 +205,22 @@ export class CopilotApp extends LitElement {
 
   override render() {
     return html`
-      <!-- Microsoft Copilot Exact Shell Architecture -->
+      <!-- Microsoft Copilot Shell Architecture with Mobile Drawer -->
       <div
-        class="flex h-screen w-screen overflow-hidden bg-sidebar-light dark:bg-sidebar-dark font-sans select-none"
+        class="flex h-screen w-screen overflow-hidden bg-sidebar-light dark:bg-sidebar-dark font-sans select-none relative"
         data-theme="${this.theme}"
       >
-        <!-- 1. Collapsible Sidebar Navigation (260px) -->
+        <!-- Mobile Backdrop Overlay when Drawer is open -->
+        ${this.isSidebarOpen
+        ? html`
+              <div
+                class="fixed inset-0 bg-black/40 backdrop-blur-xs z-40 md:hidden transition-opacity"
+                @click=${() => (this.isSidebarOpen = false)}
+              ></div>
+            `
+        : nothing}
+
+        <!-- 1. Sidebar Navigation (Desktop pinned, Mobile slide-in drawer) -->
         <copilot-sidebar
           .activeTab=${this.activeTab}
           .isOpen=${this.isSidebarOpen}
@@ -216,7 +235,7 @@ export class CopilotApp extends LitElement {
         >
           <!-- Canvas stage with background-150 and md:rounded-container -->
           <div class="relative size-full overflow-hidden md:rounded-container bg-background-150">
-            <!-- Topbar Controls -->
+            <!-- Topbar Controls (Menu toggle always available on mobile) -->
             <copilot-header
               .isSidebarOpen=${this.isSidebarOpen}
               .theme=${this.theme}
