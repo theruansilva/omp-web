@@ -1,0 +1,1 @@
+import{bT as e,bU as r}from"./entry-ssr-J8ulW5bE.js";import{z as i,A as s,B as a}from"./vendor-iVNoSsrx.js";const t=s(o=>o(e)&&o(r));function u(){return i(t)}function l(){return a().get(t)}export{l as i,u};

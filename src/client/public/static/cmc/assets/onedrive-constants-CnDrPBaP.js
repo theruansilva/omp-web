@@ -1,0 +1,1 @@
+const t={word:["doc","docx","docm","dot","dotx","dotm","rtf"],excel:["xls","xlsx","xlsm","xlsb","xlt","xltx","xltm","csv"],powerpoint:["ppt","pptx","pptm","pps","ppsx","ppsm","pot","potx","potm"],onenote:["one","onetoc2"],pdf:["pdf"],text:["txt","md"]},o="size-8",p=5;export{o as C,p as M,t as S};

@@ -1,0 +1,1 @@
+import{aB as s,aC as f}from"./entry-ssr-J8ulW5bE.js";import{g as e}from"./getTimezoneOffsetInMilliseconds-C-WuJ9cm.js";function d(n,o){const t=s(n),a=s(o),i=+t-e(t),r=+a-e(a);return Math.round((i-r)/f)}export{d};

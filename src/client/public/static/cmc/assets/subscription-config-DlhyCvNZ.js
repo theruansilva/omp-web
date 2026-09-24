@@ -1,0 +1,1 @@
+import{t as a,s as t,q as i}from"./vendor-iVNoSsrx.js";const s={discriminator:o=>typeof o=="object"&&o!==null&&"type"in o&&o.type==="placeholder",schema:a({type:i("placeholder"),message:t().optional()}),callback:()=>{}};export{s as SubscriptionConfig};

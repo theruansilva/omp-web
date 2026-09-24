@@ -1,0 +1,1 @@
+import{j as n}from"./vendor-iVNoSsrx.js";import{S as s}from"./content-blocks-TVtf54EL.js";import{H as i,bK as m}from"./entry-ssr-J8ulW5bE.js";const o=m();function p({children:a,delay:t}){const e=t.getValue();return t.queueUpdate(s),n.jsx(i.span,{className:"inline-flex",initial:"start",animate:"end",custom:e,variants:o,children:a})}export{p as A};

@@ -1,0 +1,1 @@
+import{r as t}from"./vendor-iVNoSsrx.js";import{bm as c}from"./entry-ssr-J8ulW5bE.js";function u(){const a=c();return{navigateToResearch:t.useCallback(async(o,r,s)=>{let e=`/research/${o}`;s&&(e+="?summary=1"),await a({from:r,to:e})},[a])}}export{u};

@@ -1,0 +1,1 @@
+import{j as t,Q as r}from"./vendor-iVNoSsrx.js";import{L as a}from"./index-DyFaX9Lk.js";import{ba as o,c9 as n}from"./entry-ssr-J8ulW5bE.js";import"./msal-BPRlmqEK.js";const b=function(){const s=o();return s==="/labs/"||s==="/labs"?t.jsx(a,{children:t.jsx(r,{})}):t.jsx(a,{children:t.jsx(n,{children:t.jsx(r,{})})})};export{b as component};

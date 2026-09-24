@@ -1,0 +1,1 @@
+const c="https://www.bing.com/maps/directions?rtp={rtp}&mode=d";function p(t,o,n){const e=encodeURIComponent(n),r=`pos._~pos.${t}_${o}__${e}__e_`;return c.replace("{rtp}",r)}function a(t,o){return new Intl.NumberFormat(o,{notation:"compact",compactDisplay:"short"}).format(t)}export{a as f,p as g};

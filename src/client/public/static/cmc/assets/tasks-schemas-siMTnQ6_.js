@@ -1,0 +1,1 @@
+import{a2 as n,a3 as t}from"./entry-ssr-J8ulW5bE.js";import{t as a,q as s,D as o,s as e,n as r}from"./vendor-iVNoSsrx.js";const m=a({section:o(["recent","scheduled"]).optional(),forceTasksFre:s("true").optional()}),S=a({id:e(),url:e()}),c=r("type",[n,t]),p=a({type:s("task"),task:c.nullable()});export{p as G,S as T,m as a};

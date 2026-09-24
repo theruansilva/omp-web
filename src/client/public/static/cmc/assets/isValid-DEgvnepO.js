@@ -1,0 +1,1 @@
+import{aG as o}from"./entry-ssr-J8ulW5bE.js";function r(t){return t instanceof Date||typeof t=="object"&&Object.prototype.toString.call(t)==="[object Date]"}function i(t){if(!r(t)&&typeof t!="number")return!1;const e=o(t);return!isNaN(Number(e))}export{i};

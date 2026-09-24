@@ -1,0 +1,1 @@
+import{b1 as o,cW as e}from"./entry-ssr-J8ulW5bE.js";import{z as a}from"./vendor-iVNoSsrx.js";function l(){const t=a(e),n=o("parental-control-respect-policy");return t&&n}function c(){const t=l(),n=o("parental-control-setting");return t&&n}export{c as a,l as u};

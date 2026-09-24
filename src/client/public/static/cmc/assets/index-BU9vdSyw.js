@@ -1,0 +1,1 @@
+import{eX as n}from"./index-Dw_brBcv.js";const t={current:null},o={current:!1};function i(){if(o.current=!0,!!n)if(window.matchMedia){const e=window.matchMedia("(prefers-reduced-motion)"),r=()=>t.current=e.matches;e.addListener(r),r()}else t.current=!1}export{o as h,i,t as p};

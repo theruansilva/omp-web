@@ -1,0 +1,1 @@
+import{r as a}from"./vendor-iVNoSsrx.js";import{z as n}from"./entry-ssr-J8ulW5bE.js";const r=100,o=new Set;function i(e){if(e&&!o.has(e)&&!n(e)){if(o.size>=r){const t=o.values().next().value;t!==void 0&&o.delete(t)}o.add(e);const s=new Image;s.onerror=()=>o.delete(e),s.src=e}}function m(){return a.useCallback(e=>{i(e)},[])}export{i as p,m as u};

@@ -1,0 +1,1 @@
+import{r as a}from"./vendor-iVNoSsrx.js";import{ce as m,cf as c}from"./entry-ssr-J8ulW5bE.js";function p(n){const{onDismiss:o,shouldDismiss:s}=n,r=a.useCallback(i=>{const{isDismissEvent:t}=m.run({event:i});(s?s(i,t):t)&&(i.stopPropagation(),o())},[o,s]);c(r)}export{p as u};

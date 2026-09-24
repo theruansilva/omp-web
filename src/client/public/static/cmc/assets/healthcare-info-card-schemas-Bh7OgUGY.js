@@ -1,0 +1,1 @@
+import{q as e}from"./vendor-iVNoSsrx.js";import{e0 as r,e2 as t}from"./entry-ssr-J8ulW5bE.js";import"./block-renderer-ftIj4s8V.js";import"./map-zQf3vH6T.js";import"./citation-VpQvzgDB.js";import"./msal-BPRlmqEK.js";import"./schema-DArO0iqw.js";import"./globe-NjjuuLya.js";import"./pin-BSys1-Kq.js";const f=r.extend({type:e("card"),card:t});export{f as HealthcareInfoCardItemSchema};

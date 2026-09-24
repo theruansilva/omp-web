@@ -1,0 +1,1 @@
+import{r as c}from"./vendor-iVNoSsrx.js";function u(o){return c.useCallback(({behavior:s="smooth",delay:t=0})=>{const r=()=>{o.current&&o.current.scrollTo({top:o.current.scrollHeight,behavior:s})};t===0?r():setTimeout(r,t)},[o])}export{u};

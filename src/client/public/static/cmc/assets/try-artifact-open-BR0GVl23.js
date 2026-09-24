@@ -1,0 +1,1 @@
+import{as as e}from"./entry-ssr-J8ulW5bE.js";async function i(t){return(await e.run({conversationId:t.conversationId,artifactType:t.artifactType,artifactId:t.artifactId,artifactTitle:t.artifactTitle,suppressed:!1})).suppressed}export{i as t};

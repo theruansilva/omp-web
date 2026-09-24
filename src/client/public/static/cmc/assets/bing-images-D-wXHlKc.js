@@ -1,0 +1,1 @@
+function a(n){const{baseUrl:o,width:e,height:i,format:r,quality:s}=n,g=new URL(o),{searchParams:t}=g;return e&&t.set("w",e.toString()),i&&t.set("h",i.toString()),r==="webp"?(t.set("rm","3"),t.set("o","7")):r==="jpeg"&&t.set("forceJpeg","1"),s&&t.set("qlt",s.toString()),g.toString()}export{a as g};

@@ -1,0 +1,1 @@
+import{V as t,a4 as n,j as o,G as s,f2 as m}from"./entry-ssr-J8ulW5bE.js";import{j as a}from"./vendor-iVNoSsrx.js";function l(r){const e=t(n);o.trackEvent({name:"system",data:{eventName:"clientImageError",eventInfo_url:r,eventInfo_conversationId:e}})}function I(){return a.jsx(s,{size:"md",className:"h-[176px] max-w-[360px]",children:a.jsx(m,{})})}export{I,l as t};

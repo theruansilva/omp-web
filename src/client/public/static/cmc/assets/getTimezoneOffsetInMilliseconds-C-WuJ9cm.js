@@ -1,0 +1,1 @@
+import{aG as o}from"./entry-ssr-J8ulW5bE.js";function a(t){const e=o(t),n=new Date(Date.UTC(e.getFullYear(),e.getMonth(),e.getDate(),e.getHours(),e.getMinutes(),e.getSeconds(),e.getMilliseconds()));return n.setUTCFullYear(e.getFullYear()),+t-+n}export{a as g};

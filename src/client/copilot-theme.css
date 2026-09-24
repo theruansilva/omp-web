@@ -1,0 +1,70 @@
+/* Copilot UI Adaptive Theme Rules for Lit Components */
+
+:root {
+  --copilot-bg: #FAF7F5;
+  --copilot-card-bg: #FFFFFF;
+  --copilot-card-border: rgba(0, 0, 0, 0.08);
+  --copilot-card-hover-border: rgba(0, 0, 0, 0.18);
+  --copilot-text-primary: #1C1B1A;
+  --copilot-text-secondary: #666666;
+  --copilot-text-muted: #888888;
+  --copilot-composer-bg: #FFFFFF;
+  --copilot-composer-border: rgba(0, 0, 0, 0.1);
+  --copilot-bubble-bg: #F5E7DA;
+  --copilot-bubble-text: #241F1B;
+}
+
+.dark, [data-theme="dark"] {
+  --copilot-bg: #0F121B;
+  --copilot-card-bg: #1A1E2B;
+  --copilot-card-border: rgba(255, 255, 255, 0.1);
+  --copilot-card-hover-border: rgba(255, 255, 255, 0.25);
+  --copilot-text-primary: #F8FAFC;
+  --copilot-text-secondary: #94A3B8;
+  --copilot-text-muted: #64748B;
+  --copilot-composer-bg: #151822;
+  --copilot-composer-border: rgba(255, 255, 255, 0.12);
+  --copilot-bubble-bg: #2C2723;
+  --copilot-bubble-text: #F3EDE6;
+}
+
+.copilot-card {
+  background-color: var(--copilot-card-bg) !important;
+  color: var(--copilot-text-primary) !important;
+  border: 1px solid var(--copilot-card-border) !important;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.copilot-card:hover {
+  border-color: var(--copilot-card-hover-border) !important;
+}
+
+.copilot-card-title {
+  color: var(--copilot-text-primary) !important;
+}
+
+.copilot-card-desc {
+  color: var(--copilot-text-secondary) !important;
+}
+
+.copilot-btn-pill {
+  border: 1px solid var(--copilot-card-border);
+  color: var(--copilot-text-primary);
+  transition: all 0.15s ease;
+}
+
+.copilot-btn-pill:hover {
+  border-color: var(--copilot-card-hover-border);
+  background-color: rgba(128, 128, 128, 0.08);
+}
+
+.copilot-btn-signin {
+  background-color: #1C1B1A !important;
+  color: #FFFFFF !important;
+}
+
+.dark .copilot-btn-signin,
+[data-theme="dark"] .copilot-btn-signin {
+  background-color: #FFFFFF !important;
+  color: #1C1B1A !important;
+}

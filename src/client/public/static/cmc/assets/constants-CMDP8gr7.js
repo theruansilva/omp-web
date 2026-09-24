@@ -1,0 +1,1 @@
+const a=2e4,s=28,p=5e3,_={"image/png":["png"],"image/jpeg":["jpg","jpeg"],"image/webp":["webp"]},T=Object.entries(_).map(([S,E])=>[S,...E.map(e=>`.${e}`)]).flat();export{s as A,T as S,p as T,a,_ as b};

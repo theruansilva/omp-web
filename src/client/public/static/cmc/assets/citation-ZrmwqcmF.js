@@ -1,0 +1,1 @@
+import{j as r}from"./vendor-iVNoSsrx.js";import{c as a}from"./entry-ssr-J8ulW5bE.js";function s(t){const{className:n,children:e}=t;return r.jsx("span",{className:a("inline-block h-4 min-w-4 rounded-md bg-accent-200 px-1 pt-px text-center leading-4 text-foreground-800 text-2xs dark:bg-accent-200",n),children:e})}export{s as C};

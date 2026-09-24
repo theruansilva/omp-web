@@ -1,0 +1,1 @@
+import{aq as s,ar as i}from"./entry-ssr-J8ulW5bE.js";function o(a,e={}){const{openPanel:t=!0}=e;if(t)if(a===null)s();else{const n=a.artifactId??a.artifactName??a.artifactType;i(n,a.artifactType,void 0,{autoOpen:!0})}}export{o as s};

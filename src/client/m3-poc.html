@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en" data-theme="light" class="h-full">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>Microsoft Copilot (Lit Components)</title>
+    <link rel="icon" type="image/svg+xml" href="/static/cmc/favicon.svg" />
+    <style>
+      @import "@progmruansilva/squircles/index.css";
+      @import "/copilot.css";
+      @import "/copilot-theme.css";
+
+      :root {
+        color-scheme: light dark;
+      }
+
+      html, body {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+        width: 100%;
+        overflow: hidden;
+      }
+    </style>
+  </head>
+  <body class="h-full w-full overflow-hidden bg-background-light dark:bg-background-dark text-foreground-800 antialiased font-sans">
+    <copilot-app></copilot-app>
+    <script type="module" src="/src/m3-poc.ts"></script>
+  </body>
+</html>

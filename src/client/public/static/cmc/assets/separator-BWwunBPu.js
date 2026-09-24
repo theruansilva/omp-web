@@ -1,0 +1,1 @@
+import{r as e}from"./vendor-iVNoSsrx.js";const o=({title:t,titleId:r,...l})=>e.createElement("svg",{viewBox:"0 0 17 36",fill:"none",xmlns:"http://www.w3.org/2000/svg","aria-labelledby":r,...l},t?e.createElement("title",{id:r},t):null,e.createElement("rect",{x:8,y:6,width:1,height:24,rx:.5,fill:"#CCC4C0"}));export{o as default};

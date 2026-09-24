@@ -1,0 +1,1 @@
+function r(t){return String(t).padStart(2,"0")}function f(t){if(t<0)throw new Error("Duration must be a positive number");const o=Math.floor(t/3600),u=Math.floor(t%3600/60),a=t%60,n=r(u),e=r(a);return o>0?`${r(o)}:${n}:${e}`:`${n}:${e}`}export{f};
