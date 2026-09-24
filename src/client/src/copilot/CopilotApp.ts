@@ -25,7 +25,6 @@ export class CopilotApp extends LitElement {
 
   override connectedCallback() {
     super.connectedCallback();
-    // Start closed on mobile devices
     if (typeof window !== "undefined" && window.innerWidth < 768) {
       this.isSidebarOpen = false;
     }
@@ -38,6 +37,10 @@ export class CopilotApp extends LitElement {
     const themeParam = params.get("theme");
     if (themeParam === "light" || themeParam === "dark") {
       this.theme = themeParam;
+    }
+    const sidebarParam = params.get("sidebar");
+    if (sidebarParam === "closed") {
+      this.isSidebarOpen = false;
     }
     if (params.get("mock") === "chat") {
       this.messages = [
@@ -66,7 +69,6 @@ export class CopilotApp extends LitElement {
 
   private handleNavSelect(tab: string) {
     this.activeTab = tab;
-    // Auto-close drawer on mobile upon selection
     if (typeof window !== "undefined" && window.innerWidth < 768) {
       this.isSidebarOpen = false;
     }
@@ -108,8 +110,8 @@ export class CopilotApp extends LitElement {
     if (lower.includes("audio") || lower.includes("expression")) {
       return `Copilot Audio Expressions allows generative voice and sound synthesis directly within your workflows.\n\nKey capabilities:\n1. **Zero-shot Emotion Control**: Modulate pitch, cadence, and vocal emphasis.\n2. **Multilingual Resonance**: Real-time translation with preserved timbre.\n3. **Soundscapes**: Ambient generative audio beds generated on demand.`;
     }
-    if (lower.includes("shopping") || lower.includes("price") || lower.includes("chair") || lower.includes("headphone")) {
-      return `Here are the top considerations based on recent user feedback and verified benchmarks:\n\n- **Build Quality & Durability**: Premium materials with robust warranties.\n- **Value Comparison**: Competitive tier pricing with seasonal discounts available.\n- **Compatibility**: Plug-and-play integration with standard workspaces.\n\nLet me know if you would like a detailed side-by-side spec sheet!`;
+    if (lower.includes("shopping") || lower.includes("price") || lower.includes("chair") || lower.includes("headphone") || lower.includes("sweater") || lower.includes("deal")) {
+      return `Here are the top shopping recommendations based on verified buyer reviews, current promotions, and price analysis:\n\n- **Pricing & Discounts**: Filtered for verified seasonal deals with best-price matching.\n- **Review Aggregation**: High-sentiment highlights extracted across major retailers.\n- **Quality Benchmarks**: Premium materials, standard warranty support, and durability ratings.\n\nLet me know if you would like a side-by-side comparison table!`;
     }
     return `Certainly! Regarding **"${prompt}"**:\n\nCopilot provides straightforward reasoning, real-time research, and creative assistance. Everything is running natively in your Lit components interface with full Light DOM styling, responsive mobile drawer, and Squircles integration.\n\nHow else can I assist your workflow today?`;
   }
@@ -205,7 +207,7 @@ export class CopilotApp extends LitElement {
 
   override render() {
     return html`
-      <!-- Microsoft Copilot Shell Architecture with Mobile Drawer -->
+      <!-- Microsoft Copilot Shell Architecture with Contents-based Sidebar -->
       <div
         class="flex h-screen w-screen overflow-hidden bg-sidebar-light dark:bg-sidebar-dark font-sans select-none relative"
         data-theme="${this.theme}"
@@ -220,8 +222,9 @@ export class CopilotApp extends LitElement {
             `
         : nothing}
 
-        <!-- 1. Sidebar Navigation (Desktop pinned, Mobile slide-in drawer) -->
+        <!-- 1. Sidebar Navigation (Uses display: contents so collapsed state occupies 0px) -->
         <copilot-sidebar
+          class="contents"
           .activeTab=${this.activeTab}
           .isOpen=${this.isSidebarOpen}
           @nav-select=${(e: CustomEvent<{ tab: string }>) => this.handleNavSelect(e.detail.tab)}
@@ -231,11 +234,14 @@ export class CopilotApp extends LitElement {
 
         <!-- 2. Main Stage with Microsoft Copilot Margin & Rounded Container -->
         <main
-          class="relative flex flex-1 flex-col h-full min-w-0 md:py-1.5 md:pe-1.5 transition-all duration-300"
+          class="relative flex flex-1 flex-col h-full min-w-0 md:py-1.5 md:pe-1.5 transition-all duration-300 ${!this
+        .isSidebarOpen
+        ? "md:ps-1.5"
+        : ""}"
         >
           <!-- Canvas stage with background-150 and md:rounded-container -->
-          <div class="relative size-full overflow-hidden md:rounded-container bg-background-150">
-            <!-- Topbar Controls (Menu toggle always available on mobile) -->
+          <div class="relative size-full overflow-hidden md:rounded-container bg-background-150 flex flex-col">
+            <!-- Topbar Controls -->
             <copilot-header
               .isSidebarOpen=${this.isSidebarOpen}
               .theme=${this.theme}

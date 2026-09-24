@@ -23,9 +23,14 @@ export class CopilotSidebar extends LitElement {
   @property({ type: String }) activeTab = "new-chat";
   @property({ type: Boolean }) isOpen = true;
 
-  // Render in Light DOM so global Tailwind utilities & Copilot CSS apply
   protected override createRenderRoot() {
     return this;
+  }
+
+  override connectedCallback() {
+    super.connectedCallback();
+    // Ensure custom element host does not create an unwanted flex box gap when collapsed
+    this.style.display = "contents";
   }
 
   private readonly primaryNav: NavItem[] = [
@@ -76,9 +81,10 @@ export class CopilotSidebar extends LitElement {
     return html`
       <aside
         class="h-full flex flex-col justify-between border-e border-black/10 dark:border-white/10 bg-sidebar-light dark:bg-sidebar-dark transition-all duration-300 ease-[cubic-bezier(0.43,0.195,0.02,1)] fixed md:relative inset-y-0 left-0 z-50 md:z-auto shadow-2xl md:shadow-none ${this
-        .isOpen
-        ? "w-[280px] md:w-[260px] min-w-[260px] p-3 translate-x-0"
-        : "-translate-x-full md:translate-x-0 md:w-0 md:min-w-0 p-0 overflow-hidden md:opacity-0 md:border-none pointer-events-none"}"
+          .isOpen
+          ? "p-3 translate-x-0"
+          : "-translate-x-full md:translate-x-0 p-0 m-0 overflow-hidden md:opacity-0 md:border-none pointer-events-none"}"
+        style="${this.isOpen ? "width: 260px; min-width: 260px; max-width: 260px; flex: 0 0 260px;" : "width: 0px; min-width: 0px; max-width: 0px; flex: 0 0 0px; border: none; padding: 0; margin: 0; overflow: hidden;"}"
         role="navigation"
         aria-label="Copilot Navigation"
       >
