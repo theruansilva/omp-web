@@ -15,7 +15,7 @@ import type { SubmitPromptDetail } from "./CopilotComposer";
 export class CopilotApp extends LitElement {
   @state() private activeTab = "new-chat";
   @state() private isSidebarOpen = true;
-  @state() private theme: "dark" | "light" = "dark";
+  @state() private theme: "dark" | "light" = "light";
   @state() private messages: ChatMessage[] = [];
   @state() private isStreaming = false;
 
@@ -37,7 +37,7 @@ export class CopilotApp extends LitElement {
     if (params.get("mock") === "chat") {
       this.messages = [
         { id: "msg-1", role: "user", text: "Olá! Como o Copilot pode me ajudar?", timestamp: "10:30" },
-        { id: "msg-2", role: "assistant", text: "Olá! O Copilot é seu assistente inteligente recriado 100% em Lit Components modulares, mantendo exatamente o mesmo design system, fontes e estilo visual!", timestamp: "10:30" }
+        { id: "msg-2", role: "assistant", text: "Olá! O Copilot é seu assistente de inteligência artificial recriado com 100% de fidelidade visual, consumindo as classes e tokens originais!", timestamp: "10:30" }
       ];
     }
     this.applyTheme(this.theme);
@@ -62,7 +62,6 @@ export class CopilotApp extends LitElement {
   private handleNavSelect(tab: string) {
     this.activeTab = tab;
     if (tab === "new-chat" && this.messages.length > 0) {
-      // Starting a new chat clears the current active conversation
       this.messages = [];
     }
   }
@@ -79,7 +78,6 @@ export class CopilotApp extends LitElement {
     this.activeTab = "new-chat";
     this.isStreaming = true;
 
-    // Simulate intelligent streaming assistant response
     setTimeout(() => {
       const assistantText = this.generateResponse(detail.prompt);
       const assistantMsg: ChatMessage = {
@@ -177,7 +175,7 @@ export class CopilotApp extends LitElement {
       case "library":
         return html`
           <div class="flex flex-1 flex-col items-center justify-center h-full px-4 text-center select-none">
-            <h2 class="text-2xl font-bold text-foreground-900 font-ginto mb-2">Your Library</h2>
+            <h2 class="text-2xl font-bold text-foreground-800 font-ginto mb-2">Your Library</h2>
             <p class="text-sm text-foreground-500 max-w-sm">Saved chats, pinned generations, and project artifacts will appear here.</p>
           </div>
         `;
@@ -185,8 +183,8 @@ export class CopilotApp extends LitElement {
       case "tasks":
         return html`
           <div class="flex flex-1 flex-col items-center justify-center h-full px-4 text-center select-none">
-            <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-500 border border-blue-500/20 mb-3">PREVIEW</span>
-            <h2 class="text-2xl font-bold text-foreground-900 font-ginto mb-2">Automated Tasks</h2>
+            <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-500/15 text-blue-600 border border-blue-500/30 mb-3">PREVIEW</span>
+            <h2 class="text-2xl font-bold text-foreground-800 font-ginto mb-2">Automated Tasks</h2>
             <p class="text-sm text-foreground-500 max-w-sm">Schedule background reasoning, recurring research summaries, and automated project tracking.</p>
           </div>
         `;
@@ -198,36 +196,40 @@ export class CopilotApp extends LitElement {
 
   override render() {
     return html`
+      <!-- Microsoft Copilot Exact Shell Architecture -->
       <div
         class="flex h-screen w-screen overflow-hidden bg-sidebar-light dark:bg-sidebar-dark font-sans select-none"
         data-theme="${this.theme}"
       >
-        <!-- 1. Collapsible Sidebar Navigation -->
+        <!-- 1. Collapsible Sidebar Navigation (260px) -->
         <copilot-sidebar
           .activeTab=${this.activeTab}
           .isOpen=${this.isSidebarOpen}
           @nav-select=${(e: CustomEvent<{ tab: string }>) => this.handleNavSelect(e.detail.tab)}
           @toggle-sidebar=${() => (this.isSidebarOpen = !this.isSidebarOpen)}
-          @sign-in=${() => alert("Sign in modal triggered (Guest state demo)")}
+          @sign-in=${() => alert("Sign in demo triggered")}
         ></copilot-sidebar>
 
-        <!-- 2. Main Viewport Stage -->
+        <!-- 2. Main Stage with Microsoft Copilot Margin & Rounded Container -->
         <main
-          class="relative flex flex-1 flex-col h-full bg-background-light dark:bg-background-dark overflow-hidden transition-all duration-300 md:m-2 md:rounded-container shadow-xs border border-black/5 dark:border-white/5"
+          class="relative flex flex-1 flex-col h-full min-w-0 md:py-1.5 md:pe-1.5 transition-all duration-300"
         >
-          <!-- Topbar Controls -->
-          <copilot-header
-            .isSidebarOpen=${this.isSidebarOpen}
-            .theme=${this.theme}
-            .title=${this.getHeaderTitle()}
-            @toggle-sidebar=${() => (this.isSidebarOpen = !this.isSidebarOpen)}
-            @toggle-theme=${() => this.toggleTheme()}
-            @sign-in=${() => alert("Sign in modal triggered (Guest state demo)")}
-          ></copilot-header>
+          <!-- Canvas stage with background-150 and md:rounded-container -->
+          <div class="relative size-full overflow-hidden md:rounded-container bg-background-150">
+            <!-- Topbar Controls -->
+            <copilot-header
+              .isSidebarOpen=${this.isSidebarOpen}
+              .theme=${this.theme}
+              .title=${this.getHeaderTitle()}
+              @toggle-sidebar=${() => (this.isSidebarOpen = !this.isSidebarOpen)}
+              @toggle-theme=${() => this.toggleTheme()}
+              @sign-in=${() => alert("Sign in demo triggered")}
+            ></copilot-header>
 
-          <!-- Current Active Stage View -->
-          <div class="relative flex-1 h-full w-full overflow-hidden">
-            ${this.renderActiveView()}
+            <!-- Current Active Stage View -->
+            <div class="relative flex-1 size-full overflow-hidden">
+              ${this.renderActiveView()}
+            </div>
           </div>
         </main>
       </div>

@@ -59,103 +59,115 @@ export class CopilotDiscoverView extends LitElement {
 
   override render() {
     return html`
-      <div class="relative flex flex-col h-full w-full overflow-hidden">
-        <!-- Scrollable Feed Container with generous bottom padding so cards are never occluded -->
-        <div class="flex-1 overflow-y-auto px-4 pt-14 pb-48 max-w-4xl mx-auto w-full flex flex-col gap-10">
-          <!-- Page Header -->
-          <div class="flex flex-col gap-1 text-center md:text-left select-none">
-            <h1 class="text-2xl md:text-3xl font-bold tracking-tight text-foreground-900 font-ginto">Discover</h1>
-            <p class="text-sm text-foreground-600">Explore curated topics, insights, and ideas powered by Copilot</p>
+      <!-- Microsoft Copilot Exact Discover View Hierarchy from templates/discover.html -->
+      <div class="scrollbar-stable t-custom-scrollbar relative flex size-full flex-col items-center overflow-y-auto overflow-x-hidden overscroll-contain">
+        <div class="w-full max-w-labs px-6 pt-16 pb-48 flex flex-col items-center mx-auto">
+          <!-- Page Titles -->
+          <div class="flex w-full flex-col items-center">
+            <h1 class="text-center text-foreground-800 text-3xl font-ginto" data-testid="labs-title">
+              <span class="text-[38px] font-semibold">Copilot Discover</span>
+            </h1>
+            <h2 class="mt-4 text-center text-foreground-800 text-xl font-ginto [font-variation-settings:'opsz'_40,_'wght'_400]" data-testid="labs-slogan">
+              Discover stories, insights, and trending ideas
+            </h2>
           </div>
 
-          <!-- Section 1: Trending in AI & Science with Squircle-48-32 -->
-          <div class="flex flex-col gap-4">
-            <h2 class="text-xs font-bold uppercase tracking-wider text-foreground-500 font-ginto">
+          <!-- Section 1: Trending in AI & Science with Squircle-60 -->
+          <section class="mt-12 w-full">
+            <h3 class="text-xs font-bold uppercase tracking-wider text-foreground-500 font-ginto mb-5">
               Trending in AI & Science
-            </h2>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            </h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
               ${this.trendingCards.map(
       (card) => html`
                   <div
-                    class="relative drop-shadow-sm hover:drop-shadow-md transition-all duration-200 hover:-translate-y-0.5 cursor-pointer"
+                    class="relative isolate bg-white/45 dark:bg-background-650/10 flex h-full cursor-pointer flex-col gap-3 p-3 text-foreground-800 transition-transform duration-200 ease-in hover:scale-[1.025] shadow-sm w-full"
+                    data-testid="labs-feature-card"
+                    style="clip-path: var(--clip-path-squircle-60);"
                     @click=${() => this.handleCardClick(card.prompt)}
                   >
-                    <div class="copilot-squircle-card squircle-48-32 flex flex-col overflow-hidden">
-                      <!-- Thumbnail with overlay -->
-                      <div class="relative h-44 w-full overflow-hidden bg-black/20">
+                    <div class="items-stretch overflow-hidden rounded-b-6xl rounded-t-7xl aspect-[97/74] bp-960:rounded-l-7xl bp-960:rounded-r-6xl">
+                      <div class="relative size-full">
                         <img
-                          src="${card.thumbnail}"
                           alt="${card.title}"
-                          class="size-full object-cover transition-transform duration-500 hover:scale-105"
+                          class="absolute size-full object-cover block"
+                          src="${card.thumbnail}"
                           loading="lazy"
                           onerror="this.style.display='none'"
                         />
                         <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
                       </div>
-                      <!-- Body -->
-                      <div class="p-5 flex flex-col justify-between flex-1 gap-2">
-                        <h3 class="copilot-card-title text-base font-semibold leading-snug hover:text-blue-500 transition-colors font-ginto">
+                    </div>
+                    <div class="flex flex-col items-start space-y-3 text-foreground-800 p-3 flex-1 justify-between">
+                      <div class="flex flex-col items-start space-y-1.5">
+                        <p class="line-clamp-2 text-xl font-semibold font-ginto text-foreground-800">
                           ${card.title}
-                        </h3>
-                        <p class="copilot-card-desc text-xs line-clamp-2 leading-relaxed">
+                        </p>
+                        <p class="line-clamp-3 text-xs text-foreground-600 leading-relaxed font-sans">
                           ${card.prompt}
                         </p>
                       </div>
-
-                      <!-- Squircle-48-32 Stroke Overlay -->
-                      <div class="copilot-squircle-stroke squircle-stroke-48-32"></div>
                     </div>
+                    <div
+                      class="before:border-black/10 dark:before:border-white/10 before:border-[20px] will-change-transform pointer-events-none absolute inset-0 before:absolute before:inset-0 before:rounded-inherit"
+                      style="clip-path: var(--clip-path-squircle-stroke-60);"
+                    ></div>
                   </div>
                 `
     )}
             </div>
-          </div>
+          </section>
 
-          <!-- Section 2: Creative Explorations with Squircle-36-24 -->
-          <div class="flex flex-col gap-4">
-            <h2 class="text-xs font-bold uppercase tracking-wider text-foreground-500 font-ginto">
+          <!-- Section 2: Creative Explorations with Squircle-60 -->
+          <section class="mt-14 w-full">
+            <h3 class="text-xs font-bold uppercase tracking-wider text-foreground-500 font-ginto mb-5">
               Creative Explorations
-            </h2>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            </h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
               ${this.creativeCards.map(
       (card) => html`
                   <div
-                    class="relative drop-shadow-sm hover:drop-shadow-md transition-all duration-200 hover:-translate-y-0.5 cursor-pointer"
+                    class="relative isolate bg-white/45 dark:bg-background-650/10 flex h-full cursor-pointer flex-col gap-3 p-3 text-foreground-800 transition-transform duration-200 ease-in hover:scale-[1.025] shadow-sm w-full"
+                    data-testid="labs-experiment-card"
+                    style="clip-path: var(--clip-path-squircle-60);"
                     @click=${() => this.handleCardClick(card.prompt)}
                   >
-                    <div class="copilot-squircle-card squircle-36-24 flex flex-col overflow-hidden">
-                      <div class="relative h-44 w-full overflow-hidden bg-black/20">
+                    <div class="items-stretch overflow-hidden rounded-b-6xl rounded-t-7xl aspect-[16/10]">
+                      <div class="relative size-full">
                         <img
-                          src="${card.thumbnail}"
                           alt="${card.title}"
-                          class="size-full object-cover transition-transform duration-500 hover:scale-105"
+                          class="absolute size-full object-cover block"
+                          src="${card.thumbnail}"
                           loading="lazy"
                           onerror="this.style.display='none'"
                         />
                         <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
                       </div>
-                      <div class="p-5 flex flex-col justify-between flex-1 gap-2">
-                        <h3 class="copilot-card-title text-base font-semibold leading-snug hover:text-blue-500 transition-colors font-ginto">
+                    </div>
+                    <div class="flex flex-col items-start space-y-3 text-foreground-800 p-3 flex-1 justify-between">
+                      <div class="flex flex-col items-start space-y-1.5">
+                        <p class="line-clamp-2 text-xl font-semibold font-ginto text-foreground-800">
                           ${card.title}
-                        </h3>
-                        <p class="copilot-card-desc text-xs line-clamp-2 leading-relaxed">
+                        </p>
+                        <p class="line-clamp-3 text-xs text-foreground-600 leading-relaxed font-sans">
                           ${card.prompt}
                         </p>
                       </div>
-
-                      <!-- Squircle-36-24 Stroke Overlay -->
-                      <div class="copilot-squircle-stroke squircle-stroke-36-24"></div>
                     </div>
+                    <div
+                      class="before:border-black/10 dark:before:border-white/10 before:border-[20px] will-change-transform pointer-events-none absolute inset-0 before:absolute before:inset-0 before:rounded-inherit"
+                      style="clip-path: var(--clip-path-squircle-stroke-60);"
+                    ></div>
                   </div>
                 `
     )}
             </div>
-          </div>
+          </section>
         </div>
 
         <!-- Sticky Bottom Composer Dock -->
-        <div class="absolute bottom-0 inset-x-0 z-20 flex flex-col items-center px-4 pb-4 pt-8 bg-gradient-to-t from-background-light dark:from-background-dark via-background-light/80 dark:via-background-dark/80 to-transparent pointer-events-none">
-          <div class="w-full max-w-[720px] pointer-events-auto">
+        <div class="absolute bottom-0 inset-x-0 z-20 flex flex-col items-center px-4 pb-4 pt-8 bg-gradient-to-t from-background-150 via-background-150/80 to-transparent pointer-events-none">
+          <div class="w-full max-w-chat pointer-events-auto">
             <copilot-composer
               compact
               .isWorking=${this.isWorking}
