@@ -79,7 +79,7 @@ export class CopilotShoppingView extends LitElement {
             </p>
           </div>
 
-          <!-- Product Recommendation Cards with 24px rounded corners -->
+          <!-- Product Recommendation Cards with Squircle-24 -->
           <div class="flex flex-col gap-4">
             <h2 class="text-xs font-bold uppercase tracking-wider text-foreground-500 font-ginto">
               Trending Product Guides
@@ -88,34 +88,39 @@ export class CopilotShoppingView extends LitElement {
               ${this.products.map(
       (p) => html`
                   <div
-                    class="copilot-card-compact group relative flex flex-col cursor-pointer"
+                    class="relative drop-shadow-xs hover:drop-shadow-md transition-all duration-200 hover:-translate-y-0.5 cursor-pointer"
                     @click=${() => this.handleProductClick(p.prompt)}
                   >
-                    <!-- Product Image -->
-                    <div class="relative aspect-square w-full overflow-hidden bg-black/10">
-                      <img
-                        src="${p.image}"
-                        alt="${p.name}"
-                        class="size-full object-cover transition-transform duration-500 group-hover:scale-105"
-                        loading="lazy"
-                        onerror="this.style.display='none'"
-                      />
-                    </div>
+                    <div class="copilot-squircle-card squircle-24 flex flex-col overflow-hidden">
+                      <!-- Product Image -->
+                      <div class="relative aspect-square w-full overflow-hidden bg-black/10">
+                        <img
+                          src="${p.image}"
+                          alt="${p.name}"
+                          class="size-full object-cover transition-transform duration-500 hover:scale-105"
+                          loading="lazy"
+                          onerror="this.style.display='none'"
+                        />
+                      </div>
 
-                    <!-- Info -->
-                    <div class="p-4 flex flex-col justify-between flex-1 gap-2">
-                      <div class="flex flex-col gap-1">
-                        <span class="text-[10px] font-semibold text-foreground-500 uppercase tracking-wide">
-                          ${p.category}
-                        </span>
-                        <h3 class="copilot-card-title text-xs font-semibold group-hover:text-blue-500 transition-colors line-clamp-2 leading-snug font-ginto">
-                          ${p.name}
-                        </h3>
+                      <!-- Info -->
+                      <div class="p-4 flex flex-col justify-between flex-1 gap-2">
+                        <div class="flex flex-col gap-1">
+                          <span class="text-[10px] font-semibold text-foreground-500 uppercase tracking-wide">
+                            ${p.category}
+                          </span>
+                          <h3 class="copilot-card-title text-xs font-semibold hover:text-blue-500 transition-colors line-clamp-2 leading-snug font-ginto">
+                            ${p.name}
+                          </h3>
+                        </div>
+                        <div class="flex items-center justify-between pt-1">
+                          <span class="text-xs font-bold text-foreground-900">${p.price}</span>
+                          <span class="text-[11px] font-medium text-blue-500 hover:underline">Compare →</span>
+                        </div>
                       </div>
-                      <div class="flex items-center justify-between pt-1">
-                        <span class="text-xs font-bold text-foreground-900">${p.price}</span>
-                        <span class="text-[11px] font-medium text-blue-500 hover:underline">Compare →</span>
-                      </div>
+
+                      <!-- Squircle-24 Stroke Overlay -->
+                      <div class="copilot-squircle-stroke squircle-stroke-24"></div>
                     </div>
                   </div>
                 `
@@ -126,7 +131,7 @@ export class CopilotShoppingView extends LitElement {
 
         <!-- Sticky Bottom Composer Dock -->
         <div class="absolute bottom-0 inset-x-0 z-20 flex flex-col items-center px-4 pb-4 pt-8 bg-gradient-to-t from-background-light dark:from-background-dark via-background-light/80 dark:via-background-dark/80 to-transparent pointer-events-none">
-          <div class="w-full max-w-[700px] pointer-events-auto">
+          <div class="w-full max-w-[720px] pointer-events-auto">
             <copilot-composer
               compact
               placeholder="Ask Copilot about any product, deal, or review..."

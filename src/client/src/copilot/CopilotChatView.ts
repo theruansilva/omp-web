@@ -62,9 +62,9 @@ export class CopilotChatView extends LitElement {
       (msg) => html`
               ${msg.role === "user"
           ? html`
-                    <!-- User Message Bubble (Right aligned, signature peach/tan rounded bubble) -->
+                    <!-- User Message Bubble (Right aligned, squircle-24 peach/tan bubble) -->
                     <div class="flex justify-end">
-                      <div class="copilot-user-bubble max-w-[85%] md:max-w-[75%] px-4 py-2.5 text-[15px] leading-relaxed font-sans break-words">
+                      <div class="squircle-24 max-w-[85%] md:max-w-[75%] px-5 py-3 bg-[#F5E7DA] dark:bg-[#2C2723] text-[#241F1B] dark:text-[#F3EDE6] text-[15px] leading-relaxed font-sans break-words drop-shadow-xs">
                         ${msg.text}
                       </div>
                     </div>
@@ -100,7 +100,7 @@ export class CopilotChatView extends LitElement {
 
         <!-- Sticky Bottom Composer Dock -->
         <div class="absolute bottom-0 inset-x-0 z-20 flex flex-col items-center px-4 pb-4 pt-8 bg-gradient-to-t from-background-light dark:from-background-dark via-background-light/80 dark:via-background-dark/80 to-transparent pointer-events-none">
-          <div class="w-full max-w-[700px] pointer-events-auto">
+          <div class="w-full max-w-[720px] pointer-events-auto">
             <copilot-composer
               compact
               .isWorking=${this.isStreaming}

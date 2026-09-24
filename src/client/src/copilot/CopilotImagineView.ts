@@ -135,57 +135,62 @@ export class CopilotImagineView extends LitElement {
             </p>
           </div>
 
-          <!-- 2x4 Gallery Grid with exact 24px rounded compact cards -->
+          <!-- 2x4 Gallery Grid with Squircle-24 -->
           <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             ${this.items.map(
       (item) => html`
                 <div
-                  class="copilot-card-compact group relative flex flex-col cursor-pointer"
+                  class="relative drop-shadow-xs hover:drop-shadow-md transition-all duration-200 hover:-translate-y-1 cursor-pointer"
                   @click=${() => this.selectCard(item.prompt)}
                 >
-                  <!-- Card Image / Artwork -->
-                  <div class="relative aspect-4/5 w-full overflow-hidden bg-black/20">
-                    <img
-                      src="${item.url}"
-                      alt="${item.prompt}"
-                      class="size-full object-cover transition-transform duration-500 group-hover:scale-108"
-                      loading="lazy"
-                      onerror="this.style.display='none'"
-                    />
-                    <div class="absolute inset-0 bg-gradient-to-t from-black/75 via-transparent to-transparent opacity-80 group-hover:opacity-90 transition-opacity"></div>
+                  <div class="copilot-squircle-card squircle-24 flex flex-col overflow-hidden">
+                    <!-- Card Image / Artwork -->
+                    <div class="relative aspect-4/5 w-full overflow-hidden bg-black/20">
+                      <img
+                        src="${item.url}"
+                        alt="${item.prompt}"
+                        class="size-full object-cover transition-transform duration-500 hover:scale-108"
+                        loading="lazy"
+                        onerror="this.style.display='none'"
+                      />
+                      <div class="absolute inset-0 bg-gradient-to-t from-black/75 via-transparent to-transparent opacity-80 hover:opacity-90 transition-opacity"></div>
 
-                    <!-- Prompt Preview on Hover -->
-                    <div class="absolute inset-x-3 bottom-12 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                      <p class="text-xs text-white/95 line-clamp-3 leading-relaxed drop-shadow-md">
-                        "${item.prompt}"
-                      </p>
+                      <!-- Prompt Preview on Hover -->
+                      <div class="absolute inset-x-3 bottom-12 opacity-0 hover:opacity-100 transition-opacity duration-300">
+                        <p class="text-xs text-white/95 line-clamp-3 leading-relaxed drop-shadow-md">
+                          "${item.prompt}"
+                        </p>
+                      </div>
                     </div>
-                  </div>
 
-                  <!-- Card Footer (Tags + Like Counter) -->
-                  <div class="p-3 flex items-center justify-between select-none">
-                    <div class="flex items-center gap-1.5 flex-wrap min-w-0">
-                      ${item.tags.map(
+                    <!-- Card Footer (Tags + Like Counter) -->
+                    <div class="p-3 flex items-center justify-between select-none">
+                      <div class="flex items-center gap-1.5 flex-wrap min-w-0">
+                        ${item.tags.map(
         (tag) => html`
-                          <span
-                            class="text-[10px] font-medium px-2 py-0.5 rounded-full bg-black/5 dark:bg-white/10 text-foreground-800"
-                          >
-                            ${tag}
-                          </span>
-                        `
+                            <span
+                              class="text-[10px] font-medium px-2 py-0.5 rounded-full bg-black/5 dark:bg-white/10 text-foreground-800"
+                            >
+                              ${tag}
+                            </span>
+                          `
       )}
+                      </div>
+
+                      <!-- Like Button -->
+                      <button
+                        type="button"
+                        aria-label="Like artwork"
+                        class="flex items-center gap-1 text-xs text-foreground-700 hover:text-foreground-900 transition-colors shrink-0"
+                        @click=${(e: Event) => this.toggleLike(e, item.id)}
+                      >
+                        ${renderHeartIcon(item.isLiked)}
+                        <span class="font-medium">${item.likedCount}</span>
+                      </button>
                     </div>
 
-                    <!-- Like Button -->
-                    <button
-                      type="button"
-                      aria-label="Like artwork"
-                      class="flex items-center gap-1 text-xs text-foreground-700 hover:text-foreground-900 transition-colors shrink-0"
-                      @click=${(e: Event) => this.toggleLike(e, item.id)}
-                    >
-                      ${renderHeartIcon(item.isLiked)}
-                      <span class="font-medium">${item.likedCount}</span>
-                    </button>
+                    <!-- Squircle-24 Stroke Overlay -->
+                    <div class="copilot-squircle-stroke squircle-stroke-24"></div>
                   </div>
                 </div>
               `

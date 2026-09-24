@@ -1,15 +1,16 @@
-/* Copilot UI Adaptive Theme & Exact Rounded Corners */
+/* Copilot UI Adaptive Theme & Exact Squircles */
+@import "./squircles.css";
 
 :root {
   --copilot-bg: #FAF7F5;
   --copilot-card-bg: #FFFFFF;
-  --copilot-card-border: rgba(0, 0, 0, 0.08);
-  --copilot-card-hover-border: rgba(0, 0, 0, 0.18);
+  --copilot-card-border: rgba(0, 0, 0, 0.12);
+  --copilot-card-hover-border: rgba(0, 0, 0, 0.22);
   --copilot-text-primary: #1C1B1A;
   --copilot-text-secondary: #666666;
   --copilot-text-muted: #888888;
   --copilot-composer-bg: #FFFFFF;
-  --copilot-composer-border: rgba(0, 0, 0, 0.08);
+  --copilot-composer-border: rgba(0, 0, 0, 0.12);
   --copilot-bubble-bg: #F5E7DA;
   --copilot-bubble-text: #241F1B;
 }
@@ -17,112 +18,113 @@
 .dark, [data-theme="dark"] {
   --copilot-bg: #0F121B;
   --copilot-card-bg: #1A1E2B;
-  --copilot-card-border: rgba(255, 255, 255, 0.1);
-  --copilot-card-hover-border: rgba(255, 255, 255, 0.25);
+  --copilot-card-border: rgba(255, 255, 255, 0.14);
+  --copilot-card-hover-border: rgba(255, 255, 255, 0.28);
   --copilot-text-primary: #F8FAFC;
   --copilot-text-secondary: #94A3B8;
   --copilot-text-muted: #64748B;
   --copilot-composer-bg: #181C26;
-  --copilot-composer-border: rgba(255, 255, 255, 0.12);
+  --copilot-composer-border: rgba(255, 255, 255, 0.15);
   --copilot-bubble-bg: #2C2723;
   --copilot-bubble-text: #F3EDE6;
 }
 
 /* =========================================================
-   1. EXACT COMPOSER (32px Outer + 26px Inner Concentric)
+   SQUIRCLE CLIP PATHS FROM @progmruansilva/squircles
    ========================================================= */
 
-.copilot-composer-outer {
-  border-radius: 32px !important;
-  box-shadow: 0 16px 24px 0 rgba(0, 0, 0, 0.12), 0 0 1px 0 rgba(0, 0, 0, 0.08), 0 16px 48px 0 rgba(0, 0, 0, 0.06);
-  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-}
+.squircle-16 { clip-path: var(--clip-path-squircle-16) !important; }
+.squircle-16-12 { clip-path: var(--clip-path-squircle-16-12) !important; }
+.squircle-24 { clip-path: var(--clip-path-squircle-24) !important; }
+.squircle-24-16 { clip-path: var(--clip-path-squircle-24-16) !important; }
+.squircle-28 { clip-path: var(--clip-path-squircle-28) !important; }
+.squircle-36 { clip-path: var(--clip-path-squircle-36) !important; }
+.squircle-36-24 { clip-path: var(--clip-path-squircle-36-24) !important; }
+.squircle-48 { clip-path: var(--clip-path-squircle-48) !important; }
+.squircle-48-32 { clip-path: var(--clip-path-squircle-48-32) !important; }
+.squircle-32-48 { clip-path: var(--clip-path-squircle-32-48) !important; }
+.squircle-60 { clip-path: var(--clip-path-squircle-60) !important; }
 
-.dark .copilot-composer-outer,
-[data-theme="dark"] .copilot-composer-outer {
-  box-shadow: 0 16px 28px 0 rgba(0, 0, 0, 0.35), 0 0 1px 0 rgba(255, 255, 255, 0.15), 0 16px 48px 0 rgba(0, 0, 0, 0.25);
-}
+/* Squircle Stroke Clip Paths */
+.squircle-stroke-16 { clip-path: var(--clip-path-squircle-stroke-16) !important; }
+.squircle-stroke-24 { clip-path: var(--clip-path-squircle-stroke-24) !important; }
+.squircle-stroke-28 { clip-path: var(--clip-path-squircle-stroke-28) !important; }
+.squircle-stroke-36-24 { clip-path: var(--clip-path-squircle-stroke-36-24) !important; }
+.squircle-stroke-48-32 { clip-path: var(--clip-path-squircle-stroke-48-32) !important; }
 
-/* =========================================================
-   2. EXACT MICROSOFT COPILOT ASYMMETRICAL CARD HIERARCHY
-   - Hero/Trending: 48px top, 32px bottom (rounded-t-7xl rounded-b-6xl)
-   - Grid Cards: 36px top, 28px bottom (rounded-t-6xl rounded-b-5xl)
-   - Compact Cards: 24px (rounded-4xl)
-   ========================================================= */
-
-.copilot-card-hero {
-  border-radius: 48px 48px 32px 32px !important;
-  background-color: var(--copilot-card-bg) !important;
-  color: var(--copilot-text-primary) !important;
-  border: 1px solid var(--copilot-card-border) !important;
+/* Squircle Card Container */
+.copilot-squircle-card {
+  background-color: #FFFFFF !important;
+  color: #1C1B1A !important;
+  position: relative;
   overflow: hidden;
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.copilot-card-hero:hover {
-  border-color: var(--copilot-card-hover-border) !important;
-  box-shadow: 0 12px 28px -6px rgba(0, 0, 0, 0.12);
-  transform: translateY(-2px);
+.dark .copilot-squircle-card,
+[data-theme="dark"] .copilot-squircle-card {
+  background-color: #1A1E2B !important;
+  color: #F8FAFC !important;
 }
 
-.copilot-card-grid {
-  border-radius: 36px 36px 28px 28px !important;
-  background-color: var(--copilot-card-bg) !important;
-  color: var(--copilot-text-primary) !important;
-  border: 1px solid var(--copilot-card-border) !important;
-  overflow: hidden;
-  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+/* Titles and descriptions inside squircle cards */
+.copilot-squircle-card .copilot-card-title,
+.copilot-squircle-card h2,
+.copilot-squircle-card h3 {
+  color: #1C1B1A !important;
 }
 
-.copilot-card-grid:hover {
-  border-color: var(--copilot-card-hover-border) !important;
-  box-shadow: 0 10px 24px -6px rgba(0, 0, 0, 0.12);
-  transform: translateY(-2px);
+.dark .copilot-squircle-card .copilot-card-title,
+.dark .copilot-squircle-card h2,
+.dark .copilot-squircle-card h3,
+[data-theme="dark"] .copilot-squircle-card .copilot-card-title,
+[data-theme="dark"] .copilot-squircle-card h2,
+[data-theme="dark"] .copilot-squircle-card h3 {
+  color: #F8FAFC !important;
 }
 
-.copilot-card-compact {
-  border-radius: 24px !important;
-  background-color: var(--copilot-card-bg) !important;
-  color: var(--copilot-text-primary) !important;
-  border: 1px solid var(--copilot-card-border) !important;
-  overflow: hidden;
-  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+.copilot-squircle-card .copilot-card-desc,
+.copilot-squircle-card p {
+  color: #666666 !important;
 }
 
-.copilot-card-compact:hover {
-  border-color: var(--copilot-card-hover-border) !important;
-  box-shadow: 0 8px 20px -4px rgba(0, 0, 0, 0.12);
-  transform: translateY(-2px);
+.dark .copilot-squircle-card .copilot-card-desc,
+.dark .copilot-squircle-card p,
+[data-theme="dark"] .copilot-squircle-card .copilot-card-desc,
+[data-theme="dark"] .copilot-squircle-card p {
+  color: #94A3B8 !important;
 }
 
-/* =========================================================
-   3. SPEECH BUBBLE & INTERACTIVE ELEMENTS
-   ========================================================= */
-
-.copilot-user-bubble {
-  border-radius: 24px 24px 6px 24px !important;
-  background-color: var(--copilot-bubble-bg) !important;
-  color: var(--copilot-bubble-text) !important;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+/* Squircle Stroke Overlay */
+.copilot-squircle-stroke {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.14) !important;
+  will-change: transform;
+  z-index: 20;
 }
 
-.copilot-card-title {
-  color: var(--copilot-text-primary) !important;
+.dark .copilot-squircle-stroke,
+[data-theme="dark"] .copilot-squircle-stroke {
+  background-color: rgba(255, 255, 255, 0.22) !important;
 }
 
-.copilot-card-desc {
-  color: var(--copilot-text-secondary) !important;
-}
-
+/* Buttons */
 .copilot-btn-pill {
   border-radius: 9999px !important;
-  border: 1px solid var(--copilot-card-border);
-  color: var(--copilot-text-primary);
+  border: 1px solid rgba(0, 0, 0, 0.15) !important;
+  color: #1C1B1A !important;
   transition: all 0.15s ease;
 }
 
+.dark .copilot-btn-pill,
+[data-theme="dark"] .copilot-btn-pill {
+  border: 1px solid rgba(255, 255, 255, 0.22) !important;
+  color: #F8FAFC !important;
+}
+
 .copilot-btn-pill:hover {
-  border-color: var(--copilot-card-hover-border);
   background-color: rgba(128, 128, 128, 0.08);
 }
 
