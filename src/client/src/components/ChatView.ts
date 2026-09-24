@@ -12,6 +12,7 @@ import { chatStyles } from "./shared";
 import "./ConversationMeter";
 import "./FormattedText";
 import "./ToolExecutionView";
+import { renderToolIcon, pathFromArgs, toolTarget, diffFromDetails, countDiffLines } from "./ToolExecutionView";
 import "./AskDialog";
 
 import {
@@ -95,6 +96,8 @@ export class ChatView extends LitElement {
   private prependRestoreToken = 0;
   @state() private loadMoreRequested = false;
   @state() private chatPreferences: ChatPreferences = loadChatPreferences();
+  @state() private selectedGroupItemMap: Record<string, number | null> = {};
+  @state() private copiedInspectorText = false;
   private readonly handleChatPreferencesChanged = (event: Event): void => {
     if (event instanceof CustomEvent && isChatPreferences(event.detail)) {
       this.chatPreferences = event.detail;
@@ -415,31 +418,205 @@ export class ChatView extends LitElement {
   }
 
 
+  private onToggleGroupItem(groupKey: string, offset: number): void {
+    const current = this.selectedGroupItemMap[groupKey];
+    if (current === offset) {
+      this.selectedGroupItemMap = { ...this.selectedGroupItemMap, [groupKey]: null };
+    } else {
+      this.selectedGroupItemMap = { ...this.selectedGroupItemMap, [groupKey]: offset };
+    }
+  }
+
+  private onCloseGroupInspector(groupKey: string): void {
+    this.selectedGroupItemMap = { ...this.selectedGroupItemMap, [groupKey]: null };
+  }
+
+  private async copyInspectorDiff(diff: string): Promise<void> {
+    try {
+      await navigator.clipboard.writeText(diff);
+      this.copiedInspectorText = true;
+      setTimeout(() => {
+        this.copiedInspectorText = false;
+        this.requestUpdate();
+      }, 1500);
+    } catch {
+      this.copiedInspectorText = false;
+    }
+  }
+
+  private extractGroupItemMeta(message: ChatLine): {
+    label: string;
+    icon: unknown;
+    target?: string | undefined;
+    diffStats?: { added: number; removed: number } | undefined;
+    diffText?: string | undefined;
+    isRunning: boolean;
+    isError: boolean;
+  } {
+    const part = message.parts[0];
+    if (!part) {
+      return { label: message.role, icon: null, isRunning: false, isError: false };
+    }
+    if (part.type === "thinking") {
+      const firstLine = part.text.trim().split("\n")[0]?.replace(/^\*+|\*+$/g, "").trim() || "";
+      const summary = firstLine.length > 55 ? firstLine.slice(0, 52) + "…" : firstLine;
+      const icon = html`<svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="color: var(--pi-purple, #a855f7);"><path d="M8 2a4.5 4.5 0 0 0-3 7.8c.7.7 1 1.4 1 2.2h4c0-.8.3-1.5 1-2.2A4.5 4.5 0 0 0 8 2z" /><path d="M6 13h4M6.5 14.5h3" /></svg>`;
+      return { label: "thinking", icon, target: summary, isRunning: false, isError: false };
+    }
+    if (part.type === "toolExecution") {
+      const isRunning = part.status === "running" || part.status === "pending";
+      const isError = part.status === "error";
+      const path = pathFromArgs(part.args);
+      const target = toolTarget(part, path);
+      const diff = diffFromDetails(part.details) ?? part.preview?.diff;
+      const diffStats = diff ? countDiffLines(diff) : undefined;
+      return {
+        label: part.toolName,
+        icon: renderToolIcon(part.toolName, part.status),
+        target: target?.text,
+        diffStats,
+        diffText: diff,
+        isRunning,
+        isError,
+      };
+    }
+    if (part.type === "toolCall") {
+      return {
+        label: part.toolName,
+        icon: renderToolIcon(part.toolName, "success"),
+        target: part.summary,
+        isRunning: false,
+        isError: false,
+      };
+    }
+    if (part.type === "toolResult") {
+      return {
+        label: `${part.toolName} result`,
+        icon: renderToolIcon(part.toolName, part.isError ? "error" : "success"),
+        target: part.text.trim().split("\n")[0]?.slice(0, 50),
+        isRunning: false,
+        isError: part.isError,
+      };
+    }
+    return { label: message.role, icon: null, isRunning: false, isError: false };
+  }
+
+  private renderInspectorPart(part: ChatPart, message: ChatLine) {
+    if (part.type === "thinking") {
+      return html`<div class="inspector-thinking"><formatted-text .text=${part.text}></formatted-text></div>`;
+    }
+    if (part.type === "toolExecution") {
+      return html`<tool-execution-view class="part" .execution=${part} .headless=${true}></tool-execution-view>`;
+    }
+    if (part.type === "toolResult") {
+      return html`<div class="inspector-result"><formatted-text .text=${part.text}></formatted-text></div>`;
+    }
+    if (part.type === "text") {
+      return html`<pre class="inspector-text">${part.text}</pre>`;
+    }
+    return this.renderPart(part, message);
+  }
+
   private renderMessageGroup(messages: ChatLine[], startIndex: number, endIndex: number, defaultOpen: boolean) {
     const disclosureKey = this.groupDisclosureKey(startIndex, endIndex, defaultOpen);
     const open = this.disclosures.isOpen(disclosureKey, defaultOpen);
+    const hasRunningTool = messages.some((m) =>
+      m.parts.some((p) => p.type === "toolExecution" && (p.status === "running" || p.status === "pending"))
+    );
+    const count = messages.length;
+
+    const userSelected = this.selectedGroupItemMap[disclosureKey];
+    let activeIndex: number | undefined;
+    if (userSelected === null) {
+      activeIndex = undefined;
+    } else if (typeof userSelected === "number") {
+      activeIndex = userSelected;
+    } else {
+      const runningIdx = messages.findIndex((m) =>
+        m.parts.some((p) => p.type === "toolExecution" && (p.status === "running" || p.status === "pending"))
+      );
+      if (runningIdx >= 0) {
+        activeIndex = runningIdx;
+      }
+    }
+
     return html`
       ${this.renderScrollMarker(this.groupScrollMarkerId(endIndex))}
-      <details class=${defaultOpen ? "msg event-group live" : "msg event-group"} data-index=${startIndex} data-scroll-anchor-id=${this.groupAnchorKey(startIndex)} ?open=${open} @toggle=${(event: Event) => { this.onGroupToggle(disclosureKey, event, defaultOpen); }}>
+      <details
+        class=${`msg event-group terminal-tree${defaultOpen ? " live" : ""}${hasRunningTool ? " is-running" : ""}`}
+        data-index=${startIndex}
+        data-scroll-anchor-id=${this.groupAnchorKey(startIndex)}
+        ?open=${open}
+        @toggle=${(event: Event) => { this.onGroupToggle(disclosureKey, event, defaultOpen); }}
+      >
         <summary>
           <span class="timeline-toggle-icon" aria-hidden="true">▶</span>
           <span class="timeline-summary-text">${summarizeChatGroup(messages)}</span>
+          ${hasRunningTool ? html`
+            <span class="branched-live-badge">
+              <span class="tool-spinner" aria-hidden="true">
+                <svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                  <circle cx="8" cy="8" r="6" stroke-dasharray="28" stroke-dashoffset="10" />
+                </svg>
+              </span>
+              Running
+            </span>
+          ` : null}
         </summary>
-        <div class="group-body">
+        <div class="terminal-tree-body">
           ${messages.map((message, offset) => {
-      const toolOnly = this.isToolExecutionOnlyMessage(message);
-      return html`
-              <section class=${toolOnly ? "group-msg tool-execution-shell" : `group-msg ${message.role}`} data-index=${startIndex + offset} data-scroll-anchor-id=${this.eventAnchorKey(startIndex + offset)}>
-                ${message.parts.map((part) => this.renderPart(part, message))}
+            const isLast = offset === count - 1;
+            const isRunning = message.parts.some(
+              (p) => p.type === "toolExecution" && (p.status === "running" || p.status === "pending")
+            );
+            const isError = message.parts.some(
+              (p) => (p.type === "toolExecution" && p.status === "error") || (p.type === "toolResult" && p.isError)
+            );
+            const isOpen = activeIndex === offset;
+            const itemMeta = this.extractGroupItemMeta(message);
+            const nodeClass = `timeline-node${isLast ? " is-last" : ""}${isRunning ? " running" : ""}${isError ? " error" : ""}${isOpen ? " open" : ""}`;
+
+            return html`
+              <section
+                class=${nodeClass}
+                data-index=${startIndex + offset}
+                data-scroll-anchor-id=${this.eventAnchorKey(startIndex + offset)}
+              >
+                <div class="timeline-node-header">
+                  <button
+                    type="button"
+                    class="timeline-node-btn"
+                    aria-expanded=${String(isOpen)}
+                    @click=${(e: MouseEvent) => {
+                      e.stopPropagation();
+                      this.onToggleGroupItem(disclosureKey, offset);
+                    }}
+                  >
+                    <span class="timeline-node-icon" aria-hidden="true">${itemMeta.icon}</span>
+                    <strong class="timeline-node-label">${itemMeta.label}</strong>
+                    ${itemMeta.target ? html`<span class="timeline-node-target" title=${itemMeta.target}>${itemMeta.target}</span>` : null}
+                    ${itemMeta.diffStats ? html`<span class="timeline-node-diff"><b class="added">+${itemMeta.diffStats.added}</b><b class="removed">-${itemMeta.diffStats.removed}</b></span>` : null}
+                    ${isRunning ? html`<span class="tool-spinner" aria-hidden="true">
+                      <svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                        <circle cx="8" cy="8" r="6" stroke-dasharray="28" stroke-dashoffset="10" />
+                      </svg>
+                    </span>` : null}
+                  </button>
+                </div>
+                ${isOpen ? html`
+                  <div class="timeline-node-drawer">
+                    ${message.parts.map((part) => this.renderInspectorPart(part, message))}
+                  </div>
+                ` : null}
               </section>
             `;
-    })}
+          })}
         </div>
       </details>
     `;
   }
 
-  private renderScrollMarker(markerId: string) {
+    private renderScrollMarker(markerId: string) {
     return html`<span class="scroll-marker" data-marker-id=${markerId} aria-hidden="true"></span>`;
   }
 

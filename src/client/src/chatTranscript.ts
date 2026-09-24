@@ -1,5 +1,5 @@
-import { appendText, appendThinking, normalizeMessage, previewFromDetails, summarizeArgs, textMessage } from "./chatMessages";
-import { isRecord } from "./utils.js";
+import { appendText, appendThinking, normalizeMessage, parseSkillReadPath, previewFromDetails, summarizeArgs, textMessage } from "./chatMessages";
+import { getProperty, getString, isRecord } from "./utils.js";
 import type { ChatLine, ToolExecutionPart } from "./components/shared";
 import { appendShellChunk, finalizeShellMessage, shellStartMessage } from "./shellMessages";
 import type { SessionUiEvent } from "./sessionSocket";
@@ -48,14 +48,6 @@ function withoutToolCalls(message: ChatLine): ChatLine {
   return { ...message, parts: message.parts.filter((part) => part.type !== "toolCall") };
 }
 
-function parseSkillReadPath(path: string | undefined): { name: string; path: string } | undefined {
-  if (path === undefined || path === "") return undefined;
-  const normalized = path.replace(/\\/g, "/");
-  if (!normalized.endsWith("/SKILL.md") && normalized !== "SKILL.md") return undefined;
-  const name = normalized.split("/").at(-2);
-  if (name === undefined || name === "") return undefined;
-  return { name, path };
-}
 
 function appendToolExecutionStart(messages: ChatLine[], event: Extract<SessionUiEvent, { type: "tool.start" }>): ChatLine[] {
   const skillRead = event.toolName === "read" ? parseSkillReadPath(getString(event.args, "path")) : undefined;
@@ -267,14 +259,6 @@ function lastUserBoundaryIndex(messages: ChatLine[]): number {
 }
 
 
-function getProperty(value: unknown, key: string): unknown {
-  return isRecord(value) ? value[key] : undefined;
-}
-
-function getString(value: unknown, key: string): string | undefined {
-  const property = getProperty(value, key);
-  return typeof property === "string" ? property : undefined;
-}
 
 function getBoolean(value: unknown, key: string): boolean | undefined {
   const property = getProperty(value, key);

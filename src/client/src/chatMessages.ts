@@ -1,5 +1,5 @@
 import type { ChatLine, ChatPart, ToolExecutionPart, ToolPreview } from "./components/shared";
-import { isRecord } from "./utils.js";
+import { getProperty, getString, isRecord } from "./utils.js";
 
 export function normalizeMessages(messages: unknown[]): ChatLine[] {
   return coalesceToolExecutions(messages.flatMap(normalizeMessage)).filter((message) => message.parts.length > 0);
@@ -237,7 +237,7 @@ function toolResultPartFromText(text: string, message: unknown): Extract<ChatPar
   };
 }
 
-function parseSkillReadPath(path: string | undefined): { name: string; path: string } | undefined {
+export function parseSkillReadPath(path: string | undefined): { name: string; path: string } | undefined {
   if (path === undefined || path === "") return undefined;
   const normalized = path.replace(/\\/g, "/");
   if (!normalized.endsWith("/SKILL.md") && normalized !== "SKILL.md") return undefined;
@@ -368,14 +368,6 @@ function shortValue(value: unknown): string {
 }
 
 
-function getProperty(value: unknown, key: string): unknown {
-  return isRecord(value) ? value[key] : undefined;
-}
-
-function getString(value: unknown, key: string): string | undefined {
-  const property = getProperty(value, key);
-  return typeof property === "string" ? property : undefined;
-}
 
 function getBoolean(value: unknown, key: string): boolean | undefined {
   const property = getProperty(value, key);

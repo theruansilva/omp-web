@@ -1,1 +1,1 @@
-export { errorMessage, isNodeErrorWithCode, isRecord } from "../../shared/utils.js";
+export { errorMessage, isNodeErrorWithCode, isRecord, getProperty, getString } from "../../shared/utils.js";

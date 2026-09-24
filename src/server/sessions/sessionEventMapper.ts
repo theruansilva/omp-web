@@ -1,5 +1,5 @@
 import type { SessionUiEvent } from "../types.js";
-import { isRecord } from "../utils.js";
+import { getProperty, getString, isRecord } from "../utils.js";
 
 export function toClientEvent(event: unknown): SessionUiEvent {
   const eventType = getString(event, "type");
@@ -95,14 +95,6 @@ function stringifyToolResult(result: unknown): string {
   return stringifyPrimitive(result);
 }
 
-function getProperty(value: unknown, key: string): unknown {
-  return isRecord(value) ? value[key] : undefined;
-}
-
-function getString(value: unknown, key: string): string | undefined {
-  const property = getProperty(value, key);
-  return typeof property === "string" ? property : undefined;
-}
 
 function getBoolean(value: unknown, key: string): boolean | undefined {
   const property = getProperty(value, key);

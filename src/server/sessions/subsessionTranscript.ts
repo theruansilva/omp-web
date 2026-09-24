@@ -9,7 +9,7 @@
  * the same grep-then-read loop it already uses on files. Everything here is a
  * pure transform over an array so it can be unit-tested without a live session.
  */
-import { isRecord } from "../utils.js";
+import { getProperty, getString, isRecord } from "../utils.js";
 
 /** Message roles the parent can ask for, mapped from raw history roles. */
 export type TranscriptRole = "assistant" | "user" | "tool" | "system" | "custom";
@@ -300,11 +300,3 @@ function clampInteger(value: number, min: number, max: number): number {
 }
 
 
-function getProperty(value: unknown, key: string): unknown {
-  return isRecord(value) ? value[key] : undefined;
-}
-
-function getString(value: unknown, key: string): string | undefined {
-  const property = getProperty(value, key);
-  return typeof property === "string" ? property : undefined;
-}

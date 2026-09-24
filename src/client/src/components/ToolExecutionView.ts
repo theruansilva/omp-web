@@ -1,6 +1,6 @@
 import { LitElement, css, html } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
-import { isRecord } from "../utils.js";
+import { getProperty, getString, isRecord } from "../utils.js";
 import type { ToolExecutionPart } from "./shared";
 
 const MAX_COLLAPSED_DIFF_LINES = 180;
@@ -10,7 +10,7 @@ interface ToolTarget {
   text: string;
 }
 
-function renderToolIcon(toolName: string, status: ToolExecutionPart["status"]) {
+export function renderToolIcon(toolName: string, status: ToolExecutionPart["status"]) {
   if (status === "running" || status === "pending") {
     return html`
       <span class="tool-icon tool-spinner" aria-hidden="true">
@@ -58,6 +58,7 @@ function renderToolIcon(toolName: string, status: ToolExecutionPart["status"]) {
 @customElement("tool-execution-view")
 export class ToolExecutionView extends LitElement {
   @property({ attribute: false }) execution: ToolExecutionPart | undefined;
+  @property({ type: Boolean }) headless = false;
   @state() private showFullDiff = false;
   @state() private copied = false;
 
@@ -74,6 +75,16 @@ export class ToolExecutionView extends LitElement {
     const errorText = execution.status === "error" ? execution.resultText : preview?.error;
     const bodyText = visibleDiff === undefined ? execution.resultText : undefined;
     const target = toolTarget(execution, path);
+
+    if (this.headless) {
+      return html`
+        <div class="tool-content headless">
+          ${previewMismatch ? html`<p class="notice">Applied diff differs from the preview.</p>` : null}
+          ${errorText === undefined || errorText === "" ? null : html`<pre class="error-text">${errorText}</pre>`}
+          ${execution.toolName === "eval" ? this.renderEvalContent(execution) : (visibleDiff === undefined ? this.renderTextContent(bodyText, target, execution.status) : this.renderDiffContent(visibleDiff, actualDiff === undefined ? "Preview diff" : "Applied diff", target))}
+        </div>
+      `;
+    }
 
     return html`
       <details class=${`tool-card ${execution.status}`} @toggle=${this.onToggle}>
@@ -192,49 +203,85 @@ export class ToolExecutionView extends LitElement {
 
   static override styles = css`
     :host { display: block; width: 100%; max-width: 100%; min-width: 0; color: var(--pi-text); font-family: inherit; }
-    details.tool-card { display: block; width: 100%; max-width: 100%; min-width: 0; box-sizing: border-box; overflow: hidden; border: none; border-radius: 7px; background: transparent; color: var(--pi-text); margin: 0; transition: background 200ms cubic-bezier(0.23, 1, 0.32, 1), transform 200ms cubic-bezier(0.23, 1, 0.32, 1); }
-    details.tool-card:hover:not([open]) { background: color-mix(in srgb, var(--pi-text) 4%, transparent); transform: translateX(2px); }
+    details.tool-card { display: block; width: 100%; max-width: 100%; min-width: 0; box-sizing: border-box; overflow: visible; border: none; background: transparent; color: var(--pi-text); margin: 0; }
     details.tool-card.running, details.tool-card.pending { background: transparent; }
     details.tool-card.error { background: transparent; }
-    details.tool-card[open] { background: var(--pi-surface); border: 1px solid var(--pi-border-muted); border-radius: 8px; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05); margin: 6px 0; transform: none; }
-    details.tool-card[open] .tool-content { animation: bmContentSlide 260ms cubic-bezier(0.23, 1, 0.32, 1); }
-    @keyframes bmContentSlide { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
-    summary.tool-header { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-width: 0; height: 32px; padding: 0 8px; cursor: pointer; user-select: none; list-style: none; outline: none; -webkit-tap-highlight-color: transparent; border-radius: 6px; transition: color 200ms ease; }
+    details.tool-card[open] { background: transparent; border: none; box-shadow: none; margin: 0; transform: none; }
+    summary.tool-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      min-width: 0;
+      height: 32px;
+      padding: 0 6px;
+      cursor: pointer;
+      user-select: none;
+      list-style: none;
+      outline: none;
+      -webkit-tap-highlight-color: transparent;
+      border: none;
+      border-radius: 5px;
+      background: transparent;
+      transition: background 150ms ease, color 150ms ease;
+    }
     summary.tool-header::-webkit-details-marker { display: none; }
-    details.tool-card[open] > summary.tool-header { height: 36px; padding: 0 12px; border-bottom: 1px solid var(--pi-border-muted); border-radius: 7px 7px 0 0; }
+    summary.tool-header:hover {
+      background: color-mix(in srgb, var(--pi-text) 5%, transparent);
+    }
+    details.tool-card[open] > summary.tool-header {
+      height: 32px;
+      padding: 0 6px;
+      border-bottom: none;
+      border-radius: 5px;
+      background: color-mix(in srgb, var(--pi-text) 3%, transparent);
+    }
     .tool-title { flex: 1 1 auto; display: inline-flex; align-items: center; gap: 8px; min-width: 0; }
-    .tool-icon { display: inline-flex; align-items: center; justify-content: center; width: 16px; height: 16px; flex-shrink: 0; opacity: 1; transition: transform 150ms ease; }
+    .tool-icon { display: inline-flex; align-items: center; justify-content: center; width: 16px; height: 16px; flex-shrink: 0; opacity: 0.85; transition: transform 150ms ease, opacity 150ms ease; }
     .tool-icon svg { display: block; width: 14px; height: 14px; }
-    summary.tool-header:hover .tool-icon { transform: scale(1.08); }
+    summary.tool-header:hover .tool-icon, details.tool-card[open] .tool-icon { transform: scale(1.08); opacity: 1; }
     .tool-icon.error { color: var(--pi-danger, #ef4444) !important; }
     .tool-spinner { display: inline-flex; align-items: center; justify-content: center; width: 14px; height: 14px; color: var(--pi-warning, #f59e0b); animation: toolSpin 1s linear infinite; flex-shrink: 0; }
     .tool-spinner svg { display: block; width: 14px; height: 14px; }
     @keyframes toolSpin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-    strong { flex: 0 0 auto; color: color-mix(in srgb, var(--pi-text) 85%, transparent); font-size: 13px; font-weight: 500; letter-spacing: -0.01em; transition: color 150ms ease; }
+    strong { flex: 0 0 auto; color: color-mix(in srgb, var(--pi-text) 65%, transparent); font-size: 13px; font-weight: 500; letter-spacing: -0.01em; transition: color 150ms ease; }
     summary.tool-header:hover strong, details.tool-card[open] summary.tool-header strong { color: var(--pi-text); }
-    .path, .summary { display: block; flex: 1 1 auto; min-width: 0; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; pointer-events: none; color: var(--pi-muted); font: 12px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; direction: ltr; text-align: left; unicode-bidi: isolate; opacity: 0.85; transition: opacity 150ms ease, color 150ms ease; }
+    .path, .summary { display: block; flex: 1 1 auto; min-width: 0; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; pointer-events: none; color: var(--pi-muted); font: 12px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; direction: ltr; text-align: left; unicode-bidi: isolate; opacity: 0.75; transition: opacity 150ms ease, color 150ms ease; }
     summary.tool-header:hover .path, details.tool-card[open] .path { color: var(--pi-accent); opacity: 1; }
     .summary { color: var(--pi-muted); font-family: inherit; font-size: 12.5px; }
     .tool-meta { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 6px; color: var(--pi-muted); font-size: 11.5px; }
     .diff-stats { display: inline-flex; gap: 2px; font-size: 11px; font-weight: 500; }
     .added, .diff .added { color: var(--pi-success); }
     .removed, .diff .removed { color: var(--pi-danger); }
-    .tool-content { display: grid; gap: 8px; padding: 12px; background: color-mix(in srgb, var(--pi-bg) 40%, transparent); }
-    .notice { margin: 0; color: var(--pi-warning); }
+
+    /* Content aligned directly with heading */
+    .tool-content.headless { margin: 0; padding: 0; }
+    .tool-content {
+      display: grid;
+      gap: 8px;
+      margin: 6px 0 8px 0;
+      padding: 0 6px;
+      border: none;
+      background: transparent;
+      animation: bmContentSlide 200ms cubic-bezier(0.23, 1, 0.32, 1);
+    }
+    @keyframes bmContentSlide { from { opacity: 0; transform: translateY(-3px); } to { opacity: 1; transform: translateY(0); } }
+
+    .notice { margin: 0; color: var(--pi-warning); font-size: 12px; }
     .muted { margin: 0; color: var(--pi-muted); font-size: 12px; }
-    .error-text { margin: 0; max-height: 200px; overflow-y: auto; border: 1px solid var(--pi-danger); border-radius: 8px; background: var(--pi-bg); color: var(--pi-danger); padding: 8px; white-space: pre-wrap; overflow-wrap: anywhere; font: 12px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+    .error-text { margin: 0; max-height: 200px; overflow-y: auto; border: 1px solid var(--pi-danger); border-radius: 6px; background: color-mix(in srgb, var(--pi-danger) 6%, var(--pi-bg)); color: var(--pi-danger); padding: 8px; white-space: pre-wrap; overflow-wrap: anywhere; font: 12px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
     .text-content, .eval-content { display: grid; gap: 8px; }
     .diff-content-wrap { display: grid; gap: 6px; }
     .diff-header-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; color: var(--pi-muted); font-size: 12px; }
     .detail-target, .detail-result { display: grid; gap: 4px; min-width: 0; }
     .detail-label { color: var(--pi-muted); font-size: 11px; text-transform: uppercase; letter-spacing: .04em; font-weight: 600; }
-    .detail-code-pre, .detail-result-pre, .detail-target-value { box-sizing: border-box; max-width: 100%; max-height: 220px; overflow-x: auto; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; border: 1px solid var(--pi-border-muted); border-radius: 8px; background: var(--pi-bg); padding: 8px; font: 12px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; color: var(--pi-text); white-space: pre-wrap; word-break: break-word; line-height: 1.45; }
+    .detail-code-pre, .detail-result-pre, .detail-target-value { box-sizing: border-box; max-width: 100%; max-height: 220px; overflow-x: auto; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; border: 1px solid var(--pi-border-muted); border-radius: 6px; background: var(--pi-bg); padding: 8px; font: 12px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; color: var(--pi-text); white-space: pre-wrap; word-break: break-word; line-height: 1.45; }
     .detail-target-value { color: var(--pi-accent); max-height: 140px; }
     .diff-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-width: 0; color: var(--pi-muted); font-size: 12px; }
     .diff-toolbar span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    button { border: 1px solid var(--pi-border); border-radius: 6px; background: var(--pi-surface); color: var(--pi-text); padding: 3px 8px; font: 12px system-ui, sans-serif; cursor: pointer; }
+    button { border: 1px solid var(--pi-border); border-radius: 5px; background: var(--pi-surface); color: var(--pi-text); padding: 3px 8px; font: 12px system-ui, sans-serif; cursor: pointer; }
     button:hover, button:focus { border-color: var(--pi-accent); }
-    .diff { box-sizing: border-box; width: 100%; max-width: 100%; min-width: 0; max-height: 320px; margin: 0; overflow-x: auto; overflow-y: auto; overscroll-behavior-x: contain; border: 1px solid var(--pi-border-muted); border-radius: 8px; background: var(--pi-bg); padding: 8px 0; color: var(--pi-muted); font: 12px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; line-height: 1.45; }
+    .diff { box-sizing: border-box; width: 100%; max-width: 100%; min-width: 0; max-height: 320px; margin: 0; overflow-x: auto; overflow-y: auto; overscroll-behavior-x: contain; border: 1px solid var(--pi-border-muted); border-radius: 6px; background: var(--pi-bg); padding: 8px 0; color: var(--pi-muted); font: 12px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; line-height: 1.45; }
     .diff-content { display: block; width: max-content; min-width: 100%; }
     .diff span { display: block; min-height: 1.45em; padding: 0 8px; white-space: pre; }
     .diff .context { color: var(--pi-muted); }
@@ -247,7 +294,7 @@ export class ToolExecutionView extends LitElement {
   `;
 }
 
-function toolTarget(execution: ToolExecutionPart, path: string | undefined): ToolTarget | undefined {
+export function toolTarget(execution: ToolExecutionPart, path: string | undefined): ToolTarget | undefined {
   if (path !== undefined && path !== "") return { label: "File", text: path };
   const command = getString(execution.args, "command");
   if (command !== undefined && command !== "") return { label: "Command", text: command };
@@ -263,7 +310,7 @@ function toolTarget(execution: ToolExecutionPart, path: string | undefined): Too
 }
 
 
-function pathFromArgs(args: unknown): string | undefined {
+export function pathFromArgs(args: unknown): string | undefined {
   return getString(args, "path") ?? getString(args, "file_path");
 }
 
@@ -275,11 +322,11 @@ function editCountLabel(execution: ToolExecutionPart): string | undefined {
   return undefined;
 }
 
-function diffFromDetails(details: unknown): string | undefined {
+export function diffFromDetails(details: unknown): string | undefined {
   return getString(details, "diff");
 }
 
-function countDiffLines(diff: string): { added: number; removed: number } {
+export function countDiffLines(diff: string): { added: number; removed: number } {
   let added = 0;
   let removed = 0;
   for (const line of diff.split("\n")) {
@@ -309,11 +356,4 @@ function isRemovedDiffLine(line: string): boolean {
 
 
 
-function getProperty(value: unknown, key: string): unknown {
-  return isRecord(value) ? value[key] : undefined;
-}
 
-function getString(value: unknown, key: string): string | undefined {
-  const property = getProperty(value, key);
-  return typeof property === "string" ? property : undefined;
-}

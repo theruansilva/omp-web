@@ -422,7 +422,7 @@ function normalizeSuggestionPathForSearch(path: string): string {
 }
 
 function displayBasename(path: string): string {
-  return path.split("/").filter(Boolean).at(-1) ?? path;
+  return basename(path) || path;
 }
 
 function isSubsequence(needle: string, haystack: string): boolean {

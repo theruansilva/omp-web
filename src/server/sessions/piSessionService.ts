@@ -22,7 +22,7 @@ import { parsePromptAttachments } from "../../shared/promptAttachments.js";
 import type { ActiveSessionSummary, SavedPromptAttachment, SessionBulkArchiveResponse, SessionBulkDeleteArchivedResponse, SessionBulkFailure, SessionBulkMutationRef } from "../../shared/apiTypes.js";
 
 import { cwdPathsEqual } from "../workingDirectory.js";
-import { errorMessage, isRecord } from "../utils.js";
+import { errorMessage, getString, isRecord } from "../utils.js";
 import type { WorkspaceActivityService } from "../activity/workspaceActivityService.js";
 import { createSpawnSessionToolDefinition, type SpawnSessionInvocation, type SpawnSessionResult } from "./spawnSessionTool.js";
 import { createSubsessionToolDefinitions, type SpawnSubsessionInvocation, type SpawnSubsessionResult, type SubsessionCheckResult, type SubsessionReadQuery, type SubsessionReadResult, type SubsessionStatus, type SubsessionSummary, type SubsessionToolDeps } from "./spawnSubsessionTool.js";
@@ -2095,9 +2095,6 @@ function userMessage(text: string, images: ImageContent[]): { role: "user"; cont
 }
 
 
-function getString(value: unknown, key: string): string | undefined {
- return isRecord(value) && typeof value[key] === "string" ? (value[key] as string) : undefined;
-}
 
 function getBoolean(value: unknown, key: string): boolean | undefined {
  return isRecord(value) && typeof value[key] === "boolean" ? (value[key] as boolean) : undefined;

@@ -29,6 +29,8 @@ export const BUILTIN_COMMANDS: ClientCommand[] = [
   { name: "advisor", description: "Toggle advisor", source: "builtin" },
 ];
 
+const BUILTIN_COMMAND_NAMES = new Set(BUILTIN_COMMANDS.map((command) => command.name));
+
 export function isBuiltinCommand(name: string): boolean {
-  return BUILTIN_COMMANDS.some((command) => command.name === name);
+  return BUILTIN_COMMAND_NAMES.has(name);
 }

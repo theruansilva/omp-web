@@ -35,7 +35,7 @@ async function serveDevDocs(request: IncomingMessage, response: ServerResponse, 
 
   const url = new URL(requestUrl, "http://localhost");
   if (url.pathname === docsPrefix) {
-    response.statusCode = 302;
+    response.statusCode = 301;
     response.setHeader("Location", `${docsPrefix}/`);
     response.end();
     return;
@@ -50,27 +50,24 @@ async function serveDevDocs(request: IncomingMessage, response: ServerResponse, 
   const candidatePaths = extname(requestedPath) === "" ? [requestedPath, `${requestedPath}.html`] : [requestedPath];
 
   for (const candidatePath of candidatePaths) {
-    const filePath = resolve(docsRoot, candidatePath);
-    if (filePath !== docsRoot && !filePath.startsWith(`${docsRoot}${sep}`)) {
+    const fullPath = resolve(docsRoot, candidatePath);
+    if (fullPath !== docsRoot && !fullPath.startsWith(`${docsRoot}${sep}`)) {
       response.statusCode = 403;
       response.end("Forbidden");
       return;
     }
 
     try {
-      const fileStat = await stat(filePath);
+      const fileStat = await stat(fullPath);
       if (!fileStat.isFile()) continue;
 
       response.statusCode = 200;
-      response.setHeader("Content-Type", contentTypes[extname(filePath)] ?? "application/octet-stream");
-      response.setHeader("Cache-Control", "no-store");
-      createReadStream(filePath).pipe(response);
+      response.setHeader("Content-Type", contentTypes[extname(fullPath)] ?? "application/octet-stream");
+      response.setHeader("Cache-Control", "no-cache");
+      createReadStream(fullPath).pipe(response);
       return;
-    } catch (error) {
-      const code = error instanceof Error && "code" in error ? error.code : undefined;
-      if (code === "ENOENT") continue;
-      next(error);
-      return;
+    } catch {
+      // Continue to next candidate.
     }
   }
 
@@ -81,7 +78,6 @@ async function serveDevDocs(request: IncomingMessage, response: ServerResponse, 
 function devDocsPlugin(): Plugin {
   return {
     name: "omp-web-dev-docs",
-    apply: "serve",
     configureServer(server) {
       server.middlewares.use((request, response, next) => {
         void serveDevDocs(request, response, next);
@@ -93,15 +89,14 @@ function devDocsPlugin(): Plugin {
 export default defineConfig({
   plugins: [devDocsPlugin()],
   root: "src/client",
-  resolve: {
-    alias: {
-      "@oh-my-pi/pi-natives": resolve("src/client/src/formatting/emptyStub.ts"),
-    },
-  },
   build: {
     outDir: "../../dist/client",
     emptyOutDir: true,
     rollupOptions: {
+      input: {
+        main: resolve("src/client/index.html"),
+        poc: resolve("src/client/m3-poc.html"),
+      },
       output: {
         manualChunks(id) {
           if (!id.includes("node_modules")) return;
@@ -109,6 +104,7 @@ export default defineConfig({
           if (id.includes("@codemirror/lang-") || id.includes("@lezer/")) return "vendor-editor-languages";
           if (id.includes("@codemirror") || id.includes("codemirror")) return "vendor-editor-core";
           if (id.includes("@xterm")) return "vendor-terminal";
+          if (id.includes("@material/web")) return "vendor-material-m3";
           return undefined;
         },
       },

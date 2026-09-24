@@ -18,22 +18,11 @@ export interface InlineImage {
  dimensionNote?: string;
 }
 
-/**
- * Convert validated attachments into pi-compatible inline image content.
- *
- * Mirrors pi's own CLI/TUI behaviour: each image is run through pi's
- * `resizeImage` so it fits within pi's max dimensions and inline byte budget
- * (2000x2000, ~4.5MB base64). Images that cannot be resized below the limit
- * are dropped, matching pi's `[Image omitted]` behaviour.
- */
+/** Convert validated attachments into pi-compatible inline image content. */
 export function attachmentsToInlineImages(attachments: PromptImageAttachment[]): InlineImage[] {
- const results: InlineImage[] = [];
- for (const attachment of attachments) {
-		results.push({
-			image: { type: "image", data: attachment.data, mimeType: attachment.mimeType },
-		});
- }
- return results;
+  return attachments.map((attachment) => ({
+    image: { type: "image", data: attachment.data, mimeType: attachment.mimeType },
+  }));
 }
 
 export interface SaveAttachmentsOptions {

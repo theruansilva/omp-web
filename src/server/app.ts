@@ -294,39 +294,22 @@ export async function buildApp(deps: AppDependencies = {}): Promise<BuiltApp> {
     async close() { },
     async inject(options: { method: string; url: string; payload?: unknown; headers?: Record<string, string> }) {
       const isBuffer = Buffer.isBuffer(options.payload) || options.payload instanceof Uint8Array;
-      const isJsonPayload = options.payload !== undefined && !isBuffer && typeof options.payload !== "string";
+      const isJson = options.payload !== undefined && !isBuffer && typeof options.payload !== "string";
       const headers: Record<string, string> = {
         host: "localhost",
-        ...(isJsonPayload ? { "content-type": "application/json" } : {}),
+        ...(isJson ? { "content-type": "application/json" } : {}),
         ...options.headers,
       };
-
-      let body: BodyInit | null = null;
-      if (isBuffer) {
-        body = options.payload as unknown as BodyInit;
-      } else if (typeof options.payload === "string") {
-        body = options.payload;
-      } else if (options.payload !== undefined) {
-        body = JSON.stringify(options.payload);
-      }
-
-      const init: RequestInit = {
-        method: options.method,
-        headers,
-      };
-      if (body !== null) {
-        init.body = body;
-      }
-
+      const body = (isJson ? JSON.stringify(options.payload) : options.payload) as BodyInit | undefined;
+      const init: RequestInit = { method: options.method, headers };
+      if (body !== undefined) init.body = body;
       const response = await app.request(options.url, init);
       const text = await response.text();
       return {
         statusCode: response.status,
         headers: Object.fromEntries(response.headers.entries()),
         body: text,
-        json<T = unknown>(): T {
-          return JSON.parse(text);
-        },
+        json: <T = unknown>() => JSON.parse(text) as T,
       };
     },
   };

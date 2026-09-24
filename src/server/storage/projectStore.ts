@@ -1,5 +1,5 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
-import { dirname, join, resolve } from "node:path";
+import { basename, dirname, join, resolve } from "node:path";
 import { ompWebDataDir } from "../../config.js";
 import { randomUUID } from "node:crypto";
 import type { Project } from "../types.js";
@@ -50,7 +50,7 @@ export class ProjectStore {
     if (existing) return existing;
 
     const trimmedName = input.name?.trim();
-    const leafName = path.split("/").filter((part) => part !== "").at(-1);
+    const leafName = basename(path);
     const project: Project = {
       id: randomUUID(),
       name: trimmedName !== undefined && trimmedName !== "" ? trimmedName : leafName ?? path,
