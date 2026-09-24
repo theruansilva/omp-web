@@ -29,7 +29,6 @@ export class CopilotSidebar extends LitElement {
 
   override connectedCallback() {
     super.connectedCallback();
-    // Ensure custom element host does not create an unwanted flex box gap when collapsed
     this.style.display = "contents";
   }
 
@@ -80,15 +79,18 @@ export class CopilotSidebar extends LitElement {
   override render() {
     return html`
       <aside
-        class="h-full flex flex-col justify-between border-e border-black/10 dark:border-white/10 bg-sidebar-light dark:bg-sidebar-dark transition-all duration-300 ease-[cubic-bezier(0.43,0.195,0.02,1)] fixed md:relative inset-y-0 left-0 z-50 md:z-auto shadow-2xl md:shadow-none ${this
-          .isOpen
-          ? "p-3 translate-x-0"
-          : "-translate-x-full md:translate-x-0 p-0 m-0 overflow-hidden md:opacity-0 md:border-none pointer-events-none"}"
-        style="${this.isOpen ? "width: 260px; min-width: 260px; max-width: 260px; flex: 0 0 260px;" : "width: 0px; min-width: 0px; max-width: 0px; flex: 0 0 0px; border: none; padding: 0; margin: 0; overflow: hidden;"}"
+        class="h-full flex flex-col justify-between border-e border-black/10 dark:border-white/10 bg-sidebar-light dark:bg-sidebar-dark fixed md:relative inset-y-0 left-0 z-50 md:z-auto shadow-2xl md:shadow-none will-change-auto overflow-hidden ${this
+        .isOpen
+        ? "translate-x-0 opacity-100"
+        : "-translate-x-full md:translate-x-0 border-none opacity-0 pointer-events-none"}"
+        style="transition: width 300ms cubic-bezier(0.43, 0.195, 0.02, 1), transform 300ms cubic-bezier(0.43, 0.195, 0.02, 1), padding 300ms ease, opacity 250ms ease; ${this
+        .isOpen
+        ? "width: 260px; min-width: 260px; max-width: 260px; flex: 0 0 260px; padding: 12px;"
+        : "width: 0px; min-width: 0px; max-width: 0px; flex: 0 0 0px; padding: 0px; margin: 0px; border: none;"}"
         role="navigation"
         aria-label="Copilot Navigation"
       >
-        <div>
+        <div class="w-[236px] overflow-hidden">
           <!-- Header: Copilot Wordmark + Collapse Toggle -->
           <div class="flex items-center justify-between px-2 pt-1 pb-3 mb-2">
             <div
@@ -163,7 +165,7 @@ export class CopilotSidebar extends LitElement {
         </div>
 
         <!-- Bottom Auth Callout -->
-        <div class="px-2 pb-2 pt-4 flex flex-col gap-3">
+        <div class="w-[236px] overflow-hidden px-2 pb-2 pt-4 flex flex-col gap-3">
           <p class="text-[12px] leading-relaxed text-foreground-500">
             Conversations with Copilot will be shown here. Sign in to keep your conversations.
           </p>
