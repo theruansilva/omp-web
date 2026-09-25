@@ -39,7 +39,7 @@ export class CopilotComposer extends LitElement {
 
   @state() private activeMenu: "create" | "model" | null = null;
   @state() private menuPosition = { left: 0, bottom: 0 };
-  @state() private isAskOpen = true;
+  @state() private isAskOpen = false;
   @state() private selectedAskOption: string | null = null;
 
   private readonly askOptions: AskOption[] = [
@@ -66,15 +66,28 @@ export class CopilotComposer extends LitElement {
 
   override connectedCallback() {
     super.connectedCallback();
-    window.addEventListener("pointerdown", this.handleDocumentPointerDown, true);
+    window.addEventListener(
+      "pointerdown",
+      this.handleDocumentPointerDown,
+      true,
+    );
     window.addEventListener("keydown", this.handleDocumentKeyDown, true);
-    window.addEventListener("resize", this.handleWindowResizeOrScroll, { passive: true });
-    window.addEventListener("scroll", this.handleWindowResizeOrScroll, { passive: true, capture: true });
+    window.addEventListener("resize", this.handleWindowResizeOrScroll, {
+      passive: true,
+    });
+    window.addEventListener("scroll", this.handleWindowResizeOrScroll, {
+      passive: true,
+      capture: true,
+    });
   }
 
   override disconnectedCallback() {
     super.disconnectedCallback();
-    window.removeEventListener("pointerdown", this.handleDocumentPointerDown, true);
+    window.removeEventListener(
+      "pointerdown",
+      this.handleDocumentPointerDown,
+      true,
+    );
     window.removeEventListener("keydown", this.handleDocumentKeyDown, true);
     window.removeEventListener("resize", this.handleWindowResizeOrScroll);
     window.removeEventListener("scroll", this.handleWindowResizeOrScroll, true);
@@ -110,7 +123,9 @@ export class CopilotComposer extends LitElement {
       }
 
       if (e.key === "1" || e.key === "2" || e.key === "3") {
-        const textarea = this.querySelector("textarea") as HTMLTextAreaElement | null;
+        const textarea = this.querySelector(
+          "textarea",
+        ) as HTMLTextAreaElement | null;
         const isTextarea = document.activeElement === textarea;
         if (!isTextarea || this.value.trim() === "") {
           e.preventDefault();
@@ -145,8 +160,8 @@ export class CopilotComposer extends LitElement {
     const portal = document.getElementById("popoverPortal") || document.body;
     const items = Array.from(
       portal.querySelectorAll<HTMLElement>(
-        '#composer-dropdown-button-menu-contents [role="menuitem"]:not([disabled])'
-      )
+        '#composer-dropdown-button-menu-contents [role="menuitem"]:not([disabled])',
+      ),
     );
     if (items.length === 0) return;
 
@@ -156,7 +171,8 @@ export class CopilotComposer extends LitElement {
     if (e.key === "ArrowDown") {
       e.preventDefault();
       e.stopPropagation();
-      const nextIndex = currentIndex < 0 ? 0 : (currentIndex + 1) % items.length;
+      const nextIndex =
+        currentIndex < 0 ? 0 : (currentIndex + 1) % items.length;
       items[nextIndex]?.focus();
       return;
     }
@@ -165,7 +181,9 @@ export class CopilotComposer extends LitElement {
       e.preventDefault();
       e.stopPropagation();
       const prevIndex =
-        currentIndex < 0 ? items.length - 1 : (currentIndex - 1 + items.length) % items.length;
+        currentIndex < 0
+          ? items.length - 1
+          : (currentIndex - 1 + items.length) % items.length;
       items[prevIndex]?.focus();
       return;
     }
@@ -211,7 +229,9 @@ export class CopilotComposer extends LitElement {
     this.selectedAskOption = id;
     this.value = `[${opt.id}] ${opt.title}`;
 
-    const textarea = this.querySelector("textarea") as HTMLTextAreaElement | null;
+    const textarea = this.querySelector(
+      "textarea",
+    ) as HTMLTextAreaElement | null;
     if (textarea) {
       textarea.value = this.value;
     }
@@ -255,7 +275,10 @@ export class CopilotComposer extends LitElement {
     if (btn) {
       const rect = btn.getBoundingClientRect();
       const popoverWidth = 260;
-      const left = Math.max(12, Math.min(window.innerWidth - popoverWidth - 12, rect.left));
+      const left = Math.max(
+        12,
+        Math.min(window.innerWidth - popoverWidth - 12, rect.left),
+      );
       const bottom = Math.max(12, window.innerHeight - rect.top + 8);
       this.menuPosition = { left, bottom };
     }
@@ -268,12 +291,12 @@ export class CopilotComposer extends LitElement {
     requestAnimationFrame(() => {
       const portal = document.getElementById("popoverPortal") || document.body;
       const selectedItem = portal.querySelector<HTMLElement>(
-        '#composer-dropdown-button-menu-contents [role="menuitem"][data-selected="true"]'
+        '#composer-dropdown-button-menu-contents [role="menuitem"][data-selected="true"]',
       );
       const firstItem =
         selectedItem ||
         portal.querySelector<HTMLElement>(
-          '#composer-dropdown-button-menu-contents [role="menuitem"]:not([disabled])'
+          '#composer-dropdown-button-menu-contents [role="menuitem"]:not([disabled])',
         );
       firstItem?.focus();
     });
@@ -289,7 +312,10 @@ export class CopilotComposer extends LitElement {
     if (btn) {
       const rect = btn.getBoundingClientRect();
       const popoverWidth = 260;
-      const left = Math.max(12, Math.min(window.innerWidth - popoverWidth - 12, rect.left));
+      const left = Math.max(
+        12,
+        Math.min(window.innerWidth - popoverWidth - 12, rect.left),
+      );
       const bottom = Math.max(12, window.innerHeight - rect.top + 8);
       this.menuPosition = { left, bottom };
       this.updatePortal();
@@ -316,13 +342,19 @@ export class CopilotComposer extends LitElement {
         composed: true,
       }),
     );
-    (this.querySelector("#composer-chat-mode-smart-button") as HTMLElement | null)?.focus();
+    (
+      this.querySelector(
+        "#composer-chat-mode-smart-button",
+      ) as HTMLElement | null
+    )?.focus();
   }
 
   private handleCreateAction(action: string) {
     this.closeMenu();
     if (action === "upload") {
-      const fileInput = this.querySelector("#composer-file-input") as HTMLInputElement | null;
+      const fileInput = this.querySelector(
+        "#composer-file-input",
+      ) as HTMLInputElement | null;
       if (fileInput) {
         fileInput.click();
       }
@@ -334,7 +366,9 @@ export class CopilotComposer extends LitElement {
         composed: true,
       }),
     );
-    (this.querySelector("#composer-create-button") as HTMLElement | null)?.focus();
+    (
+      this.querySelector("#composer-create-button") as HTMLElement | null
+    )?.focus();
   }
 
   private handleFileChange(e: Event) {
@@ -365,8 +399,8 @@ export class CopilotComposer extends LitElement {
     if (this.activeMenu === "create") {
       return html`
         <div
-          class="composer-dropdown-popover fixed z-[9999] transition-all duration-150 animate-in fade-in"
-          style="left: ${this.menuPosition.left}px; bottom: ${this.menuPosition.bottom}px; min-width: 250px;"
+          class="composer-dropdown-popover fixed z-[9999] p-1.5 rounded-[20px] shadow-2xl backdrop-blur-2xl backdrop-saturate-200 border border-black/8 dark:border-white/12 bg-white/95 dark:bg-[#161a24]/96 text-foreground-900 dark:text-foreground-100 transition-all duration-150 animate-in fade-in select-none"
+          style="left: ${this.menuPosition.left}px; bottom: ${this.menuPosition.bottom}px; min-width: 250px; border-radius: 20px;"
           role="menu"
           aria-orientation="vertical"
         >
@@ -480,8 +514,8 @@ export class CopilotComposer extends LitElement {
     if (this.activeMenu === "model") {
       return html`
         <div
-          class="composer-dropdown-popover fixed z-[9999] transition-all duration-150 animate-in fade-in"
-          style="left: ${this.menuPosition.left}px; bottom: ${this.menuPosition.bottom}px; min-width: 260px;"
+          class="composer-dropdown-popover fixed z-[9999] p-1.5 rounded-[20px] shadow-2xl backdrop-blur-2xl backdrop-saturate-200 border border-black/8 dark:border-white/12 bg-white/95 dark:bg-[#161a24]/96 text-foreground-900 dark:text-foreground-100 transition-all duration-150 animate-in fade-in select-none"
+          style="left: ${this.menuPosition.left}px; bottom: ${this.menuPosition.bottom}px; min-width: 260px; border-radius: 20px;"
           role="menu"
           aria-orientation="vertical"
         >
@@ -578,6 +612,57 @@ export class CopilotComposer extends LitElement {
   private renderAskToolContent() {
     return html`
       <style>
+        .composer-dropdown-popover {
+          background-color: rgba(255, 255, 255, 0.96) !important;
+          color: #1c1b1a !important;
+          border: 1px solid rgba(0, 0, 0, 0.08) !important;
+          border-radius: 20px !important;
+          box-shadow: 0 20px 48px -8px rgba(0, 0, 0, 0.22), 0 0 0 1px rgba(0, 0, 0, 0.05) !important;
+          backdrop-filter: blur(24px) saturate(180%) !important;
+          -webkit-backdrop-filter: blur(24px) saturate(180%) !important;
+          padding: 6px !important;
+        }
+
+        .composer-dropdown-popover [role="menuitem"],
+        .composer-dropdown-popover .composer-dropdown-item {
+          color: #1c1b1a !important;
+        }
+
+        .composer-dropdown-popover .composer-dropdown-desc {
+          color: #666666 !important;
+        }
+
+        .dark .composer-dropdown-popover,
+        [data-theme="dark"] .composer-dropdown-popover,
+        html.dark .composer-dropdown-popover,
+        html[data-theme="dark"] .composer-dropdown-popover {
+          background-color: rgba(22, 26, 36, 0.96) !important;
+          color: #f8fafc !important;
+          border: 1px solid rgba(255, 255, 255, 0.12) !important;
+          box-shadow: 0 24px 56px -8px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(255, 255, 255, 0.08) !important;
+        }
+
+        .dark .composer-dropdown-popover [role="menuitem"],
+        [data-theme="dark"] .composer-dropdown-popover [role="menuitem"],
+        html.dark .composer-dropdown-popover [role="menuitem"],
+        html[data-theme="dark"] .composer-dropdown-popover [role="menuitem"] {
+          color: #f8fafc !important;
+        }
+
+        .dark .composer-dropdown-popover .composer-dropdown-item,
+        [data-theme="dark"] .composer-dropdown-popover .composer-dropdown-item,
+        html.dark .composer-dropdown-popover .composer-dropdown-item,
+        html[data-theme="dark"] .composer-dropdown-popover .composer-dropdown-item {
+          color: #f8fafc !important;
+        }
+
+        .dark .composer-dropdown-popover .composer-dropdown-desc,
+        [data-theme="dark"] .composer-dropdown-popover .composer-dropdown-desc,
+        html.dark .composer-dropdown-popover .composer-dropdown-desc,
+        html[data-theme="dark"] .composer-dropdown-popover .composer-dropdown-desc {
+          color: #94a3b8 !important;
+        }
+
         .composer-ask-expander {
           display: grid;
           grid-template-rows: 0fr;
@@ -622,22 +707,17 @@ export class CopilotComposer extends LitElement {
       </style>
       <div class="px-3.5 pt-3 pb-1 flex flex-col pointer-events-auto">
         <!-- Header row -->
-        <div class="composer-ask-header flex items-center justify-between px-1 pb-2">
-          <div class="flex items-center gap-2">
-            <span class="flex size-2 rounded-full bg-blue-500 animate-pulse"></span>
-            <span class="text-[11px] font-semibold tracking-wider text-foreground-800 uppercase">
-              Pergunta do Copilot
-            </span>
-          </div>
-          <div class="flex items-center gap-2">
-            <span class="font-mono text-[11px] text-foreground-600/80 hidden sm:inline">
-              tecle 1, 2, 3 ou clique
-            </span>
+        <div class="composer-ask-header px-1 pb-2">
+          <div class="flex items-center justify-between">
+            <div class="text-sm font-medium text-foreground-900 leading-snug">
+              Qual abordagem você prefere para esta tarefa?
+            </div>
+
             <button
               type="button"
               title="Fechar opções"
               aria-label="Fechar opções"
-              class="grid size-6 place-items-center rounded-full text-foreground-600 hover:text-foreground-900 hover:bg-black/5 dark:hover:bg-white/10 transition-colors cursor-pointer pointer-events-auto text-xs"
+              class="rounded-full text-foreground-600 hover:text-foreground-900 hover:bg-black/5 dark:hover:bg-white/10 transition-colors cursor-pointer pointer-events-auto text-xs"
               @click=${(e: MouseEvent) => {
                 e.stopPropagation();
                 this.toggleAskTool();
@@ -649,11 +729,6 @@ export class CopilotComposer extends LitElement {
               ✕
             </button>
           </div>
-        </div>
-
-        <!-- Prompt question -->
-        <div class="composer-ask-header px-1 pb-2.5 text-sm font-medium text-foreground-900 leading-snug">
-          Qual abordagem você prefere para esta tarefa?
         </div>
 
         <!-- Options 1, 2, 3 -->
@@ -705,9 +780,6 @@ export class CopilotComposer extends LitElement {
             `;
           })}
         </div>
-
-        <!-- Divider separating Ask Tool from textarea -->
-        <div class="mt-2.5 mb-0.5 border-t border-black/8 dark:border-white/10"></div>
       </div>
     `;
   }
@@ -755,25 +827,26 @@ export class CopilotComposer extends LitElement {
                 </div>
 
                 <!-- Generating accent pulse line -->
-                ${this.isWorking
-        ? html`
+                ${
+                  this.isWorking
+                    ? html`
                       <div
                         class="absolute top-0 inset-x-0 h-[2px] bg-gradient-to-r from-blue-500 via-indigo-400 to-purple-500 animate-pulse z-10 rounded-t-[26px]"
                       ></div>
                     `
-        : nothing
-      }
+                    : nothing
+                }
 
                 <!-- Textarea container -->
                 <div class="pt-3 px-4 pb-0">
                   <textarea
                     rows="${this.compact ? "1" : "2"}"
-                    placeholder="${this.placeholder}"
+                    placeholder="${this.isAskOpen ? "Type another option" : this.placeholder}"
                     class="font-ligatures-none inline-block w-full resize-none overflow-y-hidden whitespace-pre-wrap bg-transparent align-top text-black outline-none placeholder:text-foreground-450 dark:text-white dark:placeholder:text-foreground-600/90 text-base-dense font-sans"
                     .value=${this.value}
                     @input=${(e: Event) => {
-        this.value = (e.target as HTMLTextAreaElement).value;
-      }}
+                      this.value = (e.target as HTMLTextAreaElement).value;
+                    }}
                     @keydown=${(e: KeyboardEvent) => this.handleKeyDown(e)}
                   ></textarea>
                 </div>
@@ -791,9 +864,9 @@ export class CopilotComposer extends LitElement {
                       aria-label="Attach files, connect apps, or make something with Copilot."
                       class="relative flex items-center text-foreground-800 fill-foreground-800 active:text-foreground-600 active:fill-foreground-600 dark:active:text-foreground-650 dark:active:fill-foreground-650 bg-transparent safe-hover:bg-black/5 active:bg-black/3 dark:safe-hover:bg-white/8 dark:active:bg-white/5 text-sm justify-center min-h-9 min-w-9 after:rounded-xl after:absolute after:inset-0 after:pointer-events-none after:border after:border-transparent after:contrast-more:border-2 outline-2 outline-offset-1 focus-visible:z-[1] focus-visible:outline focus-visible:outline-stroke-900 h-9 select-none gap-1 rounded-2xl border border-black/8 dark:border-white/8 p-0 transition-colors"
                       @click=${(e: Event) => {
-        e.stopPropagation();
-        this.toggleMenu("create", "#composer-create-button");
-      }}
+                        e.stopPropagation();
+                        this.toggleMenu("create", "#composer-create-button");
+                      }}
                     >
                       ${renderPlusIcon("size-6")}
                     </button>
@@ -809,9 +882,12 @@ export class CopilotComposer extends LitElement {
                         aria-label="${this.selectedModel}"
                         class="relative flex items-center text-foreground-800 fill-foreground-800 active:text-foreground-600 active:fill-foreground-600 dark:active:text-foreground-650 dark:active:fill-foreground-650 bg-transparent safe-hover:bg-black/5 active:bg-black/3 dark:safe-hover:bg-white/8 dark:active:bg-white/5 text-sm justify-center min-h-9 min-w-9 px-2.5 py-1 rounded-2xl gap-1 select-none font-medium border border-black/8 dark:border-white/10"
                         @click=${(e: Event) => {
-        e.stopPropagation();
-        this.toggleMenu("model", "#composer-chat-mode-smart-button");
-      }}
+                          e.stopPropagation();
+                          this.toggleMenu(
+                            "model",
+                            "#composer-chat-mode-smart-button",
+                          );
+                        }}
                       >
                         <span class="text-sm font-medium">${this.selectedModel}</span>
                         ${renderChevronDownIcon()}
@@ -840,7 +916,9 @@ export class CopilotComposer extends LitElement {
                         }}
                       >
                         <span class="size-1.5 rounded-full transition-colors ${
-                          this.isAskOpen ? "bg-blue-500 animate-pulse" : "bg-current opacity-40"
+                          this.isAskOpen
+                            ? "bg-blue-500 animate-pulse"
+                            : "bg-current opacity-40"
                         }"></span>
                         <span>Ask Tool</span>
                       </button>
@@ -849,8 +927,9 @@ export class CopilotComposer extends LitElement {
 
                   <!-- Right Action Button: Submit (Up Arrow), Stop, or Audio Call / Voice -->
                   <div class="flex items-center gap-2">
-                    ${this.isWorking
-        ? html`
+                    ${
+                      this.isWorking
+                        ? html`
                           <button
                             id="stop-button"
                             data-testid="stop-button"
@@ -859,18 +938,18 @@ export class CopilotComposer extends LitElement {
                             aria-label="Stop generating"
                             class="relative flex items-center justify-center size-9 rounded-2xl hover:opacity-90 active:scale-95 transition-all shadow-sm cursor-pointer select-none"
                             @click=${() =>
-            this.dispatchEvent(
-              new CustomEvent("stop-generation", {
-                bubbles: true,
-                composed: true,
-              }),
-            )}
+                              this.dispatchEvent(
+                                new CustomEvent("stop-generation", {
+                                  bubbles: true,
+                                  composed: true,
+                                }),
+                              )}
                           >
                             <div class="size-3.5 rounded bg-current"></div>
                           </button>
                         `
-        : this.value.trim()
-          ? html`
+                        : this.value.trim()
+                          ? html`
                             <button
                               id="submit-button"
                               data-testid="submit-button"
@@ -883,7 +962,7 @@ export class CopilotComposer extends LitElement {
                               ${renderSendIcon("size-5")}
                             </button>
                           `
-          : html`
+                          : html`
                             <button
                               id="audio-call-button"
                               data-testid="audio-call-button"
@@ -895,7 +974,7 @@ export class CopilotComposer extends LitElement {
                               ${renderWaveformIcon("size-6")}
                             </button>
                           `
-      }
+                    }
                   </div>
                 </div>
               </div>

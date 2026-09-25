@@ -15,7 +15,7 @@ import type { SubmitPromptDetail } from "./CopilotComposer";
 export class CopilotApp extends LitElement {
   @state() private activeTab = "new-chat";
   @state() private isSidebarOpen = true;
-  @state() private theme: "dark" | "light" = "light";
+  @state() private theme: "dark" | "light" = "dark";
   @state() private messages: ChatMessage[] = [];
   @state() private isStreaming = false;
   @state() private isFirstPrompt = false;
@@ -48,8 +48,18 @@ export class CopilotApp extends LitElement {
     }
     if (params.get("mock") === "chat") {
       this.messages = [
-        { id: "msg-1", role: "user", text: "Olá! Como o Copilot pode me ajudar?", timestamp: "10:30" },
-        { id: "msg-2", role: "assistant", text: "Olá! O Copilot é seu assistente de inteligência artificial recriado com 100% de fidelidade visual, consumindo as classes, fontes e tokens originais da Microsoft!", timestamp: "10:30" }
+        {
+          id: "msg-1",
+          role: "user",
+          text: "Olá! Como o Copilot pode me ajudar?",
+          timestamp: "10:30",
+        },
+        {
+          id: "msg-2",
+          role: "assistant",
+          text: "Olá! O Copilot é seu assistente de inteligência artificial recriado com 100% de fidelidade visual, consumindo as classes, fontes e tokens originais da Microsoft!",
+          timestamp: "10:30",
+        },
       ];
     }
     this.applyTheme(this.theme);
@@ -94,7 +104,10 @@ export class CopilotApp extends LitElement {
       id: "msg-" + Date.now(),
       role: "user",
       text: detail.prompt,
-      timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+      timestamp: new Date().toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+      }),
     };
 
     this.messages = [...this.messages, userMsg];
@@ -107,7 +120,10 @@ export class CopilotApp extends LitElement {
         id: "msg-" + (Date.now() + 1),
         role: "assistant",
         text: assistantText,
-        timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+        timestamp: new Date().toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
       };
       this.messages = [...this.messages, assistantMsg];
       this.isStreaming = false;
@@ -122,7 +138,14 @@ export class CopilotApp extends LitElement {
     if (lower.includes("audio") || lower.includes("expression")) {
       return `Copilot Audio Expressions allows generative voice and sound synthesis directly within your workflows.\n\nKey capabilities:\n1. **Zero-shot Emotion Control**: Modulate pitch, cadence, and vocal emphasis.\n2. **Multilingual Resonance**: Real-time translation with preserved timbre.\n3. **Soundscapes**: Ambient generative audio beds generated on demand.`;
     }
-    if (lower.includes("shopping") || lower.includes("price") || lower.includes("chair") || lower.includes("headphone") || lower.includes("sweater") || lower.includes("deal")) {
+    if (
+      lower.includes("shopping") ||
+      lower.includes("price") ||
+      lower.includes("chair") ||
+      lower.includes("headphone") ||
+      lower.includes("sweater") ||
+      lower.includes("deal")
+    ) {
       return `Here are the top shopping recommendations based on verified buyer reviews, current promotions, and price analysis:\n\n- **Pricing & Discounts**: Filtered for verified seasonal deals with best-price matching.\n- **Review Aggregation**: High-sentiment highlights extracted across major retailers.\n- **Quality Benchmarks**: Premium materials, standard warranty support, and durability ratings.\n\nLet me know if you would like a side-by-side comparison table!`;
     }
     return `Certainly! Regarding **"${prompt}"**:\n\nCopilot provides straightforward reasoning, real-time research, and creative assistance. Everything is running natively in your Lit components interface with full Light DOM styling, responsive mobile drawer, and Squircles integration.\n\nHow else can I assist your workflow today?`;
@@ -226,21 +249,24 @@ export class CopilotApp extends LitElement {
         data-theme="${this.theme}"
       >
         <!-- Mobile Backdrop Overlay when Drawer is open (z-40) -->
-        ${this.isSidebarOpen
-        ? html`
+        ${
+          this.isSidebarOpen
+            ? html`
               <div
                 class="fixed inset-0 bg-black/40 backdrop-blur-xs z-40 md:hidden transition-opacity"
                 @click=${() => (this.isSidebarOpen = false)}
               ></div>
             `
-        : nothing}
+            : nothing
+        }
 
         <!-- 1. Sidebar Navigation: z-50 fixed on mobile (above backdrop), relative on desktop -->
         <copilot-sidebar
-          class="h-full shrink-0 will-change-auto transition-all duration-300 ease-[cubic-bezier(0.43,0.195,0.02,1)] fixed md:relative inset-y-0 left-0 z-50 md:z-auto shadow-2xl md:shadow-none ${this
-        .isSidebarOpen
-        ? "w-[280px] md:w-[260px] min-w-[260px] translate-x-0 opacity-100"
-        : "-translate-x-full md:translate-x-0 w-0 md:w-0 min-w-0 p-0 m-0 overflow-hidden md:opacity-0 pointer-events-none"}"
+          class="h-full shrink-0 will-change-auto transition-all duration-300 ease-[cubic-bezier(0.43,0.195,0.02,1)] fixed md:relative inset-y-0 left-0 z-50 md:z-auto shadow-2xl md:shadow-none ${
+            this.isSidebarOpen
+              ? "w-[280px] md:w-[260px] min-w-[260px] translate-x-0 opacity-100"
+              : "-translate-x-full md:translate-x-0 w-0 md:w-0 min-w-0 p-0 m-0 overflow-hidden md:opacity-0 pointer-events-none"
+          }"
           .activeTab=${this.activeTab}
           .isOpen=${this.isSidebarOpen}
           @nav-select=${(e: CustomEvent<{ tab: string }>) => this.handleNavSelect(e.detail.tab)}
@@ -250,10 +276,9 @@ export class CopilotApp extends LitElement {
 
         <!-- 2. Main Stage with Microsoft Copilot Margin & Rounded Container -->
         <main
-          class="relative flex flex-1 flex-col h-full min-w-0 md:py-1.5 md:pe-1.5 transition-all duration-300 ${!this
-        .isSidebarOpen
-        ? "md:ps-1.5"
-        : ""}"
+          class="relative flex flex-1 flex-col h-full min-w-0 md:py-1.5 md:pe-1.5 transition-all duration-300 ${
+            !this.isSidebarOpen ? "md:ps-1.5" : ""
+          }"
         >
           <!-- Canvas stage with background-150 and md:rounded-container -->
           <div class="relative size-full overflow-hidden md:rounded-container bg-background-150 flex flex-col">
