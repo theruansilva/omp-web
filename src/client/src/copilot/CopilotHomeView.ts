@@ -40,16 +40,6 @@ export class CopilotHomeView extends LitElement {
             ></copilot-composer>
           </div>
         </div>
-
-        <!-- Terms & Privacy Disclaimer pinned at the bottom -->
-        <div class="pb-4 px-4 flex justify-center z-10 select-none">
-          <p class="text-[11px] md:text-[12px] text-foreground-500 text-center max-w-lg leading-relaxed">
-            Copilot is an AI and may make mistakes. Using Copilot means you agree to the
-            <a href="#" class="underline hover:text-foreground-700 transition-colors">Terms of Use</a>.
-            See our
-            <a href="#" class="underline hover:text-foreground-700 transition-colors">Privacy Statement</a>.
-          </p>
-        </div>
       </div>
     `;
   }
