@@ -11,4 +11,6 @@ export * from "./CopilotDiscoverView";
 export * from "./CopilotLabsView";
 export * from "./CopilotImagineView";
 export * from "./CopilotShoppingView";
+export * from "./CopilotDiscoverCard";
+export * from "./CopilotGraduatedCard";
 export * from "./CopilotApp";
