@@ -399,8 +399,8 @@ export class CopilotComposer extends LitElement {
     if (this.activeMenu === "create") {
       return html`
         <div
-          class="composer-dropdown-popover fixed z-[9999] p-1.5 rounded-[20px] shadow-2xl backdrop-blur-2xl backdrop-saturate-200 border border-black/8 dark:border-white/12 bg-white/95 dark:bg-[#161a24]/96 text-foreground-900 dark:text-foreground-100 transition-all duration-150 animate-in fade-in select-none"
-          style="left: ${this.menuPosition.left}px; bottom: ${this.menuPosition.bottom}px; min-width: 250px; border-radius: 20px;"
+          class="composer-dropdown-popover fixed z-[9999] p-1.5 rounded-[20px] shadow-2xl backdrop-blur-2xl backdrop-saturate-200 border border-black/8 dark:border-white/12 transition-all duration-150 animate-in fade-in select-none"
+          style="position: fixed !important; z-index: 9999 !important; left: ${this.menuPosition.left}px; bottom: ${this.menuPosition.bottom}px; min-width: 250px; background-color: var(--copilot-popover-bg, #161a24) !important; border: 1px solid var(--copilot-popover-border, rgba(255,255,255,0.14)) !important; border-radius: 20px !important; box-shadow: var(--copilot-popover-shadow, 0 24px 56px -8px rgba(0,0,0,0.75)) !important; backdrop-filter: blur(24px) saturate(180%) !important; -webkit-backdrop-filter: blur(24px) saturate(180%) !important; padding: 6px !important; color: var(--copilot-popover-text, #f8fafc) !important;"
           role="menu"
           aria-orientation="vertical"
         >
@@ -514,8 +514,8 @@ export class CopilotComposer extends LitElement {
     if (this.activeMenu === "model") {
       return html`
         <div
-          class="composer-dropdown-popover fixed z-[9999] p-1.5 rounded-[20px] shadow-2xl backdrop-blur-2xl backdrop-saturate-200 border border-black/8 dark:border-white/12 bg-white/95 dark:bg-[#161a24]/96 text-foreground-900 dark:text-foreground-100 transition-all duration-150 animate-in fade-in select-none"
-          style="left: ${this.menuPosition.left}px; bottom: ${this.menuPosition.bottom}px; min-width: 260px; border-radius: 20px;"
+          class="composer-dropdown-popover fixed z-[9999] p-1.5 rounded-[20px] shadow-2xl backdrop-blur-2xl backdrop-saturate-200 border border-black/8 dark:border-white/12 transition-all duration-150 animate-in fade-in select-none"
+          style="position: fixed !important; z-index: 9999 !important; left: ${this.menuPosition.left}px; bottom: ${this.menuPosition.bottom}px; min-width: 260px; background-color: var(--copilot-popover-bg, #161a24) !important; border: 1px solid var(--copilot-popover-border, rgba(255,255,255,0.14)) !important; border-radius: 20px !important; box-shadow: var(--copilot-popover-shadow, 0 24px 56px -8px rgba(0,0,0,0.75)) !important; backdrop-filter: blur(24px) saturate(180%) !important; -webkit-backdrop-filter: blur(24px) saturate(180%) !important; padding: 6px !important; color: var(--copilot-popover-text, #f8fafc) !important;"
           role="menu"
           aria-orientation="vertical"
         >

@@ -335,6 +335,8 @@
    ========================================================= */
 
 .composer-dropdown-popover {
+  position: fixed !important;
+  z-index: 9999 !important;
   background-color: rgba(255, 255, 255, 0.96) !important;
   color: #1c1b1a !important;
   border: 1px solid rgba(0, 0, 0, 0.08) !important;
@@ -362,10 +364,12 @@
 [data-theme="dark"] .composer-dropdown-popover,
 html.dark .composer-dropdown-popover,
 html[data-theme="dark"] .composer-dropdown-popover {
-  background-color: rgba(22, 26, 36, 0.96) !important;
+  position: fixed !important;
+  z-index: 9999 !important;
+  background-color: rgba(22, 26, 36, 0.98) !important;
   color: #f8fafc !important;
-  border: 1px solid rgba(255, 255, 255, 0.12) !important;
-  box-shadow: 0 24px 56px -8px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(255, 255, 255, 0.08) !important;
+  border: 1px solid rgba(255, 255, 255, 0.14) !important;
+  box-shadow: 0 24px 56px -8px rgba(0, 0, 0, 0.75), 0 0 0 1px rgba(255, 255, 255, 0.08) !important;
 }
 
 .dark .composer-dropdown-popover [role="menuitem"],
@@ -386,6 +390,13 @@ html[data-theme="dark"] .composer-dropdown-popover .composer-dropdown-item {
 [data-theme="dark"] .composer-dropdown-popover .composer-dropdown-desc,
 html.dark .composer-dropdown-popover .composer-dropdown-desc,
 html[data-theme="dark"] .composer-dropdown-popover .composer-dropdown-desc {
+  color: #94a3b8 !important;
+}
+
+.dark .composer-dropdown-popover .composer-dropdown-icon,
+[data-theme="dark"] .composer-dropdown-popover .composer-dropdown-icon,
+html.dark .composer-dropdown-popover .composer-dropdown-icon,
+html[data-theme="dark"] .composer-dropdown-popover .composer-dropdown-icon {
   color: #94a3b8 !important;
 }
 

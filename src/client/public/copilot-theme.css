@@ -193,3 +193,216 @@
 .animate-thread-fade-in {
   animation: chatThreadFadeIn 0.35s ease-out 0.08s both;
 }
+
+
+/* =========================================================
+   DYNAMIC ISLAND & CLAUDE-STYLE ASK TOOL SPRING TRANSITIONS
+   ========================================================= */
+
+:root {
+  --copilot-ask-card-bg: rgba(255, 255, 255, 0.94);
+  --copilot-ask-card-border: rgba(0, 0, 0, 0.08);
+  --vt-bounce: linear(0, 0.22 8%, 0.6 18%, 0.94 30%, 1.07 40%, 1.05 48%, 1 60%, 0.99 74%, 1);
+}
+
+.dark, [data-theme="dark"] {
+  --copilot-ask-card-bg: rgba(18, 22, 31, 0.92);
+  --copilot-ask-card-border: rgba(255, 255, 255, 0.12);
+}
+
+::view-transition-group(copilot-ask-island) {
+  animation-duration: 480ms;
+  animation-timing-function: var(--vt-bounce);
+}
+
+::view-transition-old(copilot-ask-island) {
+  animation: 150ms linear both vt-dissolve-out,
+    480ms var(--vt-bounce) both vt-reveal-out;
+}
+
+::view-transition-new(copilot-ask-island) {
+  animation: 210ms linear both vt-dissolve-in,
+    480ms var(--vt-bounce) both vt-reveal-in;
+}
+
+@keyframes ask-spring-bounce-in {
+  0% {
+    opacity: 0;
+    transform: translateY(18px) scale(0.95);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes ask-spring-bounce-out {
+  0% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(14px) scale(0.95);
+  }
+}
+
+@keyframes vt-dissolve-out {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+@keyframes vt-dissolve-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes vt-reveal-in {
+  from { scale: 0.94; }
+  to { scale: 1; }
+}
+@keyframes vt-reveal-out {
+  from { scale: 1; }
+  to { scale: 0.94; }
+}
+
+.copilot-ask-island {
+  view-transition-name: copilot-ask-island;
+  animation: ask-spring-bounce-in 480ms var(--vt-bounce) both;
+  transform-origin: bottom center;
+}
+
+.copilot-ask-island.closing {
+  animation: ask-spring-bounce-out 320ms cubic-bezier(0.32, 0.72, 0, 1) both;
+}
+
+/* =========================================================
+   COMPOSER BACKGROUND EXPANSION & TWO-PHASE REVEAL
+   ========================================================= */
+
+.composer-ask-expander {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 460ms var(--vt-bounce, linear(0, 0.22 8%, 0.6 18%, 0.94 30%, 1.07 40%, 1.05 48%, 1 60%, 0.99 74%, 1));
+  overflow: hidden;
+}
+
+.composer-ask-expander.open {
+  grid-template-rows: 1fr;
+}
+
+.composer-ask-inner {
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* Phase 2: After the background expands upwards, options cascade in smoothly */
+.composer-ask-expander.open .composer-ask-header {
+  animation: ask-item-reveal 260ms cubic-bezier(0.16, 1, 0.3, 1) 180ms both;
+}
+
+.composer-ask-expander.open .composer-ask-item-1 {
+  animation: ask-item-reveal 260ms cubic-bezier(0.16, 1, 0.3, 1) 220ms both;
+}
+
+.composer-ask-expander.open .composer-ask-item-2 {
+  animation: ask-item-reveal 260ms cubic-bezier(0.16, 1, 0.3, 1) 270ms both;
+}
+
+.composer-ask-expander.open .composer-ask-item-3 {
+  animation: ask-item-reveal 260ms cubic-bezier(0.16, 1, 0.3, 1) 320ms both;
+}
+
+.composer-ask-expander:not(.open) .composer-ask-header,
+.composer-ask-expander:not(.open) .composer-ask-item {
+  opacity: 0;
+  transform: translateY(-4px);
+  transition: opacity 120ms linear, transform 120ms linear;
+}
+
+@keyframes ask-item-reveal {
+  0% {
+    opacity: 0;
+    transform: translateY(12px) scale(0.96);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+
+/* =========================================================
+   COMPOSER DROPDOWN POPOVERS (MODEL & ATTACHMENTS)
+   ========================================================= */
+
+.composer-dropdown-popover {
+  position: fixed !important;
+  z-index: 9999 !important;
+  background-color: rgba(255, 255, 255, 0.96) !important;
+  color: #1c1b1a !important;
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
+  border-radius: 20px !important;
+  box-shadow: 0 20px 48px -8px rgba(0, 0, 0, 0.22), 0 0 0 1px rgba(0, 0, 0, 0.05) !important;
+  backdrop-filter: blur(24px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(180%) !important;
+  padding: 6px !important;
+}
+
+.composer-dropdown-popover [role="menuitem"],
+.composer-dropdown-popover .composer-dropdown-item {
+  color: #1c1b1a !important;
+}
+
+.composer-dropdown-popover .composer-dropdown-desc {
+  color: #666666 !important;
+}
+
+.composer-dropdown-popover .composer-dropdown-icon {
+  color: #4b5563 !important;
+}
+
+.dark .composer-dropdown-popover,
+[data-theme="dark"] .composer-dropdown-popover,
+html.dark .composer-dropdown-popover,
+html[data-theme="dark"] .composer-dropdown-popover {
+  position: fixed !important;
+  z-index: 9999 !important;
+  background-color: rgba(22, 26, 36, 0.98) !important;
+  color: #f8fafc !important;
+  border: 1px solid rgba(255, 255, 255, 0.14) !important;
+  box-shadow: 0 24px 56px -8px rgba(0, 0, 0, 0.75), 0 0 0 1px rgba(255, 255, 255, 0.08) !important;
+}
+
+.dark .composer-dropdown-popover [role="menuitem"],
+[data-theme="dark"] .composer-dropdown-popover [role="menuitem"],
+html.dark .composer-dropdown-popover [role="menuitem"],
+html[data-theme="dark"] .composer-dropdown-popover [role="menuitem"] {
+  color: #f8fafc !important;
+}
+
+.dark .composer-dropdown-popover .composer-dropdown-item,
+[data-theme="dark"] .composer-dropdown-popover .composer-dropdown-item,
+html.dark .composer-dropdown-popover .composer-dropdown-item,
+html[data-theme="dark"] .composer-dropdown-popover .composer-dropdown-item {
+  color: #f8fafc !important;
+}
+
+.dark .composer-dropdown-popover .composer-dropdown-desc,
+[data-theme="dark"] .composer-dropdown-popover .composer-dropdown-desc,
+html.dark .composer-dropdown-popover .composer-dropdown-desc,
+html[data-theme="dark"] .composer-dropdown-popover .composer-dropdown-desc {
+  color: #94a3b8 !important;
+}
+
+.dark .composer-dropdown-popover .composer-dropdown-icon,
+[data-theme="dark"] .composer-dropdown-popover .composer-dropdown-icon,
+html.dark .composer-dropdown-popover .composer-dropdown-icon,
+html[data-theme="dark"] .composer-dropdown-popover .composer-dropdown-icon {
+  color: #94a3b8 !important;
+}
+
+.dark .composer-dropdown-popover .composer-dropdown-icon,
+[data-theme="dark"] .composer-dropdown-popover .composer-dropdown-icon,
+html.dark .composer-dropdown-popover .composer-dropdown-icon,
+html[data-theme="dark"] .composer-dropdown-popover .composer-dropdown-icon {
+  color: #94a3b8 !important;
+}
