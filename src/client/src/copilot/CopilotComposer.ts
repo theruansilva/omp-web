@@ -209,10 +209,15 @@ export class CopilotComposer extends LitElement {
     if (!opt) return;
 
     this.selectedAskOption = id;
+    this.value = `[${opt.id}] ${opt.title}`;
+
+    const textarea = this.querySelector("textarea") as HTMLTextAreaElement | null;
+    if (textarea) {
+      textarea.value = this.value;
+    }
     this.requestUpdate();
 
     setTimeout(() => {
-      this.value = `[${opt.id}] ${opt.title}`;
       this.isAskOpen = false;
       this.selectedAskOption = null;
       this.requestUpdate();
@@ -226,10 +231,9 @@ export class CopilotComposer extends LitElement {
       );
 
       requestAnimationFrame(() => {
-        const textarea = this.querySelector("textarea") as HTMLTextAreaElement | null;
         textarea?.focus();
       });
-    }, 150);
+    }, 160);
   }
 
   private closeMenu() {
@@ -573,7 +577,50 @@ export class CopilotComposer extends LitElement {
 
   private renderAskToolContent() {
     return html`
-      <div class="px-3.5 pt-3 pb-1 flex flex-col">
+      <style>
+        .composer-ask-expander {
+          display: grid;
+          grid-template-rows: 0fr;
+          transition: grid-template-rows 460ms linear(0, 0.22 8%, 0.6 18%, 0.94 30%, 1.07 40%, 1.05 48%, 1 60%, 0.99 74%, 1);
+          overflow: hidden;
+        }
+        .composer-ask-expander.open {
+          grid-template-rows: 1fr;
+        }
+        .composer-ask-inner {
+          min-height: 0;
+          overflow: hidden;
+        }
+        .composer-ask-expander.open .composer-ask-header {
+          animation: ask-item-reveal 260ms cubic-bezier(0.16, 1, 0.3, 1) 180ms both;
+        }
+        .composer-ask-expander.open .composer-ask-item-1 {
+          animation: ask-item-reveal 260ms cubic-bezier(0.16, 1, 0.3, 1) 220ms both;
+        }
+        .composer-ask-expander.open .composer-ask-item-2 {
+          animation: ask-item-reveal 260ms cubic-bezier(0.16, 1, 0.3, 1) 270ms both;
+        }
+        .composer-ask-expander.open .composer-ask-item-3 {
+          animation: ask-item-reveal 260ms cubic-bezier(0.16, 1, 0.3, 1) 320ms both;
+        }
+        .composer-ask-expander:not(.open) .composer-ask-header,
+        .composer-ask-expander:not(.open) .composer-ask-item {
+          opacity: 0;
+          transform: translateY(-4px);
+          transition: opacity 120ms linear, transform 120ms linear;
+        }
+        @keyframes ask-item-reveal {
+          0% {
+            opacity: 0;
+            transform: translateY(12px) scale(0.96);
+          }
+          100% {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+          }
+        }
+      </style>
+      <div class="px-3.5 pt-3 pb-1 flex flex-col pointer-events-auto">
         <!-- Header row -->
         <div class="composer-ask-header flex items-center justify-between px-1 pb-2">
           <div class="flex items-center gap-2">
@@ -590,8 +637,14 @@ export class CopilotComposer extends LitElement {
               type="button"
               title="Fechar opções"
               aria-label="Fechar opções"
-              class="grid size-6 place-items-center rounded-full text-foreground-600 hover:text-foreground-900 hover:bg-black/5 dark:hover:bg-white/10 transition-colors cursor-pointer text-xs"
-              @click=${() => this.toggleAskTool()}
+              class="grid size-6 place-items-center rounded-full text-foreground-600 hover:text-foreground-900 hover:bg-black/5 dark:hover:bg-white/10 transition-colors cursor-pointer pointer-events-auto text-xs"
+              @click=${(e: MouseEvent) => {
+                e.stopPropagation();
+                this.toggleAskTool();
+              }}
+              @pointerdown=${(e: PointerEvent) => {
+                e.stopPropagation();
+              }}
             >
               ✕
             </button>
@@ -606,22 +659,30 @@ export class CopilotComposer extends LitElement {
         <!-- Options 1, 2, 3 -->
         <div class="flex flex-col gap-1.5" role="radiogroup" aria-label="Opções do Copilot">
           ${this.askOptions.map((opt, idx) => {
-      const isSelected = this.selectedAskOption === opt.id;
-      return html`
+            const isSelected = this.selectedAskOption === opt.id;
+            return html`
               <button
                 type="button"
                 role="radio"
                 aria-checked="${isSelected}"
-                class="composer-ask-item composer-ask-item-${idx + 1} group flex items-center justify-between w-full px-3 py-2 sm:py-2.5 rounded-2xl text-left transition-all duration-150 cursor-pointer border border-black/5 dark:border-white/10 hover:border-blue-500/30 dark:hover:border-blue-500/40 bg-black/[0.02] dark:bg-white/[0.04] hover:bg-black/[0.05] dark:hover:bg-white/[0.08] active:scale-[0.99] ${isSelected
-          ? "!bg-blue-500/15 !border-blue-500/40 text-blue-600 dark:text-blue-400 font-semibold"
-          : "text-foreground-900"
-        }"
-                @click=${() => this.selectAskOption(opt.id)}
+                class="composer-ask-item composer-ask-item-${idx + 1} pointer-events-auto cursor-pointer group flex items-center justify-between w-full px-3 py-2 sm:py-2.5 rounded-2xl text-left transition-all duration-150 border border-black/5 dark:border-white/10 hover:border-blue-500/30 dark:hover:border-blue-500/40 bg-black/[0.02] dark:bg-white/[0.04] hover:bg-black/[0.05] dark:hover:bg-white/[0.08] active:scale-[0.99] ${
+                  isSelected
+                    ? "!bg-blue-500/15 !border-blue-500/40 text-blue-600 dark:text-blue-400 font-semibold"
+                    : "text-foreground-900"
+                }"
+                @click=${(e: MouseEvent) => {
+                  e.stopPropagation();
+                  this.selectAskOption(opt.id);
+                }}
+                @pointerdown=${(e: PointerEvent) => {
+                  e.stopPropagation();
+                }}
               >
                 <div class="flex items-center gap-3 min-w-0">
                   <span
-                    class="grid size-6 shrink-0 place-items-center rounded-xl bg-black/8 dark:bg-white/10 font-mono text-xs font-bold text-foreground-800 transition-colors group-hover:bg-blue-600 group-hover:text-white ${isSelected ? "!bg-blue-600 !text-white" : ""
-        }"
+                    class="grid size-6 shrink-0 place-items-center rounded-xl bg-black/8 dark:bg-white/10 font-mono text-xs font-bold text-foreground-800 transition-colors group-hover:bg-blue-600 group-hover:text-white ${
+                      isSelected ? "!bg-blue-600 !text-white" : ""
+                    }"
                   >
                     ${opt.id}
                   </span>
@@ -642,7 +703,7 @@ export class CopilotComposer extends LitElement {
                 </div>
               </button>
             `;
-    })}
+          })}
         </div>
 
         <!-- Divider separating Ask Tool from textarea -->
@@ -765,17 +826,22 @@ export class CopilotComposer extends LitElement {
                         title="Testar Ask Tool estilo Claude (1, 2, 3)"
                         type="button"
                         aria-label="Ask Tool"
-                        class="relative flex items-center text-foreground-800 fill-foreground-800 active:text-foreground-600 active:fill-foreground-600 dark:active:text-foreground-650 dark:active:fill-foreground-650 bg-transparent safe-hover:bg-black/5 active:bg-black/3 dark:safe-hover:bg-white/8 dark:active:bg-white/5 text-xs justify-center min-h-9 px-2.5 py-1 rounded-2xl gap-1.5 select-none font-medium border border-black/8 dark:border-white/10 transition-colors ${this.isAskOpen
-        ? "!bg-blue-500/10 !text-blue-600 dark:!text-blue-400 !border-blue-500/30 font-semibold"
-        : ""
-      }"
-                        @click=${(e: Event) => {
-        e.stopPropagation();
-        this.toggleAskTool();
-      }}
+                        class="relative flex items-center text-foreground-800 fill-foreground-800 active:text-foreground-600 active:fill-foreground-600 dark:active:text-foreground-650 dark:active:fill-foreground-650 bg-transparent safe-hover:bg-black/5 active:bg-black/3 dark:safe-hover:bg-white/8 dark:active:bg-white/5 text-xs justify-center min-h-9 px-2.5 py-1 rounded-2xl gap-1.5 select-none font-medium border border-black/8 dark:border-white/10 transition-colors cursor-pointer pointer-events-auto ${
+                          this.isAskOpen
+                            ? "!bg-blue-500/10 !text-blue-600 dark:!text-blue-400 !border-blue-500/30 font-semibold"
+                            : ""
+                        }"
+                        @click=${(e: MouseEvent) => {
+                          e.stopPropagation();
+                          this.toggleAskTool();
+                        }}
+                        @pointerdown=${(e: PointerEvent) => {
+                          e.stopPropagation();
+                        }}
                       >
-                        <span class="size-1.5 rounded-full transition-colors ${this.isAskOpen ? "bg-blue-500 animate-pulse" : "bg-current opacity-40"
-      }"></span>
+                        <span class="size-1.5 rounded-full transition-colors ${
+                          this.isAskOpen ? "bg-blue-500 animate-pulse" : "bg-current opacity-40"
+                        }"></span>
                         <span>Ask Tool</span>
                       </button>
                     </div>

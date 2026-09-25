@@ -1,5 +1,6 @@
-// Import squircles library so Vite bundles it into client assets
+// Import squircles library and theme so Vite bundles it into client assets
 import "@progmruansilva/squircles/index.css";
+import "../../copilot-theme.css";
 
 export * from "./icons";
 export * from "./CopilotSidebar";
