@@ -2,31 +2,162 @@
 @import "./squircles.css";
 
 :root {
-  --copilot-bg: #FAF7F5;
-  --copilot-card-bg: rgba(255, 255, 255, 0.72);
-  --copilot-card-border: rgba(0, 0, 0, 0.08);
-  --copilot-card-hover-border: rgba(0, 0, 0, 0.18);
-  --copilot-text-primary: #1C1B1A;
-  --copilot-text-secondary: #666666;
-  --copilot-text-muted: #888888;
-  --copilot-composer-bg: rgba(255, 255, 255, 0.92);
-  --copilot-composer-border: rgba(0, 0, 0, 0.08);
-  --copilot-bubble-bg: rgba(245, 231, 218, 0.85);
-  --copilot-bubble-text: #241F1B;
+  /* =========================================================
+     COPILOT SEMANTIC DESIGN TOKENS (OKLCH Color Space)
+     ========================================================= */
+
+  /* 1. Surfaces & Canvases */
+  --copilot-bg: oklch(98.5% 0.006 56); /* #FAF7F5 - Canvas background */
+  --copilot-surface-canvas: var(--copilot-bg);
+  --copilot-card-bg: oklch(100% 0 0 / 0.72);
+  --copilot-surface-card: var(--copilot-card-bg);
+  --copilot-surface-elevated: oklch(100% 0 0 / 0.92);
+  --copilot-surface-popover: oklch(100% 0 0 / 0.96);
+  --copilot-surface-avatar: oklch(100% 0 0);
+  --copilot-surface-subtle: oklch(93.5% 0.012 60); /* soft warm stone */
+
+  /* 2. Borders & Strokes */
+  --copilot-card-border: oklch(0% 0 0 / 0.08);
+  --copilot-border-subtle: var(--copilot-card-border);
+  --copilot-card-hover-border: oklch(0% 0 0 / 0.18);
+  --copilot-border-strong: var(--copilot-card-hover-border);
+  --copilot-popover-border: oklch(0% 0 0 / 0.08);
+
+  /* 3. Typography & Text Hierarchy */
+  --copilot-text-primary: oklch(20% 0.006 56); /* #1C1B1A */
+  --copilot-text-secondary: oklch(48% 0.008 56); /* #666666 */
+  --copilot-text-muted: oklch(62% 0.008 56); /* #888888 */
+
+  /* 4. Action & Brand Semantics */
+  --copilot-primary: oklch(20% 0.006 56);
+  --copilot-primary-hover: oklch(0% 0 0);
+  --copilot-on-primary: oklch(100% 0 0);
+
+  --copilot-secondary: oklch(94% 0.008 56);
+  --copilot-secondary-hover: oklch(90% 0.01 56);
+  --copilot-on-secondary: oklch(20% 0.006 56);
+
+  --copilot-accent: oklch(58% 0.18 240); /* #0284C7 */
+  --copilot-accent-subtle: oklch(58% 0.18 240 / 0.12);
+  --copilot-on-accent: oklch(100% 0 0);
+
+  /* 5. Composer & Bubble */
+  --copilot-composer-bg: oklch(100% 0 0 / 0.92);
+  --copilot-composer-border: oklch(0% 0 0 / 0.08);
+  --copilot-bubble-bg: oklch(93% 0.02 56 / 0.85);
+  --copilot-bubble-text: oklch(22% 0.01 56);
+
+  /* 6. Acrylic Translucency */
+  --copilot-acrylic-blur: 24px;
+  --copilot-acrylic-saturate: 180%;
+
+  /* 7. Nested Radius & Border Experiment Tokens */
+  --radius-card-bg: oklch(100% 0 0 / 0.75);
+  --radius-card-border: oklch(0% 0 0 / 0.08);
+  --radius-accent: oklch(58% 0.18 240);
+  --radius-stat-bg: oklch(0% 0 0 / 0.03);
+  --radius-stat-border: oklch(0% 0 0 / 0.06);
+  --radius-viz-bg: oklch(96% 0.01 240 / 0.6);
+  --radius-viz-border: oklch(0% 0 0 / 0.08);
+  --radius-outer-fill: oklch(76% 0.15 220 / 0.08);
+  --radius-outer-stroke: oklch(76% 0.15 220);
+  --radius-inner-fill: oklch(58% 0.18 240 / 0.15);
+  --radius-inner-stroke: oklch(58% 0.18 240);
+  --radius-guide: oklch(74% 0.18 70);
+  --radius-guide-text: oklch(50% 0.18 60);
+  --radius-dashed: oklch(0% 0 0 / 0.25);
+  --radius-point: oklch(62% 0.24 15);
+  --radius-slider-track: oklch(0% 0 0 / 0.10);
 }
 
 .dark, [data-theme="dark"] {
-  --copilot-bg: #0B0E14;
-  --copilot-card-bg: rgba(26, 30, 43, 0.55);
-  --copilot-card-border: rgba(255, 255, 255, 0.1);
-  --copilot-card-hover-border: rgba(255, 255, 255, 0.25);
-  --copilot-text-primary: #F8FAFC;
-  --copilot-text-secondary: #94A3B8;
-  --copilot-text-muted: #64748B;
-  --copilot-composer-bg: rgba(24, 28, 38, 0.75);
-  --copilot-composer-border: rgba(255, 255, 255, 0.12);
-  --copilot-bubble-bg: rgba(44, 39, 35, 0.9);
-  --copilot-bubble-text: #F3EDE6;
+  /* 1. Surfaces & Canvases (Dark) */
+  --copilot-bg: oklch(14.5% 0.015 260); /* #0B0E14 */
+  --copilot-surface-canvas: var(--copilot-bg);
+  --copilot-card-bg: oklch(22% 0.02 260 / 0.55); /* #1A1E2B / 0.55 */
+  --copilot-surface-card: var(--copilot-card-bg);
+  --copilot-surface-elevated: oklch(20% 0.02 260 / 0.85);
+  --copilot-surface-popover: oklch(18% 0.02 260 / 0.96);
+  --copilot-surface-avatar: oklch(23% 0.022 260); /* #1E2330 */
+  --copilot-surface-subtle: oklch(18% 0.018 260); /* #161B28 */
+
+  /* 2. Borders & Strokes (Dark) */
+  --copilot-card-border: oklch(100% 0 0 / 0.10);
+  --copilot-border-subtle: var(--copilot-card-border);
+  --copilot-card-hover-border: oklch(100% 0 0 / 0.22);
+  --copilot-border-strong: var(--copilot-card-hover-border);
+  --copilot-popover-border: oklch(100% 0 0 / 0.14);
+
+  /* 3. Typography & Text Hierarchy (Dark) */
+  --copilot-text-primary: oklch(97% 0.005 260); /* #F8FAFC */
+  --copilot-text-secondary: oklch(72% 0.015 260); /* #94A3B8 */
+  --copilot-text-muted: oklch(54% 0.02 260); /* #64748B */
+
+  /* 4. Action & Brand Semantics (Dark) */
+  --copilot-primary: oklch(100% 0 0);
+  --copilot-primary-hover: oklch(92% 0 0);
+  --copilot-on-primary: oklch(20% 0.006 56);
+
+  --copilot-secondary: oklch(25% 0.02 260);
+  --copilot-secondary-hover: oklch(30% 0.02 260);
+  --copilot-on-secondary: oklch(97% 0.005 260);
+
+  --copilot-accent: oklch(76% 0.15 220); /* #38BDF8 */
+  --copilot-accent-subtle: oklch(76% 0.15 220 / 0.18);
+  --copilot-on-accent: oklch(15% 0.02 240);
+
+  /* 5. Composer & Bubble (Dark) */
+  --copilot-composer-bg: oklch(20% 0.02 260 / 0.75);
+  --copilot-composer-border: oklch(100% 0 0 / 0.12);
+  --copilot-bubble-bg: oklch(25% 0.015 56 / 0.90);
+  --copilot-bubble-text: oklch(95% 0.01 56);
+
+  /* 7. Nested Radius & Border Experiment Tokens (Dark) */
+  --radius-card-bg: oklch(22% 0.02 260 / 0.65);
+  --radius-card-border: oklch(100% 0 0 / 0.12);
+  --radius-accent: oklch(76% 0.15 220);
+  --radius-stat-bg: oklch(100% 0 0 / 0.04);
+  --radius-stat-border: oklch(100% 0 0 / 0.08);
+  --radius-viz-bg: oklch(18% 0.02 260 / 0.6);
+  --radius-viz-border: oklch(100% 0 0 / 0.10);
+  --radius-outer-fill: oklch(76% 0.15 220 / 0.12);
+  --radius-outer-stroke: oklch(76% 0.15 220);
+  --radius-inner-fill: oklch(58% 0.18 240 / 0.25);
+  --radius-inner-stroke: oklch(76% 0.15 220);
+  --radius-guide: oklch(74% 0.18 70);
+  --radius-guide-text: oklch(82% 0.16 75);
+  --radius-dashed: oklch(100% 0 0 / 0.25);
+  --radius-point: oklch(62% 0.24 15);
+  --radius-slider-track: oklch(100% 0 0 / 0.15);
+}
+
+/* =========================================================
+   COPILOT SEMANTIC SURFACE UTILITIES
+   ========================================================= */
+
+.copilot-surface-avatar {
+  background-color: var(--copilot-surface-avatar) !important;
+  border: 1px solid var(--copilot-border-subtle) !important;
+}
+
+.copilot-surface-subtle {
+  background-color: var(--copilot-surface-subtle) !important;
+}
+
+.copilot-surface-card {
+  background-color: var(--copilot-surface-card) !important;
+}
+
+.copilot-surface-elevated {
+  background-color: var(--copilot-surface-elevated) !important;
+}
+
+.copilot-border-subtle {
+  border-color: var(--copilot-border-subtle) !important;
+}
+
+.copilot-border-strong {
+  border-color: var(--copilot-border-strong) !important;
 }
 
 /* =========================================================
@@ -136,27 +267,27 @@
 /* Authentic Microsoft Copilot Sign-in Button (variant="rect", color="strong", rounded-xl) */
 .copilot-btn-signin {
   border-radius: 0.75rem !important; /* rounded-xl (12px) */
-  background-color: #1C1B1A !important;
-  color: #FFFFFF !important;
+  background-color: var(--copilot-primary) !important;
+  color: var(--copilot-on-primary) !important;
   font-size: 0.875rem !important; /* text-sm (14px) */
   font-weight: 500 !important;
   transition: all 0.15s ease;
-  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  box-shadow: 0 1px 2px 0 oklch(0% 0 0 / 0.05);
 }
 
 .copilot-btn-signin:hover {
-  background-color: #000000 !important;
+  background-color: var(--copilot-primary-hover) !important;
 }
 
 .dark .copilot-btn-signin,
 [data-theme="dark"] .copilot-btn-signin {
-  background-color: #FFFFFF !important;
-  color: #1C1B1A !important;
+  background-color: var(--copilot-primary) !important;
+  color: var(--copilot-on-primary) !important;
 }
 
 .dark .copilot-btn-signin:hover,
 [data-theme="dark"] .copilot-btn-signin:hover {
-  background-color: rgba(255, 255, 255, 0.9) !important;
+  background-color: var(--copilot-primary-hover) !important;
 }
 
 /* =========================================================
@@ -337,27 +468,27 @@
 .composer-dropdown-popover {
   position: fixed !important;
   z-index: 9999 !important;
-  background-color: rgba(255, 255, 255, 0.96) !important;
-  color: #1c1b1a !important;
-  border: 1px solid rgba(0, 0, 0, 0.08) !important;
+  background-color: var(--copilot-surface-popover) !important;
+  color: var(--copilot-text-primary) !important;
+  border: 1px solid var(--copilot-popover-border) !important;
   border-radius: 20px !important;
-  box-shadow: 0 20px 48px -8px rgba(0, 0, 0, 0.22), 0 0 0 1px rgba(0, 0, 0, 0.05) !important;
-  backdrop-filter: blur(24px) saturate(180%) !important;
-  -webkit-backdrop-filter: blur(24px) saturate(180%) !important;
+  box-shadow: 0 20px 48px -8px oklch(0% 0 0 / 0.22), 0 0 0 1px oklch(0% 0 0 / 0.05) !important;
+  backdrop-filter: blur(var(--copilot-acrylic-blur)) saturate(var(--copilot-acrylic-saturate)) !important;
+  -webkit-backdrop-filter: blur(var(--copilot-acrylic-blur)) saturate(var(--copilot-acrylic-saturate)) !important;
   padding: 6px !important;
 }
 
 .composer-dropdown-popover [role="menuitem"],
 .composer-dropdown-popover .composer-dropdown-item {
-  color: #1c1b1a !important;
+  color: var(--copilot-text-primary) !important;
 }
 
 .composer-dropdown-popover .composer-dropdown-desc {
-  color: #666666 !important;
+  color: var(--copilot-text-secondary) !important;
 }
 
 .composer-dropdown-popover .composer-dropdown-icon {
-  color: #4b5563 !important;
+  color: var(--copilot-text-secondary) !important;
 }
 
 .dark .composer-dropdown-popover,
@@ -366,43 +497,36 @@ html.dark .composer-dropdown-popover,
 html[data-theme="dark"] .composer-dropdown-popover {
   position: fixed !important;
   z-index: 9999 !important;
-  background-color: rgba(22, 26, 36, 0.98) !important;
-  color: #f8fafc !important;
-  border: 1px solid rgba(255, 255, 255, 0.14) !important;
-  box-shadow: 0 24px 56px -8px rgba(0, 0, 0, 0.75), 0 0 0 1px rgba(255, 255, 255, 0.08) !important;
+  background-color: var(--copilot-surface-popover) !important;
+  color: var(--copilot-text-primary) !important;
+  border: 1px solid var(--copilot-popover-border) !important;
+  box-shadow: 0 24px 56px -8px oklch(0% 0 0 / 0.75), 0 0 0 1px oklch(100% 0 0 / 0.08) !important;
 }
 
 .dark .composer-dropdown-popover [role="menuitem"],
 [data-theme="dark"] .composer-dropdown-popover [role="menuitem"],
 html.dark .composer-dropdown-popover [role="menuitem"],
 html[data-theme="dark"] .composer-dropdown-popover [role="menuitem"] {
-  color: #f8fafc !important;
+  color: var(--copilot-text-primary) !important;
 }
 
 .dark .composer-dropdown-popover .composer-dropdown-item,
 [data-theme="dark"] .composer-dropdown-popover .composer-dropdown-item,
 html.dark .composer-dropdown-popover .composer-dropdown-item,
 html[data-theme="dark"] .composer-dropdown-popover .composer-dropdown-item {
-  color: #f8fafc !important;
+  color: var(--copilot-text-primary) !important;
 }
 
 .dark .composer-dropdown-popover .composer-dropdown-desc,
 [data-theme="dark"] .composer-dropdown-popover .composer-dropdown-desc,
 html.dark .composer-dropdown-popover .composer-dropdown-desc,
 html[data-theme="dark"] .composer-dropdown-popover .composer-dropdown-desc {
-  color: #94a3b8 !important;
+  color: var(--copilot-text-secondary) !important;
 }
 
 .dark .composer-dropdown-popover .composer-dropdown-icon,
 [data-theme="dark"] .composer-dropdown-popover .composer-dropdown-icon,
 html.dark .composer-dropdown-popover .composer-dropdown-icon,
 html[data-theme="dark"] .composer-dropdown-popover .composer-dropdown-icon {
-  color: #94a3b8 !important;
-}
-
-.dark .composer-dropdown-popover .composer-dropdown-icon,
-[data-theme="dark"] .composer-dropdown-popover .composer-dropdown-icon,
-html.dark .composer-dropdown-popover .composer-dropdown-icon,
-html[data-theme="dark"] .composer-dropdown-popover .composer-dropdown-icon {
-  color: #94a3b8 !important;
+  color: var(--copilot-text-secondary) !important;
 }

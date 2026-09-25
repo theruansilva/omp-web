@@ -99,10 +99,10 @@ export class CopilotShoppingView extends LitElement {
                   ${this.heroCards.map(
       (card) => html`
                       <div
-                        class="flex h-22 min-w-60 max-w-60 items-center justify-start gap-3 p-2 pe-3 bg-white/80 dark:bg-[#1A1E2B]/85 backdrop-blur-xl rounded-2xl cursor-pointer transition-transform duration-200 ease-out hover:scale-[1.025] shadow-lg border border-white/25 shrink-0"
+                        class="flex h-22 min-w-60 max-w-60 items-center justify-start gap-3 p-2 pe-3 copilot-surface-card backdrop-blur-xl rounded-2xl cursor-pointer transition-transform duration-200 ease-out hover:scale-[1.025] shadow-lg border border-copilot-subtle shrink-0"
                         @click=${() => this.handlePromptClick(card.prompt)}
                       >
-                        <div class="aspect-square h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-[#EBE4DC] flex items-center justify-center p-1">
+                        <div class="aspect-square h-16 w-16 shrink-0 overflow-hidden rounded-xl copilot-surface-subtle flex items-center justify-center p-1">
                           <img src="${card.image}" alt="${card.label}" class="size-full object-contain" />
                         </div>
                         <div class="flex flex-col justify-center overflow-hidden">
@@ -120,7 +120,7 @@ export class CopilotShoppingView extends LitElement {
             <div class="flex w-full justify-center -mt-6 relative z-10">
               <button
                 type="button"
-                class="inline-flex items-center gap-3 rounded-full bg-background-100 dark:bg-[#161B28] px-6 py-3 text-foreground-800 border border-black/10 dark:border-white/15 shadow-xl hover:scale-105 active:scale-98 transition-all cursor-pointer font-sans"
+                class="inline-flex items-center gap-3 rounded-full copilot-surface-elevated px-6 py-3 text-foreground-800 border border-copilot-subtle shadow-xl hover:scale-105 active:scale-98 transition-all cursor-pointer font-sans"
                 @click=${() => this.handlePromptClick("Ideas for the funniest secret santa gifts")}
               >
                 <div class="text-center text-sm md:text-base font-semibold font-ginto">

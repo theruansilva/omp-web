@@ -400,7 +400,7 @@ export class CopilotComposer extends LitElement {
       return html`
         <div
           class="composer-dropdown-popover fixed z-[9999] p-1.5 rounded-[20px] shadow-2xl backdrop-blur-2xl backdrop-saturate-200 border border-black/8 dark:border-white/12 transition-all duration-150 animate-in fade-in select-none"
-          style="position: fixed !important; z-index: 9999 !important; left: ${this.menuPosition.left}px; bottom: ${this.menuPosition.bottom}px; min-width: 250px; background-color: var(--copilot-popover-bg, #161a24) !important; border: 1px solid var(--copilot-popover-border, rgba(255,255,255,0.14)) !important; border-radius: 20px !important; box-shadow: var(--copilot-popover-shadow, 0 24px 56px -8px rgba(0,0,0,0.75)) !important; backdrop-filter: blur(24px) saturate(180%) !important; -webkit-backdrop-filter: blur(24px) saturate(180%) !important; padding: 6px !important; color: var(--copilot-popover-text, #f8fafc) !important;"
+          style="left: ${this.menuPosition.left}px; bottom: ${this.menuPosition.bottom}px; min-width: 250px;"
           role="menu"
           aria-orientation="vertical"
         >
@@ -515,7 +515,7 @@ export class CopilotComposer extends LitElement {
       return html`
         <div
           class="composer-dropdown-popover fixed z-[9999] p-1.5 rounded-[20px] shadow-2xl backdrop-blur-2xl backdrop-saturate-200 border border-black/8 dark:border-white/12 transition-all duration-150 animate-in fade-in select-none"
-          style="position: fixed !important; z-index: 9999 !important; left: ${this.menuPosition.left}px; bottom: ${this.menuPosition.bottom}px; min-width: 260px; background-color: var(--copilot-popover-bg, #161a24) !important; border: 1px solid var(--copilot-popover-border, rgba(255,255,255,0.14)) !important; border-radius: 20px !important; box-shadow: var(--copilot-popover-shadow, 0 24px 56px -8px rgba(0,0,0,0.75)) !important; backdrop-filter: blur(24px) saturate(180%) !important; -webkit-backdrop-filter: blur(24px) saturate(180%) !important; padding: 6px !important; color: var(--copilot-popover-text, #f8fafc) !important;"
+          style="left: ${this.menuPosition.left}px; bottom: ${this.menuPosition.bottom}px; min-width: 260px;"
           role="menu"
           aria-orientation="vertical"
         >
@@ -613,54 +613,18 @@ export class CopilotComposer extends LitElement {
     return html`
       <style>
         .composer-dropdown-popover {
-          background-color: rgba(255, 255, 255, 0.96) !important;
-          color: #1c1b1a !important;
-          border: 1px solid rgba(0, 0, 0, 0.08) !important;
-          border-radius: 20px !important;
-          box-shadow: 0 20px 48px -8px rgba(0, 0, 0, 0.22), 0 0 0 1px rgba(0, 0, 0, 0.05) !important;
-          backdrop-filter: blur(24px) saturate(180%) !important;
-          -webkit-backdrop-filter: blur(24px) saturate(180%) !important;
-          padding: 6px !important;
+          background-color: var(--copilot-surface-popover) !important;
+          color: var(--copilot-text-primary) !important;
+          border: 1px solid var(--copilot-popover-border) !important;
         }
 
         .composer-dropdown-popover [role="menuitem"],
         .composer-dropdown-popover .composer-dropdown-item {
-          color: #1c1b1a !important;
+          color: var(--copilot-text-primary) !important;
         }
 
         .composer-dropdown-popover .composer-dropdown-desc {
-          color: #666666 !important;
-        }
-
-        .dark .composer-dropdown-popover,
-        [data-theme="dark"] .composer-dropdown-popover,
-        html.dark .composer-dropdown-popover,
-        html[data-theme="dark"] .composer-dropdown-popover {
-          background-color: rgba(22, 26, 36, 0.96) !important;
-          color: #f8fafc !important;
-          border: 1px solid rgba(255, 255, 255, 0.12) !important;
-          box-shadow: 0 24px 56px -8px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(255, 255, 255, 0.08) !important;
-        }
-
-        .dark .composer-dropdown-popover [role="menuitem"],
-        [data-theme="dark"] .composer-dropdown-popover [role="menuitem"],
-        html.dark .composer-dropdown-popover [role="menuitem"],
-        html[data-theme="dark"] .composer-dropdown-popover [role="menuitem"] {
-          color: #f8fafc !important;
-        }
-
-        .dark .composer-dropdown-popover .composer-dropdown-item,
-        [data-theme="dark"] .composer-dropdown-popover .composer-dropdown-item,
-        html.dark .composer-dropdown-popover .composer-dropdown-item,
-        html[data-theme="dark"] .composer-dropdown-popover .composer-dropdown-item {
-          color: #f8fafc !important;
-        }
-
-        .dark .composer-dropdown-popover .composer-dropdown-desc,
-        [data-theme="dark"] .composer-dropdown-popover .composer-dropdown-desc,
-        html.dark .composer-dropdown-popover .composer-dropdown-desc,
-        html[data-theme="dark"] .composer-dropdown-popover .composer-dropdown-desc {
-          color: #94a3b8 !important;
+          color: var(--copilot-text-secondary) !important;
         }
 
         .composer-ask-expander {

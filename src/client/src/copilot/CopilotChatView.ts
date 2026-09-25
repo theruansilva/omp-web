@@ -87,7 +87,7 @@ export class CopilotChatView extends LitElement {
           : html`
                         <!-- Assistant Message with Copilot gradient logo -->
                         <div class="flex items-start gap-3 w-full">
-                          <div class="size-8 rounded-full bg-white dark:bg-[#1E2330] border border-black/5 dark:border-white/10 flex items-center justify-center shadow-xs shrink-0 mt-0.5">
+                          <div class="size-8 rounded-full copilot-surface-avatar flex items-center justify-center shadow-xs shrink-0 mt-0.5">
                             ${renderCopilotLogo("size-5")}
                           </div>
                           <div class="flex-1 text-[15px] leading-relaxed text-foreground-900 font-sans break-words pt-1 select-text">
@@ -102,7 +102,7 @@ export class CopilotChatView extends LitElement {
               ${this.isStreaming
         ? html`
                     <div class="flex items-start gap-3 w-full">
-                      <div class="size-8 rounded-full bg-white dark:bg-[#1E2330] border border-black/5 dark:border-white/10 flex items-center justify-center shadow-xs shrink-0 mt-0.5">
+                      <div class="size-8 rounded-full copilot-surface-avatar flex items-center justify-center shadow-xs shrink-0 mt-0.5">
                         ${renderCopilotLogo("size-5")}
                       </div>
                       <div class="flex items-center pt-2">
