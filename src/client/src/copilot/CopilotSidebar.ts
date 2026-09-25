@@ -159,7 +159,7 @@ export class CopilotSidebar extends LitElement {
           </p>
           <button
             type="button"
-            class="copilot-btn-signin w-full py-2.5 px-4 rounded-full font-semibold text-xs text-center transition-all shadow-sm hover:opacity-90 active:scale-98 cursor-pointer pointer-events-auto"
+            class="copilot-btn-signin w-full h-10 py-2 px-4 rounded-xl font-medium text-sm text-center transition-all shadow-sm active:scale-98 cursor-pointer pointer-events-auto"
             @click=${() => this.dispatchEvent(new CustomEvent("sign-in", { bubbles: true, composed: true }))}
           >
             Sign in

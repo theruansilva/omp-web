@@ -95,7 +95,6 @@ export default defineConfig({
     rollupOptions: {
       input: {
         main: resolve("src/client/index.html"),
-        poc: resolve("src/client/m3-poc.html"),
         copilot: resolve("src/client/copilot.html"),
       },
       output: {

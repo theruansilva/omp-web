@@ -18,6 +18,7 @@ export class CopilotApp extends LitElement {
   @state() private theme: "dark" | "light" = "light";
   @state() private messages: ChatMessage[] = [];
   @state() private isStreaming = false;
+  @state() private isFirstPrompt = false;
 
   protected override createRenderRoot() {
     return this;
@@ -82,6 +83,13 @@ export class CopilotApp extends LitElement {
   }
 
   private handlePromptSubmit(detail: SubmitPromptDetail) {
+    if (this.messages.length === 0) {
+      this.isFirstPrompt = true;
+      setTimeout(() => {
+        this.isFirstPrompt = false;
+      }, 600);
+    }
+
     const userMsg: ChatMessage = {
       id: "msg-" + Date.now(),
       role: "user",
@@ -153,6 +161,7 @@ export class CopilotApp extends LitElement {
               <copilot-chat-view
                 .messages=${this.messages}
                 .isStreaming=${this.isStreaming}
+                .isFirstPrompt=${this.isFirstPrompt}
                 @submit-prompt=${(e: CustomEvent<SubmitPromptDetail>) => this.handlePromptSubmit(e.detail)}
               ></copilot-chat-view>
             `;
@@ -213,7 +222,7 @@ export class CopilotApp extends LitElement {
     return html`
       <!-- Microsoft Copilot Shell Architecture -->
       <div
-        class="flex h-screen w-screen overflow-hidden bg-sidebar-light dark:bg-sidebar-dark font-sans select-none relative"
+        class="flex h-full h-dvh w-full overflow-hidden bg-sidebar-light dark:bg-sidebar-dark font-sans select-none relative"
         data-theme="${this.theme}"
       >
         <!-- Mobile Backdrop Overlay when Drawer is open (z-40) -->

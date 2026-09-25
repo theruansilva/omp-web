@@ -4,7 +4,7 @@ import "./CopilotComposer";
 
 @customElement("copilot-home-view")
 export class CopilotHomeView extends LitElement {
-  @property({ type: String }) greeting = "Hey Guest, what’s on your mind today?";
+  @property({ type: String }) greeting = "Hey Ruan, what’s on your mind today?";
   @property({ type: Boolean }) isWorking = false;
 
   protected override createRenderRoot() {
@@ -29,8 +29,14 @@ export class CopilotHomeView extends LitElement {
             <copilot-composer
               .isWorking=${this.isWorking}
               @submit-prompt=${(e: CustomEvent) => {
-        this.dispatchEvent(new CustomEvent("submit-prompt", { detail: e.detail, bubbles: true, composed: true }));
-      }}
+                this.dispatchEvent(
+                  new CustomEvent("submit-prompt", {
+                    detail: e.detail,
+                    bubbles: true,
+                    composed: true,
+                  }),
+                );
+              }}
             ></copilot-composer>
           </div>
         </div>

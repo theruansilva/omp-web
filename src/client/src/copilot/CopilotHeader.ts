@@ -1,11 +1,11 @@
 import { LitElement, html, nothing } from "lit";
 import { customElement, property } from "lit/decorators.js";
-import { renderToggleSidebarIcon, renderUserIcon, renderSunIcon, renderMoonIcon } from "./icons";
+import { renderToggleSidebarIcon, renderSunIcon, renderMoonIcon } from "./icons";
 
 @customElement("copilot-header")
 export class CopilotHeader extends LitElement {
   @property({ type: Boolean }) isSidebarOpen = true;
-  @property({ type: String }) title = "";
+  @property({ type: String }) override title = "";
   @property({ type: String }) theme: "dark" | "light" = "light";
 
   protected override createRenderRoot() {
@@ -46,14 +46,13 @@ export class CopilotHeader extends LitElement {
             ${this.theme === "dark" ? renderSunIcon() : renderMoonIcon()}
           </button>
 
-          <!-- Sign In Pill Button -->
+          <!-- Sign In Button (Exact original Microsoft Copilot rect/strong 36-sm style) -->
           <button
             type="button"
-            class="h-8 px-3.5 rounded-full bg-white dark:bg-[#202430] border border-black/10 dark:border-white/15 flex items-center gap-2 text-xs font-semibold text-foreground-800 hover:bg-black/5 dark:hover:bg-white/10 transition-all shadow-sm"
+            class="copilot-btn-signin h-9 px-3.5 py-1 rounded-xl flex items-center justify-center text-sm font-medium cursor-pointer shadow-sm active:scale-98"
             @click=${() => this.dispatchEvent(new CustomEvent("sign-in", { bubbles: true, composed: true }))}
           >
-            ${renderUserIcon()}
-            <span>Sign in</span>
+            Sign in
           </button>
         </div>
       </header>

@@ -15,8 +15,9 @@ export interface SubmitPromptDetail {
 @customElement("copilot-composer")
 export class CopilotComposer extends LitElement {
   @property({ type: String }) value = "";
-  @property({ type: String }) placeholder = "Message Copilot";
-  @property({ type: String }) selectedModel = "Smart";
+  @property({ type: String }) placeholder =
+    "Message to omp, use @ to metion a file or / to start a command";
+  @property({ type: String }) selectedModel = "Gemini 3.8";
   @property({ type: Boolean }) isWorking = false;
   @property({ type: Boolean }) compact = false;
 
@@ -41,35 +42,35 @@ export class CopilotComposer extends LitElement {
         detail: { prompt: text, model: this.selectedModel },
         bubbles: true,
         composed: true,
-      })
+      }),
     );
     this.value = "";
   }
 
   override render() {
     return html`
-      <!-- Microsoft Copilot Exact 4-Tier Composer Hierarchy -->
-      <div class="relative max-h-full min-h-composer min-w-16 w-full max-w-chat rounded-5xl">
+      <!-- Microsoft Copilot Exact 4-Tier Composer Hierarchy with Unified Width and Border Calculations -->
+      <div class="relative max-h-full min-h-composer min-w-16 w-expanded-composer max-w-chat max-w-full rounded-5xl">
         <!-- 1. Background layer with shadow-tinted-xl and backdrop-blur -->
         <div
-          class="relative shadow-tinted-xl backdrop-blur-2xl backdrop-saturate-200 bg-accent-100/60 dark:bg-muted-200/50"
+          class="relative flex flex-col overflow-hidden shadow-tinted-xl backdrop-blur-2xl backdrop-saturate-200 bg-accent-100/60 dark:bg-muted-200/50 w-full"
           style="border-radius: 32px;"
           data-testid="composer-background"
         >
-          <!-- 2. Content container -->
+          <!-- 2. Content container (same border-radius and full width matching composer-background) -->
           <div
-            class="pointer-events-auto relative flex flex-col overflow-hidden contrast-more:border-2"
+            class="pointer-events-auto relative flex flex-col overflow-hidden contrast-more:border-2 w-full"
             style="border-radius: 32px;"
             data-testid="composer-content"
           >
-            <!-- 3. Gradient frame with 6px (p-1.5) padding and subtle border -->
+            <!-- 3. Gradient frame with 6px (p-1.5) padding and matching 32px border -->
             <div
-              class="relative max-h-full w-expanded-composer max-w-chat bg-gradient-to-b p-1.5 before:pointer-events-none before:absolute before:inset-0 before:rounded-[inherit] before:border before:border-white/100 dark:before:border-white/12 from-background-400/5 to-background-400/8 dark:from-background-200/65 dark:to-background-200/65"
+              class="relative max-h-full w-full bg-gradient-to-b p-1.5 before:pointer-events-none before:absolute before:inset-0 before:rounded-[inherit] before:border before:border-white/100 dark:before:border-white/12 from-background-400/5 to-background-400/8 dark:from-background-200/65 dark:to-background-200/65"
               style="border-radius: 32px;"
             >
-              <!-- 4. Inner card with 26px concentric radius and white/glass fill -->
+              <!-- 4. Inner card with 26px concentric radius (32px - 6px padding) and white/glass fill -->
               <div
-                class="bg-white/95 dark:bg-background-100/45 backdrop-blur-xl relative flex flex-col overflow-hidden shadow-xs"
+                class="bg-white/95 dark:bg-background-100/45 backdrop-blur-xl relative flex flex-col overflow-hidden shadow-xs w-full"
                 style="border-radius: 26px;"
               >
                 <!-- Generating accent pulse line -->
@@ -79,10 +80,11 @@ export class CopilotComposer extends LitElement {
                         class="absolute top-0 inset-x-0 h-[2px] bg-gradient-to-r from-blue-500 via-indigo-400 to-purple-500 animate-pulse z-10"
                       ></div>
                     `
-        : nothing}
+        : nothing
+      }
 
                 <!-- Textarea container -->
-                <div class="pt-3 px-4 pb-1">
+                <div class="pt-3 px-4 pb-0">
                   <textarea
                     rows="${this.compact ? "1" : "2"}"
                     placeholder="${this.placeholder}"
@@ -108,7 +110,7 @@ export class CopilotComposer extends LitElement {
                       ${renderPlusIcon()}
                     </button>
 
-                    <!-- Model Selector Pill: "Smart ⌄" with Microsoft Copilot classes -->
+                    <!-- Model Selector Pill: "Gemini 3.8 ⌄" with Microsoft Copilot classes -->
                     <div class="relative">
                       <button
                         type="button"
@@ -126,10 +128,10 @@ export class CopilotComposer extends LitElement {
                               class="absolute bottom-full mb-2 left-0 min-w-[160px] p-1.5 bg-white dark:bg-[#181c28] border border-black/10 dark:border-white/15 rounded-2xl shadow-2xl flex flex-col gap-0.5 z-50 text-xs font-medium"
                             >
                               <div
-                                class="px-3 py-2 rounded-xl cursor-pointer hover:bg-black/5 dark:hover:bg-white/8 transition-colors ${this
-            .selectedModel === "Smart"
+                                class="px-3 py-2 rounded-xl cursor-pointer hover:bg-black/5 dark:hover:bg-white/8 transition-colors ${this.selectedModel === "Smart"
             ? "text-blue-600 dark:text-blue-400 font-semibold"
-            : "text-foreground-700"}"
+            : "text-foreground-700"
+          }"
                                 @click=${() => {
             this.selectedModel = "Smart";
             this.isModelMenuOpen = false;
@@ -138,10 +140,10 @@ export class CopilotComposer extends LitElement {
                                 Smart (Balanced)
                               </div>
                               <div
-                                class="px-3 py-2 rounded-xl cursor-pointer hover:bg-black/5 dark:hover:bg-white/8 transition-colors ${this
-            .selectedModel === "Fast"
+                                class="px-3 py-2 rounded-xl cursor-pointer hover:bg-black/5 dark:hover:bg-white/8 transition-colors ${this.selectedModel === "Fast"
             ? "text-blue-600 dark:text-blue-400 font-semibold"
-            : "text-foreground-700"}"
+            : "text-foreground-700"
+          }"
                                 @click=${() => {
             this.selectedModel = "Fast";
             this.isModelMenuOpen = false;
@@ -150,10 +152,10 @@ export class CopilotComposer extends LitElement {
                                 Fast (Quick reply)
                               </div>
                               <div
-                                class="px-3 py-2 rounded-xl cursor-pointer hover:bg-black/5 dark:hover:bg-white/8 transition-colors ${this
-            .selectedModel === "Thinking"
+                                class="px-3 py-2 rounded-xl cursor-pointer hover:bg-black/5 dark:hover:bg-white/8 transition-colors ${this.selectedModel === "Thinking"
             ? "text-blue-600 dark:text-blue-400 font-semibold"
-            : "text-foreground-700"}"
+            : "text-foreground-700"
+          }"
                                 @click=${() => {
             this.selectedModel = "Thinking";
             this.isModelMenuOpen = false;
@@ -163,7 +165,8 @@ export class CopilotComposer extends LitElement {
                               </div>
                             </div>
                           `
-        : nothing}
+        : nothing
+      }
                     </div>
                   </div>
 
@@ -188,7 +191,8 @@ export class CopilotComposer extends LitElement {
                           >
                             ${renderWaveformIcon()}
                           </button>
-                        `}
+                        `
+      }
                   </div>
                 </div>
               </div>
