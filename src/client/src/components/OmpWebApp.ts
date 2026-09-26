@@ -1,4 +1,4 @@
-import { LitElement, html } from "lit";
+import { LitElement, html, type PropertyValues } from "lit";
 import { errorMessage } from "../utils.js";
 import { customElement, query, state } from "lit/decorators.js";
 import { configApi, effectiveWorkspaceUploadFolder, type AskDialogSubmitResult, ompWebApi, sessionsApi, terminalsApi, workspacesApi, workspaceEffectiveUploadFolder, type Machine, type OmpWebConfigValues, type OmpWebShortcutConfig, type Project, type RealtimeEvent, type SessionCleanupExecuteResponse, type SessionCleanupPreviewResponse, type SessionCleanupRequest, type SessionInfo, type TerminalCommandRun, type TerminalUiEvent, type Workspace } from "../api";
@@ -31,6 +31,7 @@ import { AppShellController } from "../appShell/appShellController";
 import { NavigationSectionsController, type NavigationSection } from "../appShell/navigationState";
 import { PanelCollapseController, mainViewClass } from "../appShell/panelCollapseController";
 import { PanelResizeController, type PanelResizeConstraints, type ResizablePanelSide } from "../appShell/panelResizeController";
+import { MobileDrawerController } from "../appShell/mobileDrawerController";
 import { readRoute, writeRoute, type AppRoute } from "../route";
 import { readSettingsSection, writeSettingsSection, type SettingsSection } from "../settingsRoute";
 import { applyActiveShortcutPreferences } from "../shortcutPreferences";
@@ -135,6 +136,7 @@ export class OmpWebApp extends LitElement {
     this.requestUpdate();
   };
   @query("app-navigation-panel") private navigationPanel?: AppNavigationPanel;
+  @query(".mobile-drawer") private mobileDrawerElement?: HTMLElement;
   @query("#navigation-panel") private navigationPanelFrame?: HTMLElement;
   @query("#workspace-panel") private workspacePanelFrame?: HTMLElement;
 
@@ -190,6 +192,10 @@ export class OmpWebApp extends LitElement {
   private readonly appShell = new AppShellController(this);
   private readonly panelCollapse = new PanelCollapseController(this);
   private readonly panelResize = new PanelResizeController(this);
+  private readonly mobileDrawer = new MobileDrawerController(this, {
+    isMobileNavigationLayout: () => this.appShell.isMobileNavigationLayout,
+    getDrawerElement: () => this.mobileDrawerElement,
+  });
   private readonly navigationSections = new NavigationSectionsController(
     this,
     () => this.state,
@@ -267,6 +273,18 @@ export class OmpWebApp extends LitElement {
 
   protected override willUpdate(): void {
     this.toggleAttribute("pwa-display-mode", this.appShell.isPwaDisplayMode);
+  }
+
+  override firstUpdated(changedProperties: PropertyValues): void {
+    super.firstUpdated(changedProperties);
+    if (this.appShell.isMobileNavigationLayout && this.state.mainView === "navigation") {
+      this.mobileDrawer.open();
+    }
+  }
+
+  override updated(changedProperties: PropertyValues): void {
+    super.updated(changedProperties);
+    this.mobileDrawer.updateListeners();
   }
 
   override connectedCallback(): void {
@@ -818,6 +836,13 @@ export class OmpWebApp extends LitElement {
   }
 
   private selectMainView(view: AppState["mainView"]) {
+    if (this.appShell.isMobileNavigationLayout && view === "navigation") {
+      this.mobileDrawer.open();
+      return;
+    }
+    if (this.appShell.isMobileNavigationLayout && this.mobileDrawer.isOpen) {
+      this.mobileDrawer.close();
+    }
     if (view !== "navigation" && view !== "chat") {
       this.openWorkspaceTool(view);
       return;
@@ -2085,11 +2110,38 @@ export class OmpWebApp extends LitElement {
       <app-mobile-main-tabs
         ?bottom=${true}
         .tabs=${this.mobileMainTabs()}
-        .selectedView=${this.state.mainView}
+        .selectedView=${this.mobileDrawer.isOpen ? "navigation" : this.state.mainView}
         .refreshControl=${this.appShell.shouldShowAppRefreshInContextBar() ? this.renderAppRefresh() : undefined}
         .onShowActions=${() => { this.setState({ actionPaletteOpen: true }); }}
-        .onSelect=${(view: AppState["mainView"]) => { this.selectMainView(view); }}
+        .onSelect=${(view: AppState["mainView"]) => { this.handleMobileTabSelect(view); }}
       ></app-mobile-main-tabs>
+    `;
+  }
+
+  private handleMobileTabSelect(view: AppState["mainView"]): void {
+    if (view === "navigation") {
+      this.mobileDrawer.toggle();
+      return;
+    }
+    this.mobileDrawer.close();
+    this.selectMainView(view);
+  }
+
+  private renderMobileDrawer() {
+    if (!this.appShell.isMobileNavigationLayout) return null;
+    return html`
+      <div
+        class=${this.mobileDrawer.backdropClass()}
+        style=${this.mobileDrawer.backdropStyle()}
+        @click=${() => { this.mobileDrawer.close(); }}
+      ></div>
+      <div
+        class=${this.mobileDrawer.drawerClass()}
+        style=${this.mobileDrawer.drawerStyle()}
+        aria-hidden=${!this.mobileDrawer.isOpen}
+      >
+        ${this.renderNavigationPanel()}
+      </div>
     `;
   }
 
@@ -2147,11 +2199,11 @@ export class OmpWebApp extends LitElement {
       >
         <aside id="navigation-panel">${this.appShell.isMobileNavigationLayout ? null : this.renderNavigationPanel()}</aside>
         ${this.renderNavigationPanelEdgeControl()}
+        ${this.renderMobileDrawer()}
         <main class=${mainViewClass(state.mainView)}>
           ${this.renderContextBar()}
           ${this.renderMobileMainTabs()}
           ${state.error ? html`<div class="error">${state.error}</div>` : null}
-          <div class="mobile-navigation-panel">${this.appShell.isMobileNavigationLayout ? this.renderNavigationPanel() : null}</div>
           ${state.selectedSession ? html`
             <chat-view .onFocusPrompt=${() => { void this.focusChatComposer(); }} .sessionId=${state.selectedSession.id} .pendingAsk=${state.askDialog} .onSubmitAsk=${(result: AskDialogSubmitResult, reqId?: string) => { const targetId = reqId || state.askDialog?.requestId; if (targetId) void this.sessions.submitAsk(targetId, result); }} .onCancelAsk=${(reqId?: string) => { const targetId = reqId || state.askDialog?.requestId; if (targetId) void this.sessions.cancelAsk(targetId); }} .messages=${state.messages} .messageStart=${state.messagePageStart} .messageEnd=${state.messagePageEnd} .messageTotal=${state.messagePageTotal} .hasMore=${state.messagePageStart > 0} .loadingMore=${state.isLoadingEarlierMessages} .isSendingPrompt=${state.sendingPrompts[state.selectedSession.id] === true} .isCompacting=${state.status?.isCompacting === true} .pendingMessageCount=${state.status?.pendingMessageCount ?? 0} .clientQueuedMessages=${state.clientQueuedSessionMessages[state.selectedSession.id] ?? []} .status=${state.status} .activity=${state.activity} .onLoadMore=${() => this.withChatPrependTransition(() => this.sessions.loadEarlierMessages())}></chat-view>
             ${state.btwState !== undefined ? html`

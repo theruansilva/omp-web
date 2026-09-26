@@ -90,7 +90,7 @@ export const appStyles = css`
   .mobile-tabs-frame.can-scroll-left::before, .mobile-tabs-frame.can-scroll-right::after { opacity: 1; }
   .mobile-tabs { flex: 1 1 auto; min-width: 0; display: flex; align-items: center; gap: 6px; padding: 8px; overflow-x: auto; overflow-y: hidden; overscroll-behavior-x: contain; scrollbar-width: thin; }
   .mobile-tabs button { flex: 0 0 auto; white-space: nowrap; }
-  .mobile-navigation-tab, .mobile-navigation-panel { display: none; }
+  .mobile-navigation-tab, .mobile-navigation-panel, .mobile-drawer, .mobile-drawer-backdrop { display: none; }
   .mobile-tabs button.selected { border-color: var(--pi-accent); background: var(--pi-selection-bg); }
   .tab-badge { display: inline-block; min-width: 14px; margin-left: 4px; border: 1px solid var(--pi-success-border); border-radius: 999px; background: var(--pi-success-surface); color: var(--pi-success); padding: 0 5px; font-size: 11px; line-height: 16px; text-align: center; }
   .navigation-panel-edge, .workspace-panel-edge { min-width: 0; min-height: 0; display: flex; align-items: center; justify-content: center; overflow: visible; background: var(--pi-border-muted); z-index: 2; }
@@ -154,6 +154,14 @@ export const appStyles = css`
     main.navigation-view .mobile-navigation-panel project-list[collapsed],
     main.navigation-view .mobile-navigation-panel workspace-list[collapsed],
     main.navigation-view .mobile-navigation-panel session-list[collapsed] { flex: 0 0 auto; min-height: auto; overflow: hidden; }
+    .mobile-drawer-backdrop { display: block; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(2px); -webkit-backdrop-filter: blur(2px); z-index: 1000; opacity: 0; pointer-events: none; transition: opacity .25s ease; will-change: opacity; }
+    .mobile-drawer-backdrop.open { opacity: 1; pointer-events: auto; }
+    .mobile-drawer { display: flex; flex-direction: column; position: fixed; top: 0; bottom: 0; left: 0; width: min(85vw, 320px); max-width: 100vw; background: var(--pi-bg); border-right: 1px solid var(--pi-border); box-shadow: 4px 0 28px rgba(0, 0, 0, 0.35); z-index: 1001; transform: translateX(-100%); transition: transform .25s cubic-bezier(0.16, 1, 0.3, 1); will-change: transform; overflow: hidden; box-sizing: border-box; padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
+    .mobile-drawer.open { transform: translateX(0); }
+    .mobile-drawer.dragging, .mobile-drawer-backdrop.dragging { transition: none !important; }
+    .mobile-drawer app-navigation-panel { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
+    .mobile-drawer project-list, .mobile-drawer workspace-list, .mobile-drawer session-list { flex: 1 1 auto; max-height: none; min-height: 0; overflow: hidden; }
+    .mobile-drawer project-list[collapsed], .mobile-drawer workspace-list[collapsed], .mobile-drawer session-list[collapsed] { flex: 0 0 auto; min-height: auto; overflow: hidden; }
   }
   status-bar { flex: 0 0 auto; }
   chat-view { flex: 1 1 auto; min-height: 0; overflow: hidden; }
