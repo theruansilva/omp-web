@@ -1,6 +1,6 @@
 import type { ReactiveController, ReactiveControllerHost } from "lit";
 
-export const EDGE_SWIPE_THRESHOLD = 28;
+export const EDGE_SWIPE_THRESHOLD = 60;
 export const DIRECTION_LOCK_DEADZONE = 8;
 export const FLING_VELOCITY_THRESHOLD = 0.3; // px/ms
 export const DRAWER_MAX_WIDTH = 320;
