@@ -2,7 +2,9 @@ import { LitElement, html, nothing } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { renderOmpLogo, renderLoadingDots } from "./icons";
 import "./OmpComposer";
+import type { BtwState } from "./OmpComposer";
 import "./OmpAgentProcess";
+import "./OmpMarkdown";
 
 export interface ChatMessage {
   id: string;
@@ -18,6 +20,7 @@ export class OmpChatView extends LitElement {
   @property({ type: Boolean }) isStreaming = false;
   @property({ type: Boolean }) isFirstPrompt = false;
   @property({ type: String }) selectedProjectId = "proj-1";
+  @property({ attribute: false }) btwState?: BtwState;
 
   protected override createRenderRoot() {
     return this;
@@ -95,12 +98,12 @@ export class OmpChatView extends LitElement {
                               ${renderOmpLogo("size-5")}
                             </div>
                             <div class="flex-1 text-[15px] leading-relaxed text-foreground-900 font-sans break-words pt-1 select-text">
-                              <div class="whitespace-pre-wrap">${msg.text}</div>
+                              <omp-markdown .text=${msg.text}></omp-markdown>
                             </div>
                           </div>
                           ${msg.hasAgentProcess !== false
-                            ? html`<omp-agent-process @agent-step-changed=${() => this.scrollToBottom()}></omp-agent-process>`
-                            : nothing}
+              ? html`<omp-agent-process @agent-step-changed=${() => this.scrollToBottom()}></omp-agent-process>`
+              : nothing}
                         </div>
                       `}
                 `
@@ -133,16 +136,26 @@ export class OmpChatView extends LitElement {
               compact
               .isWorking=${this.isStreaming}
               .selectedProjectId=${this.selectedProjectId}
+              .btwState=${this.btwState}
               @project-select=${(e: CustomEvent<{ projectId: string }>) => {
-                this.selectedProjectId = e.detail.projectId;
-                this.dispatchEvent(
-                  new CustomEvent("project-select", {
-                    detail: e.detail,
-                    bubbles: true,
-                    composed: true,
-                  }),
-                );
-              }}
+        this.selectedProjectId = e.detail.projectId;
+        this.dispatchEvent(
+          new CustomEvent("project-select", {
+            detail: e.detail,
+            bubbles: true,
+            composed: true,
+          }),
+        );
+      }}
+              @submit-btw=${(e: CustomEvent) => {
+        this.dispatchEvent(new CustomEvent("submit-btw", { detail: e.detail, bubbles: true, composed: true }));
+      }}
+              @branch-btw=${(e: CustomEvent) => {
+        this.dispatchEvent(new CustomEvent("branch-btw", { detail: e.detail, bubbles: true, composed: true }));
+      }}
+              @close-btw=${() => {
+        this.dispatchEvent(new CustomEvent("close-btw", { bubbles: true, composed: true }));
+      }}
               @submit-prompt=${(e: CustomEvent) => {
         this.dispatchEvent(new CustomEvent("submit-prompt", { detail: e.detail, bubbles: true, composed: true }));
       }}

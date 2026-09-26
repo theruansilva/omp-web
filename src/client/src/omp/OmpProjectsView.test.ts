@@ -115,3 +115,142 @@ describe("OmpComposer Extensibility & Project Selector", () => {
     expect(allText).toContain("omp-appearance-cover-image-small--2.jpg");
   });
 });
+
+describe("OmpComposer /btw Side Question Support", () => {
+  it("renders /btw toggle button in the toolbar", () => {
+    const composer = new OmpComposer();
+    const rendered = composer.render();
+    const text = getAllTemplateText(rendered);
+    expect(text).toContain("composer-btw-toggle-button");
+    expect(text).toContain("/btw");
+  });
+
+  it("toggles /btw mode on button click", () => {
+    const composer = new OmpComposer();
+    expect(composer.isBtwMode).toBe(false);
+    expect(composer.isBtwActive).toBe(false);
+
+    composer.toggleBtwMode();
+    expect(composer.isBtwMode).toBe(true);
+    expect(composer.isBtwActive).toBe(true);
+
+    composer.toggleBtwMode();
+    expect(composer.isBtwMode).toBe(false);
+  });
+
+  it("opens slash commands menu and includes /btw command", () => {
+    const composer = new OmpComposer();
+    composer.openSlashMenu("");
+    expect(composer.filteredSlashCommands.some((c) => c.name === "btw")).toBe(true);
+
+    const rendered = composer.render();
+    const text = getAllTemplateText(rendered);
+    expect(text).toContain("composer-slash-menu");
+    expect(text).toContain("/btw");
+    expect(text).toContain("Side Question");
+  });
+
+  it("selecting /btw slash command populates input and enables isBtwMode", () => {
+    const composer = new OmpComposer();
+    composer.selectSlashCommand("btw");
+    expect(composer.value).toBe("/btw ");
+    expect(composer.isBtwMode).toBe(true);
+    expect(composer.isBtwActive).toBe(true);
+  });
+
+  it("renders btw expander when btwState is active", () => {
+    const composer = new OmpComposer();
+    composer.btwState = {
+      status: "complete",
+      question: "Qual é o token de cor do acrylic?",
+      answer: "O token é --omp-acrylic-bg com backdrop-blur.",
+      canBranch: true,
+    };
+    expect(composer.hasActiveBtw).toBe(true);
+
+    const rendered = composer.render();
+    const text = getAllTemplateText(rendered);
+    expect(text).toContain("composer-btw-card");
+    expect(text).toContain("Qual é o token de cor do acrylic?");
+    expect(text).toContain("O token é --omp-acrylic-bg com backdrop-blur.");
+    expect(text).toContain("Branch para Sessão");
+    expect(text).not.toContain("Respondido");
+    expect(text).not.toContain("Esc para fechar");
+  });
+
+  it("dispatches submit-btw and submit-prompt when submitting /btw query", () => {
+    const composer = new OmpComposer();
+    composer.value = "/btw O que este comando faz?";
+    let btwDetail: unknown = null;
+    let promptDetail: unknown = null;
+
+    composer.addEventListener("submit-btw", (e: Event) => {
+      btwDetail = (e as CustomEvent).detail;
+    });
+    composer.addEventListener("submit-prompt", (e: Event) => {
+      promptDetail = (e as CustomEvent).detail;
+    });
+
+    // Call submit directly
+    (composer as unknown as { submit: () => void }).submit();
+
+    expect(btwDetail).toEqual({
+      question: "O que este comando faz?",
+      prompt: "/btw O que este comando faz?",
+    });
+    expect(promptDetail).toMatchObject({
+      prompt: "/btw O que este comando faz?",
+    });
+    expect(composer.value).toBe("");
+  });
+
+
+  it("closes active btw panel when Escape key is pressed", () => {
+    const composer = new OmpComposer();
+    composer.btwState = {
+      status: "complete",
+      question: "Dúvida teste",
+      answer: "Resposta teste",
+    };
+    expect(composer.hasActiveBtw).toBe(true);
+
+    let closeEventDispatched = false;
+    composer.addEventListener("close-btw", () => {
+      closeEventDispatched = true;
+    });
+
+    // Simulate Escape keydown on document handler
+    let prevented = false;
+    let stopped = false;
+    const fakeEsc = {
+      key: "Escape",
+      preventDefault() { prevented = true; },
+      stopPropagation() { stopped = true; },
+    } as KeyboardEvent;
+
+    (composer as unknown as { handleDocumentKeyDown: (e: KeyboardEvent) => void }).handleDocumentKeyDown(fakeEsc);
+
+    expect(prevented).toBe(true);
+    expect(stopped).toBe(true);
+    expect(closeEventDispatched).toBe(true);
+    expect(composer.hasActiveBtw).toBe(false);
+    expect(composer.btwState).toBeUndefined();
+  });
+
+  it("dispatches close-btw when closing", () => {
+    const composer = new OmpComposer();
+    composer.btwState = {
+      status: "running",
+      question: "Side query",
+      answer: "",
+    };
+    let closed = false;
+    composer.addEventListener("close-btw", () => {
+      closed = true;
+    });
+
+    composer.closeBtw();
+    expect(closed).toBe(true);
+    expect(composer.btwState).toBeUndefined();
+  });
+});

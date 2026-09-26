@@ -10,7 +10,7 @@ import "./OmpLibraryView";
 import "./OmpProjectsView";
 import "./OmpProjectDetailView";
 import type { ChatMessage } from "./OmpChatView";
-import type { SubmitPromptDetail } from "./OmpComposer";
+import type { SubmitPromptDetail, BtwState } from "./OmpComposer";
 
 @customElement("omp-app")
 export class OmpApp extends LitElement {
@@ -24,6 +24,7 @@ export class OmpApp extends LitElement {
   @state() private currentUser: string | null = null;
   @state() private selectedProjectId = "proj-1";
   @state() private selectedSessionId = "sess-1";
+  @state() private btwState?: BtwState;
   private lastPromptTime = 0;
 
   protected override createRenderRoot() {
@@ -99,6 +100,13 @@ export class OmpApp extends LitElement {
   }
 
   private handlePromptSubmit(detail: SubmitPromptDetail) {
+    const promptTrimmed = detail.prompt.trim();
+    if (promptTrimmed.toLowerCase().startsWith("/btw")) {
+      const question = promptTrimmed.replace(/^\/btw\s*/i, "").trim() || "Como posso te ajudar?";
+      this.handleBtwSubmit(question);
+      return;
+    }
+
     const now = Date.now();
     if (this.isStreaming || (now - this.lastPromptTime < 350)) return;
     this.lastPromptTime = now;
@@ -140,6 +148,64 @@ export class OmpApp extends LitElement {
     }, 1200);
   }
 
+  private handleBtwSubmit(question: string) {
+    this.btwState = {
+      status: "running",
+      question,
+      answer: "",
+      canBranch: true,
+    };
+    this.activeTab = "new-chat";
+
+    const mockAnswer = `Esta é uma resposta lateral efêmera para **"${question}"** gerada com o contexto ativo da sessão.\n\nComo o \`/btw\` não altera o histórico principal da conversa, este contexto permanece isolado. Você pode copiar esta resposta ou clicar em **"Branch para Sessão"** para continuar explorando este tópico em uma nova conversa!`;
+
+    let progress = 0;
+    const interval = setInterval(() => {
+      progress += 16;
+      if (progress >= mockAnswer.length) {
+        clearInterval(interval);
+        this.btwState = {
+          status: "complete",
+          question,
+          answer: mockAnswer,
+          canBranch: true,
+        };
+      } else {
+        this.btwState = {
+          status: "running",
+          question,
+          answer: mockAnswer.slice(0, progress),
+          canBranch: true,
+        };
+      }
+    }, 35);
+  }
+
+  private handleBranchBtw(state?: BtwState) {
+    const target = state || this.btwState;
+    if (!target?.answer) return;
+    const question = target.question;
+    const answer = target.answer;
+    this.btwState = undefined;
+    this.messages = [
+      ...this.messages,
+      {
+        id: "msg-" + Date.now(),
+        role: "user",
+        text: `[Branch /btw] ${question}`,
+        timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+      },
+      {
+        id: "msg-" + (Date.now() + 1),
+        role: "assistant",
+        text: answer,
+        hasAgentProcess: false,
+        timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+      },
+    ];
+    this.activeTab = "new-chat";
+  }
+
   private generateResponse(prompt: string): string {
     return `Certainly! Regarding **"${prompt}"**:\n\nOMP provides straightforward reasoning, real-time research, and creative assistance. Everything is running natively in your Lit components interface with full Light DOM styling, responsive mobile drawer, and Squircles integration.\n\nHow else can I assist your workflow today?`;
   }
@@ -178,10 +244,14 @@ export class OmpApp extends LitElement {
                 .isStreaming=${this.isStreaming}
                 .isFirstPrompt=${this.isFirstPrompt}
                 .selectedProjectId=${this.selectedProjectId}
+                .btwState=${this.btwState}
                 @project-select=${(e: CustomEvent<{ projectId: string }>) => {
                   this.selectedProjectId = e.detail.projectId;
                   this.activeTab = "project-detail";
                 }}
+                @submit-btw=${(e: CustomEvent<{ question: string }>) => this.handleBtwSubmit(e.detail.question)}
+                @branch-btw=${(e: CustomEvent<{ state?: BtwState }>) => this.handleBranchBtw(e.detail?.state)}
+                @close-btw=${() => { this.btwState = undefined; }}
                 @submit-prompt=${(e: CustomEvent<SubmitPromptDetail>) => this.handlePromptSubmit(e.detail)}
               ></omp-chat-view>
             `;

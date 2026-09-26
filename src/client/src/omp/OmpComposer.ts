@@ -16,6 +16,8 @@ import {
   renderWebPageIcon,
   renderCheckIcon,
   renderFolderIcon,
+  renderLightbulbIcon,
+  renderBranchIcon,
 } from "./icons";
 
 export interface SubmitPromptDetail {
@@ -29,6 +31,22 @@ export interface ComposerProject {
   name: string;
   path?: string;
   image?: string;
+}
+
+export interface BtwState {
+  status: "running" | "complete" | "error";
+  question: string;
+  answer: string;
+  canBranch?: boolean | undefined;
+  error?: string | undefined;
+}
+
+export interface SlashCommandItem {
+  name: string;
+  label: string;
+  title: string;
+  desc: string;
+  badge: string;
 }
 
 export interface AskOption {
@@ -53,6 +71,80 @@ export class OmpComposer extends LitElement {
   @property({ type: String }) selectedProjectId = "proj-1";
   @property({ type: String }) askMode: "options" | "projects" = "projects";
   @property({ attribute: false }) customPills: unknown[] = [];
+  @property({ attribute: false }) btwState?: BtwState;
+  @property({ type: Boolean }) isBtwMode = false;
+  @property({ attribute: false }) onBranchBtw?: () => void | Promise<void>;
+  @property({ attribute: false }) onCloseBtw?: () => void;
+
+  @state() private slashCommandsOpen = false;
+  @state() private slashFilter = "";
+  @state() private selectedSlashIndex = 0;
+  @state() private btwBranching = false;
+  @state() private btwCopied = false;
+
+  private readonly defaultSlashCommands: SlashCommandItem[] = [
+    {
+      name: "btw",
+      label: "/btw",
+      title: "Side Question",
+      desc: "Faça uma pergunta lateral efêmera usando o contexto atual",
+      badge: "Contexto",
+    },
+    {
+      name: "plan",
+      label: "/plan",
+      title: "Plan Mode",
+      desc: "Ativa ou revisa o modo de planejamento da tarefa",
+      badge: "Tarefas",
+    },
+    {
+      name: "model",
+      label: "/model",
+      title: "Switch Model",
+      desc: "Troca o modelo de raciocínio (Smart, Fast, Thinking)",
+      badge: "Modelo",
+    },
+    {
+      name: "clear",
+      label: "/clear",
+      title: "Clear Chat",
+      desc: "Limpa o histórico de mensagens da conversa atual",
+      badge: "Sessão",
+    },
+    {
+      name: "help",
+      label: "/help",
+      title: "Comandos & Ajuda",
+      desc: "Mostra todos os comandos e atalhos disponíveis",
+      badge: "Docs",
+    },
+  ];
+
+  get activeBtwState(): BtwState | undefined {
+    return this.btwState;
+  }
+
+  get hasActiveBtw(): boolean {
+    return this.activeBtwState !== undefined;
+  }
+
+  get isBtwActive(): boolean {
+    return (
+      this.isBtwMode ||
+      this.value.trim().toLowerCase().startsWith("/btw") ||
+      this.hasActiveBtw
+    );
+  }
+
+  get filteredSlashCommands(): SlashCommandItem[] {
+    const q = this.slashFilter.trim().toLowerCase();
+    if (!q) return this.defaultSlashCommands;
+    return this.defaultSlashCommands.filter(
+      (cmd) =>
+        cmd.name.toLowerCase().startsWith(q) ||
+        cmd.title.toLowerCase().includes(q),
+    );
+  }
 
   @state() private activeMenu: "create" | "model" | null = null;
   @state() private menuPosition = { left: 0, bottom: 0 };
@@ -109,33 +201,65 @@ export class OmpComposer extends LitElement {
 
   override connectedCallback() {
     super.connectedCallback();
-    window.addEventListener(
-      "pointerdown",
-      this.handleDocumentPointerDown,
-      true,
-    );
-    window.addEventListener("keydown", this.handleDocumentKeyDown, true);
-    window.addEventListener("resize", this.handleWindowResizeOrScroll, {
-      passive: true,
-    });
-    window.addEventListener("scroll", this.handleWindowResizeOrScroll, {
-      passive: true,
-      capture: true,
-    });
+    if (typeof window !== "undefined") {
+      window.addEventListener(
+        "pointerdown",
+        this.handleDocumentPointerDown,
+        true,
+      );
+      window.addEventListener("keydown", this.handleDocumentKeyDown, true);
+      window.addEventListener("resize", this.handleWindowResizeOrScroll, {
+        passive: true,
+      });
+      window.addEventListener("scroll", this.handleWindowResizeOrScroll, {
+        passive: true,
+        capture: true,
+      });
+      window.addEventListener("omp:set-prompt-text", this.handleSetPromptText);
+    }
   }
 
   override disconnectedCallback() {
     super.disconnectedCallback();
-    window.removeEventListener(
-      "pointerdown",
-      this.handleDocumentPointerDown,
-      true,
-    );
-    window.removeEventListener("keydown", this.handleDocumentKeyDown, true);
-    window.removeEventListener("resize", this.handleWindowResizeOrScroll);
-    window.removeEventListener("scroll", this.handleWindowResizeOrScroll, true);
+    if (typeof window !== "undefined") {
+      window.removeEventListener(
+        "pointerdown",
+        this.handleDocumentPointerDown,
+        true,
+      );
+      window.removeEventListener("keydown", this.handleDocumentKeyDown, true);
+      window.removeEventListener("resize", this.handleWindowResizeOrScroll);
+      window.removeEventListener("scroll", this.handleWindowResizeOrScroll, true);
+      window.removeEventListener("omp:set-prompt-text", this.handleSetPromptText);
+    }
     this.closeMenu();
   }
+
+  private readonly handleSetPromptText = (event: Event): void => {
+    const custom = event as CustomEvent<{
+      text: string;
+      append?: boolean;
+      submit?: boolean;
+    }>;
+    if (typeof custom.detail?.text !== "string") return;
+    const newText =
+      custom.detail.append && this.value.trim().length > 0
+        ? `${this.value}\n${custom.detail.text}`
+        : custom.detail.text;
+    this.value = newText;
+    const textarea = this.querySelector<HTMLTextAreaElement>("textarea");
+    if (textarea) {
+      textarea.value = this.value;
+    }
+    this.requestUpdate();
+    if (
+      custom.detail.submit &&
+      this.value.trim().length > 0 &&
+      !this.isWorking
+    ) {
+      this.submit();
+    }
+  };
 
   protected override updated() {
     this.updatePortal();
@@ -156,6 +280,28 @@ export class OmpComposer extends LitElement {
   };
 
   private handleDocumentKeyDown = (e: KeyboardEvent) => {
+    // 0. Escape handler for Active BTW and Slash Menu
+    if (e.key === "Escape") {
+      if (this.slashCommandsOpen) {
+        e.preventDefault();
+        e.stopPropagation();
+        this.closeSlashMenu();
+        return;
+      }
+      if (this.hasActiveBtw) {
+        e.preventDefault();
+        e.stopPropagation();
+        this.closeBtw();
+        return;
+      }
+      if (this.isBtwMode) {
+        e.preventDefault();
+        e.stopPropagation();
+        this.clearBtwMode();
+        return;
+      }
+    }
+
     // 1. Hotkeys for Ask Tool
     if (this.isAskOpen) {
       if (e.key === "Escape") {
@@ -661,7 +807,220 @@ export class OmpComposer extends LitElement {
     return nothing;
   }
 
+  public toggleBtwMode() {
+    if (this.hasActiveBtw) {
+      this.closeBtw();
+      return;
+    }
+    if (this.isBtwActive) {
+      this.clearBtwMode();
+    } else {
+      this.isBtwMode = true;
+      this.isAskOpen = false;
+      this.requestUpdate();
+      if (typeof requestAnimationFrame !== "undefined") {
+        requestAnimationFrame(() => {
+          const textarea = this.querySelector?.(
+            "textarea",
+          ) as HTMLTextAreaElement | null;
+          textarea?.focus();
+        });
+      }
+    }
+  }
+
+  public clearBtwMode() {
+    this.isBtwMode = false;
+    if (this.value.toLowerCase().startsWith("/btw")) {
+      this.value = this.value.replace(/^\/btw\s*/i, "");
+      const textarea = this.querySelector?.(
+        "textarea",
+      ) as HTMLTextAreaElement | null;
+      if (textarea) textarea.value = this.value;
+    }
+    this.requestUpdate();
+  }
+
+  public openSlashMenu(query = "") {
+    this.slashCommandsOpen = true;
+    this.slashFilter = query;
+    this.selectedSlashIndex = 0;
+    this.requestUpdate();
+  }
+
+  public closeSlashMenu() {
+    if (!this.slashCommandsOpen) return;
+    this.slashCommandsOpen = false;
+    this.slashFilter = "";
+    this.selectedSlashIndex = 0;
+    this.requestUpdate();
+  }
+
+  public selectSlashCommand(name: string) {
+    if (name === "btw") {
+      this.value = "/btw ";
+      this.isBtwMode = true;
+      this.closeSlashMenu();
+      const textarea = this.querySelector?.(
+        "textarea",
+      ) as HTMLTextAreaElement | null;
+      if (textarea) {
+        textarea.value = this.value;
+        textarea.focus?.();
+        textarea.setSelectionRange?.(this.value.length, this.value.length);
+      }
+      this.requestUpdate();
+      return;
+    }
+
+    if (name === "model") {
+      this.value = "";
+      this.closeSlashMenu();
+      const textarea = this.querySelector?.(
+        "textarea",
+      ) as HTMLTextAreaElement | null;
+      if (textarea) textarea.value = "";
+      this.toggleMenu("model", "#composer-chat-mode-smart-button");
+      return;
+    }
+
+    this.value = `/${name} `;
+    this.closeSlashMenu();
+    const textarea = this.querySelector(
+      "textarea",
+    ) as HTMLTextAreaElement | null;
+    if (textarea) {
+      textarea.value = this.value;
+      textarea.focus();
+      textarea.setSelectionRange(this.value.length, this.value.length);
+    }
+    this.requestUpdate();
+  }
+
+  public async handleCopyBtw(): Promise<void> {
+    const ans = this.activeBtwState?.answer;
+    if (!ans) return;
+    try {
+      await navigator.clipboard.writeText(ans);
+      this.btwCopied = true;
+      this.requestUpdate();
+      setTimeout(() => {
+        this.btwCopied = false;
+        this.requestUpdate();
+      }, 2000);
+    } catch {
+      // ignore
+    }
+  }
+
+  public handleBranchBtw(): void {
+    if (!this.activeBtwState) return;
+    this.btwBranching = true;
+    this.requestUpdate();
+
+    this.dispatchEvent(
+      new CustomEvent("branch-btw", {
+        detail: { state: this.activeBtwState },
+        bubbles: true,
+        composed: true,
+      }),
+    );
+
+    this.dispatchEvent(
+      new CustomEvent<SubmitPromptDetail>("submit-prompt", {
+        detail: {
+          prompt: "/btw branch",
+          model: this.selectedModel,
+          projectId: this.selectedProjectId,
+        },
+        bubbles: true,
+        composed: true,
+      }),
+    );
+
+    void this.onBranchBtw?.();
+
+    setTimeout(() => {
+      this.btwBranching = false;
+      this.closeBtw();
+    }, 400);
+  }
+
+  public closeBtw(): void {
+    this.dispatchEvent(
+      new CustomEvent("close-btw", {
+        bubbles: true,
+        composed: true,
+      }),
+    );
+    this.onCloseBtw?.();
+    this.btwState = undefined;
+    this.isBtwMode = false;
+    this.requestUpdate();
+  }
+
+  private handleInput(e: Event) {
+    const val = (e.target as HTMLTextAreaElement).value;
+    this.value = val;
+    if (val.startsWith("/") && !val.includes("\n")) {
+      const parts = val.slice(1).split(/\s+/);
+      if (parts.length <= 1) {
+        this.openSlashMenu(parts[0].toLowerCase());
+      } else {
+        this.closeSlashMenu();
+      }
+    } else {
+      this.closeSlashMenu();
+    }
+  }
+
   private handleKeyDown(e: KeyboardEvent) {
+    if (this.slashCommandsOpen) {
+      if (e.key === "ArrowDown") {
+        e.preventDefault();
+        const len = this.filteredSlashCommands.length;
+        if (len > 0) {
+          this.selectedSlashIndex = (this.selectedSlashIndex + 1) % len;
+          this.requestUpdate();
+        }
+        return;
+      }
+      if (e.key === "ArrowUp") {
+        e.preventDefault();
+        const len = this.filteredSlashCommands.length;
+        if (len > 0) {
+          this.selectedSlashIndex = (this.selectedSlashIndex - 1 + len) % len;
+          this.requestUpdate();
+        }
+        return;
+      }
+      if (e.key === "Enter" || e.key === "Tab") {
+        e.preventDefault();
+        const cmd = this.filteredSlashCommands[this.selectedSlashIndex];
+        if (cmd) {
+          this.selectSlashCommand(cmd.name);
+        }
+        return;
+      }
+      if (e.key === "Escape") {
+        e.preventDefault();
+        this.closeSlashMenu();
+        return;
+      }
+    }
+
+    if (this.hasActiveBtw && e.key === "Escape") {
+      e.preventDefault();
+      this.closeBtw();
+      return;
+    }
+
+    if (this.isBtwMode && e.key === "Escape" && this.value.trim() === "") {
+      e.preventDefault();
+      this.clearBtwMode();
+      return;
+    }
+
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       this.submit();
@@ -669,17 +1028,170 @@ export class OmpComposer extends LitElement {
   }
 
   private submit() {
-    const text = this.value.trim();
-    if (!text || this.isWorking) return;
+    const rawText = this.value.trim();
+    if (!rawText || this.isWorking) return;
     this.closeMenu();
+    this.closeSlashMenu();
+
+    const isBtw = this.isBtwMode || rawText.toLowerCase().startsWith("/btw");
+    let prompt = rawText;
+    let btwQuestion = "";
+
+    if (isBtw) {
+      if (rawText.toLowerCase().startsWith("/btw")) {
+        btwQuestion = rawText.replace(/^\/btw\s*/i, "").trim();
+        prompt = rawText;
+      } else {
+        btwQuestion = rawText;
+        prompt = `/btw ${rawText}`;
+      }
+    }
+
+    if (isBtw && btwQuestion) {
+      this.dispatchEvent(
+        new CustomEvent("submit-btw", {
+          detail: { question: btwQuestion, prompt },
+          bubbles: true,
+          composed: true,
+        }),
+      );
+      this.dispatchEvent(
+        new CustomEvent<SubmitPromptDetail>("submit-prompt", {
+          detail: {
+            prompt,
+            model: this.selectedModel,
+            projectId: this.selectedProjectId,
+          },
+          bubbles: true,
+          composed: true,
+        }),
+      );
+      this.value = "";
+      this.isBtwMode = false;
+      return;
+    }
+
     this.dispatchEvent(
       new CustomEvent<SubmitPromptDetail>("submit-prompt", {
-        detail: { prompt: text, model: this.selectedModel },
+        detail: {
+          prompt: rawText,
+          model: this.selectedModel,
+          projectId: this.selectedProjectId,
+        },
         bubbles: true,
         composed: true,
       }),
     );
     this.value = "";
+  }
+
+  private renderBtwContent() {
+    if (!this.activeBtwState) return nothing;
+    const activeBtw = this.activeBtwState;
+    const isRunning = activeBtw.status === "running";
+    const isError = activeBtw.status === "error";
+
+    return html`
+      <div class="px-3.5 pt-3 pb-2 flex flex-col pointer-events-auto font-sans" data-testid="composer-btw-card">
+        <!-- Header row with Question directly at top -->
+        <div class="flex items-center justify-between gap-3 pb-2 border-b border-black/5 dark:border-white/5">
+          <div class="flex items-center gap-2 min-w-0 flex-1">
+            <div class="size-6 rounded-lg bg-amber-500/15 text-amber-500 dark:text-amber-400 flex items-center justify-center shrink-0">
+              ${renderLightbulbIcon("size-3.5")}
+            </div>
+            <span class="text-sm font-semibold text-foreground-900 truncate leading-snug" title="${activeBtw.question}">
+              ${activeBtw.question}
+            </span>
+            ${
+              isRunning
+                ? html`
+                <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 animate-pulse shrink-0">
+                  <span class="size-1.5 rounded-full bg-amber-500 animate-ping"></span>Pensando…
+                </span>
+              `
+                : nothing
+            }
+          </div>
+
+          <button
+            type="button"
+            title="Fechar"
+            aria-label="Fechar pergunta lateral"
+            class="rounded-full text-foreground-600 hover:text-foreground-900 hover:bg-black/5 dark:hover:bg-white/10 transition-colors cursor-pointer text-xs p-1 shrink-0"
+            @click=${(e: MouseEvent) => {
+              e.stopPropagation();
+              this.closeBtw();
+            }}
+          >
+            ✕
+          </button>
+        </div>
+
+        <!-- Answer takes the full space -->
+        <div class="mt-2.5 max-h-64 overflow-y-auto scrollbar-stable px-1 text-xs sm:text-sm text-foreground-900 leading-relaxed break-words select-text">
+          ${
+            isRunning && !activeBtw.answer
+              ? html`
+              <div class="flex items-center gap-2 py-2 text-foreground-500 text-xs italic">
+                <span class="size-2 rounded-full bg-amber-500 animate-pulse"></span>
+                <span>Pensando com o contexto da sessão…</span>
+              </div>
+            `
+              : nothing
+          }
+          ${
+            activeBtw.answer
+              ? html`<div class="whitespace-pre-wrap">${activeBtw.answer}</div>`
+              : nothing
+          }
+          ${
+            isError
+              ? html`<div class="p-2 rounded-xl bg-rose-500/10 text-rose-600 dark:text-rose-400 text-xs">${activeBtw.error || "Falha ao responder pergunta lateral."}</div>`
+              : nothing
+          }
+        </div>
+
+        <!-- Footer actions without last divider -->
+        <div class="flex items-center justify-end gap-2 pt-2 mt-0.5">
+          ${
+            activeBtw.answer
+              ? html`
+              <button
+                type="button"
+                class="px-2.5 py-1 rounded-xl text-xs font-semibold bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/15 text-foreground-800 transition-colors flex items-center gap-1.5 cursor-pointer"
+                @click=${() => this.handleCopyBtw()}
+              >
+                ${this.btwCopied ? renderCheckIcon("size-3.5 text-emerald-500") : nothing}
+                <span>${this.btwCopied ? "Copiado!" : "Copiar"}</span>
+              </button>
+            `
+              : nothing
+          }
+          ${
+            activeBtw.canBranch !== false && activeBtw.status === "complete"
+              ? html`
+              <button
+                type="button"
+                class="px-2.5 py-1 rounded-xl text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white transition-colors shadow-xs flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                ?disabled=${this.btwBranching}
+                @click=${() => this.handleBranchBtw()}
+              >
+                ${renderBranchIcon("size-3.5")}
+                <span>${this.btwBranching ? "Criando branch…" : "Branch para Sessão"}</span>
+              </button>
+            `
+              : nothing
+          }
+          <button
+            type="button"
+            class="px-2.5 py-1 rounded-xl text-xs font-medium text-foreground-600 hover:text-foreground-900 hover:bg-black/5 dark:hover:bg-white/10 transition-colors cursor-pointer"
+            @click=${() => this.closeBtw()}
+          >
+            Fechar
+          </button>
+        </div>
+      </div>
+    `;
   }
 
   private renderAskToolContent() {
@@ -708,6 +1220,20 @@ export class OmpComposer extends LitElement {
           color: var(--omp-text-secondary) !important;
         }
 
+
+        .composer-btw-expander {
+          display: grid;
+          grid-template-rows: 0fr;
+          transition: grid-template-rows 460ms linear(0, 0.22 8%, 0.6 18%, 0.94 30%, 1.07 40%, 1.05 48%, 1 60%, 0.99 74%, 1);
+          overflow: hidden;
+        }
+        .composer-btw-expander.open {
+          grid-template-rows: 1fr;
+        }
+        .composer-btw-inner {
+          min-height: 0;
+          overflow: hidden;
+        }
         .composer-ask-expander {
           display: grid;
           grid-template-rows: 0fr;
@@ -890,6 +1416,62 @@ export class OmpComposer extends LitElement {
 
       <!-- OMP Web Exact 4-Tier Composer Hierarchy with Unclipped Popover Support -->
       <div class="relative max-h-full min-h-composer min-w-16 w-expanded-composer max-w-chat max-w-full rounded-5xl">
+        <!-- Floating Slash Command Autocomplete Popover -->
+        ${
+          this.slashCommandsOpen && this.filteredSlashCommands.length > 0
+            ? html`
+            <div
+              id="composer-slash-menu"
+              data-testid="composer-slash-menu"
+              class="absolute bottom-full mb-3 left-2 sm:left-4 z-40 min-w-[280px] max-w-[360px] w-[calc(100%-16px)] sm:w-auto p-1.5 rounded-[22px] shadow-2xl backdrop-blur-2xl backdrop-saturate-200 bg-white/95 dark:bg-background-100/90 border border-black/8 dark:border-white/12 flex flex-col gap-0.5 animate-in fade-in select-none font-sans"
+            >
+              <div class="px-3 py-1.5 text-[10px] font-semibold tracking-wider uppercase text-foreground-450 flex items-center justify-between border-b border-black/5 dark:border-white/5 mb-0.5">
+                <span>Comandos Rápidos</span>
+                <span class="font-mono text-[9px]">↑↓ Navegar · ↵ Selecionar</span>
+              </div>
+              ${this.filteredSlashCommands.map((cmd, idx) => {
+                const isSelected = idx === this.selectedSlashIndex;
+                return html`
+                  <button
+                    type="button"
+                    role="option"
+                    aria-selected=${isSelected}
+                    class="group flex w-full items-center justify-between gap-3 px-3 py-2 rounded-xl text-left transition-all duration-100 cursor-pointer ${
+                      isSelected
+                        ? "bg-blue-500/10 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400 font-medium"
+                        : "hover:bg-black/5 dark:hover:bg-white/10 text-foreground-900"
+                    }"
+                    @click=${() => this.selectSlashCommand(cmd.name)}
+                  >
+                    <div class="flex items-center gap-2.5 min-w-0">
+                      <div class="size-6 rounded-lg flex items-center justify-center shrink-0 ${
+                        cmd.name === "btw"
+                          ? "bg-amber-500/15 text-amber-500 dark:text-amber-400"
+                          : "bg-black/5 dark:bg-white/10 text-foreground-700"
+                      }">
+                        ${cmd.name === "btw" ? renderLightbulbIcon("size-3.5") : html`<span class="text-xs font-mono font-bold">/</span>`}
+                      </div>
+                      <div class="flex flex-col min-w-0">
+                        <div class="flex items-center gap-1.5">
+                          <span class="text-sm font-bold leading-tight font-mono">${cmd.label}</span>
+                          <span class="text-xs font-medium text-foreground-600 leading-tight">· ${cmd.title}</span>
+                        </div>
+                        <span class="text-[11px] opacity-70 leading-tight truncate mt-0.5">${cmd.desc}</span>
+                      </div>
+                    </div>
+                    <span class="text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${
+                      cmd.name === "btw"
+                        ? "bg-amber-500/15 text-amber-600 dark:text-amber-400 font-mono"
+                        : "bg-black/5 dark:bg-white/10 text-foreground-500 font-mono"
+                    }">${cmd.badge}</span>
+                  </button>
+                `;
+              })}
+            </div>
+          `
+            : nothing
+        }
+
         <!-- 1. Background layer with shadow-tinted-xl and backdrop-blur -->
         <div
           class="relative flex flex-col shadow-tinted-xl backdrop-blur-2xl backdrop-saturate-200 bg-accent-100/60 dark:bg-muted-200/50 w-full"
@@ -919,6 +1501,13 @@ export class OmpComposer extends LitElement {
                   </div>
                 </div>
 
+                <!-- BTW Side Question Expander (Spring open!) -->
+                <div class="composer-btw-expander ${this.hasActiveBtw ? "open" : ""}">
+                  <div class="composer-btw-inner">
+                    ${this.renderBtwContent()}
+                  </div>
+                </div>
+
                 <!-- Generating accent pulse line -->
                 ${
                   this.isWorking
@@ -932,14 +1521,33 @@ export class OmpComposer extends LitElement {
 
                 <!-- Textarea container -->
                 <div class="pt-3 px-4 pb-0">
+                  <!-- Active /btw Mode Pill Banner -->
+                  ${
+                    this.isBtwActive && !this.hasActiveBtw
+                      ? html`
+                      <div class="flex items-center justify-between pb-2 mb-1 border-b border-black/5 dark:border-white/5">
+                        <div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 text-xs font-semibold border border-amber-500/20 animate-in fade-in select-none">
+                          ${renderLightbulbIcon("size-3.5")}
+                          <span>Side Question (/btw)</span>
+                          <span class="text-[11px] opacity-75 font-normal">· Efêmero, não polui o histórico</span>
+                        </div>
+                        <button
+                          type="button"
+                          class="text-xs text-foreground-500 hover:text-foreground-800 transition-colors cursor-pointer"
+                          @click=${() => this.clearBtwMode()}
+                        >
+                          Cancelar
+                        </button>
+                      </div>
+                    `
+                      : nothing
+                  }
                   <textarea
                     rows="${this.compact ? "1" : "2"}"
-                    placeholder="${this.isAskOpen ? (this.askMode === "projects" ? "Digite para filtrar ou criar projeto..." : "Digite outra opção...") : this.placeholder}"
+                    placeholder="${this.isBtwActive ? "Faça uma pergunta lateral com o contexto da sessão (/btw)..." : this.isAskOpen ? (this.askMode === "projects" ? "Digite para filtrar ou criar projeto..." : "Digite outra opção...") : this.placeholder}"
                     class="font-ligatures-none inline-block w-full resize-none overflow-y-hidden whitespace-pre-wrap bg-transparent align-top text-black outline-none placeholder:text-foreground-450 dark:text-white dark:placeholder:text-foreground-600/90 text-base-dense font-sans"
                     .value=${this.value}
-                    @input=${(e: Event) => {
-                      this.value = (e.target as HTMLTextAreaElement).value;
-                    }}
+                    @input=${(e: Event) => this.handleInput(e)}
                     @keydown=${(e: KeyboardEvent) => this.handleKeyDown(e)}
                   ></textarea>
                 </div>
@@ -1009,6 +1617,29 @@ export class OmpComposer extends LitElement {
                         <span class="max-w-[120px] truncate">
                           ${(this.projects.length > 0 ? this.projects : this.defaultProjects).find((p) => p.id === this.selectedProjectId)?.name || "Projeto"}
                         </span>
+                      </button>
+                    </div>
+
+                    <!-- Side Question (/btw) Toggle Pill -->
+                    <div class="relative">
+                      <button
+                        id="composer-btw-toggle-button"
+                        data-testid="composer-btw-toggle-button"
+                        title="Side Question (/btw) — Faça uma pergunta lateral efêmera com o contexto da sessão"
+                        type="button"
+                        aria-label="Side Question (/btw)"
+                        class="relative flex items-center text-foreground-800 fill-foreground-800 bg-transparent safe-hover:bg-black/5 active:bg-black/3 dark:safe-hover:bg-white/8 dark:active:bg-white/5 text-xs justify-center min-h-9 px-2.5 py-1 rounded-2xl gap-1.5 select-none font-medium border border-black/8 dark:border-white/10 transition-colors cursor-pointer pointer-events-auto ${
+                          this.isBtwActive
+                            ? "!bg-amber-500/15 !text-amber-600 dark:!text-amber-400 !border-amber-500/40 font-semibold shadow-xs"
+                            : ""
+                        }"
+                        @click=${(e: MouseEvent) => {
+                          e.stopPropagation();
+                          this.toggleBtwMode();
+                        }}
+                      >
+                        ${renderLightbulbIcon("size-3.5 text-amber-500 dark:text-amber-400")}
+                        <span>/btw</span>
                       </button>
                     </div>
 
