@@ -8,6 +8,8 @@ import "./CopilotDiscoverView";
 import "./CopilotLabsView";
 import "./CopilotImagineView";
 import "./CopilotShoppingView";
+import "./CopilotLoginModal";
+import "./CopilotTasksBanner";
 import type { ChatMessage } from "./CopilotChatView";
 import type { SubmitPromptDetail } from "./CopilotComposer";
 
@@ -19,6 +21,8 @@ export class CopilotApp extends LitElement {
   @state() private messages: ChatMessage[] = [];
   @state() private isStreaming = false;
   @state() private isFirstPrompt = false;
+  @state() private isLoginModalOpen = false;
+  @state() private currentUser: string | null = null;
 
   protected override createRenderRoot() {
     return this;
@@ -229,10 +233,17 @@ export class CopilotApp extends LitElement {
 
       case "tasks":
         return html`
-          <div class="flex flex-1 flex-col items-center justify-center h-full px-4 text-center select-none">
-            <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-500/15 text-blue-600 border border-blue-500/30 mb-3">PREVIEW</span>
-            <h2 class="text-2xl font-bold text-foreground-800 font-ginto mb-2">Automated Tasks</h2>
-            <p class="text-sm text-foreground-500 max-w-sm">Schedule background reasoning, recurring research summaries, and automated project tracking.</p>
+          <div class="relative flex flex-1 flex-col items-center justify-between h-full px-4 pt-16 pb-6 text-center select-none">
+            <div class="flex flex-col items-center justify-center flex-1">
+              <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-500/15 text-blue-600 border border-blue-500/30 mb-3">PREVIEW</span>
+              <h2 class="text-2xl font-bold text-foreground-800 font-ginto mb-2">Automated Tasks</h2>
+              <p class="text-sm text-foreground-500 max-w-sm mb-6">Schedule background reasoning, recurring research summaries, and automated project tracking.</p>
+            </div>
+            <div class="fixed bottom-0 flex w-full items-center justify-center px-4 pointer-events-none z-20">
+              <copilot-tasks-banner
+                @sign-in=${() => (this.isLoginModalOpen = true)}
+              ></copilot-tasks-banner>
+            </div>
           </div>
         `;
 
@@ -271,7 +282,7 @@ export class CopilotApp extends LitElement {
           .isOpen=${this.isSidebarOpen}
           @nav-select=${(e: CustomEvent<{ tab: string }>) => this.handleNavSelect(e.detail.tab)}
           @toggle-sidebar=${() => (this.isSidebarOpen = !this.isSidebarOpen)}
-          @sign-in=${() => alert("Sign in demo triggered")}
+          @sign-in=${() => (this.isLoginModalOpen = true)}
         ></copilot-sidebar>
 
         <!-- 2. Main Stage with Microsoft Copilot Margin & Rounded Container -->
@@ -286,10 +297,12 @@ export class CopilotApp extends LitElement {
             <copilot-header
               .isSidebarOpen=${this.isSidebarOpen}
               .theme=${this.theme}
+              .currentUser=${this.currentUser}
               .title=${this.getHeaderTitle()}
               @toggle-sidebar=${() => (this.isSidebarOpen = !this.isSidebarOpen)}
               @toggle-theme=${() => this.toggleTheme()}
-              @sign-in=${() => alert("Sign in demo triggered")}
+              @sign-in=${() => (this.isLoginModalOpen = true)}
+              @sign-out=${() => (this.currentUser = null)}
             ></copilot-header>
 
             <!-- Current Active Stage View -->
@@ -298,6 +311,16 @@ export class CopilotApp extends LitElement {
             </div>
           </div>
         </main>
+        <!-- Login Modal Component -->
+        <copilot-login-modal
+          .isOpen=${this.isLoginModalOpen}
+          .theme=${this.theme}
+          @close=${() => (this.isLoginModalOpen = false)}
+          @login-success=${(e: CustomEvent<{ username: string }>) => {
+            this.currentUser = e.detail.username;
+            this.isLoginModalOpen = false;
+          }}
+        ></copilot-login-modal>
       </div>
     `;
   }

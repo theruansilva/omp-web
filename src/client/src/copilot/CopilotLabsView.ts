@@ -1,5 +1,7 @@
 import { LitElement, html } from "lit";
 import { customElement } from "lit/decorators.js";
+import "./CopilotGraduatedCard";
+import type { GraduatedExperiment } from "./CopilotGraduatedCard";
 
 interface LabInitiative {
   id: string;
@@ -42,13 +44,6 @@ export class CopilotLabsView extends LitElement {
       actionText: "Try now",
     },
     {
-      id: "vision",
-      title: "Copilot Vision",
-      description: "Vision available on Edge, Windows, Mac, mobile and Xbox. Understand anything on your screen in real time.",
-      image: "/static/copilotlabs/copilot-vision-cover-image-small.jpg",
-      actionText: "Try now",
-    },
-    {
       id: "gaming",
       title: "Copilot Gaming Experiences",
       description: "A research demo at the intersection of gaming and artificial intelligence.",
@@ -57,7 +52,25 @@ export class CopilotLabsView extends LitElement {
     },
   ];
 
-  private handleAction(init: LabInitiative) {
+  private readonly graduatedExperiments: GraduatedExperiment[] = [
+    {
+      id: "mico",
+      title: "Mico",
+      description: "Now available in Voice mode on desktop and mobile",
+      image: "/static/copilotlabs/copilot-appearance-cover-image-small--2.jpg",
+      showButton: false,
+    },
+    {
+      id: "copilot-vision",
+      title: "Copilot Vision",
+      description: "Vision available on Edge, Windows, Mac, mobile and Xbox.",
+      image: "/static/copilotlabs/copilot-vision-cover-image-small.jpg",
+      actionText: "Try in Copilot in Edge",
+      showButton: true,
+    },
+  ];
+
+  private handleAction(init: LabInitiative | GraduatedExperiment) {
     this.dispatchEvent(
       new CustomEvent("submit-prompt", {
         detail: {
@@ -113,7 +126,7 @@ export class CopilotLabsView extends LitElement {
                   </p>
                 </div>
                 <button
-                  class="relative flex items-center text-foreground-800 fill-foreground-800 active:text-foreground-600 active:fill-foreground-600 dark:active:text-foreground-650 dark:active:fill-foreground-650 bg-transparent safe-hover:bg-black/5 active:bg-black/3 dark:safe-hover:bg-black/30 dark:active:bg-black/20 text-sm justify-center min-h-10 min-w-10 px-4 py-2 gap-x-2 rounded-xl after:rounded-xl after:absolute after:inset-0 after:pointer-events-none after:contrast-more:border-2 outline-2 outline-offset-1 focus-visible:z-[1] focus-visible:outline focus-visible:outline-stroke-900 after:border after:border-black/30 dark:after:border-white/30 border-black/8 font-medium"
+                  class="relative flex items-center text-foreground-800 fill-foreground-800 active:text-foreground-600 active:fill-foreground-600 dark:active:text-foreground-650 dark:active:fill-foreground-650 bg-transparent safe-hover:bg-black/5 active:bg-black/3 dark:safe-hover:bg-black/30 dark:active:bg-black/20 text-sm justify-center min-h-10 min-w-10 px-4 py-2 gap-x-2 rounded-xl after:rounded-xl after:absolute after:inset-0 after:pointer-events-none after:contrast-more:border-2 outline-2 outline-offset-1 focus-visible:z-[1] focus-visible:outline focus-visible:outline-stroke-900 after:border after:border-black/30 dark:after:border-white/30 border-black/8 font-medium cursor-pointer"
                   type="button"
                 >
                   Try now
@@ -126,10 +139,10 @@ export class CopilotLabsView extends LitElement {
             </div>
           </section>
 
-          <!-- Section: Previous Experiments (2-Column Grid) -->
+          <!-- Section: Preview Experiments (2-Column Grid) -->
           <section class="mt-14 w-full">
             <h2 class="text-center text-foreground-800 text-2xl font-ginto [font-variation-settings:'opsz'_40,_'wght'_400] mb-8">
-              Previous experiments
+              Preview experiments
             </h2>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
               ${this.gridInitiatives.map(
@@ -160,7 +173,7 @@ export class CopilotLabsView extends LitElement {
                         </p>
                       </div>
                       <button
-                        class="relative flex items-center text-foreground-800 fill-foreground-800 bg-transparent safe-hover:bg-black/5 active:bg-black/3 dark:safe-hover:bg-black/30 text-xs justify-center min-h-8 min-w-8 px-3.5 py-1.5 rounded-xl border border-black/20 dark:border-white/20 font-medium"
+                        class="relative flex items-center text-foreground-800 fill-foreground-800 bg-transparent safe-hover:bg-black/5 active:bg-black/3 dark:safe-hover:bg-black/30 text-xs justify-center min-h-8 min-w-8 px-3.5 py-1.5 rounded-xl border border-black/20 dark:border-white/20 font-medium cursor-pointer"
                         type="button"
                       >
                         ${item.actionText}
@@ -174,6 +187,28 @@ export class CopilotLabsView extends LitElement {
                 `
     )}
             </div>
+          </section>
+
+          <!-- Section: Previous Experiments (Graduated Cards) -->
+          <section class="mt-20 w-full" aria-labelledby="labs-previous-experiments-title">
+            <h2
+              id="labs-previous-experiments-title"
+              class="text-center text-foreground-800 text-2xl [font-variation-settings:'opsz'_40,_'wght'_400]"
+            >
+              Previous experiments
+            </h2>
+            <ul class="mt-4 flex list-none flex-col gap-4" role="list">
+              ${this.graduatedExperiments.map(
+      (exp) => html`
+                  <li>
+                    <copilot-graduated-card
+                      .experiment=${exp}
+                      @card-click=${() => this.handleAction(exp)}
+                    ></copilot-graduated-card>
+                  </li>
+                `
+    )}
+            </ul>
           </section>
 
           <!-- Section: Community Callout -->

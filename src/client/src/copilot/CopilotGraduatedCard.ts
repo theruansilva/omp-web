@@ -6,8 +6,9 @@ export interface GraduatedExperiment {
   title: string;
   description: string;
   image: string;
-  actionText: string;
+  actionText?: string;
   prompt?: string;
+  showButton?: boolean;
 }
 
 @customElement("copilot-graduated-card")
@@ -16,6 +17,11 @@ export class CopilotGraduatedCard extends LitElement {
 
   protected override createRenderRoot() {
     return this;
+  }
+
+  override connectedCallback() {
+    super.connectedCallback();
+    this.classList.add("block", "w-full");
   }
 
   private handleClick() {
@@ -32,13 +38,23 @@ export class CopilotGraduatedCard extends LitElement {
   override render() {
     if (!this.experiment) return html``;
 
+    const showBtn = this.experiment.showButton !== false && Boolean(this.experiment.actionText);
+
     return html`
       <!-- Microsoft Copilot Authentic Graduated Card -->
       <div
         data-testid="labs-graduated-card"
         data-experiment-alias="${this.experiment.id}"
-        class="flex flex-row gap-3 bg-background-300/20 p-3 squircle-48 dark:bg-background-650/5 cursor-pointer hover:bg-background-300/30 dark:hover:bg-background-650/15 transition-colors"
+        role="button"
+        tabindex="0"
+        class="flex flex-row gap-3 bg-background-300/20 p-3 squircle-48 dark:bg-background-650/5 cursor-pointer hover:bg-background-300/30 dark:hover:bg-background-650/10 transition-colors"
         @click=${this.handleClick}
+        @keydown=${(e: KeyboardEvent) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          this.handleClick();
+        }
+      }}
       >
         <img
           alt="${this.experiment.title}"
@@ -52,17 +68,21 @@ export class CopilotGraduatedCard extends LitElement {
           <p class="line-clamp-2 text-foreground-800 text-sm">
             ${this.experiment.description}
           </p>
-          <button
-            type="button"
-            title="${this.experiment.title}: ${this.experiment.actionText}"
-            class="w-fit text-accent-550 text-sm hover:underline cursor-pointer"
-            @click=${(e: Event) => {
-        e.stopPropagation();
-        this.handleClick();
-      }}
-          >
-            ${this.experiment.actionText}
-          </button>
+          ${showBtn
+        ? html`
+                <button
+                  type="button"
+                  title="${this.experiment.title}: ${this.experiment.actionText}"
+                  class="w-fit text-accent-550 text-sm hover:underline cursor-pointer"
+                  @click=${(e: Event) => {
+            e.stopPropagation();
+            this.handleClick();
+          }}
+                >
+                  ${this.experiment.actionText}
+                </button>
+              `
+        : ""}
         </div>
       </div>
     `;

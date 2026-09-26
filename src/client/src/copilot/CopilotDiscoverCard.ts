@@ -24,6 +24,11 @@ export class CopilotDiscoverCard extends LitElement {
     return this;
   }
 
+  override connectedCallback() {
+    super.connectedCallback();
+    this.classList.add("contents");
+  }
+
   private handleClick() {
     if (!this.card) return;
     this.dispatchEvent(
@@ -63,6 +68,12 @@ export class CopilotDiscoverCard extends LitElement {
           aria-labelledby="disc-${this.card.id}"
           style="clip-path: var(--clip-path-squircle-60);"
           @click=${this.handleClick}
+          @keydown=${(e: KeyboardEvent) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            this.handleClick();
+          }
+        }}
         >
           <div id="disc-${this.card.id}" class="size-full">
             <div
@@ -147,6 +158,12 @@ export class CopilotDiscoverCard extends LitElement {
         aria-labelledby="disc-${this.card.id}"
         style="clip-path: var(--clip-path-squircle-48);"
         @click=${this.handleClick}
+        @keydown=${(e: KeyboardEvent) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          this.handleClick();
+        }
+      }}
       >
         <div id="disc-${this.card.id}" class="size-full">
           <div
