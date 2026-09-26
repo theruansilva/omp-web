@@ -10,6 +10,7 @@ import "./CopilotImagineView";
 import "./CopilotShoppingView";
 import "./CopilotLoginModal";
 import "./CopilotTasksBanner";
+import "./CopilotLibraryView";
 import type { ChatMessage } from "./CopilotChatView";
 import type { SubmitPromptDetail } from "./CopilotComposer";
 
@@ -225,10 +226,10 @@ export class CopilotApp extends LitElement {
 
       case "library":
         return html`
-          <div class="flex flex-1 flex-col items-center justify-center h-full px-4 text-center select-none">
-            <h2 class="text-2xl font-bold text-foreground-800 font-ginto mb-2">Your Library</h2>
-            <p class="text-sm text-foreground-500 max-w-sm">Saved chats, pinned generations, and project artifacts will appear here.</p>
-          </div>
+          <copilot-library-view
+            .isWorking=${this.isStreaming}
+            @submit-prompt=${(e: CustomEvent<SubmitPromptDetail>) => this.handlePromptSubmit(e.detail)}
+          ></copilot-library-view>
         `;
 
       case "tasks":
