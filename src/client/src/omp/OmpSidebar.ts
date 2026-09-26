@@ -5,11 +5,6 @@ import {
   renderToggleSidebarIcon,
   renderNewChatIcon,
   renderLibraryIcon,
-  renderTasksIcon,
-  renderDiscoverIcon,
-  renderShoppingIcon,
-  renderImagineIcon,
-  renderLabsIcon,
 } from "./icons";
 
 export interface NavItem {
@@ -30,14 +25,6 @@ export class OmpSidebar extends LitElement {
   private readonly primaryNav: NavItem[] = [
     { id: "new-chat", label: "New chat" },
     { id: "library", label: "Library" },
-    { id: "tasks", label: "Tasks", badge: "PREVIEW" },
-  ];
-
-  private readonly secondaryNav: NavItem[] = [
-    { id: "discover", label: "Discover" },
-    { id: "shopping", label: "Shopping" },
-    { id: "imagine", label: "Imagine" },
-    { id: "labs", label: "Labs" },
   ];
 
   private handleSelect(tabId: string) {
@@ -56,16 +43,6 @@ export class OmpSidebar extends LitElement {
         return renderNewChatIcon();
       case "library":
         return renderLibraryIcon();
-      case "tasks":
-        return renderTasksIcon();
-      case "discover":
-        return renderDiscoverIcon();
-      case "shopping":
-        return renderShoppingIcon();
-      case "imagine":
-        return renderImagineIcon();
-      case "labs":
-        return renderLabsIcon();
       default:
         return html``;
     }
@@ -100,59 +77,33 @@ export class OmpSidebar extends LitElement {
             </button>
           </div>
 
-          <!-- Primary Nav: New Chat, Library, Tasks -->
+          <!-- Primary Nav: New Chat, Library -->
           <div class="flex flex-col gap-0.5" role="menu">
             ${this.primaryNav.map(
-              (item) => html`
+      (item) => html`
                 <button
                   type="button"
                   role="menuitem"
-                  class="group relative flex w-full items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium transition-colors cursor-pointer pointer-events-auto ${
-                    this.activeTab === item.id
-                      ? "bg-black/8 dark:bg-white/10 text-foreground-900 font-semibold"
-                      : "text-foreground-800 hover:bg-black/5 dark:hover:bg-white/8"
-                  }"
+                  class="group relative flex w-full items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium transition-colors cursor-pointer pointer-events-auto ${this.activeTab === item.id
+          ? "bg-black/8 dark:bg-white/10 text-foreground-900 font-semibold"
+          : "text-foreground-800 hover:bg-black/5 dark:hover:bg-white/8"
+        }"
                   @click=${() => this.handleSelect(item.id)}
                 >
                   <div class="flex items-center gap-3 min-w-0">
                     ${this.renderNavIcon(item.id)}
                     <span class="truncate">${item.label}</span>
                   </div>
-                  ${
-                    item.badge
-                      ? html`<span
+                  ${item.badge
+          ? html`<span
                         class="text-[9px] font-bold tracking-wider px-1.5 py-0.5 rounded border border-black/15 dark:border-white/20 text-foreground-600 leading-none"
                         >${item.badge}</span
                       >`
-                      : ""
-                  }
+          : ""
+        }
                 </button>
               `,
-            )}
-          </div>
-
-          <!-- Divider -->
-          <div class="my-3 mx-1 h-0 border-t border-black/10 dark:border-white/10"></div>
-
-          <!-- Secondary Nav: Discover, Shopping, Imagine, Labs -->
-          <div class="flex flex-col gap-0.5" role="menu">
-            ${this.secondaryNav.map(
-              (item) => html`
-                <button
-                  type="button"
-                  role="menuitem"
-                  class="flex w-full items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors cursor-pointer pointer-events-auto ${
-                    this.activeTab === item.id
-                      ? "bg-black/8 dark:bg-white/10 text-foreground-900 font-semibold"
-                      : "text-foreground-800 hover:bg-black/5 dark:hover:bg-white/8"
-                  }"
-                  @click=${() => this.handleSelect(item.id)}
-                >
-                  ${this.renderNavIcon(item.id)}
-                  <span class="truncate">${item.label}</span>
-                </button>
-              `,
-            )}
+    )}
           </div>
         </div>
       </aside>

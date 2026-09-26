@@ -4,10 +4,6 @@ import "./OmpSidebar";
 import "./OmpHeader";
 import "./OmpHomeView";
 import "./OmpChatView";
-import "./OmpDiscoverView";
-import "./OmpLabsView";
-import "./OmpImagineView";
-import "./OmpShoppingView";
 import "./OmpLoginModal";
 import "./OmpTasksBanner";
 import "./OmpLibraryView";
@@ -141,40 +137,13 @@ export class OmpApp extends LitElement {
   }
 
   private generateResponse(prompt: string): string {
-    const lower = prompt.toLowerCase();
-    if (lower.includes("image") || lower.includes("create an image")) {
-      return `Here is your conceptual visualization:\n\n✨ **Generated Creative Direction:**\n- Style: High-fidelity digital rendering\n- Palette: Atmospheric illumination & cinematic contrast\n- Subject: ${prompt.replace(/create an image:?/i, "").trim()}\n\nWould you like me to refine the color grading, aspect ratio, or artistic medium?`;
-    }
-    if (lower.includes("audio") || lower.includes("expression")) {
-      return `OMP Audio Expressions allows generative voice and sound synthesis directly within your workflows.\n\nKey capabilities:\n1. **Zero-shot Emotion Control**: Modulate pitch, cadence, and vocal emphasis.\n2. **Multilingual Resonance**: Real-time translation with preserved timbre.\n3. **Soundscapes**: Ambient generative audio beds generated on demand.`;
-    }
-    if (
-      lower.includes("shopping") ||
-      lower.includes("price") ||
-      lower.includes("chair") ||
-      lower.includes("headphone") ||
-      lower.includes("sweater") ||
-      lower.includes("deal")
-    ) {
-      return `Here are the top shopping recommendations based on verified buyer reviews, current promotions, and price analysis:\n\n- **Pricing & Discounts**: Filtered for verified seasonal deals with best-price matching.\n- **Review Aggregation**: High-sentiment highlights extracted across major retailers.\n- **Quality Benchmarks**: Premium materials, standard warranty support, and durability ratings.\n\nLet me know if you would like a side-by-side comparison table!`;
-    }
     return `Certainly! Regarding **"${prompt}"**:\n\nOMP provides straightforward reasoning, real-time research, and creative assistance. Everything is running natively in your Lit components interface with full Light DOM styling, responsive mobile drawer, and Squircles integration.\n\nHow else can I assist your workflow today?`;
   }
 
   private getHeaderTitle(): string {
     switch (this.activeTab) {
-      case "discover":
-        return "Discover";
-      case "shopping":
-        return "Shopping";
-      case "imagine":
-        return "Imagine";
-      case "labs":
-        return "Labs";
       case "library":
         return "Library";
-      case "tasks":
-        return "Tasks";
       default:
         return "";
     }
@@ -199,57 +168,16 @@ export class OmpApp extends LitElement {
               ></omp-chat-view>
             `;
 
-      case "discover":
-        return html`
-          <omp-discover-view
-            .isWorking=${this.isStreaming}
-            @submit-prompt=${(e: CustomEvent<SubmitPromptDetail>) => this.handlePromptSubmit(e.detail)}
-          ></omp-discover-view>
-        `;
-
-      case "shopping":
-        return html`
-          <omp-shopping-view
-            .isWorking=${this.isStreaming}
-            @submit-prompt=${(e: CustomEvent<SubmitPromptDetail>) => this.handlePromptSubmit(e.detail)}
-          ></omp-shopping-view>
-        `;
-
-      case "imagine":
-        return html`
-          <omp-imagine-view
-            @submit-prompt=${(e: CustomEvent<SubmitPromptDetail>) => this.handlePromptSubmit(e.detail)}
-          ></omp-imagine-view>
-        `;
-
-      case "labs":
-        return html`
-          <omp-labs-view
-            @submit-prompt=${(e: CustomEvent<SubmitPromptDetail>) => this.handlePromptSubmit(e.detail)}
-          ></omp-labs-view>
-        `;
-
       case "library":
         return html`
           <omp-library-view
             .isWorking=${this.isStreaming}
             @submit-prompt=${(e: CustomEvent<SubmitPromptDetail>) => this.handlePromptSubmit(e.detail)}
           ></omp-library-view>
-        `;
-
-      case "tasks":
-        return html`
-          <div class="relative flex flex-1 flex-col items-center justify-between h-full px-4 pt-16 pb-6 text-center select-none">
-            <div class="flex flex-col items-center justify-center flex-1">
-              <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-500/15 text-blue-600 border border-blue-500/30 mb-3">PREVIEW</span>
-              <h2 class="text-2xl font-bold text-foreground-800 font-ginto mb-2">Automated Tasks</h2>
-              <p class="text-sm text-foreground-500 max-w-sm mb-6">Schedule background reasoning, recurring research summaries, and automated project tracking.</p>
-            </div>
-            <div class="fixed bottom-0 flex w-full items-center justify-center px-4 pointer-events-none z-20">
-              <omp-tasks-banner
-                @sign-in=${() => (this.isLoginModalOpen = true)}
-              ></omp-tasks-banner>
-            </div>
+          <div class="fixed bottom-0 flex w-full items-center justify-center px-4 pointer-events-none z-20">
+            <omp-tasks-banner
+              @sign-in=${() => (this.isLoginModalOpen = true)}
+            ></omp-tasks-banner>
           </div>
         `;
 
