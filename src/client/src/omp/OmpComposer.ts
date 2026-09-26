@@ -71,7 +71,29 @@ export class OmpComposer extends LitElement {
   @property({ type: String }) selectedProjectId = "proj-1";
   @property({ type: String }) askMode: "options" | "projects" = "projects";
   @property({ attribute: false }) customPills: unknown[] = [];
-  @property({ attribute: false }) btwState?: BtwState;
+  private _btwState?: BtwState;
+
+  @property({ attribute: false })
+  get btwState(): BtwState | undefined {
+    return this._btwState;
+  }
+  set btwState(val: BtwState | undefined) {
+    const old = this._btwState;
+    this._btwState = val;
+    if (val) {
+      this.cachedBtwState = val;
+      this.isBtwOpen = true;
+    } else if (this.isBtwOpen) {
+      this.isBtwOpen = false;
+      setTimeout(() => {
+        if (!this.isBtwOpen) {
+          this.cachedBtwState = undefined;
+          if (this.isConnected) this.requestUpdate();
+        }
+      }, 460);
+    }
+    this.requestUpdate("btwState", old);
+  }
   @property({ type: Boolean }) isBtwMode = false;
   @property({ attribute: false }) onBranchBtw?: () => void | Promise<void>;
   @property({ attribute: false }) onCloseBtw?: () => void;
@@ -81,6 +103,8 @@ export class OmpComposer extends LitElement {
   @state() private selectedSlashIndex = 0;
   @state() private btwBranching = false;
   @state() private btwCopied = false;
+  @state() private isBtwOpen = false;
+  @state() private cachedBtwState?: BtwState;
 
   private readonly defaultSlashCommands: SlashCommandItem[] = [
     {
@@ -121,11 +145,11 @@ export class OmpComposer extends LitElement {
   ];
 
   get activeBtwState(): BtwState | undefined {
-    return this.btwState;
+    return this.btwState || this.cachedBtwState;
   }
 
   get hasActiveBtw(): boolean {
-    return this.activeBtwState !== undefined;
+    return this.isBtwOpen || this._btwState !== undefined;
   }
 
   get isBtwActive(): boolean {
@@ -229,8 +253,15 @@ export class OmpComposer extends LitElement {
       );
       window.removeEventListener("keydown", this.handleDocumentKeyDown, true);
       window.removeEventListener("resize", this.handleWindowResizeOrScroll);
-      window.removeEventListener("scroll", this.handleWindowResizeOrScroll, true);
-      window.removeEventListener("omp:set-prompt-text", this.handleSetPromptText);
+      window.removeEventListener(
+        "scroll",
+        this.handleWindowResizeOrScroll,
+        true,
+      );
+      window.removeEventListener(
+        "omp:set-prompt-text",
+        this.handleSetPromptText,
+      );
     }
     this.closeMenu();
   }
@@ -947,6 +978,10 @@ export class OmpComposer extends LitElement {
   }
 
   public closeBtw(): void {
+    if (!this.isBtwOpen && !this._btwState && !this.cachedBtwState) return;
+    this.isBtwOpen = false;
+    this.isBtwMode = false;
+    this._btwState = undefined;
     this.dispatchEvent(
       new CustomEvent("close-btw", {
         bubbles: true,
@@ -954,9 +989,23 @@ export class OmpComposer extends LitElement {
       }),
     );
     this.onCloseBtw?.();
-    this.btwState = undefined;
-    this.isBtwMode = false;
-    this.requestUpdate();
+    if (this.isConnected) {
+      this.requestUpdate();
+    }
+    setTimeout(() => {
+      if (!this.isBtwOpen) {
+        this.cachedBtwState = undefined;
+        if (this.isConnected) this.requestUpdate();
+      }
+    }, 460);
+    if (typeof requestAnimationFrame !== "undefined") {
+      requestAnimationFrame(() => {
+        const textarea = this.querySelector?.(
+          "textarea",
+        ) as HTMLTextAreaElement | null;
+        textarea?.focus();
+      });
+    }
   }
 
   private handleInput(e: Event) {
@@ -1182,13 +1231,6 @@ export class OmpComposer extends LitElement {
             `
               : nothing
           }
-          <button
-            type="button"
-            class="px-2.5 py-1 rounded-xl text-xs font-medium text-foreground-600 hover:text-foreground-900 hover:bg-black/5 dark:hover:bg-white/10 transition-colors cursor-pointer"
-            @click=${() => this.closeBtw()}
-          >
-            Fechar
-          </button>
         </div>
       </div>
     `;
@@ -1233,6 +1275,16 @@ export class OmpComposer extends LitElement {
         .composer-btw-inner {
           min-height: 0;
           overflow: hidden;
+        }
+        .composer-btw-expander:not(.open) [data-testid="composer-btw-card"] {
+          opacity: 0;
+          transform: translateY(-6px);
+          transition: opacity 220ms ease-out, transform 240ms ease-out;
+        }
+        .composer-btw-expander.open [data-testid="composer-btw-card"] {
+          opacity: 1;
+          transform: translateY(0);
+          transition: opacity 220ms ease-out, transform 240ms ease-out;
         }
         .composer-ask-expander {
           display: grid;
@@ -1502,7 +1554,7 @@ export class OmpComposer extends LitElement {
                 </div>
 
                 <!-- BTW Side Question Expander (Spring open!) -->
-                <div class="composer-btw-expander ${this.hasActiveBtw ? "open" : ""}">
+                <div class="composer-btw-expander ${this.isBtwOpen ? "open" : ""}">
                   <div class="composer-btw-inner">
                     ${this.renderBtwContent()}
                   </div>

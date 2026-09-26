@@ -237,6 +237,26 @@ describe("OmpComposer /btw Side Question Support", () => {
     expect(composer.btwState).toBeUndefined();
   });
 
+
+  it("preserves cached content during closing animation while removing open state", () => {
+    const composer = new OmpComposer();
+    composer.btwState = {
+      status: "complete",
+      question: "Questão para fechar",
+      answer: "Resposta para animar",
+    };
+    expect(composer.hasActiveBtw).toBe(true);
+
+    composer.closeBtw();
+    expect(composer.btwState).toBeUndefined();
+
+    const rendered = composer.render();
+    const text = getAllTemplateText(rendered);
+    expect(text).toContain("composer-btw-card");
+    expect(text).toContain("Questão para fechar");
+    expect(text).toContain("Resposta para animar");
+  });
+
   it("dispatches close-btw when closing", () => {
     const composer = new OmpComposer();
     composer.btwState = {
