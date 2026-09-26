@@ -351,11 +351,12 @@ export class OmpComposer extends LitElement {
         ? `${this.value}\n${custom.detail.text}`
         : custom.detail.text;
     this.value = newText;
-    const textarea = this.querySelector<HTMLTextAreaElement>("textarea");
+    const textarea = (this.querySelector?.("textarea") as HTMLTextAreaElement | null);
     if (textarea) {
       textarea.value = this.value;
     }
     this.requestUpdate();
+    this.adjustTextareaHeight();
     if (
       custom.detail.submit &&
       this.value.trim().length > 0 &&
@@ -365,7 +366,14 @@ export class OmpComposer extends LitElement {
     }
   };
 
+  protected override firstUpdated() {
+    this.adjustTextareaHeight();
+  }
+
   protected override updated(changedProperties: Map<string, unknown>) {
+    if (changedProperties.has("value") || changedProperties.has("compact")) {
+      this.adjustTextareaHeight();
+    }
     if (typeof document !== "undefined") {
       this.updatePortal();
     }
@@ -528,9 +536,36 @@ export class OmpComposer extends LitElement {
   };
 
   private handleWindowResizeOrScroll = () => {
-    if (!this.activeMenu) return;
-    this.updatePosition();
+    if (this.activeMenu) {
+      this.updatePosition();
+    }
+    this.adjustTextareaHeight();
   };
+
+  public adjustTextareaHeight(): void {
+    const textarea = (this.querySelector?.("textarea") as HTMLTextAreaElement | null);
+    if (!textarea) return;
+
+    // Temporarily reset height to auto to calculate accurate scrollHeight
+    textarea.style.height = "auto";
+
+    if (!textarea.value) {
+      textarea.style.height = "";
+      textarea.style.overflowY = "hidden";
+      return;
+    }
+
+    const maxHeight = 280;
+    const scrollHeight = textarea.scrollHeight;
+
+    if (scrollHeight > maxHeight) {
+      textarea.style.height = `${maxHeight}px`;
+      textarea.style.overflowY = "auto";
+    } else {
+      textarea.style.height = `${scrollHeight}px`;
+      textarea.style.overflowY = "hidden";
+    }
+  }
 
   public toggleProjectSelector() {
     if (this.isAskOpen && this.askMode === "projects") {
@@ -620,6 +655,7 @@ export class OmpComposer extends LitElement {
         );
         this.value = "";
         if (textarea) textarea.value = "";
+        this.adjustTextareaHeight();
         return;
       }
 
@@ -806,7 +842,11 @@ export class OmpComposer extends LitElement {
     if (files.length > 0) {
       e.preventDefault();
       await this.addFiles(files);
+      return;
     }
+    requestAnimationFrame(() => {
+      this.adjustTextareaHeight();
+    });
   }
 
   private handleDragOver(e: DragEvent) {
@@ -1065,6 +1105,7 @@ export class OmpComposer extends LitElement {
       ) as HTMLTextAreaElement | null;
       if (textarea) textarea.value = this.value;
     }
+    this.adjustTextareaHeight();
     this.requestUpdate();
   }
 
@@ -1095,6 +1136,7 @@ export class OmpComposer extends LitElement {
         textarea.value = this.value;
         textarea.focus?.();
         textarea.setSelectionRange?.(this.value.length, this.value.length);
+        this.adjustTextareaHeight();
       }
       this.requestUpdate();
       return;
@@ -1120,6 +1162,7 @@ export class OmpComposer extends LitElement {
       textarea.value = this.value;
       textarea.focus();
       textarea.setSelectionRange(this.value.length, this.value.length);
+      this.adjustTextareaHeight();
     }
     this.requestUpdate();
   }
@@ -1207,6 +1250,7 @@ export class OmpComposer extends LitElement {
   private handleInput(e: Event) {
     const val = (e.target as HTMLTextAreaElement).value;
     this.value = val;
+    this.adjustTextareaHeight();
     if (val.startsWith("/") && !val.includes("\n")) {
       const parts = val.slice(1).split(/\s+/);
       if (parts.length <= 1) {
@@ -1317,6 +1361,9 @@ export class OmpComposer extends LitElement {
 
       this.value = "";
       this.isAskOpen = false;
+      const textarea = (this.querySelector?.("textarea") as HTMLTextAreaElement | null);
+      if (textarea) textarea.value = "";
+      this.adjustTextareaHeight();
       this.requestUpdate();
       return;
     }
@@ -1364,6 +1411,9 @@ export class OmpComposer extends LitElement {
       this.attachments = [];
       this.attachmentError = undefined;
       this.isBtwMode = false;
+      const textarea = (this.querySelector?.("textarea") as HTMLTextAreaElement | null);
+      if (textarea) textarea.value = "";
+      this.adjustTextareaHeight();
       return;
     }
 
@@ -1382,6 +1432,9 @@ export class OmpComposer extends LitElement {
     this.value = "";
     this.attachments = [];
     this.attachmentError = undefined;
+    const textarea = (this.querySelector?.("textarea") as HTMLTextAreaElement | null);
+    if (textarea) textarea.value = "";
+    this.adjustTextareaHeight();
   }
 
   private renderBtwContent() {
@@ -1926,7 +1979,8 @@ export class OmpComposer extends LitElement {
                   <textarea
                     rows="${this.compact ? "1" : "2"}"
                     placeholder="${this.isBtwActive ? "Faça uma pergunta lateral com o contexto da sessão (/btw)..." : this.isAskOpen ? (this.askMode === "projects" ? "Digite para filtrar ou criar projeto..." : "Digite outra opção...") : this.placeholder}"
-                    class="font-ligatures-none inline-block w-full resize-none overflow-y-hidden whitespace-pre-wrap bg-transparent align-top text-black outline-none placeholder:text-foreground-450 dark:text-white dark:placeholder:text-foreground-600/90 text-base-dense font-sans"
+                    class="omp-composer-textarea font-ligatures-none inline-block w-full resize-none overflow-y-hidden whitespace-pre-wrap bg-transparent align-top text-black outline-none placeholder:text-foreground-450 dark:text-white dark:placeholder:text-foreground-600/90 text-base-dense font-sans"
+                    style="field-sizing: content; max-height: 280px;"
                     .value=${this.value}
                     @input=${(e: Event) => this.handleInput(e)}
                     @keydown=${(e: KeyboardEvent) => this.handleKeyDown(e)}

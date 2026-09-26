@@ -227,6 +227,30 @@
   color: rgba(255, 255, 255, 0.45) !important;
 }
 
+/* Subtle modern scrollbar for composer textarea */
+.omp-composer-textarea {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(120, 120, 120, 0.25) transparent;
+}
+
+.omp-composer-textarea::-webkit-scrollbar {
+  width: 5px;
+}
+
+.omp-composer-textarea::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.omp-composer-textarea::-webkit-scrollbar-thumb {
+  background: rgba(120, 120, 120, 0.25);
+  border-radius: 9999px;
+}
+
+.omp-composer-textarea::-webkit-scrollbar-thumb:hover {
+  background: rgba(120, 120, 120, 0.45);
+}
+
+
 .omp-dark-btn {
   background-color: rgba(255, 255, 255, 0.1) !important;
   color: #FFFFFF !important;
