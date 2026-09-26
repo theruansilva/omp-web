@@ -7,6 +7,8 @@ import "./OmpChatView";
 import "./OmpLoginModal";
 import "./OmpTasksBanner";
 import "./OmpLibraryView";
+import "./OmpProjectsView";
+import "./OmpProjectDetailView";
 import type { ChatMessage } from "./OmpChatView";
 import type { SubmitPromptDetail } from "./OmpComposer";
 
@@ -20,6 +22,8 @@ export class OmpApp extends LitElement {
   @state() private isFirstPrompt = false;
   @state() private isLoginModalOpen = false;
   @state() private currentUser: string | null = null;
+  @state() private selectedProjectId = "proj-1";
+  @state() private selectedSessionId = "sess-1";
   private lastPromptTime = 0;
 
   protected override createRenderRoot() {
@@ -144,6 +148,10 @@ export class OmpApp extends LitElement {
     switch (this.activeTab) {
       case "library":
         return "Library";
+      case "projects":
+        return "Projetos";
+      case "project-detail":
+        return "Projeto";
       default:
         return "";
     }
@@ -156,6 +164,11 @@ export class OmpApp extends LitElement {
           ? html`
               <omp-home-view
                 .isWorking=${this.isStreaming}
+                .selectedProjectId=${this.selectedProjectId}
+                @project-select=${(e: CustomEvent<{ projectId: string }>) => {
+                  this.selectedProjectId = e.detail.projectId;
+                  this.activeTab = "project-detail";
+                }}
                 @submit-prompt=${(e: CustomEvent<SubmitPromptDetail>) => this.handlePromptSubmit(e.detail)}
               ></omp-home-view>
             `
@@ -164,6 +177,11 @@ export class OmpApp extends LitElement {
                 .messages=${this.messages}
                 .isStreaming=${this.isStreaming}
                 .isFirstPrompt=${this.isFirstPrompt}
+                .selectedProjectId=${this.selectedProjectId}
+                @project-select=${(e: CustomEvent<{ projectId: string }>) => {
+                  this.selectedProjectId = e.detail.projectId;
+                  this.activeTab = "project-detail";
+                }}
                 @submit-prompt=${(e: CustomEvent<SubmitPromptDetail>) => this.handlePromptSubmit(e.detail)}
               ></omp-chat-view>
             `;
@@ -179,6 +197,52 @@ export class OmpApp extends LitElement {
               @sign-in=${() => (this.isLoginModalOpen = true)}
             ></omp-tasks-banner>
           </div>
+        `;
+
+      case "projects":
+        return html`
+          <omp-projects-view
+            .selectedProjectId=${this.selectedProjectId}
+            .isWorking=${this.isStreaming}
+            @project-open=${(e: CustomEvent<{ projectId: string }>) => {
+              this.selectedProjectId = e.detail.projectId;
+              this.activeTab = "project-detail";
+            }}
+            @project-select=${(e: CustomEvent<{ projectId: string }>) => {
+              this.selectedProjectId = e.detail.projectId;
+              this.activeTab = "project-detail";
+            }}
+            @submit-prompt=${(e: CustomEvent<SubmitPromptDetail>) => {
+              this.handlePromptSubmit(e.detail);
+            }}
+          ></omp-projects-view>
+        `;
+
+      case "project-detail":
+        return html`
+          <omp-project-detail-view
+            .projectId=${this.selectedProjectId}
+            .isWorking=${this.isStreaming}
+            @back-to-projects=${() => {
+              this.activeTab = "projects";
+            }}
+            @project-select=${(e: CustomEvent<{ projectId: string }>) => {
+              this.selectedProjectId = e.detail.projectId;
+              this.activeTab = "project-detail";
+            }}
+            @project-delete=${(e: CustomEvent<{ projectId: string }>) => {
+              if (this.selectedProjectId === e.detail.projectId) {
+                this.selectedProjectId = "proj-1";
+              }
+            }}
+            @session-select=${(e: CustomEvent<{ sessionId: string }>) => {
+              this.selectedSessionId = e.detail.sessionId;
+              this.activeTab = "new-chat";
+            }}
+            @submit-prompt=${(e: CustomEvent<SubmitPromptDetail>) => {
+              this.handlePromptSubmit(e.detail);
+            }}
+          ></omp-project-detail-view>
         `;
 
       default:
@@ -214,6 +278,16 @@ export class OmpApp extends LitElement {
           }"
           .activeTab=${this.activeTab}
           .isOpen=${this.isSidebarOpen}
+          .selectedProjectId=${this.selectedProjectId}
+          .selectedSessionId=${this.selectedSessionId}
+          @project-select=${(e: CustomEvent<{ projectId: string }>) => {
+            this.selectedProjectId = e.detail.projectId;
+            this.activeTab = "project-detail";
+          }}
+          @session-select=${(e: CustomEvent<{ sessionId: string }>) => {
+            this.selectedSessionId = e.detail.sessionId;
+            this.activeTab = "new-chat";
+          }}
           @nav-select=${(e: CustomEvent<{ tab: string }>) => this.handleNavSelect(e.detail.tab)}
           @toggle-sidebar=${() => (this.isSidebarOpen = !this.isSidebarOpen)}
           @sign-in=${() => (this.isLoginModalOpen = true)}
@@ -240,7 +314,13 @@ export class OmpApp extends LitElement {
             ></omp-header>
 
             <!-- Current Active Stage View -->
-            <div class="relative flex-1 size-full overflow-hidden">
+            <div
+              class="relative flex-1 size-full overflow-hidden"
+              @project-select=${(e: CustomEvent<{ projectId: string }>) => {
+                this.selectedProjectId = e.detail.projectId;
+                this.activeTab = "project-detail";
+              }}
+            >
               ${this.renderActiveView()}
             </div>
           </div>

@@ -15,14 +15,23 @@ import {
   renderSparklesIcon,
   renderWebPageIcon,
   renderCheckIcon,
+  renderFolderIcon,
 } from "./icons";
 
 export interface SubmitPromptDetail {
   prompt: string;
   model: string;
+  projectId?: string;
 }
 
-interface AskOption {
+export interface ComposerProject {
+  id: string;
+  name: string;
+  path?: string;
+  image?: string;
+}
+
+export interface AskOption {
   id: string;
   title: string;
   desc: string;
@@ -36,13 +45,47 @@ export class OmpComposer extends LitElement {
   @property({ type: String }) selectedModel = "Smart";
   @property({ type: Boolean }) isWorking = false;
   @property({ type: Boolean }) compact = false;
+  @property({ type: Boolean }) isAskOpen = false;
+  @property({ type: String }) askTitle =
+    "Qual abordagem você prefere para esta tarefa?";
+  @property({ attribute: false }) askOptions: AskOption[] = [];
+  @property({ attribute: false }) projects: ComposerProject[] = [];
+  @property({ type: String }) selectedProjectId = "proj-1";
+  @property({ type: String }) askMode: "options" | "projects" = "projects";
+  @property({ attribute: false }) customPills: unknown[] = [];
 
   @state() private activeMenu: "create" | "model" | null = null;
   @state() private menuPosition = { left: 0, bottom: 0 };
-  @state() private isAskOpen = false;
   @state() private selectedAskOption: string | null = null;
 
-  private readonly askOptions: AskOption[] = [
+  private readonly defaultProjects: ComposerProject[] = [
+    {
+      id: "proj-1",
+      name: "omp-web",
+      path: "~/code/omp-web",
+      image: "/static/omplabs/omp-appearance-cover-image-small--2.jpg",
+    },
+    {
+      id: "proj-2",
+      name: "oh-my-pi",
+      path: "~/code/oh-my-pi",
+      image: "/static/omplabs/omp-gaming-cover-image-small.jpg",
+    },
+    {
+      id: "proj-3",
+      name: "api-backend",
+      path: "~/code/api-backend",
+      image: "/static/omplabs/omp-vision-cover-image-small.jpg",
+    },
+    {
+      id: "proj-4",
+      name: "ai-memory",
+      path: "~/code/ai-memory",
+      image: "/static/omplabs/audio-expression-cover-image-small.jpg",
+    },
+  ];
+
+  private readonly defaultAskOptions: AskOption[] = [
     {
       id: "1",
       title: "Abordagem rápida",
@@ -216,10 +259,40 @@ export class OmpComposer extends LitElement {
     this.updatePosition();
   };
 
-  private toggleAskTool() {
-    this.isAskOpen = !this.isAskOpen;
+  public toggleProjectSelector() {
+    if (this.isAskOpen && this.askMode === "projects") {
+      this.isAskOpen = false;
+    } else {
+      this.isAskOpen = true;
+      this.askMode = "projects";
+    }
+    this.requestUpdate();
+  }
+
+  public toggleAskTool() {
+    if (this.isAskOpen && this.askMode === "options") {
+      this.isAskOpen = false;
+    } else {
+      this.isAskOpen = true;
+      this.askMode = "options";
+    }
     this.selectedAskOption = null;
     this.requestUpdate();
+  }
+
+  public selectProjectOption(id: string) {
+    this.selectedProjectId = id;
+    this.dispatchEvent(
+      new CustomEvent("project-select", {
+        detail: { projectId: id },
+        bubbles: true,
+        composed: true,
+      }),
+    );
+    setTimeout(() => {
+      this.isAskOpen = false;
+      this.requestUpdate();
+    }, 180);
   }
 
   private selectAskOption(id: string) {
@@ -610,6 +683,14 @@ export class OmpComposer extends LitElement {
   }
 
   private renderAskToolContent() {
+    const projectsList =
+      this.projects.length > 0 ? this.projects : this.defaultProjects;
+    const currentProject =
+      projectsList.find((p) => p.id === this.selectedProjectId) ??
+      projectsList[0];
+    const optionsToUse =
+      this.askOptions.length > 0 ? this.askOptions : this.defaultAskOptions;
+
     return html`
       <style>
         .composer-dropdown-popover {
@@ -652,6 +733,9 @@ export class OmpComposer extends LitElement {
         .composer-ask-expander.open .composer-ask-item-3 {
           animation: ask-item-reveal 260ms cubic-bezier(0.16, 1, 0.3, 1) 320ms both;
         }
+        .composer-ask-expander.open .composer-ask-item-4 {
+          animation: ask-item-reveal 260ms cubic-bezier(0.16, 1, 0.3, 1) 370ms both;
+        }
         .composer-ask-expander:not(.open) .composer-ask-header,
         .composer-ask-expander:not(.open) .composer-ask-item {
           opacity: 0;
@@ -669,25 +753,26 @@ export class OmpComposer extends LitElement {
           }
         }
       </style>
-      <div class="px-3.5 pt-3 pb-1 flex flex-col pointer-events-auto">
+      <div class="px-3.5 pt-3 pb-1 flex flex-col pointer-events-auto font-sans">
         <!-- Header row -->
         <div class="composer-ask-header px-1 pb-2">
           <div class="flex items-center justify-between">
-            <div class="text-sm font-medium text-foreground-900 leading-snug">
-              Qual abordagem você prefere para esta tarefa?
+            <div class="text-sm font-bold text-foreground-900 leading-snug flex items-center gap-2">
+              ${this.askMode === "projects" ? renderFolderIcon("size-4 text-foreground-700") : nothing}
+              <span>
+                ${this.askMode === "projects" ? "Selecione o projeto para esta sessão" : this.askTitle}
+              </span>
             </div>
 
             <button
               type="button"
-              title="Fechar opções"
+              title="Fechar"
               aria-label="Fechar opções"
-              class="rounded-full text-foreground-600 hover:text-foreground-900 hover:bg-black/5 dark:hover:bg-white/10 transition-colors cursor-pointer pointer-events-auto text-xs"
+              class="rounded-full text-foreground-600 hover:text-foreground-900 hover:bg-black/5 dark:hover:bg-white/10 transition-colors cursor-pointer pointer-events-auto text-xs p-1"
               @click=${(e: MouseEvent) => {
                 e.stopPropagation();
-                this.toggleAskTool();
-              }}
-              @pointerdown=${(e: PointerEvent) => {
-                e.stopPropagation();
+                this.isAskOpen = false;
+                this.requestUpdate();
               }}
             >
               ✕
@@ -695,55 +780,99 @@ export class OmpComposer extends LitElement {
           </div>
         </div>
 
-        <!-- Options 1, 2, 3 -->
-        <div class="flex flex-col gap-1.5" role="radiogroup" aria-label="Opções do OMP">
-          ${this.askOptions.map((opt, idx) => {
-            const isSelected = this.selectedAskOption === opt.id;
-            return html`
-              <button
-                type="button"
-                role="radio"
-                aria-checked="${isSelected}"
-                class="composer-ask-item composer-ask-item-${idx + 1} pointer-events-auto cursor-pointer group flex items-center justify-between w-full px-3 py-2 sm:py-2.5 rounded-2xl text-left transition-all duration-150 border border-black/5 dark:border-white/10 hover:border-blue-500/30 dark:hover:border-blue-500/40 bg-black/[0.02] dark:bg-white/[0.04] hover:bg-black/[0.05] dark:hover:bg-white/[0.08] active:scale-[0.99] ${
-                  isSelected
-                    ? "!bg-blue-500/15 !border-blue-500/40 text-blue-600 dark:text-blue-400 font-semibold"
-                    : "text-foreground-900"
-                }"
-                @click=${(e: MouseEvent) => {
-                  e.stopPropagation();
-                  this.selectAskOption(opt.id);
-                }}
-                @pointerdown=${(e: PointerEvent) => {
-                  e.stopPropagation();
-                }}
-              >
-                <div class="flex items-center gap-3 min-w-0">
-                  <span
-                    class="grid size-6 shrink-0 place-items-center rounded-xl bg-black/8 dark:bg-white/10 font-mono text-xs font-bold text-foreground-800 transition-colors group-hover:bg-blue-600 group-hover:text-white ${
-                      isSelected ? "!bg-blue-600 !text-white" : ""
-                    }"
+        ${
+          this.askMode === "projects"
+            ? html`
+            <!-- Lista de Projetos Estilo Ask Tool (1, 2, 3...) -->
+            <div class="flex flex-col gap-1.5" role="radiogroup" aria-label="Projetos disponíveis">
+              ${projectsList.map((proj, idx) => {
+                const isSelected = this.selectedProjectId === proj.id;
+                return html`
+                  <button
+                    type="button"
+                    role="radio"
+                    aria-checked="${isSelected}"
+                    class="composer-ask-item composer-ask-item-${idx + 1} pointer-events-auto cursor-pointer group flex items-center justify-between w-full px-3 py-2 sm:py-2.5 rounded-2xl text-left transition-all duration-150 border ${
+                      isSelected
+                        ? "!bg-blue-500/15 !border-blue-500/40 text-blue-600 dark:text-blue-400 font-semibold"
+                        : "border-black/5 dark:border-white/10 hover:border-blue-500/30 bg-black/[0.02] dark:bg-white/[0.04] hover:bg-black/[0.05] dark:hover:bg-white/[0.08] text-foreground-900"
+                    } active:scale-[0.99]"
+                    @click=${(e: MouseEvent) => {
+                      e.stopPropagation();
+                      this.selectProjectOption(proj.id);
+                    }}
                   >
-                    ${opt.id}
-                  </span>
-                  <div class="min-w-0 flex flex-col">
-                    <span class="text-sm font-medium leading-tight truncate">
-                      ${opt.title}
-                    </span>
-                    <span class="text-xs opacity-65 leading-tight mt-0.5 font-normal">
-                      ${opt.desc}
-                    </span>
-                  </div>
-                </div>
-                <div class="flex items-center gap-2 shrink-0 ps-2">
-                  <span class="text-xs font-mono opacity-0 group-hover:opacity-70 transition-opacity">
-                    ↵
-                  </span>
-                  ${isSelected ? renderCheckIcon("size-4 text-blue-600 dark:text-blue-400") : nothing}
-                </div>
-              </button>
-            `;
-          })}
-        </div>
+                    <div class="flex items-center gap-3 min-w-0">
+                      <div class="relative size-9 shrink-0 overflow-hidden rounded-xl bg-black/8 dark:bg-white/10 border border-black/10 dark:border-white/10 shadow-xs">
+                        ${
+                          proj.image
+                            ? html`<img src="${proj.image}" alt="${proj.name}" class="size-full object-cover block" />`
+                            : html`<div class="size-full flex items-center justify-center">${renderFolderIcon("size-4 text-foreground-700")}</div>`
+                        }
+                      </div>
+                      <div class="min-w-0 flex flex-col">
+                        <span class="text-sm font-bold leading-tight truncate">
+                          ${proj.name}
+                        </span>
+                        <span class="text-xs opacity-65 leading-tight mt-0.5 font-mono">
+                          ${proj.path || "~/code/" + proj.name}
+                        </span>
+                      </div>
+                    </div>
+                    <div class="flex items-center gap-2 shrink-0 ps-2">
+                      ${isSelected ? renderCheckIcon("size-4 text-blue-600 dark:text-blue-400") : html`<span class="text-xs font-semibold text-foreground-400 opacity-0 group-hover:opacity-100 transition-opacity">Selecionar</span>`}
+                    </div>
+                  </button>
+                `;
+              })}
+            </div>
+          `
+            : html`
+            <!-- Lista de Opções Tradicionais Ask Tool -->
+            <div class="flex flex-col gap-1.5" role="radiogroup" aria-label="Opções do OMP">
+              ${optionsToUse.map((opt, idx) => {
+                const isSelected = this.selectedAskOption === opt.id;
+                return html`
+                  <button
+                    type="button"
+                    role="radio"
+                    aria-checked="${isSelected}"
+                    class="composer-ask-item composer-ask-item-${idx + 1} pointer-events-auto cursor-pointer group flex items-center justify-between w-full px-3 py-2 sm:py-2.5 rounded-2xl text-left transition-all duration-150 border border-black/5 dark:border-white/10 hover:border-blue-500/30 dark:hover:border-blue-500/40 bg-black/[0.02] dark:bg-white/[0.04] hover:bg-black/[0.05] dark:hover:bg-white/[0.08] active:scale-[0.99] ${
+                      isSelected
+                        ? "!bg-blue-500/15 !border-blue-500/40 text-blue-600 dark:text-blue-400 font-semibold"
+                        : "text-foreground-900"
+                    }"
+                    @click=${(e: MouseEvent) => {
+                      e.stopPropagation();
+                      this.selectAskOption(opt.id);
+                    }}
+                  >
+                    <div class="flex items-center gap-3 min-w-0">
+                      <span
+                        class="grid size-6 shrink-0 place-items-center rounded-xl bg-black/8 dark:bg-white/10 font-mono text-xs font-bold text-foreground-800 transition-colors group-hover:bg-blue-600 group-hover:text-white ${
+                          isSelected ? "!bg-blue-600 !text-white" : ""
+                        }"
+                      >
+                        ${opt.id}
+                      </span>
+                      <div class="min-w-0 flex flex-col">
+                        <span class="text-sm font-medium leading-tight truncate">
+                          ${opt.title}
+                        </span>
+                        <span class="text-xs opacity-65 leading-tight mt-0.5 font-normal">
+                          ${opt.desc}
+                        </span>
+                      </div>
+                    </div>
+                    <div class="flex items-center gap-2 shrink-0 ps-2">
+                      ${isSelected ? renderCheckIcon("size-4 text-blue-600 dark:text-blue-400") : nothing}
+                    </div>
+                  </button>
+                `;
+              })}
+            </div>
+          `
+        }
       </div>
     `;
   }
@@ -805,7 +934,7 @@ export class OmpComposer extends LitElement {
                 <div class="pt-3 px-4 pb-0">
                   <textarea
                     rows="${this.compact ? "1" : "2"}"
-                    placeholder="${this.isAskOpen ? "Type another option" : this.placeholder}"
+                    placeholder="${this.isAskOpen ? (this.askMode === "projects" ? "Digite para filtrar ou criar projeto..." : "Digite outra opção...") : this.placeholder}"
                     class="font-ligatures-none inline-block w-full resize-none overflow-y-hidden whitespace-pre-wrap bg-transparent align-top text-black outline-none placeholder:text-foreground-450 dark:text-white dark:placeholder:text-foreground-600/90 text-base-dense font-sans"
                     .value=${this.value}
                     @input=${(e: Event) => {
@@ -858,16 +987,41 @@ export class OmpComposer extends LitElement {
                       </button>
                     </div>
 
-                    <!-- Ask Tool Toggle Pill (Para teste / reabertura) -->
+                    <!-- Project Selector Pill -->
+                    <div class="relative">
+                      <button
+                        id="composer-project-pill"
+                        data-testid="composer-project-pill"
+                        title="Selecionar projeto ativo"
+                        type="button"
+                        aria-label="Selecionar projeto"
+                        class="relative flex items-center text-foreground-800 fill-foreground-800 bg-transparent safe-hover:bg-black/5 active:bg-black/3 dark:safe-hover:bg-white/8 dark:active:bg-white/5 text-xs justify-center min-h-9 px-2.5 py-1 rounded-2xl gap-1.5 select-none font-semibold border border-black/8 dark:border-white/10 transition-colors cursor-pointer pointer-events-auto ${
+                          this.isAskOpen && this.askMode === "projects"
+                            ? "!bg-blue-500/10 !text-blue-600 dark:!text-blue-400 !border-blue-500/30"
+                            : ""
+                        }"
+                        @click=${(e: MouseEvent) => {
+                          e.stopPropagation();
+                          this.toggleProjectSelector();
+                        }}
+                      >
+                        ${renderFolderIcon("size-3.5 shrink-0")}
+                        <span class="max-w-[120px] truncate">
+                          ${(this.projects.length > 0 ? this.projects : this.defaultProjects).find((p) => p.id === this.selectedProjectId)?.name || "Projeto"}
+                        </span>
+                      </button>
+                    </div>
+
+                    <!-- Ask Tool Toggle Pill -->
                     <div class="relative">
                       <button
                         id="composer-ask-toggle-button"
                         data-testid="composer-ask-toggle-button"
-                        title="Testar Ask Tool estilo Claude (1, 2, 3)"
+                        title="Opções / Ask Tool (1, 2, 3)"
                         type="button"
                         aria-label="Ask Tool"
                         class="relative flex items-center text-foreground-800 fill-foreground-800 active:text-foreground-600 active:fill-foreground-600 dark:active:text-foreground-650 dark:active:fill-foreground-650 bg-transparent safe-hover:bg-black/5 active:bg-black/3 dark:safe-hover:bg-white/8 dark:active:bg-white/5 text-xs justify-center min-h-9 px-2.5 py-1 rounded-2xl gap-1.5 select-none font-medium border border-black/8 dark:border-white/10 transition-colors cursor-pointer pointer-events-auto ${
-                          this.isAskOpen
+                          this.isAskOpen && this.askMode === "options"
                             ? "!bg-blue-500/10 !text-blue-600 dark:!text-blue-400 !border-blue-500/30 font-semibold"
                             : ""
                         }"
@@ -880,13 +1034,16 @@ export class OmpComposer extends LitElement {
                         }}
                       >
                         <span class="size-1.5 rounded-full transition-colors ${
-                          this.isAskOpen
+                          this.isAskOpen && this.askMode === "options"
                             ? "bg-blue-500 animate-pulse"
                             : "bg-current opacity-40"
                         }"></span>
-                        <span>Ask Tool</span>
+                        <span>Opções</span>
                       </button>
                     </div>
+
+                    <!-- Extensible Custom Pills Slot -->
+                    ${this.customPills}
                   </div>
 
                   <!-- Right Action Button: Submit (Up Arrow), Stop, or Audio Call / Voice -->

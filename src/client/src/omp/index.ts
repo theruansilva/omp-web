@@ -16,3 +16,5 @@ export * from "./OmpTasksBanner";
 export * from "./OmpApp";
 export * from "./OmpLoginModal";
 export * from "./OmpAgentProcess";
+export * from "./OmpProjectsView";
+export * from "./OmpProjectDetailView";

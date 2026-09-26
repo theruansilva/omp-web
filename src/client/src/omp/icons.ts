@@ -89,6 +89,32 @@ export function renderPlusIcon(className = "size-4") {
   `;
 }
 
+export function renderFolderIcon(className = "size-5 shrink-0") {
+  return html`
+    <svg viewBox="0 0 24 24" fill="currentColor" class="${className}">
+      <path d="M2.25 6.75C2.25 5.50736 3.25736 4.5 4.5 4.5H8.62132C9.21808 4.5 9.7904 4.73705 10.2123 5.15899L11.5537 6.50041C11.9756 6.92235 12.5479 7.1594 13.1447 7.1594H19.5C20.7426 7.1594 21.75 8.16676 21.75 9.4094V17.25C21.75 18.4926 20.7426 19.5 19.5 19.5H4.5C3.25736 19.5 2.25 18.4926 2.25 17.25V6.75Z" />
+    </svg>
+  `;
+}
+
+export function renderPhotoIcon(className = "size-4") {
+  return html`
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="${className}">
+      <rect width="18" height="18" x="3" y="3" rx="2" ry="2"/>
+      <circle cx="9" cy="9" r="2"/>
+      <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/>
+    </svg>
+  `;
+}
+
+export function renderChatBubbleIcon(className = "size-4 shrink-0") {
+  return html`
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" class="${className}">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M7.5 8.25h9m-9 3H12m-9.75 1.51c0 1.6 1.123 2.994 2.707 3.227 1.129.166 2.27.293 3.423.379.35.026.67.21.865.501L12 21l2.755-4.133a1.14 1.14 0 01.865-.501 48.172 48.172 0 003.423-.379c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0012 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018z" />
+    </svg>
+  `;
+}
+
 export function renderWaveformIcon(className = "size-5") {
   return html`
     <svg viewBox="0 0 24 24" fill="currentColor" class="${className}">
@@ -105,6 +131,15 @@ export function renderSendIcon(className = "size-4") {
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="${className}">
       <line x1="12" y1="19" x2="12" y2="5"></line>
       <polyline points="5 12 12 5 19 12"></polyline>
+    </svg>
+  `;
+}
+
+export function renderArrowLeftIcon(className = "size-4") {
+  return html`
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="${className}">
+      <line x1="19" y1="12" x2="5" y2="12"></line>
+      <polyline points="12 19 5 12 12 5"></polyline>
     </svg>
   `;
 }
@@ -306,6 +341,43 @@ export function renderEyeOffIcon(className = "size-4") {
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="${className}">
       <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
       <line x1="1" y1="1" x2="23" y2="23"></line>
+    </svg>
+  `;
+}
+
+export function renderDotsHorizontalIcon(className = "size-4") {
+  return html`
+    <svg viewBox="0 0 24 24" fill="currentColor" class="${className}">
+      <circle cx="5" cy="12" r="2" />
+      <circle cx="12" cy="12" r="2" />
+      <circle cx="19" cy="12" r="2" />
+    </svg>
+  `;
+}
+
+export function renderTrashIcon(className = "size-4") {
+  return html`
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="${className}">
+      <path d="M3 6h18m-2 0v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6m3 0V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+    </svg>
+  `;
+}
+
+export function renderBranchIcon(className = "size-4") {
+  return html`
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="${className}">
+      <line x1="6" y1="3" x2="6" y2="15"></line>
+      <circle cx="18" cy="6" r="3"></circle>
+      <circle cx="6" cy="18" r="3"></circle>
+      <path d="M18 9a9 9 0 0 1-9 9"></path>
+    </svg>
+  `;
+}
+
+export function renderProjectsIcon(className = "size-5 shrink-0") {
+  return html`
+    <svg viewBox="0 0 24 24" fill="currentColor" class="${className}">
+      <path d="M12.378 1.602a.75.75 0 00-.756 0L3.122 6.602A.75.75 0 002.75 7.25v9.5c0 .27.144.518.372.648l8.5 5a.75.75 0 00.756 0l8.5-5a.75.75 0 00.372-.648V7.25a.75.75 0 00-.372-.648l-8.5-5zM12 3.14l7.086 4.168L12 11.476 4.914 7.308 12 3.14zM4.25 8.784l7 4.118v7.958l-7-4.118V8.784zm8.5 12.076v-7.958l7-4.118v7.958l-7 4.118z"/>
     </svg>
   `;
 }

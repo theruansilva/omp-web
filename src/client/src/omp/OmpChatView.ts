@@ -17,6 +17,7 @@ export class OmpChatView extends LitElement {
   @property({ type: Array }) messages: ChatMessage[] = [];
   @property({ type: Boolean }) isStreaming = false;
   @property({ type: Boolean }) isFirstPrompt = false;
+  @property({ type: String }) selectedProjectId = "proj-1";
 
   protected override createRenderRoot() {
     return this;
@@ -131,6 +132,17 @@ export class OmpChatView extends LitElement {
             <omp-composer
               compact
               .isWorking=${this.isStreaming}
+              .selectedProjectId=${this.selectedProjectId}
+              @project-select=${(e: CustomEvent<{ projectId: string }>) => {
+                this.selectedProjectId = e.detail.projectId;
+                this.dispatchEvent(
+                  new CustomEvent("project-select", {
+                    detail: e.detail,
+                    bubbles: true,
+                    composed: true,
+                  }),
+                );
+              }}
               @submit-prompt=${(e: CustomEvent) => {
         this.dispatchEvent(new CustomEvent("submit-prompt", { detail: e.detail, bubbles: true, composed: true }));
       }}
