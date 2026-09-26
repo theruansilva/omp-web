@@ -346,6 +346,7 @@ export class OmpApp extends LitElement {
       () => { void this.refreshActiveSessions(); },
     );
     void this.refreshActiveSessions();
+    void this.checkAuthStatus();
   }
 
   override disconnectedCallback() {
@@ -356,6 +357,34 @@ export class OmpApp extends LitElement {
     }
     this.sessionSocket.close();
     this.realtimeSocket.close();
+  }
+
+  private async checkAuthStatus(): Promise<void> {
+    try {
+      const res = await fetch("/api/omp-web/auth");
+      if (!res.ok) return;
+      const data = await res.json() as { authenticated?: boolean; authRequired?: boolean; setupRequired?: boolean; username?: string };
+      if (data.authenticated && data.username) {
+        this.currentUser = data.username;
+      } else {
+        this.currentUser = null;
+        if (data.authRequired) {
+          this.isLoginModalOpen = true;
+        }
+      }
+    } catch {
+      // offline or error
+    }
+  }
+
+  private async handleSignOut(): Promise<void> {
+    try {
+      await fetch("/api/omp-web/auth", { method: "DELETE" });
+    } catch {
+      // ignore
+    }
+    this.currentUser = null;
+    this.isLoginModalOpen = true;
   }
 
   private async refreshActiveSessions() {
@@ -1365,7 +1394,7 @@ Dica: você pode selecionar uma das opções abaixo para testar a injeção auto
               @toggle-sidebar=${() => this.toggleSidebar()}
               @toggle-theme=${() => this.toggleTheme()}
               @sign-in=${() => (this.isLoginModalOpen = true)}
-              @sign-out=${() => (this.currentUser = null)}
+              @sign-out=${() => { void this.handleSignOut(); }}
             ></omp-header>
 
             <!-- Current Active Stage View -->

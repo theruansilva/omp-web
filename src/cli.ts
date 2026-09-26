@@ -4,7 +4,8 @@ import { mkdir, rm, writeFile } from "node:fs/promises";
 import { homedir, userInfo } from "node:os";
 import { basename, dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { defaultOmpWebConfigPath, defaultOmpWebDataDir, exampleOmpWebConfig } from "./config.js";
+import { defaultOmpWebConfigPath, defaultOmpWebDataDir, exampleOmpWebConfig, loadOmpWebConfig, saveOmpWebConfig } from "./config.js";
+import { randomBytes } from "node:crypto";
 import { SessionDaemonClient } from "./sessiond/sessionDaemonClient.js";
 import type { ActiveSessionSummary } from "./shared/apiTypes.js";
 import { packageVersion, printOmpWebVersionReport } from "./ompWebVersionReport.js";
@@ -1024,6 +1025,44 @@ async function doctor(): Promise<void> {
   });
 }
 
+export async function resetPasswordCommand(args: string[] = []): Promise<void> {
+  const username = args[0]?.trim() || "admin";
+  const newPassword = randomBytes(6).toString("hex");
+  const hash = await Bun.password.hash(newPassword, { algorithm: "argon2id" });
+
+  const { config } = loadOmpWebConfig();
+  saveOmpWebConfig({
+    ...config,
+    authUsername: username,
+    authPasswordHash: hash,
+  });
+
+  console.log(`Password reset successfully for user "${username}".`);
+  console.log(`New password: ${newPassword}`);
+  console.log(`Please change this password after your next login.`);
+}
+
+export async function setPasswordCommand(args: string[] = []): Promise<void> {
+  const username = args[0]?.trim();
+  const password = args[1]?.trim();
+  if (!username || !password) {
+    throw new Error("Usage: omp-web set-password <username> <password>");
+  }
+  if (password.length < 6) {
+    throw new Error("Password must be at least 6 characters.");
+  }
+
+  const hash = await Bun.password.hash(password, { algorithm: "argon2id" });
+  const { config } = loadOmpWebConfig();
+  saveOmpWebConfig({
+    ...config,
+    authUsername: username,
+    authPasswordHash: hash,
+  });
+
+  console.log(`Password set successfully for user "${username}".`);
+}
+
 function help(): void {
   console.log(`PI WEB
 
@@ -1035,6 +1074,8 @@ Usage:
   omp-web restart [--force] [--wait]
   omp-web sessions [--json]
   omp-web doctor
+  omp-web reset-password [username]
+  omp-web set-password <user> <pass>
 
 Recommended install:
   bun add -g @theruansilva/omp-web
@@ -1055,6 +1096,8 @@ async function main(): Promise<void> {
   else if (command === "start" || command === "stop" || command === "status") serviceAction(command);
   else if (command === "logs") logs();
   else if (command === "doctor") await doctor();
+  else if (command === "reset-password" || command === "resetpass") await resetPasswordCommand(args);
+  else if (command === "set-password" || command === "setpass") await setPasswordCommand(args);
   else if (command === "version") await printOmpWebVersionReport();
   else if (command === "--version" || command === "-v") console.log(packageVersion());
   else if (command === "help" || command === "--help" || command === "-h") help();

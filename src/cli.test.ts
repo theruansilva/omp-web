@@ -2,7 +2,8 @@ import { mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from "node
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "bun:test";
-import { codingAgentCommandWithVersionCheck, commandWithVersionCheck, isCliEntrypoint, sessionsCommand } from "./cli.js";
+import { codingAgentCommandWithVersionCheck, commandWithVersionCheck, isCliEntrypoint, resetPasswordCommand, setPasswordCommand, sessionsCommand } from "./cli.js";
+import { loadOmpWebConfig } from "./config.js";
 
 const originalShell = process.env["SHELL"];
 
@@ -99,6 +100,37 @@ describe("sessionsCommand", () => {
       expect(Array.isArray(parsed)).toBe(true);
     } finally {
       console.log = origLog;
+    }
+  });
+});
+
+describe("password CLI commands", () => {
+  it("sets a new password via setPasswordCommand", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "omp-cli-pass-"));
+    process.env["OMP_WEB_CONFIG"] = join(dir, "config.json");
+    try {
+      await setPasswordCommand(["customadmin", "newsecret123"]);
+      const loaded = loadOmpWebConfig();
+      expect(loaded.config.authUsername).toBe("customadmin");
+      expect(loaded.config.authPasswordHash).toContain("$argon2id$");
+      expect(await Bun.password.verify("newsecret123", loaded.config.authPasswordHash!)).toBe(true);
+    } finally {
+      delete process.env["OMP_WEB_CONFIG"];
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("resets password via resetPasswordCommand", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "omp-cli-pass-"));
+    process.env["OMP_WEB_CONFIG"] = join(dir, "config.json");
+    try {
+      await resetPasswordCommand(["admin"]);
+      const loaded = loadOmpWebConfig();
+      expect(loaded.config.authUsername).toBe("admin");
+      expect(loaded.config.authPasswordHash).toContain("$argon2id$");
+    } finally {
+      delete process.env["OMP_WEB_CONFIG"];
+      rmSync(dir, { recursive: true, force: true });
     }
   });
 });

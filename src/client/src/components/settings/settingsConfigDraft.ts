@@ -74,6 +74,8 @@ function preservedGatewayConfigRemainder(baseConfig: OmpWebConfigValues): OmpWeb
     ...(baseConfig.subsessions === undefined ? {} : { subsessions: baseConfig.subsessions }),
     ...(baseConfig.authRequired === undefined ? {} : { authRequired: baseConfig.authRequired }),
     ...(baseConfig.authToken === undefined ? {} : { authToken: baseConfig.authToken }),
+    ...(baseConfig.authUsername === undefined ? {} : { authUsername: baseConfig.authUsername }),
+    ...(baseConfig.authPasswordHash === undefined ? {} : { authPasswordHash: baseConfig.authPasswordHash }),
     ...(baseConfig.allowPrivateMachines === undefined ? {} : { allowPrivateMachines: baseConfig.allowPrivateMachines }),
   };
 }

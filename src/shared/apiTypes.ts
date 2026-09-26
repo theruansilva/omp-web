@@ -89,6 +89,8 @@ export interface OmpWebConfigValues {
  subsessions?: boolean;
  authRequired?: boolean;
  authToken?: string;
+ authUsername?: string;
+ authPasswordHash?: string;
  allowPrivateMachines?: boolean;
 }
 

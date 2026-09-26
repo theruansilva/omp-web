@@ -9,8 +9,7 @@ const authRequired = config.authRequired !== false && process.env["OMP_WEB_AUTH_
 
 const app = await buildApp({
   bodyLimit: maxUploadBytes(process.env, config),
-  // ponytail: auth temporariamente desativado para teste rápido da POC
-  authRequired: false,
+  authRequired,
   authToken,
 });
 

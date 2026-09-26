@@ -2,7 +2,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { Hono } from "hono";
-import { createSecurityMiddleware, getOrGenerateAuthToken, parseCookie, safeTokenCompare } from "./security.js";
+import { createSecurityMiddleware, getOrGenerateAuthToken, hashPassword, parseCookie, safeTokenCompare, verifyUserPassword } from "./security.js";
 import { createBunWebSocket } from "hono/bun";
 import { serveStatic } from "hono/bun";
 import { ProjectStore } from "./storage/projectStore.js";
@@ -49,6 +49,8 @@ export interface AppDependencies {
   bodyLimit?: number;
   authRequired?: boolean;
   authToken?: string;
+  authUsername?: string;
+  authPasswordHash?: string;
 }
 
 export interface BuiltApp {
@@ -166,6 +168,8 @@ export async function buildApp(deps: AppDependencies = {}): Promise<BuiltApp> {
     return cachedAllowedHosts;
   };
 
+  let currentAuthUsername = deps.authUsername ?? effectiveConfig.authUsername;
+  let currentAuthPasswordHash = deps.authPasswordHash ?? effectiveConfig.authPasswordHash;
   const authRequired = deps.authRequired ?? (effectiveConfig.authRequired ?? (process.env["OMP_WEB_AUTH_REQUIRED"] === "1" || process.env["OMP_WEB_AUTH_REQUIRED"] === "true"));
   const authToken = deps.authToken ?? effectiveConfig.authToken ?? getOrGenerateAuthToken();
 
@@ -173,6 +177,8 @@ export async function buildApp(deps: AppDependencies = {}): Promise<BuiltApp> {
     allowedHosts: getAllowedHosts,
     authRequired,
     authToken,
+    authUsername: () => currentAuthUsername,
+    authPasswordHash: () => currentAuthPasswordHash,
   }));
   const { upgradeWebSocket, websocket } = createBunWebSocket();
 
@@ -204,9 +210,76 @@ export async function buildApp(deps: AppDependencies = {}): Promise<BuiltApp> {
     });
   });
 
+  app.post("/api/omp-web/setup", async (c) => {
+    try {
+      if (!authRequired) {
+        return c.json({ error: "Authentication is not enabled on this instance" }, 400);
+      }
+      if (currentAuthUsername && currentAuthPasswordHash) {
+        return c.json({ error: "Setup has already been completed" }, 400);
+      }
+
+      const body = await c.req.json<{ username?: string; password?: string; token?: string }>().catch(() => ({} as { username?: string; password?: string; token?: string }));
+      const username = body.username?.trim();
+      const password = body.password;
+      const token = body.token?.trim();
+
+      // Token is optional on first-time setup (makes it seamless like AionUi)
+      if (token && !safeTokenCompare(token, authToken)) {
+        return c.json({ error: "Invalid activation token" }, 401);
+      }
+      if (!username || username.length < 2) {
+        return c.json({ error: "Username must be at least 2 characters" }, 400);
+      }
+      if (!password || password.length < 6) {
+        return c.json({ error: "Password must be at least 6 characters" }, 400);
+      }
+
+      const passwordHash = await hashPassword(password);
+      await configService.write({
+        authUsername: username,
+        authPasswordHash: passwordHash,
+      });
+
+      currentAuthUsername = username;
+      currentAuthPasswordHash = passwordHash;
+
+      c.header("Set-Cookie", `omp_web_token=${encodeURIComponent(authToken)}; Path=/; HttpOnly; SameSite=Lax`);
+      return c.json({ ok: true });
+    } catch (error) {
+      return c.json({ error: error instanceof Error ? error.message : String(error) }, 400);
+    }
+  });
+
   app.post("/api/omp-web/auth", async (c) => {
     try {
-      const body = await c.req.json<{ token?: string }>().catch(() => ({} as { token?: string }));
+      const body = await c.req.json<{ username?: string; password?: string; token?: string }>().catch(() => ({} as { username?: string; password?: string; token?: string }));
+
+      // 1. Username + Password login
+      if (body.username !== undefined || body.password !== undefined) {
+        const setupRequired = authRequired && (!currentAuthUsername || !currentAuthPasswordHash);
+        if (setupRequired) {
+          return c.json({ error: "Setup required: administrator account has not been created", setupRequired: true }, 400);
+        }
+
+        const username = body.username?.trim();
+        const password = body.password;
+        if (!username || !password) {
+          return c.json({ error: "Username and password are required" }, 400);
+        }
+
+        const userMatch = currentAuthUsername && username.toLowerCase() === currentAuthUsername.toLowerCase();
+        const passwordMatch = userMatch && currentAuthPasswordHash && await verifyUserPassword(password, currentAuthPasswordHash);
+
+        if (!passwordMatch) {
+          return c.json({ error: "Invalid username or password" }, 401);
+        }
+
+        c.header("Set-Cookie", `omp_web_token=${encodeURIComponent(authToken)}; Path=/; HttpOnly; SameSite=Lax`);
+        return c.json({ ok: true });
+      }
+
+      // 2. Direct Token login
       const candidate = body.token?.trim();
       if (!candidate || !safeTokenCompare(candidate, authToken)) {
         return c.json({ error: "Invalid auth token" }, 401);
@@ -230,7 +303,13 @@ export async function buildApp(deps: AppDependencies = {}): Promise<BuiltApp> {
     const queryToken = c.req.query("token");
     const token = bearerToken ?? cookieToken ?? queryToken;
     const authenticated = !authRequired || safeTokenCompare(token, authToken);
-    return c.json({ authenticated, authRequired });
+    const setupRequired = authRequired && (!currentAuthUsername || !currentAuthPasswordHash);
+    return c.json({
+      authenticated,
+      authRequired,
+      setupRequired,
+      username: authenticated && currentAuthUsername ? currentAuthUsername : undefined,
+    });
   });
 
   app.get("/api/omp-web/status", async (c) => c.json(await ompWebStatusCache.get()));

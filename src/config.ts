@@ -81,6 +81,9 @@ export function effectiveOmpWebConfig(options: LoadOptions = {}): LoadedOmpWebCo
  const maxUpload = env["OMP_WEB_MAX_UPLOAD_BYTES"];
  const authRequired = env["OMP_WEB_AUTH_REQUIRED"];
  const authToken = env["OMP_WEB_AUTH_TOKEN"];
+ const authUsername = env["OMP_WEB_AUTH_USERNAME"];
+ const authPasswordHash = env["OMP_WEB_AUTH_PASSWORD_HASH"];
+ const authPassword = env["OMP_WEB_AUTH_PASSWORD"];
 
  return {
   ...loaded,
@@ -100,6 +103,8 @@ export function effectiveOmpWebConfig(options: LoadOptions = {}): LoadedOmpWebCo
    allowPrivateMachines: allowPrivateMachinesEnabled(env, loaded.config),
    ...(authRequired !== undefined && authRequired !== "" ? { authRequired: authRequired === "1" || authRequired.toLowerCase() === "true" } : {}),
    ...(authToken !== undefined && authToken.trim() !== "" ? { authToken: authToken.trim() } : {}),
+   ...(authUsername !== undefined && authUsername.trim() !== "" ? { authUsername: authUsername.trim() } : {}),
+   ...(authPasswordHash !== undefined && authPasswordHash.trim() !== "" ? { authPasswordHash: authPasswordHash.trim() } : (authPassword !== undefined && authPassword.trim() !== "" ? { authPasswordHash: authPassword.trim() } : {})),
   },
  };
 }
@@ -122,6 +127,8 @@ export function saveOmpWebConfig(config: OmpWebConfigValues, options: LoadOption
  delete existing["subsessions"];
  delete existing["authRequired"];
  delete existing["authToken"];
+ delete existing["authUsername"];
+ delete existing["authPasswordHash"];
  delete existing["allowPrivateMachines"];
  const merged = { ...existing, ...ompWebConfigRecord(normalized) };
  mkdirSync(dirname(path), { recursive: true });
@@ -151,6 +158,8 @@ function ompWebConfigRecord(config: OmpWebConfigValues): Record<string, unknown>
   ...(config.subsessions !== undefined ? { subsessions: config.subsessions } : {}),
   ...(config.authRequired !== undefined ? { authRequired: config.authRequired } : {}),
   ...(config.authToken !== undefined ? { authToken: config.authToken } : {}),
+  ...(config.authUsername !== undefined ? { authUsername: config.authUsername } : {}),
+  ...(config.authPasswordHash !== undefined ? { authPasswordHash: config.authPasswordHash } : {}),
   ...(config.allowPrivateMachines !== undefined ? { allowPrivateMachines: config.allowPrivateMachines } : {}),
  };
 }
@@ -170,6 +179,8 @@ function parseOmpWebConfig(value: Record<string, unknown>, path: string): OmpWeb
   ...(value["subsessions"] !== undefined ? { subsessions: parseBooleanConfig(value["subsessions"], "subsessions", path) } : {}),
   ...(value["authRequired"] !== undefined ? { authRequired: parseBooleanConfig(value["authRequired"], "authRequired", path) } : {}),
   ...(value["authToken"] !== undefined ? { authToken: parseString(value["authToken"], "authToken", path) } : {}),
+  ...(value["authUsername"] !== undefined ? { authUsername: parseString(value["authUsername"], "authUsername", path) } : {}),
+  ...(value["authPasswordHash"] !== undefined ? { authPasswordHash: parseString(value["authPasswordHash"], "authPasswordHash", path) } : {}),
   ...(value["allowPrivateMachines"] !== undefined ? { allowPrivateMachines: parseBooleanConfig(value["allowPrivateMachines"], "allowPrivateMachines", path) } : {}),
  };
 }

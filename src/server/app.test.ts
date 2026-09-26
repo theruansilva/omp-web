@@ -496,6 +496,108 @@ describe("buildApp", () => {
     }
   });
 
+  it("handles first-time setup wizard and username/password authentication", async () => {
+    const configDir = join(tempDir, "auth-user-config");
+    const testConfigService = fakeConfigService();
+    const appWithSetup = await buildApp({
+      authRequired: true,
+      authToken: "terminal-token-xyz",
+      projects: new ProjectService(new ProjectStore(join(tempDir, "auth-user-projects.json"))),
+      workspaces: new WorkspaceService(),
+      config: testConfigService,
+      sessionDaemon: fakeSessionDaemon(),
+      clientDist: false,
+      logger: false,
+    });
+
+    try {
+      // 1. Initial auth status indicates setup is required
+      const statusRes = await appWithSetup.inject({ method: "GET", url: "/api/omp-web/auth" });
+      expect(statusRes.statusCode).toBe(200);
+      expect(statusRes.json()).toEqual({
+        authenticated: false,
+        authRequired: true,
+        setupRequired: true,
+      });
+
+      // 2. Browser navigation without credentials returns setup wizard HTML
+      const htmlRes = await appWithSetup.inject({ method: "GET", url: "/" });
+      expect(htmlRes.statusCode).toBe(401);
+      expect(htmlRes.body).toContain("Primeiro Acesso");
+      expect(htmlRes.body).toContain("setupForm");
+
+      // 3. Setup with invalid token fails
+      const badTokenRes = await appWithSetup.inject({
+        method: "POST",
+        url: "/api/omp-web/setup",
+        payload: { username: "admin", password: "securepassword123", token: "wrong-token" },
+      });
+      expect(badTokenRes.statusCode).toBe(401);
+      expect(badTokenRes.json()).toEqual({ error: "Invalid activation token" });
+
+      // 4. Setup with short password fails
+      const shortPassRes = await appWithSetup.inject({
+        method: "POST",
+        url: "/api/omp-web/setup",
+        payload: { username: "admin", password: "123", token: "terminal-token-xyz" },
+      });
+      expect(shortPassRes.statusCode).toBe(400);
+      expect(shortPassRes.json()).toEqual({ error: "Password must be at least 6 characters" });
+
+      // 5. Successful setup returns 200, sets cookie, and logs in (token is optional)
+      const setupRes = await appWithSetup.inject({
+        method: "POST",
+        url: "/api/omp-web/setup",
+        payload: { username: "admin", password: "mypassword123" },
+      });
+      expect(setupRes.statusCode).toBe(200);
+      expect(setupRes.headers["set-cookie"]).toContain("omp_web_token=terminal-token-xyz");
+
+      // 6. Repeating setup fails because already completed
+      const secondSetup = await appWithSetup.inject({
+        method: "POST",
+        url: "/api/omp-web/setup",
+        payload: { username: "hacker", password: "newpassword123", token: "terminal-token-xyz" },
+      });
+      expect(secondSetup.statusCode).toBe(400);
+      expect(secondSetup.json()).toEqual({ error: "Setup has already been completed" });
+
+      // 7. Login with wrong password fails
+      const wrongPassRes = await appWithSetup.inject({
+        method: "POST",
+        url: "/api/omp-web/auth",
+        payload: { username: "admin", password: "wrongpassword" },
+      });
+      expect(wrongPassRes.statusCode).toBe(401);
+      expect(wrongPassRes.json()).toEqual({ error: "Invalid username or password" });
+
+      // 8. Login with correct username and password succeeds and sets cookie
+      const loginRes = await appWithSetup.inject({
+        method: "POST",
+        url: "/api/omp-web/auth",
+        payload: { username: "admin", password: "mypassword123" },
+      });
+      expect(loginRes.statusCode).toBe(200);
+      expect(loginRes.headers["set-cookie"]).toContain("omp_web_token=terminal-token-xyz");
+
+      // 9. Auth status now shows authenticated with username and setupRequired = false
+      const authedStatus = await appWithSetup.inject({
+        method: "GET",
+        url: "/api/omp-web/auth",
+        headers: { cookie: "omp_web_token=terminal-token-xyz" },
+      });
+      expect(authedStatus.statusCode).toBe(200);
+      expect(authedStatus.json()).toEqual({
+        authenticated: true,
+        authRequired: true,
+        setupRequired: false,
+        username: "admin",
+      });
+    } finally {
+      await appWithSetup.close();
+    }
+  });
+
   it("serves local session and terminal proxy routes through machine-scoped aliases", async () => {
     const sessionsResponse = await app.inject({ method: "GET", url: `/api/machines/local/sessions?cwd=${encodeURIComponent(projectDir)}` });
 

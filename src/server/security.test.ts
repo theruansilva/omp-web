@@ -2,6 +2,9 @@ import { describe, expect, it } from "bun:test";
 import type { Context } from "hono";
 import {
   createSecurityMiddleware,
+  hashPassword,
+  verifyUserPassword,
+  renderLoginPage,
   isPrivateOrReservedHost,
   isPrivateOrReservedHostAsync,
   parseCookie,
@@ -67,6 +70,37 @@ describe("security utils", () => {
       expect(safeTokenCompare("", "secret123")).toBe(false);
       expect(safeTokenCompare(undefined, "secret123")).toBe(false);
       expect(safeTokenCompare("secret1234", "secret123")).toBe(false);
+    });
+  });
+
+  describe("password hashing and verification", () => {
+    it("hashes and verifies passwords securely", async () => {
+      const hash = await hashPassword("supersecret123");
+      expect(hash).toContain("$argon2id$");
+
+      const valid = await verifyUserPassword("supersecret123", hash);
+      expect(valid).toBe(true);
+
+      const invalid = await verifyUserPassword("wrongpass", hash);
+      expect(invalid).toBe(false);
+
+      // Plaintext fallback (e.g. from plain env var)
+      const plainValid = await verifyUserPassword("myplain", "myplain");
+      expect(plainValid).toBe(true);
+      const plainInvalid = await verifyUserPassword("wrong", "myplain");
+      expect(plainInvalid).toBe(false);
+    });
+
+    it("renders setup wizard and login views appropriately", () => {
+      const setupHtml = renderLoginPage({ setupRequired: true });
+      expect(setupHtml).toContain("Primeiro Acesso");
+      expect(setupHtml).toContain("setupForm");
+      expect(setupHtml).toContain("Nome de Usuário");
+
+      const loginHtml = renderLoginPage({ setupRequired: false });
+      expect(loginHtml).toContain("loginForm");
+      expect(loginHtml).toContain("tokenForm");
+      expect(loginHtml).toContain("Ou entrar com Token de Acesso");
     });
   });
 

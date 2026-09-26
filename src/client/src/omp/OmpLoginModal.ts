@@ -18,9 +18,14 @@ export class OmpLoginModal extends LitElement {
   @property({ type: Boolean }) isOpen = false;
   @property({ type: String }) theme: "dark" | "light" = "dark";
 
+  @property({ type: Boolean }) setupRequired = false;
+
   @state() private username = "";
   @state() private password = "";
+  @state() private confirmPassword = "";
+  @state() private token = "";
   @state() private showPassword = false;
+  @state() private tokenMode = false;
   @state() private errorMessage = "";
   @state() private isLoading = false;
   @state() private isSuccess = false;
@@ -49,17 +54,41 @@ export class OmpLoginModal extends LitElement {
     if (changedProperties.has("isOpen") && this.isOpen) {
       this.username = "";
       this.password = "";
+      this.confirmPassword = "";
       this.errorMessage = "";
       this.isLoading = false;
       this.isSuccess = false;
+      this.tokenMode = false;
 
-      // Auto-focus username field after rendering
+      if (typeof window !== "undefined") {
+        const queryToken = new URLSearchParams(window.location.search).get("token");
+        if (queryToken) {
+          this.token = queryToken;
+        }
+      }
+
+      void this.checkSetupStatus();
+
       requestAnimationFrame(() => {
         const input = this.querySelector<HTMLInputElement>(
           "#login-username-input",
         );
         input?.focus();
       });
+    }
+  }
+
+  private async checkSetupStatus() {
+    try {
+      const res = await fetch("/api/omp-web/auth");
+      if (res.ok) {
+        const data = await res.json() as { setupRequired?: boolean };
+        if (data.setupRequired) {
+          this.setupRequired = true;
+        }
+      }
+    } catch {
+      // offline or error
     }
   }
 
@@ -72,21 +101,130 @@ export class OmpLoginModal extends LitElement {
     );
   }
 
-  private handleSubmit(e: Event) {
+  private async handleSubmit(e: Event) {
     e.preventDefault();
-    if (!this.username.trim() || !this.password.trim()) {
+    this.errorMessage = "";
+
+    // 1. Direct Token mode
+    if (this.tokenMode) {
+      const tokenVal = this.token.trim();
+      if (!tokenVal) {
+        this.errorMessage = "Insira o token de acesso";
+        return;
+      }
+
+      this.isLoading = true;
+      try {
+        const res = await fetch("/api/omp-web/auth", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ token: tokenVal }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          this.errorMessage = data.error || "Token de acesso inválido";
+          this.isLoading = false;
+          return;
+        }
+
+        this.isLoading = false;
+        this.isSuccess = true;
+        this.dispatchEvent(
+          new CustomEvent("login-success", {
+            detail: { username: "admin" } as LoginSubmitDetail,
+            bubbles: true,
+            composed: true,
+          }),
+        );
+        setTimeout(() => {
+          this.handleClose();
+        }, 400);
+      } catch {
+        this.errorMessage = "Erro de conexão ao autenticar token";
+        this.isLoading = false;
+      }
+      return;
+    }
+
+    // 2. Setup mode (Primeiro Acesso)
+    if (this.setupRequired) {
+      if (!this.username.trim() || !this.password) {
+        this.errorMessage = "Preencha o nome e a senha";
+        return;
+      }
+      if (this.password !== this.confirmPassword) {
+        this.errorMessage = "As senhas não coincidem";
+        return;
+      }
+      if (this.password.length < 6) {
+        this.errorMessage = "A senha deve ter no mínimo 6 caracteres";
+        return;
+      }
+
+
+      this.isLoading = true;
+      try {
+        const res = await fetch("/api/omp-web/setup", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({
+            username: this.username.trim(),
+            password: this.password,
+            token: this.token.trim(),
+          }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          this.errorMessage = data.error || "Erro ao configurar credenciais";
+          this.isLoading = false;
+          return;
+        }
+
+        this.isLoading = false;
+        this.isSuccess = true;
+        this.setupRequired = false;
+        this.dispatchEvent(
+          new CustomEvent("login-success", {
+            detail: { username: this.username.trim() } as LoginSubmitDetail,
+            bubbles: true,
+            composed: true,
+          }),
+        );
+        setTimeout(() => {
+          this.handleClose();
+        }, 400);
+      } catch {
+        this.errorMessage = "Erro de conexão ao salvar credenciais";
+        this.isLoading = false;
+      }
+      return;
+    }
+
+    // 3. Normal Username + Password login
+    if (!this.username.trim() || !this.password) {
       this.errorMessage = "Preencha o nome e a senha";
       return;
     }
 
-    this.errorMessage = "";
     this.isLoading = true;
+    try {
+      const res = await fetch("/api/omp-web/auth", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          username: this.username.trim(),
+          password: this.password,
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        this.errorMessage = data.error || "Usuário ou senha incorretos";
+        this.isLoading = false;
+        return;
+      }
 
-    // Simulated authentic transition
-    setTimeout(() => {
       this.isLoading = false;
       this.isSuccess = true;
-
       this.dispatchEvent(
         new CustomEvent("login-success", {
           detail: { username: this.username.trim() } as LoginSubmitDetail,
@@ -94,11 +232,13 @@ export class OmpLoginModal extends LitElement {
           composed: true,
         }),
       );
-
       setTimeout(() => {
         this.handleClose();
       }, 400);
-    }, 600);
+    } catch {
+      this.errorMessage = "Erro de conexão ao realizar login";
+      this.isLoading = false;
+    }
   }
 
   override render() {
@@ -484,7 +624,7 @@ export class OmpLoginModal extends LitElement {
           <div class="omp-squircle-card">
             <!-- Header: Title + Close -->
             <div class="omp-squircle-header">
-              <h2 class="omp-squircle-title">Entrar</h2>
+              <h2 class="omp-squircle-title">${this.setupRequired ? "Primeiro Acesso" : this.tokenMode ? "Token de Acesso" : "Entrar"}</h2>
               <button
                 type="button"
                 aria-label="Fechar"
@@ -497,62 +637,115 @@ export class OmpLoginModal extends LitElement {
 
             <!-- Form -->
             <form @submit=${this.handleSubmit}>
-              <!-- Username (Squircle-16) -->
-              <div class="omp-squircle-field">
-                <label for="login-username-input" class="omp-squircle-label">
-                  Nome de usuário
-                </label>
-                <div class="omp-squircle-input-wrapper">
-                  <div class="omp-squircle-input-row">
-                    <div class="omp-squircle-input-icon">
-                      ${renderUserIcon("size-4")}
+              ${this.tokenMode ? html`
+                <!-- Direct Token Input -->
+                <div class="omp-squircle-field">
+                  <label for="login-token-input" class="omp-squircle-label">
+                    Token de Acesso
+                  </label>
+                  <div class="omp-squircle-input-wrapper">
+                    <div class="omp-squircle-input-row">
+                      <div class="omp-squircle-input-icon">
+                        ${renderLockIcon("size-4")}
+                      </div>
+                      <input
+                        id="login-token-input"
+                        type="password"
+                        placeholder="Token de 64 caracteres"
+                        .value=${this.token}
+                        @input=${(e: Event) => (this.token = (e.target as HTMLInputElement).value)}
+                        class="omp-squircle-input"
+                      />
                     </div>
-                    <input
-                      id="login-username-input"
-                      type="text"
-                      autocomplete="username"
-                      placeholder="Seu nome"
-                      .value=${this.username}
-                      @input=${(e: Event) => (this.username = (e.target as HTMLInputElement).value)}
-                      class="omp-squircle-input"
-                    />
+                    <div class="omp-squircle-input-stroke"></div>
                   </div>
-                  <div class="omp-squircle-input-stroke"></div>
                 </div>
-              </div>
+              ` : html`
+                <!-- Username (Squircle-16) -->
+                <div class="omp-squircle-field">
+                  <label for="login-username-input" class="omp-squircle-label">
+                    Nome de usuário
+                  </label>
+                  <div class="omp-squircle-input-wrapper">
+                    <div class="omp-squircle-input-row">
+                      <div class="omp-squircle-input-icon">
+                        ${renderUserIcon("size-4")}
+                      </div>
+                      <input
+                        id="login-username-input"
+                        type="text"
+                        autocomplete="username"
+                        placeholder="Seu nome"
+                        .value=${this.username}
+                        @input=${(e: Event) => (this.username = (e.target as HTMLInputElement).value)}
+                        class="omp-squircle-input"
+                      />
+                    </div>
+                    <div class="omp-squircle-input-stroke"></div>
+                  </div>
+                </div>
 
-              <!-- Password (Squircle-16) -->
-              <div class="omp-squircle-field">
-                <label for="login-password-input" class="omp-squircle-label">
-                  Senha
-                </label>
-                <div class="omp-squircle-input-wrapper">
-                  <div class="omp-squircle-input-row">
-                    <div class="omp-squircle-input-icon">
-                      ${renderLockIcon("size-4")}
+                <!-- Password (Squircle-16) -->
+                <div class="omp-squircle-field">
+                  <label for="login-password-input" class="omp-squircle-label">
+                    Senha
+                  </label>
+                  <div class="omp-squircle-input-wrapper">
+                    <div class="omp-squircle-input-row">
+                      <div class="omp-squircle-input-icon">
+                        ${renderLockIcon("size-4")}
+                      </div>
+                      <input
+                        id="login-password-input"
+                        type=${this.showPassword ? "text" : "password"}
+                        autocomplete=${this.setupRequired ? "new-password" : "current-password"}
+                        placeholder=${this.setupRequired ? "Mínimo 6 caracteres" : "••••••••"}
+                        .value=${this.password}
+                        @input=${(e: Event) => (this.password = (e.target as HTMLInputElement).value)}
+                        class="omp-squircle-input"
+                        style="padding-right: 36px;"
+                      />
+                      <button
+                        type="button"
+                        aria-label=${this.showPassword ? "Ocultar senha" : "Ver senha"}
+                        class="omp-squircle-toggle-btn"
+                        @click=${() => (this.showPassword = !this.showPassword)}
+                      >
+                        ${this.showPassword ? renderEyeOffIcon("size-4") : renderEyeIcon("size-4")}
+                      </button>
                     </div>
-                    <input
-                      id="login-password-input"
-                      type=${this.showPassword ? "text" : "password"}
-                      autocomplete="current-password"
-                      placeholder="••••••••"
-                      .value=${this.password}
-                      @input=${(e: Event) => (this.password = (e.target as HTMLInputElement).value)}
-                      class="omp-squircle-input"
-                      style="padding-right: 36px;"
-                    />
-                    <button
-                      type="button"
-                      aria-label=${this.showPassword ? "Ocultar senha" : "Ver senha"}
-                      class="omp-squircle-toggle-btn"
-                      @click=${() => (this.showPassword = !this.showPassword)}
-                    >
-                      ${this.showPassword ? renderEyeOffIcon("size-4") : renderEyeIcon("size-4")}
-                    </button>
+                    <div class="omp-squircle-input-stroke"></div>
                   </div>
-                  <div class="omp-squircle-input-stroke"></div>
                 </div>
-              </div>
+
+                ${this.setupRequired ? html`
+                  <!-- Confirm Password -->
+                  <div class="omp-squircle-field">
+                    <label for="login-confirm-input" class="omp-squircle-label">
+                      Confirme a senha
+                    </label>
+                    <div class="omp-squircle-input-wrapper">
+                      <div class="omp-squircle-input-row">
+                        <div class="omp-squircle-input-icon">
+                          ${renderLockIcon("size-4")}
+                        </div>
+                        <input
+                          id="login-confirm-input"
+                          type="password"
+                          autocomplete="new-password"
+                          placeholder="Repita a senha"
+                          .value=${this.confirmPassword}
+                          @input=${(e: Event) => (this.confirmPassword = (e.target as HTMLInputElement).value)}
+                          class="omp-squircle-input"
+                        />
+                      </div>
+                      <div class="omp-squircle-input-stroke"></div>
+                    </div>
+                  </div>
+
+
+                ` : nothing}
+              `}
 
               <!-- Error -->
               ${
@@ -577,11 +770,23 @@ export class OmpLoginModal extends LitElement {
                       : this.isLoading
                         ? html`
                           <div class="omp-squircle-spinner"></div>
-                          <span>Entrando...</span>
+                          <span>${this.setupRequired ? "Salvando..." : "Entrando..."}</span>
                         `
-                        : html`<span>Entrar</span>`
+                        : html`<span>${this.setupRequired ? "Criar Administrador" : this.tokenMode ? "Entrar com Token" : "Entrar"}</span>`
                   }
                 </button>
+
+                ${!this.setupRequired ? html`
+                  <div style="text-align: center; margin-top: 10px;">
+                    <button
+                      type="button"
+                      style="background: none; border: none; font-size: 11px; color: var(--omp-muted-450, #8b949e); cursor: pointer; text-decoration: underline;"
+                      @click=${() => { this.tokenMode = !this.tokenMode; this.errorMessage = ""; }}
+                    >
+                      ${this.tokenMode ? "Voltar para Usuário e Senha" : "Ou entrar com Token direto"}
+                    </button>
+                  </div>
+                ` : nothing}
               </div>
             </form>
           </div>

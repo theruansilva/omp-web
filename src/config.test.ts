@@ -18,10 +18,12 @@ afterEach(async () => {
 
 describe("PI WEB config persistence", () => {
   it("persists and reads authRequired and authToken", () => {
-    saveOmpWebConfig({ authRequired: true, authToken: "my-token-123" }, testOptions());
+    saveOmpWebConfig({ authRequired: true, authToken: "my-token-123", authUsername: "admin", authPasswordHash: "$argon2id$test" }, testOptions());
     const loaded = loadOmpWebConfig(testOptions());
     expect(loaded.config.authRequired).toBe(true);
     expect(loaded.config.authToken).toBe("my-token-123");
+    expect(loaded.config.authUsername).toBe("admin");
+    expect(loaded.config.authPasswordHash).toBe("$argon2id$test");
   });
 
   it("reads auth configuration from environment variables", () => {
@@ -30,11 +32,15 @@ describe("PI WEB config persistence", () => {
         OMP_WEB_CONFIG: configPath,
         OMP_WEB_AUTH_REQUIRED: "1",
         OMP_WEB_AUTH_TOKEN: "env-token-xyz",
+        OMP_WEB_AUTH_USERNAME: "env-admin",
+        OMP_WEB_AUTH_PASSWORD_HASH: "$argon2id$envhash",
       },
     };
     const effective = effectiveOmpWebConfig(custom);
     expect(effective.config.authRequired).toBe(true);
     expect(effective.config.authToken).toBe("env-token-xyz");
+    expect(effective.config.authUsername).toBe("env-admin");
+    expect(effective.config.authPasswordHash).toBe("$argon2id$envhash");
   });
 
   it("writes and reads the configured PI WEB config path", () => {
