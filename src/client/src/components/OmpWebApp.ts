@@ -137,6 +137,7 @@ export class OmpWebApp extends LitElement {
   };
   @query("app-navigation-panel") private navigationPanel?: AppNavigationPanel;
   @query(".mobile-drawer") private mobileDrawerElement?: HTMLElement;
+  @query(".mobile-drawer-backdrop") private mobileDrawerBackdropElement?: HTMLElement;
   @query("#navigation-panel") private navigationPanelFrame?: HTMLElement;
   @query("#workspace-panel") private workspacePanelFrame?: HTMLElement;
 
@@ -195,6 +196,7 @@ export class OmpWebApp extends LitElement {
   private readonly mobileDrawer = new MobileDrawerController(this, {
     isMobileNavigationLayout: () => this.appShell.isMobileNavigationLayout,
     getDrawerElement: () => this.mobileDrawerElement,
+    getBackdropElement: () => this.mobileDrawerBackdropElement,
   });
   private readonly navigationSections = new NavigationSectionsController(
     this,
@@ -2130,15 +2132,32 @@ export class OmpWebApp extends LitElement {
   private renderMobileDrawer() {
     if (!this.appShell.isMobileNavigationLayout) return null;
     return html`
+      ${!this.mobileDrawer.isOpen ? html`
+        <div
+          class="mobile-drawer-edge-swipe-zone"
+          @touchstart=${this.mobileDrawer.handleTouchStart}
+          @touchmove=${this.mobileDrawer.handleTouchMove}
+          @touchend=${this.mobileDrawer.handleTouchEnd}
+          @touchcancel=${this.mobileDrawer.handleTouchCancel}
+        ></div>
+      ` : null}
       <div
         class=${this.mobileDrawer.backdropClass()}
         style=${this.mobileDrawer.backdropStyle()}
         @click=${() => { this.mobileDrawer.close(); }}
+        @touchstart=${this.mobileDrawer.handleTouchStart}
+        @touchmove=${this.mobileDrawer.handleTouchMove}
+        @touchend=${this.mobileDrawer.handleTouchEnd}
+        @touchcancel=${this.mobileDrawer.handleTouchCancel}
       ></div>
       <div
         class=${this.mobileDrawer.drawerClass()}
         style=${this.mobileDrawer.drawerStyle()}
         aria-hidden=${!this.mobileDrawer.isOpen}
+        @touchstart=${this.mobileDrawer.handleTouchStart}
+        @touchmove=${this.mobileDrawer.handleTouchMove}
+        @touchend=${this.mobileDrawer.handleTouchEnd}
+        @touchcancel=${this.mobileDrawer.handleTouchCancel}
       >
         ${this.renderNavigationPanel()}
       </div>

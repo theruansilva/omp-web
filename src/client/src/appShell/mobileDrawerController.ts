@@ -1,29 +1,16 @@
 import type { ReactiveController, ReactiveControllerHost } from "lit";
 
 export const EDGE_SWIPE_THRESHOLD = 80;
-export const DIRECTION_LOCK_DEADZONE = 8;
-export const FLING_VELOCITY_THRESHOLD = 0.3; // px/ms
+export const DIRECTION_LOCK_DEADZONE = 6;
+export const FLING_VELOCITY_THRESHOLD = 0.25; // px/ms
 export const DRAWER_MAX_WIDTH = 320;
 export const DRAWER_VIEWPORT_RATIO = 0.85;
-
-function hasClass(target: unknown, className: string): boolean {
-  if (!target || typeof target !== "object" || !("classList" in target)) return false;
-  const classList = target.classList;
-  if (!classList || typeof classList !== "object" || !("contains" in classList)) return false;
-  const contains = classList.contains;
-  return typeof contains === "function" && Boolean(contains.call(classList, className));
-}
-
-function nodeContains(container: unknown, target: unknown): boolean {
-  if (!container || typeof container !== "object" || !("contains" in container)) return false;
-  const contains = container.contains;
-  return typeof contains === "function" && Boolean(contains.call(container, target));
-}
 
 export interface MobileDrawerControllerOptions {
   isMobileNavigationLayout: () => boolean;
   onStateChange?: (open: boolean) => void;
   getDrawerElement?: () => HTMLElement | null | undefined;
+  getBackdropElement?: () => HTMLElement | null | undefined;
 }
 
 export class MobileDrawerController implements ReactiveController {
@@ -58,10 +45,10 @@ export class MobileDrawerController implements ReactiveController {
     if (typeof window === "undefined") return;
     const shouldAttach = this.options.isMobileNavigationLayout();
     if (shouldAttach && !this.listenersAttached) {
-      window.addEventListener("touchstart", this.handleTouchStart, { passive: true });
-      window.addEventListener("touchmove", this.handleTouchMove, { passive: false });
-      window.addEventListener("touchend", this.handleTouchEnd, { passive: true });
-      window.addEventListener("touchcancel", this.handleTouchCancel, { passive: true });
+      window.addEventListener("touchstart", this.handleTouchStart, { passive: false, capture: true });
+      window.addEventListener("touchmove", this.handleTouchMove, { passive: false, capture: true });
+      window.addEventListener("touchend", this.handleTouchEnd, { passive: false, capture: true });
+      window.addEventListener("touchcancel", this.handleTouchCancel, { passive: false, capture: true });
       window.addEventListener("keydown", this.handleKeyDown);
       this.listenersAttached = true;
     } else if (!shouldAttach && this.listenersAttached) {
@@ -75,10 +62,10 @@ export class MobileDrawerController implements ReactiveController {
 
   private removeListeners(): void {
     if (typeof window === "undefined" || !this.listenersAttached) return;
-    window.removeEventListener("touchstart", this.handleTouchStart);
-    window.removeEventListener("touchmove", this.handleTouchMove);
-    window.removeEventListener("touchend", this.handleTouchEnd);
-    window.removeEventListener("touchcancel", this.handleTouchCancel);
+    window.removeEventListener("touchstart", this.handleTouchStart, { capture: true } as EventListenerOptions);
+    window.removeEventListener("touchmove", this.handleTouchMove, { capture: true } as EventListenerOptions);
+    window.removeEventListener("touchend", this.handleTouchEnd, { capture: true } as EventListenerOptions);
+    window.removeEventListener("touchcancel", this.handleTouchCancel, { capture: true } as EventListenerOptions);
     window.removeEventListener("keydown", this.handleKeyDown);
     this.listenersAttached = false;
   }
@@ -88,20 +75,51 @@ export class MobileDrawerController implements ReactiveController {
     return Math.min(window.innerWidth * DRAWER_VIEWPORT_RATIO, DRAWER_MAX_WIDTH);
   }
 
+  private applyDirectStyles(width: number): void {
+    const drawerEl = this.options.getDrawerElement?.();
+    if (drawerEl?.style?.setProperty) {
+      drawerEl.style.setProperty("transform", `translateX(${this.dragTranslateX}px)`, "important");
+      drawerEl.style.setProperty("transition", "none", "important");
+    }
+    const backdropEl = this.options.getBackdropElement?.();
+    if (backdropEl?.style?.setProperty) {
+      const progress = Math.max(0, Math.min(1, (this.dragTranslateX + width) / width));
+      backdropEl.style.setProperty("opacity", String(progress), "important");
+      backdropEl.style.setProperty("transition", "none", "important");
+      backdropEl.style.setProperty("pointer-events", progress > 0.05 ? "auto" : "none", "important");
+      backdropEl.style.setProperty("visibility", progress > 0 ? "visible" : "hidden", "important");
+    }
+  }
+
+  private clearDirectStyles(): void {
+    const drawerEl = this.options.getDrawerElement?.();
+    if (drawerEl?.style?.removeProperty) {
+      drawerEl.style.removeProperty("transform");
+      drawerEl.style.removeProperty("transition");
+    }
+    const backdropEl = this.options.getBackdropElement?.();
+    if (backdropEl?.style?.removeProperty) {
+      backdropEl.style.removeProperty("opacity");
+      backdropEl.style.removeProperty("transition");
+      backdropEl.style.removeProperty("pointer-events");
+      backdropEl.style.removeProperty("visibility");
+    }
+  }
+
   open(): void {
-    if (this.isOpen && !this.isDragging) return;
     this.isOpen = true;
     this.isDragging = false;
     this.dragTranslateX = 0;
+    this.clearDirectStyles();
     this.options.onStateChange?.(true);
     this.host.requestUpdate();
   }
 
   close(): void {
-    if (!this.isOpen && !this.isDragging) return;
     this.isOpen = false;
     this.isDragging = false;
     this.dragTranslateX = -this.getDrawerWidth();
+    this.clearDirectStyles();
     this.options.onStateChange?.(false);
     this.host.requestUpdate();
   }
@@ -125,25 +143,19 @@ export class MobileDrawerController implements ReactiveController {
     if (!touch) return;
 
     const target = event.target;
-    const isInteractive = typeof HTMLElement !== "undefined" && target instanceof HTMLElement && Boolean(target.closest("input, textarea, select, .cm-editor, .xterm"));
+    // Don't intercept touches if user is interacting with text inputs/textareas
+    const isTextInput = typeof HTMLElement !== "undefined" && target instanceof HTMLElement && Boolean(target.closest("input, textarea, select"));
 
     if (!this.isOpen) {
-      // Only initiate open if starting within edge threshold
-      if (touch.clientX > EDGE_SWIPE_THRESHOLD || isInteractive) {
+      // Swipe from left edge (up to EDGE_SWIPE_THRESHOLD)
+      if (touch.clientX > EDGE_SWIPE_THRESHOLD || isTextInput) {
         return;
       }
       this.dragMode = "opening";
       this.dragTranslateX = -this.getDrawerWidth();
     } else {
-      // When drawer is open, dragging can start anywhere on the drawer or backdrop
-      const drawerEl = this.options.getDrawerElement?.();
-      const touchedDrawer = nodeContains(drawerEl, target);
-      const touchedBackdrop = hasClass(target, "mobile-drawer-backdrop");
-
-      if (!touchedDrawer && !touchedBackdrop) {
-        return;
-      }
-      if (isInteractive) {
+      // When drawer is open: can drag anywhere on drawer or backdrop to close
+      if (isTextInput) {
         return;
       }
       this.dragMode = "closing";
@@ -170,32 +182,31 @@ export class MobileDrawerController implements ReactiveController {
       const absDx = Math.abs(dx);
       const absDy = Math.abs(dy);
 
-      // Deadzone: wait until finger moves at least DIRECTION_LOCK_DEADZONE in some direction
+      // Deadzone: wait until finger moves at least DIRECTION_LOCK_DEADZONE
       if (absDx < DIRECTION_LOCK_DEADZONE && absDy < DIRECTION_LOCK_DEADZONE) {
         return;
       }
 
-      // Check for horizontal intent (accommodating natural thumb diagonal arc)
+      // Check horizontal intent (accommodating natural thumb diagonal arc)
       const isHorizontalIntent = this.dragMode === "opening"
-        ? (dx > 6 && absDx >= absDy * 0.7)
-        : (dx < -6 && absDx >= absDy * 0.7);
+        ? (dx > 4 && absDx >= absDy * 0.6)
+        : (dx < -4 && absDx >= absDy * 0.6);
 
       if (isHorizontalIntent) {
         this.directionLock = "horizontal";
         this.isDragging = true;
       } else if (absDy > 10 && absDy > absDx * 1.3) {
-        // Clearly vertical movement (scrolling content), cancel tracking
+        // Vertical scroll
         this.directionLock = "vertical";
         this.isTracking = false;
         this.dragMode = null;
         return;
       } else {
-        // Ambiguous trajectory, wait for next touchmove frame
         return;
       }
     }
 
-    if (this.directionLock === "horizontal") {
+    if (this.directionLock === "horizontal" || this.isDragging) {
       if (event.cancelable) {
         event.preventDefault();
       }
@@ -205,6 +216,8 @@ export class MobileDrawerController implements ReactiveController {
       } else {
         this.dragTranslateX = Math.min(0, Math.max(-width, dx));
       }
+
+      this.applyDirectStyles(width);
       this.host.requestUpdate();
     }
   };
@@ -221,23 +234,13 @@ export class MobileDrawerController implements ReactiveController {
       const width = this.getDrawerWidth();
 
       if (this.dragMode === "opening") {
-        // Fast swipe right opens, fast swipe left closes, or position threshold
-        if (vx > FLING_VELOCITY_THRESHOLD) {
-          this.open();
-        } else if (vx < -FLING_VELOCITY_THRESHOLD) {
-          this.close();
-        } else if (this.dragTranslateX > -width * 0.6) {
+        if (vx > FLING_VELOCITY_THRESHOLD || this.dragTranslateX > -width * 0.65) {
           this.open();
         } else {
           this.close();
         }
       } else {
-        // Closing mode: fast swipe left closes, fast swipe right keeps open
-        if (vx < -FLING_VELOCITY_THRESHOLD) {
-          this.close();
-        } else if (vx > FLING_VELOCITY_THRESHOLD) {
-          this.open();
-        } else if (this.dragTranslateX < -width * 0.35) {
+        if (vx < -FLING_VELOCITY_THRESHOLD || this.dragTranslateX < -width * 0.35) {
           this.close();
         } else {
           this.open();
@@ -250,8 +253,25 @@ export class MobileDrawerController implements ReactiveController {
   };
 
   readonly handleTouchCancel = (): void => {
-    this.cancelDrag();
-    this.host.requestUpdate();
+    if (this.isDragging) {
+      const width = this.getDrawerWidth();
+      if (this.dragMode === "opening") {
+        if (this.dragTranslateX > -width * 0.5) {
+          this.open();
+        } else {
+          this.close();
+        }
+      } else {
+        if (this.dragTranslateX < -width * 0.5) {
+          this.close();
+        } else {
+          this.open();
+        }
+      }
+    } else {
+      this.cancelDrag();
+      this.host.requestUpdate();
+    }
   };
 
   private readonly handleKeyDown = (event: KeyboardEvent): void => {
