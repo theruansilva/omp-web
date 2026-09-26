@@ -4,7 +4,7 @@ import { customElement, property } from "lit/decorators.js";
 @customElement("omp-agent-process")
 export class OmpAgentProcess extends LitElement {
  @property({ type: Number }) currentStep = 0;
- @property({ type: Boolean }) autoAnimate = true;
+ @property({ type: Boolean }) autoAnimate = false;
  private timer: unknown = null;
 
  protected override createRenderRoot() {

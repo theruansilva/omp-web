@@ -55,7 +55,9 @@ export class OmpLoginModal extends LitElement {
 
       // Auto-focus username field after rendering
       requestAnimationFrame(() => {
-        const input = this.querySelector<HTMLInputElement>("#login-username-input");
+        const input = this.querySelector<HTMLInputElement>(
+          "#login-username-input",
+        );
         input?.focus();
       });
     }
@@ -482,7 +484,7 @@ export class OmpLoginModal extends LitElement {
           <div class="omp-squircle-card">
             <!-- Header: Title + Close -->
             <div class="omp-squircle-header">
-              <h2 class="omp-squircle-title">Acessar</h2>
+              <h2 class="omp-squircle-title">Entrar</h2>
               <button
                 type="button"
                 aria-label="Fechar"
@@ -553,9 +555,11 @@ export class OmpLoginModal extends LitElement {
               </div>
 
               <!-- Error -->
-              ${this.errorMessage
-        ? html`<div class="omp-squircle-error">${this.errorMessage}</div>`
-        : nothing}
+              ${
+                this.errorMessage
+                  ? html`<div class="omp-squircle-error">${this.errorMessage}</div>`
+                  : nothing
+              }
 
               <!-- Submit Button (Squircle-16) with color-muted-450 -->
               <div class="omp-squircle-btn-wrap">
@@ -564,17 +568,19 @@ export class OmpLoginModal extends LitElement {
                   ?disabled=${this.isLoading || this.isSuccess}
                   class="omp-squircle-submit-btn"
                 >
-                  ${this.isSuccess
-        ? html`
+                  ${
+                    this.isSuccess
+                      ? html`
                         ${renderCheckIcon("size-4")}
                         <span>Conectado</span>
                       `
-        : this.isLoading
-          ? html`
+                      : this.isLoading
+                        ? html`
                           <div class="omp-squircle-spinner"></div>
                           <span>Entrando...</span>
                         `
-          : html`<span>Entrar</span>`}
+                        : html`<span>Entrar</span>`
+                  }
                 </button>
               </div>
             </form>
