@@ -257,7 +257,7 @@ export class OmpProjectsView extends LitElement {
             : ""}
                       </div>
 
-                      <!-- Action Button -->
+                      <!-- Action Button & Start Session -->
                       <div class="flex items-center justify-between w-full pt-1">
                         <button
                           type="button"
@@ -271,6 +271,18 @@ export class OmpProjectsView extends LitElement {
           }}
                         >
                           ${isSelected ? "Continuar Sessão →" : "Abrir Projeto →"}
+                        </button>
+                        <button
+                          type="button"
+                          class="flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-medium text-foreground-500 hover:text-foreground-900 hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer"
+                          title="Iniciar nova sessão neste projeto"
+                          @click=${(e: Event) => {
+            e.stopPropagation();
+            this.dispatchEvent(new CustomEvent("start-new-session", { detail: { projectId: project.id }, bubbles: true, composed: true }));
+          }}
+                        >
+                          <span class="text-sm font-light leading-none">+</span>
+                          <span>Nova sessão</span>
                         </button>
                       </div>
                     </div>
@@ -309,6 +321,7 @@ export class OmpProjectsView extends LitElement {
           <div class="w-full max-w-chat pointer-events-auto">
             <omp-composer
               .isWorking=${this.isWorking}
+              .projects=${this.projects}
               .selectedProjectId=${this.selectedProjectId}
               @project-select=${(e: CustomEvent<{ projectId: string }>) => {
         this.selectedProjectId = e.detail.projectId;

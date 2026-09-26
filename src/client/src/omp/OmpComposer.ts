@@ -1,4 +1,5 @@
 import { LitElement, html, nothing, render } from "lit";
+import type { AskDialogQuestion, AskDialogResult } from "../api";
 import { customElement, property, state } from "lit/decorators.js";
 import {
   renderPlusIcon,
@@ -18,12 +19,76 @@ import {
   renderFolderIcon,
   renderLightbulbIcon,
   renderBranchIcon,
+  renderCloseIcon,
 } from "./icons";
+import {
+  capturePromptAttachments,
+  type CapturedAttachment,
+} from "../promptAttachmentCapture";
+import type { PromptAttachment } from "../../../shared/apiTypes";
+
+export interface PendingAttachment extends CapturedAttachment {
+  readonly id: string;
+}
 
 export interface SubmitPromptDetail {
   prompt: string;
   model: string;
   projectId?: string;
+  attachments?: PromptAttachment[];
+}
+
+async function readFileAsBase64(file: File): Promise<string> {
+  if (typeof file.arrayBuffer === "function") {
+    const buffer = await file.arrayBuffer();
+    const bytes = new Uint8Array(buffer);
+    let binary = "";
+    const len = bytes.byteLength;
+    for (let i = 0; i < len; i++) {
+      binary += String.fromCharCode(bytes[i]);
+    }
+    return btoa(binary);
+  }
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => {
+      reject(reader.error ?? new Error("Failed to read file"));
+    };
+    reader.onload = () => {
+      if (typeof reader.result !== "string") {
+        reject(new Error("Failed to read file as data URL"));
+        return;
+      }
+      const comma = reader.result.indexOf(",");
+      resolve(comma >= 0 ? reader.result.slice(comma + 1) : reader.result);
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+function pendingToPromptAttachment(
+  attachment: PendingAttachment,
+): PromptAttachment {
+  if (attachment.kind === "image") {
+    return {
+      kind: "image",
+      mimeType: attachment.mimeType,
+      data: attachment.data,
+      name: attachment.name,
+    };
+  }
+  return {
+    kind: "file",
+    mimeType: attachment.mimeType,
+    data: attachment.data,
+    name: attachment.name,
+  };
+}
+
+function formatFileSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
 export interface ComposerProject {
@@ -60,7 +125,7 @@ export class OmpComposer extends LitElement {
   @property({ type: String }) value = "";
   @property({ type: String }) placeholder =
     "Message to omp, use @ to mention a file or / to start a command";
-  @property({ type: String }) selectedModel = "Smart";
+  @property({ type: String }) selectedModel = "Gemini 3.8";
   @property({ type: Boolean }) isWorking = false;
   @property({ type: Boolean }) compact = false;
   @property({ type: Boolean }) isAskOpen = false;
@@ -71,6 +136,10 @@ export class OmpComposer extends LitElement {
   @property({ type: String }) selectedProjectId = "proj-1";
   @property({ type: String }) askMode: "options" | "projects" = "projects";
   @property({ attribute: false }) customPills: unknown[] = [];
+  @property({ attribute: false }) pendingAsk?: {
+    requestId: string;
+    questions: AskDialogQuestion[];
+  };
   private _btwState?: BtwState;
 
   @property({ attribute: false })
@@ -97,6 +166,10 @@ export class OmpComposer extends LitElement {
   @property({ type: Boolean }) isBtwMode = false;
   @property({ attribute: false }) onBranchBtw?: () => void | Promise<void>;
   @property({ attribute: false }) onCloseBtw?: () => void;
+
+  @state() private attachments: PendingAttachment[] = [];
+  @state() private attachmentError?: string;
+  @state() private isDragOver = false;
 
   @state() private slashCommandsOpen = false;
   @state() private slashFilter = "";
@@ -292,8 +365,31 @@ export class OmpComposer extends LitElement {
     }
   };
 
-  protected override updated() {
-    this.updatePortal();
+  protected override updated(changedProperties: Map<string, unknown>) {
+    if (typeof document !== "undefined") {
+      this.updatePortal();
+    }
+    if (changedProperties.has("pendingAsk")) {
+      if (this.pendingAsk && this.pendingAsk.questions.length > 0) {
+        const q = this.pendingAsk.questions[0];
+        this.isAskOpen = true;
+        this.askMode = "options";
+        this.askTitle = q.question;
+        this.askOptions = q.options.map((opt, idx) => ({
+          id: String(idx + 1),
+          title: opt.label,
+          desc: opt.description || "",
+        }));
+        if (typeof requestAnimationFrame !== "undefined") {
+          requestAnimationFrame(() => {
+            this.querySelector("textarea")?.focus();
+          });
+        }
+      } else if (!this.pendingAsk && this.askMode === "options") {
+        this.isAskOpen = false;
+        this.askOptions = [];
+      }
+    }
   }
 
   private handleDocumentPointerDown = (e: PointerEvent) => {
@@ -449,6 +545,15 @@ export class OmpComposer extends LitElement {
   public toggleAskTool() {
     if (this.isAskOpen && this.askMode === "options") {
       this.isAskOpen = false;
+      if (this.pendingAsk) {
+        this.dispatchEvent(
+          new CustomEvent("cancel-ask", {
+            detail: { requestId: this.pendingAsk.requestId },
+            bubbles: true,
+            composed: true,
+          }),
+        );
+      }
     } else {
       this.isAskOpen = true;
       this.askMode = "options";
@@ -479,7 +584,7 @@ export class OmpComposer extends LitElement {
     this.selectedAskOption = id;
     this.value = `[${opt.id}] ${opt.title}`;
 
-    const textarea = this.querySelector(
+    const textarea = this.querySelector?.(
       "textarea",
     ) as HTMLTextAreaElement | null;
     if (textarea) {
@@ -491,6 +596,32 @@ export class OmpComposer extends LitElement {
       this.isAskOpen = false;
       this.selectedAskOption = null;
       this.requestUpdate();
+
+      if (this.pendingAsk && this.pendingAsk.questions.length > 0) {
+        const q = this.pendingAsk.questions[0];
+        const result: AskDialogResult = {
+          kind: "submit",
+          results: [
+            {
+              id: q.id,
+              question: q.question,
+              options: q.options.map((o) => o.label),
+              multi: false,
+              selectedOptions: [opt.title],
+            },
+          ],
+        };
+        this.dispatchEvent(
+          new CustomEvent("submit-ask", {
+            detail: { requestId: this.pendingAsk.requestId, result },
+            bubbles: true,
+            composed: true,
+          }),
+        );
+        this.value = "";
+        if (textarea) textarea.value = "";
+        return;
+      }
 
       this.dispatchEvent(
         new CustomEvent("ask-select", {
@@ -621,22 +752,87 @@ export class OmpComposer extends LitElement {
     )?.focus();
   }
 
-  private handleFileChange(e: Event) {
-    const input = e.target as HTMLInputElement;
-    if (input.files && input.files.length > 0) {
+  public async addFiles(files: File[]) {
+    if (files.length === 0) return;
+    this.attachmentError = undefined;
+    const { attachments, error } = await capturePromptAttachments(
+      files,
+      readFileAsBase64,
+    );
+    if (attachments.length > 0) {
+      const newItems: PendingAttachment[] = attachments.map((att) => ({
+        id: `att-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+        ...att,
+      }));
+      this.attachments = [...this.attachments, ...newItems];
       this.dispatchEvent(
         new CustomEvent("files-selected", {
-          detail: { files: Array.from(input.files) },
+          detail: { files, attachments: this.attachments },
           bubbles: true,
           composed: true,
         }),
       );
+    }
+    if (error) {
+      this.attachmentError = error;
+    }
+    this.requestUpdate();
+  }
+
+  public removeAttachment(id: string) {
+    this.attachments = this.attachments.filter((a) => a.id !== id);
+    if (this.attachments.length === 0) {
+      this.attachmentError = undefined;
+    }
+    this.requestUpdate();
+  }
+
+  public clearAttachments() {
+    this.attachments = [];
+    this.attachmentError = undefined;
+    this.requestUpdate();
+  }
+
+  private async handleFileChange(e: Event) {
+    const input = e.target as HTMLInputElement;
+    if (input.files && input.files.length > 0) {
+      await this.addFiles(Array.from(input.files));
       input.value = "";
     }
   }
 
+  private async handlePaste(e: ClipboardEvent) {
+    const files = e.clipboardData ? Array.from(e.clipboardData.files) : [];
+    if (files.length > 0) {
+      e.preventDefault();
+      await this.addFiles(files);
+    }
+  }
+
+  private handleDragOver(e: DragEvent) {
+    if (e.dataTransfer && Array.from(e.dataTransfer.types).includes("Files")) {
+      e.preventDefault();
+      this.isDragOver = true;
+    }
+  }
+
+  private handleDragLeave(e: DragEvent) {
+    e.preventDefault();
+    this.isDragOver = false;
+  }
+
+  private async handleDrop(e: DragEvent) {
+    if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      e.preventDefault();
+      this.isDragOver = false;
+      await this.addFiles(Array.from(e.dataTransfer.files));
+    }
+  }
+
   private updatePortal() {
+    if (typeof document === "undefined" || !document.body) return;
     const portal = this.getPortalContainer();
+    if (!portal || typeof (portal as any).nodeType !== "number") return;
     if (!this.activeMenu) {
       render(nothing, portal);
       return;
@@ -1078,9 +1274,57 @@ export class OmpComposer extends LitElement {
 
   private submit() {
     const rawText = this.value.trim();
-    if (!rawText || this.isWorking) return;
+    if (
+      (!rawText && this.attachments.length === 0) ||
+      (this.isWorking && !this.pendingAsk)
+    )
+      return;
     this.closeMenu();
     this.closeSlashMenu();
+
+    if (this.pendingAsk && this.pendingAsk.questions.length > 0) {
+      const q = this.pendingAsk.questions[0];
+      const matched = this.askOptions.find(
+        (o) =>
+          o.title.toLowerCase() === rawText.toLowerCase() ||
+          `[${o.id}] ${o.title}`.toLowerCase() === rawText.toLowerCase() ||
+          o.id === rawText,
+      );
+      const selectedOptions = matched ? [matched.title] : [];
+      const customInput = matched ? undefined : rawText;
+
+      const result: AskDialogResult = {
+        kind: "submit",
+        results: [
+          {
+            id: q.id,
+            question: q.question,
+            options: q.options.map((o) => o.label),
+            multi: false,
+            selectedOptions,
+            ...(customInput ? { customInput } : {}),
+          },
+        ],
+      };
+
+      this.dispatchEvent(
+        new CustomEvent("submit-ask", {
+          detail: { requestId: this.pendingAsk.requestId, result },
+          bubbles: true,
+          composed: true,
+        }),
+      );
+
+      this.value = "";
+      this.isAskOpen = false;
+      this.requestUpdate();
+      return;
+    }
+
+    const attachments =
+      this.attachments.length > 0
+        ? this.attachments.map(pendingToPromptAttachment)
+        : undefined;
 
     const isBtw = this.isBtwMode || rawText.toLowerCase().startsWith("/btw");
     let prompt = rawText;
@@ -1110,12 +1354,15 @@ export class OmpComposer extends LitElement {
             prompt,
             model: this.selectedModel,
             projectId: this.selectedProjectId,
+            attachments,
           },
           bubbles: true,
           composed: true,
         }),
       );
       this.value = "";
+      this.attachments = [];
+      this.attachmentError = undefined;
       this.isBtwMode = false;
       return;
     }
@@ -1126,12 +1373,15 @@ export class OmpComposer extends LitElement {
           prompt: rawText,
           model: this.selectedModel,
           projectId: this.selectedProjectId,
+          attachments,
         },
         bubbles: true,
         composed: true,
       }),
     );
     this.value = "";
+    this.attachments = [];
+    this.attachmentError = undefined;
   }
 
   private renderBtwContent() {
@@ -1350,6 +1600,15 @@ export class OmpComposer extends LitElement {
               @click=${(e: MouseEvent) => {
                 e.stopPropagation();
                 this.isAskOpen = false;
+                if (this.pendingAsk) {
+                  this.dispatchEvent(
+                    new CustomEvent("cancel-ask", {
+                      detail: { requestId: this.pendingAsk.requestId },
+                      bubbles: true,
+                      composed: true,
+                    }),
+                  );
+                }
                 this.requestUpdate();
               }}
             >
@@ -1455,6 +1714,70 @@ export class OmpComposer extends LitElement {
     `;
   }
 
+  private renderPendingAttachments() {
+    if (this.attachments.length === 0 && !this.attachmentError) return nothing;
+
+    return html`
+      <div
+        class="flex flex-wrap items-center gap-2 pb-2.5 mb-1.5 border-b border-black/5 dark:border-white/5 animate-in fade-in"
+        aria-label="Anexos pendentes"
+        data-testid="composer-pending-attachments"
+      >
+        ${this.attachments.map((att) => {
+          const isImg = att.kind === "image";
+          return html`
+            <div
+              class="group relative flex items-center gap-2 rounded-2xl p-1.5 transition-all select-none border border-black/8 dark:border-white/10 bg-black/[0.03] dark:bg-white/[0.06] hover:bg-black/[0.06] dark:hover:bg-white/[0.09]"
+              title="${att.name}"
+              data-testid="attachment-chip"
+            >
+              ${
+                isImg
+                  ? html`
+                    <div class="relative size-12 shrink-0 overflow-hidden rounded-xl bg-black/10 dark:bg-white/10">
+                      <img
+                        src="data:${att.mimeType};base64,${att.data}"
+                        alt="${att.name}"
+                        class="size-full object-cover block"
+                      />
+                    </div>
+                  `
+                  : html`
+                    <div class="flex items-center justify-center size-9 shrink-0 rounded-xl bg-black/8 dark:bg-white/10 text-foreground-700">
+                      ${renderPaperclipIcon("size-4")}
+                    </div>
+                  `
+              }
+              <div class="flex flex-col min-w-0 max-w-[130px] pr-5">
+                <span class="text-xs font-semibold text-foreground-800 truncate leading-tight">
+                  ${att.name}
+                </span>
+                <span class="text-[10px] text-foreground-500 font-mono leading-tight mt-0.5">
+                  ${formatFileSize(att.size)}
+                </span>
+              </div>
+              <button
+                type="button"
+                aria-label="Remover anexo ${att.name}"
+                title="Remover anexo"
+                class="absolute top-1 right-1 size-5 rounded-full bg-black/10 dark:bg-white/20 hover:bg-red-500 hover:text-white dark:hover:bg-red-500 text-foreground-600 flex items-center justify-center transition-colors cursor-pointer"
+                @click=${(e: Event) => {
+                  e.stopPropagation();
+                  this.removeAttachment(att.id);
+                }}
+              >
+                ${renderCloseIcon("size-3")}
+              </button>
+            </div>
+          `;
+        })}
+        ${this.attachmentError
+          ? html`<div class="text-xs text-red-500 font-medium py-1">${this.attachmentError}</div>`
+          : nothing}
+      </div>
+    `;
+  }
+
   override render() {
     return html`
       <!-- Hidden file input for native attachment handling -->
@@ -1526,9 +1849,12 @@ export class OmpComposer extends LitElement {
 
         <!-- 1. Background layer with shadow-tinted-xl and backdrop-blur -->
         <div
-          class="relative flex flex-col shadow-tinted-xl backdrop-blur-2xl backdrop-saturate-200 bg-accent-100/60 dark:bg-muted-200/50 w-full"
+          class="relative flex flex-col shadow-tinted-xl backdrop-blur-2xl backdrop-saturate-200 bg-accent-100/60 dark:bg-muted-200/50 w-full ${this.isDragOver ? "ring-2 ring-blue-500/50 bg-blue-500/5" : ""}"
           style="border-radius: 32px;"
           data-testid="composer-background"
+          @dragover=${(e: DragEvent) => this.handleDragOver(e)}
+          @dragleave=${(e: DragEvent) => this.handleDragLeave(e)}
+          @drop=${(e: DragEvent) => this.handleDrop(e)}
         >
           <!-- 2. Content container -->
           <div
@@ -1573,6 +1899,9 @@ export class OmpComposer extends LitElement {
 
                 <!-- Textarea container -->
                 <div class="pt-3 px-4 pb-0">
+                  <!-- Pending Attachments Section -->
+                  ${this.renderPendingAttachments()}
+
                   <!-- Active /btw Mode Pill Banner -->
                   ${
                     this.isBtwActive && !this.hasActiveBtw
@@ -1601,6 +1930,7 @@ export class OmpComposer extends LitElement {
                     .value=${this.value}
                     @input=${(e: Event) => this.handleInput(e)}
                     @keydown=${(e: KeyboardEvent) => this.handleKeyDown(e)}
+                    @paste=${(e: ClipboardEvent) => this.handlePaste(e)}
                   ></textarea>
                 </div>
 
@@ -1667,61 +1997,8 @@ export class OmpComposer extends LitElement {
                       >
                         ${renderFolderIcon("size-3.5 shrink-0")}
                         <span class="max-w-[120px] truncate">
-                          ${(this.projects.length > 0 ? this.projects : this.defaultProjects).find((p) => p.id === this.selectedProjectId)?.name || "Projeto"}
+                          ${((this.projects.length > 0 ? this.projects : this.defaultProjects).find((p) => p.id === this.selectedProjectId) ?? (this.projects.length > 0 ? this.projects[0] : this.defaultProjects[0]))?.name || "Projeto"}
                         </span>
-                      </button>
-                    </div>
-
-                    <!-- Side Question (/btw) Toggle Pill -->
-                    <div class="relative">
-                      <button
-                        id="composer-btw-toggle-button"
-                        data-testid="composer-btw-toggle-button"
-                        title="Side Question (/btw) — Faça uma pergunta lateral efêmera com o contexto da sessão"
-                        type="button"
-                        aria-label="Side Question (/btw)"
-                        class="relative flex items-center text-foreground-800 fill-foreground-800 bg-transparent safe-hover:bg-black/5 active:bg-black/3 dark:safe-hover:bg-white/8 dark:active:bg-white/5 text-xs justify-center min-h-9 px-2.5 py-1 rounded-2xl gap-1.5 select-none font-medium border border-black/8 dark:border-white/10 transition-colors cursor-pointer pointer-events-auto ${
-                          this.isBtwActive
-                            ? "!bg-amber-500/15 !text-amber-600 dark:!text-amber-400 !border-amber-500/40 font-semibold shadow-xs"
-                            : ""
-                        }"
-                        @click=${(e: MouseEvent) => {
-                          e.stopPropagation();
-                          this.toggleBtwMode();
-                        }}
-                      >
-                        ${renderLightbulbIcon("size-3.5 text-amber-500 dark:text-amber-400")}
-                        <span>/btw</span>
-                      </button>
-                    </div>
-
-                    <!-- Ask Tool Toggle Pill -->
-                    <div class="relative">
-                      <button
-                        id="composer-ask-toggle-button"
-                        data-testid="composer-ask-toggle-button"
-                        title="Opções / Ask Tool (1, 2, 3)"
-                        type="button"
-                        aria-label="Ask Tool"
-                        class="relative flex items-center text-foreground-800 fill-foreground-800 active:text-foreground-600 active:fill-foreground-600 dark:active:text-foreground-650 dark:active:fill-foreground-650 bg-transparent safe-hover:bg-black/5 active:bg-black/3 dark:safe-hover:bg-white/8 dark:active:bg-white/5 text-xs justify-center min-h-9 px-2.5 py-1 rounded-2xl gap-1.5 select-none font-medium border border-black/8 dark:border-white/10 transition-colors cursor-pointer pointer-events-auto ${
-                          this.isAskOpen && this.askMode === "options"
-                            ? "!bg-blue-500/10 !text-blue-600 dark:!text-blue-400 !border-blue-500/30 font-semibold"
-                            : ""
-                        }"
-                        @click=${(e: MouseEvent) => {
-                          e.stopPropagation();
-                          this.toggleAskTool();
-                        }}
-                        @pointerdown=${(e: PointerEvent) => {
-                          e.stopPropagation();
-                        }}
-                      >
-                        <span class="size-1.5 rounded-full transition-colors ${
-                          this.isAskOpen && this.askMode === "options"
-                            ? "bg-blue-500 animate-pulse"
-                            : "bg-current opacity-40"
-                        }"></span>
-                        <span>Opções</span>
                       </button>
                     </div>
 
@@ -1752,7 +2029,7 @@ export class OmpComposer extends LitElement {
                             <div class="size-3.5 rounded bg-current"></div>
                           </button>
                         `
-                        : this.value.trim()
+                        : (this.value.trim() || this.attachments.length > 0)
                           ? html`
                             <button
                               id="submit-button"

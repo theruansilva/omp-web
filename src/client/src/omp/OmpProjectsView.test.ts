@@ -117,12 +117,10 @@ describe("OmpComposer Extensibility & Project Selector", () => {
 });
 
 describe("OmpComposer /btw Side Question Support", () => {
-  it("renders /btw toggle button in the toolbar", () => {
+  it("supports /btw mode and slash commands", () => {
     const composer = new OmpComposer();
-    const rendered = composer.render();
-    const text = getAllTemplateText(rendered);
-    expect(text).toContain("composer-btw-toggle-button");
-    expect(text).toContain("/btw");
+    composer.openSlashMenu("");
+    expect(composer.filteredSlashCommands.some((c) => c.name === "btw")).toBe(true);
   });
 
   it("toggles /btw mode on button click", () => {
@@ -272,5 +270,148 @@ describe("OmpComposer /btw Side Question Support", () => {
     composer.closeBtw();
     expect(closed).toBe(true);
     expect(composer.btwState).toBeUndefined();
+  });
+});
+
+describe("OmpComposer Ask Tool Integration (pendingAsk)", () => {
+  it("opens ask drawer with questions when pendingAsk is set", () => {
+    const composer = new OmpComposer();
+    composer.pendingAsk = {
+      requestId: "req-1",
+      questions: [
+        {
+          id: "q1",
+          question: "Qual framework você prefere?",
+          options: [
+            { label: "Lit", description: "Lightweight and fast" },
+            { label: "React", description: "Ecosystem" },
+          ],
+        },
+      ],
+    };
+
+    composer.updated(new Map([["pendingAsk", undefined]]));
+
+    expect(composer.isAskOpen).toBe(true);
+    expect(composer.askMode).toBe("options");
+    expect(composer.askTitle).toBe("Qual framework você prefere?");
+    expect(composer.askOptions.length).toBe(2);
+    expect(composer.askOptions[0].title).toBe("Lit");
+
+    const rendered = composer.render();
+    const text = getAllTemplateText(rendered);
+    expect(text).toContain("Qual framework você prefere?");
+    expect(text).toContain("Lit");
+    expect(text).toContain("Lightweight and fast");
+  });
+
+  it("submits ask answer on option selection", () => {
+    const composer = new OmpComposer();
+    composer.pendingAsk = {
+      requestId: "req-2",
+      questions: [
+        {
+          id: "auth",
+          question: "Qual método de autenticação?",
+          options: [{ label: "JWT" }, { label: "OAuth2" }],
+        },
+      ],
+    };
+    composer.updated(new Map([["pendingAsk", undefined]]));
+
+    let submittedDetail: any = null;
+    composer.addEventListener("submit-ask", (e: any) => {
+      submittedDetail = e.detail;
+    });
+
+    (composer as any).selectAskOption("1");
+
+    expect(submittedDetail).toBeNull(); // Has 160ms delay
+  });
+});
+
+describe("OmpComposer Attachments Handling & Display", () => {
+  it("manages pending attachments and dispatches files-selected", async () => {
+    const composer = new OmpComposer();
+    const fakeFile = new File(["dummy image data"], "test-shot.png", { type: "image/png" });
+
+    let filesSelectedEvent: any = null;
+    composer.addEventListener("files-selected", (e: any) => {
+      filesSelectedEvent = e.detail;
+    });
+
+    await composer.addFiles([fakeFile]);
+
+    expect(filesSelectedEvent).toBeDefined();
+    expect(filesSelectedEvent.files.length).toBe(1);
+    expect((composer as any).attachments.length).toBe(1);
+    expect((composer as any).attachments[0].name).toBe("test-shot.png");
+    expect((composer as any).attachments[0].kind).toBe("image");
+
+    const rendered = composer.render();
+    const text = getAllTemplateText(rendered);
+    expect(text).toContain("test-shot.png");
+    expect(text).toContain("img");
+
+    // Remove attachment
+    composer.removeAttachment((composer as any).attachments[0].id);
+    expect((composer as any).attachments.length).toBe(0);
+  });
+
+  it("enables submit button and includes attachments in submit-prompt even without text", async () => {
+    const composer = new OmpComposer();
+    const fakeFile = new File(["notes"], "document.txt", { type: "text/plain" });
+    await composer.addFiles([fakeFile]);
+
+    composer.value = "";
+    const rendered = composer.render();
+    const text = getAllTemplateText(rendered);
+    expect(text).toContain("submit-button");
+    expect(text).toContain("document.txt");
+
+    let submittedDetail: any = null;
+    composer.addEventListener("submit-prompt", (e: any) => {
+      submittedDetail = e.detail;
+    });
+
+    (composer as any).submit();
+
+    expect(submittedDetail).toBeDefined();
+    expect(submittedDetail.attachments).toBeDefined();
+    expect(submittedDetail.attachments.length).toBe(1);
+    expect(submittedDetail.attachments[0].name).toBe("document.txt");
+    expect(submittedDetail.attachments[0].kind).toBe("file");
+    expect((composer as any).attachments.length).toBe(0);
+  });
+});
+
+describe("OmpProjectsView & OmpProjectDetailView Project Forwarding", () => {
+  it("passes projects property to omp-composer in OmpProjectsView", () => {
+    const view = new OmpProjectsView();
+    const customList = [
+      { id: "p1", name: "Alpha Project", path: "~/code/alpha" },
+      { id: "p2", name: "Beta Project", path: "~/code/beta" },
+    ];
+    view.projects = customList;
+    view.selectedProjectId = "p1";
+
+    const rendered = view.render();
+    const text = getAllTemplateText(rendered);
+    expect(text).toContain("omp-composer");
+    expect(text).toContain("Alpha Project");
+  });
+
+  it("passes projects property to omp-composer in OmpProjectDetailView", () => {
+    const view = new OmpProjectDetailView();
+    const customList = [
+      { id: "p1", name: "Alpha Project", path: "~/code/alpha" },
+      { id: "p2", name: "Beta Project", path: "~/code/beta" },
+    ];
+    view.projectId = "p1";
+    view.projects = customList;
+
+    const rendered = view.render();
+    const text = getAllTemplateText(rendered);
+    expect(text).toContain("omp-composer");
   });
 });

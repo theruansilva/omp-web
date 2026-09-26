@@ -1,11 +1,13 @@
 import { LitElement, html } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import "./OmpComposer";
+import type { ComposerProject } from "./OmpComposer";
 
 @customElement("omp-home-view")
 export class OmpHomeView extends LitElement {
   @property({ type: String }) greeting = "Hey Ruan, what’s on your mind today?";
   @property({ type: Boolean }) isWorking = false;
+  @property({ attribute: false }) projects: ComposerProject[] = [];
   @property({ type: String }) selectedProjectId = "proj-1";
 
   protected override createRenderRoot() {
@@ -30,6 +32,7 @@ export class OmpHomeView extends LitElement {
           <div class="w-full max-w-chat pointer-events-auto">
             <omp-composer
               .isWorking=${this.isWorking}
+              .projects=${this.projects}
               .selectedProjectId=${this.selectedProjectId}
               @project-select=${(e: CustomEvent<{ projectId: string }>) => {
         this.selectedProjectId = e.detail.projectId;

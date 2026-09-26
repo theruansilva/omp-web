@@ -444,6 +444,14 @@ export class OmpProjectDetailView extends LitElement {
                     ${projectSessions.length}
                   </span>
                 </div>
+                <button
+                  type="button"
+                  class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-foreground-600 dark:text-foreground-300 hover:text-foreground-900 hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer"
+                  @click=${() => this.dispatchEvent(new CustomEvent("start-new-session", { detail: { projectId: this.projectId }, bubbles: true, composed: true }))}
+                >
+                  <span class="text-sm font-light leading-none">+</span>
+                  <span>Nova sessão</span>
+                </button>
               </div>
 
               ${projectSessions.length > 0
@@ -458,10 +466,10 @@ export class OmpProjectDetailView extends LitElement {
                           >
                             <div class="flex flex-col min-w-0 pr-3">
                               <div class="flex items-center gap-2 mb-1">
-                                <span class="text-sm font-bold text-foreground-900 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors truncate">
+                                <span class="text-sm font-bold ${session.archived ? "text-foreground-400 dark:text-foreground-500 opacity-60" : "text-foreground-900"} group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors truncate">
                                   ${session.title}
                                 </span>
-                                ${isRecent
+                                ${isRecent && !session.archived
               ? html`
                                       <span class="text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
                                         Última
@@ -470,7 +478,7 @@ export class OmpProjectDetailView extends LitElement {
               : nothing}
                               </div>
                               <span class="text-xs text-foreground-500 font-mono">
-                                ${session.updatedAt || "Recente"}
+                                ${session.updatedAt || (session.archived ? "" : "Recente")}
                               </span>
                             </div>
 
@@ -492,9 +500,17 @@ export class OmpProjectDetailView extends LitElement {
         : html`
                     <div class="p-8 rounded-3xl border border-dashed border-black/10 dark:border-white/10 text-center flex flex-col items-center justify-center text-foreground-500">
                       <span class="text-sm font-bold text-foreground-800 mb-1">Nenhuma sessão encontrada</span>
-                      <p class="text-xs max-w-sm">
-                        Use o composer abaixo para iniciar a primeira sessão de desenvolvimento no repositório ${currentProject.name}.
+                      <p class="text-xs max-w-sm mb-4">
+                        Inicie uma nova sessão de desenvolvimento no repositório ${currentProject.name}.
                       </p>
+                      <button
+                        type="button"
+                        class="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-blue-600 text-white hover:bg-blue-700 transition-colors cursor-pointer"
+                        @click=${() => this.dispatchEvent(new CustomEvent("start-new-session", { detail: { projectId: this.projectId }, bubbles: true, composed: true }))}
+                      >
+                        <span class="text-sm font-light leading-none">+</span>
+                        <span>Iniciar Nova Sessão</span>
+                      </button>
                     </div>
                   `}
             </div>
@@ -510,6 +526,7 @@ export class OmpProjectDetailView extends LitElement {
             <omp-composer
               compact
               .isWorking=${this.isWorking}
+              .projects=${this.projects}
               .selectedProjectId=${this.projectId}
               .placeholder=${`Enviar mensagem no contexto de ${currentProject.name} (${this.activeBranch})...`}
               @project-select=${(e: CustomEvent<{ projectId: string }>) => {
