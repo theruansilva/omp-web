@@ -1,3 +1,4 @@
+import { MobileDrawerController } from "../appShell/mobileDrawerController";
 import { LitElement, html, nothing } from "lit";
 import { customElement, state } from "lit/decorators.js";
 import "./OmpSidebar";
@@ -147,11 +148,31 @@ export class OmpApp extends LitElement {
 
   private readonly sessionSocket = new SessionSocket();
   private readonly realtimeSocket = new RealtimeSocket();
+  private readonly mobileDrawer = new MobileDrawerController(this, {
+    isMobileNavigationLayout: () => typeof window !== "undefined" && window.innerWidth < 768,
+    onStateChange: (open) => {
+      this.isSidebarOpen = open;
+    },
+    getDrawerElement: () => this.querySelector("omp-sidebar") as HTMLElement | null,
+    getBackdropElement: () => this.querySelector(".mobile-sidebar-backdrop") as HTMLElement | null,
+  });
   private readonly workingSessionIds = new Set<string>();
   private readonly unseenCompletedSessionIds = new Set<string>();
   private rawLines: ChatLine[] = [];
   private lastPromptTime = 0;
   private currentConnectedSessionId = "";
+
+  private readonly handleWindowResize = () => {
+    this.mobileDrawer.updateListeners();
+  };
+
+  private toggleSidebar(): void {
+    if (typeof window !== "undefined" && window.innerWidth < 768) {
+      this.mobileDrawer.toggle();
+    } else {
+      this.isSidebarOpen = !this.isSidebarOpen;
+    }
+  }
 
   private syncUrl(options?: { replace?: boolean }) {
     if (typeof window === "undefined" || !window.location) return;
@@ -296,7 +317,9 @@ export class OmpApp extends LitElement {
     }
     if (typeof window !== "undefined") {
       window.addEventListener("popstate", this.handlePopState);
+      window.addEventListener("resize", this.handleWindowResize);
     }
+    this.mobileDrawer.updateListeners();
 
     if (params.get("mock") === "chat") {
       this.messages = [
@@ -329,6 +352,7 @@ export class OmpApp extends LitElement {
     super.disconnectedCallback();
     if (typeof window !== "undefined") {
       window.removeEventListener("popstate", this.handlePopState);
+      window.removeEventListener("resize", this.handleWindowResize);
     }
     this.sessionSocket.close();
     this.realtimeSocket.close();
@@ -645,6 +669,9 @@ export class OmpApp extends LitElement {
   }
 
   private async handleSessionSelect(sessionId: string, projectId?: string) {
+    if (typeof window !== "undefined" && window.innerWidth < 768) {
+      this.mobileDrawer.close();
+    }
     if (projectId && projectId !== this.selectedProjectId) {
       this.selectedProjectId = projectId;
       await this.loadWorkspaces(this.selectedProjectId, false);
@@ -1275,24 +1302,41 @@ Dica: você pode selecionar uma das opções abaixo para testar a injeção auto
         class="flex h-full h-dvh w-full overflow-hidden bg-sidebar-light dark:bg-sidebar-dark font-sans select-none relative"
         data-theme="${this.theme}"
       >
+        <!-- Mobile Floating Drawer Grip (Thumb Zone ~60% height) -->
+        <button
+          type="button"
+          class="mobile-drawer-grip ${!this.isSidebarOpen ? "" : "hidden"}"
+          title="Abrir navegação"
+          aria-label="Abrir navegação"
+          @click=${() => this.mobileDrawer.open()}
+          @touchstart=${this.mobileDrawer.handleTouchStart}
+          @touchmove=${this.mobileDrawer.handleTouchMove}
+          @touchend=${this.mobileDrawer.handleTouchEnd}
+          @touchcancel=${this.mobileDrawer.handleTouchCancel}
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <polyline points="9 18 15 12 9 6"></polyline>
+          </svg>
+        </button>
+
         <!-- Mobile Backdrop Overlay when Drawer is open (z-40) -->
-        ${
-          this.isSidebarOpen
-            ? html`
-              <div
-                class="fixed inset-0 bg-black/40 backdrop-blur-xs z-40 md:hidden transition-opacity"
-                @click=${() => (this.isSidebarOpen = false)}
-              ></div>
-            `
-            : nothing
-        }
+        <div
+          class="mobile-sidebar-backdrop fixed inset-0 bg-black/40 backdrop-blur-xs z-40 md:hidden transition-opacity duration-300 ease-[cubic-bezier(0.43,0.195,0.02,1)] ${
+            this.isSidebarOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+          }"
+          @click=${() => this.mobileDrawer.close()}
+          @touchstart=${this.mobileDrawer.handleTouchStart}
+          @touchmove=${this.mobileDrawer.handleTouchMove}
+          @touchend=${this.mobileDrawer.handleTouchEnd}
+          @touchcancel=${this.mobileDrawer.handleTouchCancel}
+        ></div>
 
         <!-- 1. Sidebar Navigation: z-50 fixed on mobile (above backdrop), relative on desktop -->
         <omp-sidebar
-          class="h-full shrink-0 will-change-auto transition-all duration-300 ease-[cubic-bezier(0.43,0.195,0.02,1)] fixed md:relative inset-y-0 left-0 z-50 md:z-auto shadow-2xl md:shadow-none ${
+          class="h-full shrink-0 will-change-auto transition-all duration-300 ease-[cubic-bezier(0.43,0.195,0.02,1)] fixed md:relative inset-y-0 left-0 z-50 md:z-auto shadow-2xl md:shadow-none w-[280px] md:w-[260px] min-w-[260px] ${
             this.isSidebarOpen
-              ? "w-[280px] md:w-[260px] min-w-[260px] translate-x-0 opacity-100"
-              : "-translate-x-full md:translate-x-0 w-0 md:w-0 min-w-0 p-0 m-0 overflow-hidden md:opacity-0 pointer-events-none"
+              ? "translate-x-0 opacity-100"
+              : "-translate-x-full md:translate-x-0 md:w-0 md:min-w-0 p-0 m-0 overflow-hidden md:opacity-0 pointer-events-none"
           }"
           .activeTab=${this.activeTab}
           .isOpen=${this.isSidebarOpen}
@@ -1300,6 +1344,10 @@ Dica: você pode selecionar uma das opções abaixo para testar a injeção auto
           .sessions=${this.getSidebarSessions()}
           .selectedProjectId=${this.selectedProjectId}
           .selectedSessionId=${this.selectedSessionId}
+          @touchstart=${this.mobileDrawer.handleTouchStart}
+          @touchmove=${this.mobileDrawer.handleTouchMove}
+          @touchend=${this.mobileDrawer.handleTouchEnd}
+          @touchcancel=${this.mobileDrawer.handleTouchCancel}
           @project-select=${(e: CustomEvent<{ projectId: string }>) => {
             this.selectedProjectId = e.detail.projectId;
             this.activeTab = "project-detail";
@@ -1313,7 +1361,7 @@ Dica: você pode selecionar uma das opções abaixo para testar a injeção auto
           @start-new-session=${(e: CustomEvent<{ projectId?: string }>) => void this.handleStartNewSession(e.detail?.projectId)}
           @archive-session=${(e: CustomEvent<{ sessionId: string; projectId?: string }>) => void this.handleArchiveSession(e.detail.sessionId, e.detail.projectId)}
           @nav-select=${(e: CustomEvent<{ tab: string }>) => this.handleNavSelect(e.detail.tab)}
-          @toggle-sidebar=${() => (this.isSidebarOpen = !this.isSidebarOpen)}
+          @toggle-sidebar=${() => this.toggleSidebar()}
           @sign-in=${() => (this.isLoginModalOpen = true)}
         ></omp-sidebar>
 
@@ -1331,7 +1379,7 @@ Dica: você pode selecionar uma das opções abaixo para testar a injeção auto
               .theme=${this.theme}
               .currentUser=${this.currentUser}
               .title=${this.getHeaderTitle()}
-              @toggle-sidebar=${() => (this.isSidebarOpen = !this.isSidebarOpen)}
+              @toggle-sidebar=${() => this.toggleSidebar()}
               @toggle-theme=${() => this.toggleTheme()}
               @sign-in=${() => (this.isLoginModalOpen = true)}
               @sign-out=${() => (this.currentUser = null)}

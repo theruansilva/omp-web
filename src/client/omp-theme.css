@@ -1535,3 +1535,161 @@ html[data-theme="dark"] .composer-dropdown-popover .composer-dropdown-icon {
 .omp-markdown .ui-options-btn:active {
   transform: scale(0.97);
 }
+
+
+/* =========================================================
+   Mobile Sidebar Drawer Grip (Thumb Zone ~60% height)
+   ========================================================= */
+.mobile-drawer-grip {
+  display: none;
+}
+
+@media (max-width: 767px) {
+  .mobile-drawer-grip {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: fixed;
+    left: 0;
+    top: 60%;
+    transform: translateY(-50%);
+    width: 22px;
+    height: 52px;
+    padding: 0;
+    margin: 0;
+    border: 1px solid var(--omp-card-border, rgba(0, 0, 0, 0.1));
+    border-left: none;
+    border-radius: 0 16px 16px 0;
+    background: var(--omp-surface-elevated, #ffffff);
+    color: var(--omp-text-secondary, #666666);
+    box-shadow: 2px 4px 16px rgba(0, 0, 0, 0.15);
+    z-index: 45;
+    cursor: pointer;
+    touch-action: none;
+    -webkit-tap-highlight-color: transparent;
+    transition: opacity 0.2s cubic-bezier(0.43, 0.195, 0.02, 1),
+                transform 0.2s cubic-bezier(0.43, 0.195, 0.02, 1),
+                width 0.15s ease,
+                color 0.15s ease,
+                background-color 0.15s ease;
+    opacity: 0.9;
+  }
+
+  [data-theme="dark"] .mobile-drawer-grip,
+  .dark .mobile-drawer-grip {
+    background: var(--omp-surface-elevated, #1c1b1a);
+    border-color: var(--omp-card-border, rgba(255, 255, 255, 0.12));
+    color: var(--omp-text-secondary, #aaaaaa);
+    box-shadow: 2px 4px 18px rgba(0, 0, 0, 0.4);
+  }
+
+  .mobile-drawer-grip:hover,
+  .mobile-drawer-grip:active {
+    opacity: 1;
+    width: 25px;
+    color: var(--omp-text-primary, #000000);
+  }
+
+  [data-theme="dark"] .mobile-drawer-grip:hover,
+  [data-theme="dark"] .mobile-drawer-grip:active,
+  .dark .mobile-drawer-grip:hover,
+  .dark .mobile-drawer-grip:active {
+    color: var(--omp-text-primary, #ffffff);
+  }
+
+  .mobile-drawer-grip.hidden {
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(-50%) translateX(-100%);
+  }
+
+  .mobile-drawer-grip svg {
+    width: 14px;
+    height: 14px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2.5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    pointer-events: none;
+  }
+}
+
+
+/* =========================================================
+   Mobile Sidebar Drawer Grip (Thumb Zone ~60% height)
+   ========================================================= */
+.mobile-drawer-grip {
+  display: none;
+}
+
+@media (max-width: 767px) {
+  .mobile-drawer-grip {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: fixed;
+    left: 0;
+    top: 60%;
+    transform: translateY(-50%);
+    width: 22px;
+    height: 52px;
+    padding: 0;
+    margin: 0;
+    border: 1px solid var(--omp-card-border, rgba(0, 0, 0, 0.1));
+    border-left: none;
+    border-radius: 0 16px 16px 0;
+    background: var(--omp-surface-elevated, #ffffff);
+    color: var(--omp-text-secondary, #666666);
+    box-shadow: 2px 4px 16px rgba(0, 0, 0, 0.15);
+    z-index: 45;
+    cursor: pointer;
+    touch-action: none;
+    -webkit-tap-highlight-color: transparent;
+    transition: opacity 0.2s cubic-bezier(0.43, 0.195, 0.02, 1),
+                transform 0.2s cubic-bezier(0.43, 0.195, 0.02, 1),
+                width 0.15s ease,
+                color 0.15s ease,
+                background-color 0.15s ease;
+    opacity: 0.9;
+  }
+
+  [data-theme="dark"] .mobile-drawer-grip,
+  .dark .mobile-drawer-grip {
+    background: var(--omp-surface-elevated, #1c1b1a);
+    border-color: var(--omp-card-border, rgba(255, 255, 255, 0.12));
+    color: var(--omp-text-secondary, #aaaaaa);
+    box-shadow: 2px 4px 18px rgba(0, 0, 0, 0.4);
+  }
+
+  .mobile-drawer-grip:hover,
+  .mobile-drawer-grip:active {
+    opacity: 1;
+    width: 25px;
+    color: var(--omp-text-primary, #000000);
+  }
+
+  [data-theme="dark"] .mobile-drawer-grip:hover,
+  [data-theme="dark"] .mobile-drawer-grip:active,
+  .dark .mobile-drawer-grip:hover,
+  .dark .mobile-drawer-grip:active {
+    color: var(--omp-text-primary, #ffffff);
+  }
+
+  .mobile-drawer-grip.hidden {
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(-50%) translateX(-100%);
+  }
+
+  .mobile-drawer-grip svg {
+    width: 14px;
+    height: 14px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2.5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    pointer-events: none;
+  }
+}
