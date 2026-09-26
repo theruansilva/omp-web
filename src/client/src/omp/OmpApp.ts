@@ -1302,23 +1302,6 @@ Dica: você pode selecionar uma das opções abaixo para testar a injeção auto
         class="flex h-full h-dvh w-full overflow-hidden bg-sidebar-light dark:bg-sidebar-dark font-sans select-none relative"
         data-theme="${this.theme}"
       >
-        <!-- Mobile Floating Drawer Grip (Thumb Zone ~60% height) -->
-        <button
-          type="button"
-          class="mobile-drawer-grip ${!this.isSidebarOpen ? "" : "hidden"}"
-          title="Abrir navegação"
-          aria-label="Abrir navegação"
-          @click=${() => this.mobileDrawer.open()}
-          @touchstart=${this.mobileDrawer.handleTouchStart}
-          @touchmove=${this.mobileDrawer.handleTouchMove}
-          @touchend=${this.mobileDrawer.handleTouchEnd}
-          @touchcancel=${this.mobileDrawer.handleTouchCancel}
-        >
-          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-            <polyline points="9 18 15 12 9 6"></polyline>
-          </svg>
-        </button>
-
         <!-- Mobile Backdrop Overlay when Drawer is open (z-40) -->
         <div
           class="mobile-sidebar-backdrop fixed inset-0 bg-black/40 backdrop-blur-xs z-40 md:hidden transition-opacity duration-300 ease-[cubic-bezier(0.43,0.195,0.02,1)] ${
@@ -1333,10 +1316,10 @@ Dica: você pode selecionar uma das opções abaixo para testar a injeção auto
 
         <!-- 1. Sidebar Navigation: z-50 fixed on mobile (above backdrop), relative on desktop -->
         <omp-sidebar
-          class="h-full shrink-0 will-change-auto transition-all duration-300 ease-[cubic-bezier(0.43,0.195,0.02,1)] fixed md:relative inset-y-0 left-0 z-50 md:z-auto shadow-2xl md:shadow-none w-[280px] md:w-[260px] min-w-[260px] ${
-            this.isSidebarOpen
-              ? "translate-x-0 opacity-100"
-              : "-translate-x-full md:translate-x-0 md:w-0 md:min-w-0 p-0 m-0 overflow-hidden md:opacity-0 pointer-events-none"
+          class="h-full shrink-0 will-change-auto transition-all duration-300 ease-[cubic-bezier(0.43,0.195,0.02,1)] fixed md:relative inset-y-0 left-0 z-50 md:z-auto shadow-2xl md:shadow-none ${
+            this.isSidebarOpen || this.mobileDrawer.isDragging
+              ? "w-[280px] md:w-[260px] min-w-[260px] translate-x-0 opacity-100"
+              : "-translate-x-full md:translate-x-0 w-0 md:w-0 min-w-0 md:min-w-0 p-0 m-0 overflow-hidden md:opacity-0 pointer-events-none"
           }"
           .activeTab=${this.activeTab}
           .isOpen=${this.isSidebarOpen}
