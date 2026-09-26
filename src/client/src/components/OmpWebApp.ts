@@ -2131,8 +2131,24 @@ export class OmpWebApp extends LitElement {
 
   private renderMobileDrawer() {
     if (!this.appShell.isMobileNavigationLayout) return null;
+    const isClosed = !this.mobileDrawer.isOpen;
     return html`
-      ${!this.mobileDrawer.isOpen ? html`
+      <button
+        type="button"
+        class="mobile-drawer-grip ${isClosed ? "" : "hidden"}"
+        title="Open Sessions"
+        aria-label="Open Sessions"
+        @click=${() => { this.mobileDrawer.open(); }}
+        @touchstart=${this.mobileDrawer.handleTouchStart}
+        @touchmove=${this.mobileDrawer.handleTouchMove}
+        @touchend=${this.mobileDrawer.handleTouchEnd}
+        @touchcancel=${this.mobileDrawer.handleTouchCancel}
+      >
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <polyline points="9 18 15 12 9 6"></polyline>
+        </svg>
+      </button>
+      ${isClosed ? html`
         <div
           class="mobile-drawer-edge-swipe-zone"
           @touchstart=${this.mobileDrawer.handleTouchStart}

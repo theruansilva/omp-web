@@ -90,7 +90,7 @@ export const appStyles = css`
   .mobile-tabs-frame.can-scroll-left::before, .mobile-tabs-frame.can-scroll-right::after { opacity: 1; }
   .mobile-tabs { flex: 1 1 auto; min-width: 0; display: flex; align-items: center; gap: 6px; padding: 8px; overflow-x: auto; overflow-y: hidden; overscroll-behavior-x: contain; scrollbar-width: thin; }
   .mobile-tabs button { flex: 0 0 auto; white-space: nowrap; }
-  .mobile-navigation-tab, .mobile-navigation-panel, .mobile-drawer, .mobile-drawer-backdrop, .mobile-drawer-edge-swipe-zone { display: none; }
+  .mobile-navigation-tab, .mobile-navigation-panel, .mobile-drawer, .mobile-drawer-backdrop, .mobile-drawer-edge-swipe-zone, .mobile-drawer-grip { display: none; }
   .mobile-tabs button.selected { border-color: var(--pi-accent); background: var(--pi-selection-bg); }
   .tab-badge { display: inline-block; min-width: 14px; margin-left: 4px; border: 1px solid var(--pi-success-border); border-radius: 999px; background: var(--pi-success-surface); color: var(--pi-success); padding: 0 5px; font-size: 11px; line-height: 16px; text-align: center; }
   .navigation-panel-edge, .workspace-panel-edge { min-width: 0; min-height: 0; display: flex; align-items: center; justify-content: center; overflow: visible; background: var(--pi-border-muted); z-index: 2; }
@@ -154,6 +154,53 @@ export const appStyles = css`
     main.navigation-view .mobile-navigation-panel project-list[collapsed],
     main.navigation-view .mobile-navigation-panel workspace-list[collapsed],
     main.navigation-view .mobile-navigation-panel session-list[collapsed] { flex: 0 0 auto; min-height: auto; overflow: hidden; }
+    .mobile-drawer-grip {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: fixed;
+      left: 0;
+      top: 60%;
+      transform: translateY(-50%);
+      width: 22px;
+      height: 52px;
+      padding: 0;
+      margin: 0;
+      border: 1px solid var(--pi-border);
+      border-left: none;
+      border-radius: 0 16px 16px 0;
+      background: var(--pi-surface);
+      color: var(--pi-muted);
+      box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.28);
+      z-index: 995;
+      cursor: pointer;
+      touch-action: none;
+      -webkit-tap-highlight-color: transparent;
+      transition: opacity 0.2s ease, transform 0.2s ease, color 0.15s ease, background 0.15s ease;
+      opacity: 0.85;
+    }
+    .mobile-drawer-grip:hover,
+    .mobile-drawer-grip:active {
+      opacity: 1;
+      color: var(--pi-text);
+      background: var(--pi-surface-hover);
+      width: 24px;
+    }
+    .mobile-drawer-grip.hidden {
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(-50%) translateX(-100%);
+    }
+    .mobile-drawer-grip svg {
+      width: 14px;
+      height: 14px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2.2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      pointer-events: none;
+    }
     .mobile-drawer-edge-swipe-zone { display: block; position: fixed; top: 0; bottom: 0; left: 0; width: 44px; z-index: 999; touch-action: none; pointer-events: auto; }
     .mobile-drawer-backdrop { display: block; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(2px); -webkit-backdrop-filter: blur(2px); z-index: 1000; opacity: 0; pointer-events: none; transition: opacity .25s ease; will-change: opacity; }
     .mobile-drawer-backdrop.open { opacity: 1; pointer-events: auto; }
