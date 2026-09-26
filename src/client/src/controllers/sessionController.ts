@@ -193,7 +193,7 @@ export class SessionController {
 
   async send(text: string, streamingBehavior?: "steer" | "followUp", attachments?: PromptAttachment[], delivery: PromptAttachmentDelivery = "inline") {
     const session = this.getState().selectedSession;
-    if (!session || session.archived === true) return;
+    if (!session) return;
 
     const trimmed = text.trim();
     const hasAttachments = attachments !== undefined && attachments.length > 0;
@@ -217,13 +217,13 @@ export class SessionController {
 
   async runShell(text: string) {
     const session = this.getState().selectedSession;
-    if (!session || session.archived === true) return;
+    if (!session) return;
     await this.deliverShellToSession(session, text, selectedMachineId(this.getState()), { optimisticLine: true });
   }
 
   async runCommand(text: string) {
     const session = this.getState().selectedSession;
-    if (!session || session.archived === true) return;
+    if (!session) return;
     const [name = ""] = text.trim().replace(/^\//, "").split(/\s+/);
     const commandName = name.toLowerCase();
     if (commandName === "exit" || commandName === "quit") {
@@ -292,6 +292,14 @@ export class SessionController {
   private async deliverPromptToSession(session: SessionInfo, text: string, streamingBehavior: "steer" | "followUp" | undefined, attachments: PromptAttachment[] | undefined, delivery: PromptAttachmentDelivery, machineId: string, options: { markSending: boolean }): Promise<boolean> {
     const hasAttachments = attachments !== undefined && attachments.length > 0;
     if (options.markSending) this.markSendingPrompt(session.id, true);
+    if (session.archived === true) {
+      this.socket.connect(
+        session,
+        (event) => { this.applyEvent(event); },
+        () => { void this.refreshSelectedSession(session.id); },
+        machineId,
+      );
+    }
     try {
       if (hasAttachments && delivery === "folder") {
         const saved = await this.api.saveAttachments(session, attachments, machineId);
@@ -301,6 +309,15 @@ export class SessionController {
         await this.api.prompt(session, body, streamingBehavior, machineId);
       } else {
         await this.api.prompt(session, text, streamingBehavior, machineId, attachments);
+      }
+      if (session.archived === true) {
+        const restored = { ...session };
+        delete restored.archived;
+        delete restored.archivedAt;
+        this.replaceSession(restored);
+        if (this.getState().selectedSession?.id === session.id) {
+          this.setState({ selectedSession: restored });
+        }
       }
       this.markCachedNewSessionPersisted(session);
       return true;
@@ -316,8 +333,25 @@ export class SessionController {
     if (options.optimisticLine && this.getState().selectedSession?.id === session.id) {
       this.setState({ messages: [...this.getState().messages, textMessage("user", text)] });
     }
+    if (session.archived === true) {
+      this.socket.connect(
+        session,
+        (event) => { this.applyEvent(event); },
+        () => { void this.refreshSelectedSession(session.id); },
+        machineId,
+      );
+    }
     try {
       await this.api.shell(session, text, machineId);
+      if (session.archived === true) {
+        const restored = { ...session };
+        delete restored.archived;
+        delete restored.archivedAt;
+        this.replaceSession(restored);
+        if (this.getState().selectedSession?.id === session.id) {
+          this.setState({ selectedSession: restored });
+        }
+      }
       this.markCachedNewSessionPersisted(session);
       return true;
     } catch (error) {
@@ -334,9 +368,26 @@ export class SessionController {
     // message. Inserting the raw text here would leave a line that doesn't
     // converge with server history and disappears on reload. Surface the same
     // per-session sending indicator that send() uses for the pre-receipt window.
+    if (session.archived === true) {
+      this.socket.connect(
+        session,
+        (event) => { this.applyEvent(event); },
+        () => { void this.refreshSelectedSession(session.id); },
+        machineId,
+      );
+    }
     this.markSendingPrompt(session.id, true);
     try {
       const result = await this.api.runCommand(session, text, machineId);
+      if (session.archived === true) {
+        const restored = { ...session };
+        delete restored.archived;
+        delete restored.archivedAt;
+        this.replaceSession(restored);
+        if (this.getState().selectedSession?.id === session.id) {
+          this.setState({ selectedSession: restored });
+        }
+      }
       if (options.applyResult && this.getState().selectedSession?.id === session.id) this.applyCommandResult(result);
       else if (result.type === "select") this.setState({ error: `Queued command “${text}” needs input; open the session and run it again.` });
       this.markCachedNewSessionPersisted(session);

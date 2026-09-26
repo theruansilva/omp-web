@@ -251,7 +251,7 @@ export interface PiSessionServiceDependencies {
  createAgentRuntime?: CreateAgentRuntime;
  modelRegistry?: ModelRegistryInstance;
  heartbeatIntervalMs?: number;
- /** Inactivity threshold (ms) before an idle in-memory session is evicted/dormant. Defaults to 1 hour. */
+ /** Inactivity threshold (ms) before an idle in-memory session is evicted/dormant. Defaults to 10 minutes. */
  idleEvictionMs?: number;
  /** Inactivity threshold (ms) before an inactive session is automatically archived. Defaults to 24 hours. */
  autoArchiveIdleMs?: number;
@@ -353,7 +353,7 @@ export class PiSessionService {
    );
   this.createAgentRuntime = deps.createAgentRuntime ?? defaultCreateAgentRuntime;
   this.workspaceActivity = deps.workspaceActivity;
-  this.idleEvictionMs = deps.idleEvictionMs ?? (60 * 60 * 1000);
+  this.idleEvictionMs = deps.idleEvictionMs ?? (10 * 60 * 1000);
   this.autoArchiveIdleMs = deps.autoArchiveIdleMs ?? (24 * 60 * 60 * 1000);
   this.autoArchiveIntervalMs = deps.autoArchiveIntervalMs ?? (60 * 1000);
   this.heartbeat = setInterval(() => { this.publishHeartbeats(); }, deps.heartbeatIntervalMs ?? 2000);
@@ -1012,7 +1012,7 @@ export class PiSessionService {
   const requestedBehavior = parsePromptStreamingBehavior(streamingBehavior);
   const parsedAttachments = parsePromptAttachments(attachments, { enforceInlineSizeLimit: false });
   const images = attachmentsToInlineImages(parsedAttachments).map((entry) => entry.image);
-  await this.assertWritable(ref);
+  await this.ensureWritableOrRestore(ref);
   const session = await this.getOrOpen(ref);
   this.maybeGenerateSessionName(session, promptText);
   const isQueued = session.isStreaming || session.isCompacting;
@@ -1053,13 +1053,13 @@ export class PiSessionService {
  async saveAttachments(ref: PiSessionLookup, attachments: unknown, folder?: string): Promise<SavedPromptAttachment[]> {
   const parsed = parsePromptAttachments(attachments, { enforceInlineSizeLimit: false, allowFileAttachments: true });
   if (parsed.length === 0) return [];
-  await this.assertWritable(ref);
+  await this.ensureWritableOrRestore(ref);
   const active = await this.getActive(ref);
   return saveAttachmentsToWorkspace(active.runtime.cwd, parsed, folder === undefined ? {} : { folder });
  }
 
  async shell(ref: PiSessionLookup, text: string): Promise<void> {
-  await this.assertWritable(ref);
+  await this.ensureWritableOrRestore(ref);
   const active = await this.getActive(ref);
   const { session } = active.runtime;
   const isExcluded = text.startsWith("!!");
@@ -1093,7 +1093,7 @@ export class PiSessionService {
  }
 
  async runCommand(ref: PiSessionLookup, text: string): Promise<ClientCommandResult> {
-  await this.assertWritable(ref);
+  await this.ensureWritableOrRestore(ref);
   const active = await this.getActive(ref);
   return this.commandService.run(active.runtime.session.sessionId, text);
  }
@@ -1230,6 +1230,19 @@ export class PiSessionService {
   if (archived === undefined) throw new Error("Session not found");
   await this.closeActive(archived.sessionId);
   await this.archiveStore.restore(archived.sessionId);
+  const restoredStatus: ClientSessionStatus = {
+   sessionId: archived.sessionId,
+   isStreaming: false,
+   isCompacting: false,
+   isBashRunning: false,
+   pendingMessageCount: 0,
+   queuedMessages: [],
+   tokens: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, total: 0 },
+   cost: 0,
+   archived: false,
+  };
+  this.events.publish(archived.sessionId, { type: "status.update", status: restoredStatus });
+  this.events.publishGlobal({ type: "status.update", status: restoredStatus });
  }
 
  async deleteArchived(ref: PiSessionLookup): Promise<void> {
@@ -1578,6 +1591,14 @@ export class PiSessionService {
 
  private async assertWritable(ref: PiSessionLookup): Promise<void> {
   if (await this.getArchived(ref) !== undefined) throw new Error("Archived sessions are read-only. Restore the session to continue.");
+ }
+
+ private async ensureWritableOrRestore(ref: PiSessionLookup): Promise<void> {
+  const archived = await this.getArchived(ref);
+  if (archived !== undefined) {
+   this.logger.info({ sessionId: archived.sessionId }, "Restoring archived session upon receiving user interaction");
+   await this.restore(ref);
+  }
  }
 
  private async getOrOpen(ref: PiSessionLookup): Promise<PiAgentSession> {

@@ -984,6 +984,35 @@ describe("PiSessionService", () => {
     await service.dispose();
   });
 
+  it("automatically restores an archived session when receiving a prompt", async () => {
+    const fake = fakeRuntime("archived-session");
+    const archived = new Map<string, { sessionId: string; cwd: string; archivedAt: string; archivePath?: string }>();
+    archived.set("archived-session", { sessionId: "archived-session", cwd: "/workspace", archivedAt: "2026-01-01T00:00:00.000Z", archivePath: "/archive/archived-session.jsonl" });
+    const restoreCalls: string[] = [];
+    const service = new PiSessionService(new CapturingSessionEventHub(), {
+      createAgentRuntime: runtimeCreator(fake.runtime),
+      sessionManager: sessionGateway([sessionRecord("archived-session")]),
+      archiveStore: {
+        list: () => Promise.resolve([...archived.values()]),
+        get: (id) => Promise.resolve(archived.get(id)),
+        archive: () => Promise.reject(new Error("should not be called")),
+        restore: (id) => {
+          restoreCalls.push(id);
+          archived.delete(id);
+          return Promise.resolve();
+        },
+        isArchived: (id) => Promise.resolve(archived.has(id)),
+      },
+      heartbeatIntervalMs: 60_000,
+    });
+
+    await service.prompt(sessionRef("archived-session"), "Revive and continue");
+
+    expect(restoreCalls).toEqual(["archived-session"]);
+    expect(fake.calls.prompt).toEqual([{ text: "Revive and continue", options: undefined }]);
+    await service.dispose();
+  });
+
   it("echoes the user message for direct prompts but not command-forwarded ones", async () => {
     const fake = fakeRuntime("echo-session", {
       resourceLoader: { getSkills: () => ({ skills: [{ name: "skill-creator" }] }) },

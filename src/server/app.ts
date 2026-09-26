@@ -277,6 +277,13 @@ export async function buildApp(deps: AppDependencies = {}): Promise<BuiltApp> {
   const packagedClientDist = join(dirname(fileURLToPath(import.meta.url)), "..", "client");
   const clientDist = deps.clientDist ?? (existsSync(packagedClientDist) ? packagedClientDist : join(process.cwd(), "dist", "client"));
   if (clientDist !== false && existsSync(clientDist)) {
+    app.get("/omp", (c) => {
+      const ompHtmlPath = join(clientDist, "omp.html");
+      if (existsSync(ompHtmlPath)) {
+        return c.html(readFileSync(ompHtmlPath, "utf8"));
+      }
+      return c.text("OMP Web UI not found", 404);
+    });
     app.use("/*", serveStatic({ root: clientDist }));
     app.notFound((c) => {
       const indexHtmlPath = join(clientDist, "index.html");
