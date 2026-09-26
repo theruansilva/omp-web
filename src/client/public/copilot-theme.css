@@ -29,9 +29,9 @@
   --copilot-text-muted: oklch(62% 0.008 56); /* #888888 */
 
   /* 4. Action & Brand Semantics */
-  --copilot-primary: oklch(20% 0.006 56);
-  --copilot-primary-hover: oklch(0% 0 0);
-  --copilot-on-primary: oklch(100% 0 0);
+  --copilot-primary: rgb(var(--color-muted-450, 135 103 78));
+  --copilot-primary-hover: rgb(var(--color-muted-550, 115 85 62));
+  --copilot-on-primary: #ffffff;
 
   --copilot-secondary: oklch(94% 0.008 56);
   --copilot-secondary-hover: oklch(90% 0.01 56);
@@ -94,9 +94,9 @@
   --copilot-text-muted: oklch(54% 0.02 260); /* #64748B */
 
   /* 4. Action & Brand Semantics (Dark) */
-  --copilot-primary: oklch(100% 0 0);
-  --copilot-primary-hover: oklch(92% 0 0);
-  --copilot-on-primary: oklch(20% 0.006 56);
+  --copilot-primary: rgb(var(--color-muted-450, 82 92 123));
+  --copilot-primary-hover: rgb(var(--color-muted-550, 102 113 148));
+  --copilot-on-primary: #ffffff;
 
   --copilot-secondary: oklch(25% 0.02 260);
   --copilot-secondary-hover: oklch(30% 0.02 260);

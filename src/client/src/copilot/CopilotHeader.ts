@@ -7,6 +7,7 @@ export class CopilotHeader extends LitElement {
   @property({ type: Boolean }) isSidebarOpen = true;
   @property({ type: String }) override title = "";
   @property({ type: String }) theme: "dark" | "light" = "light";
+  @property({ type: String }) currentUser: string | null = null;
 
   protected override createRenderRoot() {
     return this;
@@ -46,14 +47,38 @@ export class CopilotHeader extends LitElement {
             ${this.theme === "dark" ? renderSunIcon() : renderMoonIcon()}
           </button>
 
-          <!-- Sign In Button (Exact original Microsoft Copilot rect/strong 36-sm style) -->
-          <button
-            type="button"
-            class="copilot-btn-signin h-9 px-3.5 py-1 rounded-xl flex items-center justify-center text-sm font-medium cursor-pointer shadow-sm active:scale-98"
-            @click=${() => this.dispatchEvent(new CustomEvent("sign-in", { bubbles: true, composed: true }))}
-          >
-            Sign in
-          </button>
+          <!-- Sign In / Active User Profile -->
+          ${this.currentUser
+            ? html`
+                <div class="flex items-center gap-2">
+                  <div
+                    class="h-9 px-3 rounded-xl flex items-center gap-2 text-sm font-medium bg-[var(--copilot-surface-elevated)] border border-[var(--copilot-border-subtle)] text-[var(--copilot-text-primary)] shadow-sm"
+                  >
+                    <div class="size-5 rounded-full bg-[var(--copilot-accent)] text-[var(--copilot-on-accent)] flex items-center justify-center text-xs font-bold uppercase">
+                      ${this.currentUser.charAt(0)}
+                    </div>
+                    <span class="max-w-[120px] truncate">${this.currentUser}</span>
+                  </div>
+                  <button
+                    type="button"
+                    title="Sair"
+                    aria-label="Sair da conta"
+                    class="h-9 px-2.5 rounded-xl flex items-center justify-center text-xs font-medium text-[var(--copilot-text-muted)] hover:text-red-500 hover:bg-black/5 dark:hover:bg-white/10 transition-colors cursor-pointer"
+                    @click=${() => this.dispatchEvent(new CustomEvent("sign-out", { bubbles: true, composed: true }))}
+                  >
+                    Sair
+                  </button>
+                </div>
+              `
+            : html`
+                <button
+                  type="button"
+                  class="copilot-btn-signin h-9 px-3.5 py-1 rounded-xl flex items-center justify-center text-sm font-medium cursor-pointer shadow-sm active:scale-98"
+                  @click=${() => this.dispatchEvent(new CustomEvent("sign-in", { bubbles: true, composed: true }))}
+                >
+                  Sign in
+                </button>
+              `}
         </div>
       </header>
     `;
