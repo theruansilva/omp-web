@@ -77,3 +77,146 @@ describe("OmpComposer Auto-Resize", () => {
     expect(mockTextarea.style.overflowY).toBe("auto");
   });
 });
+
+describe("OmpComposer Enter Key Behavior (Mobile & PC)", () => {
+  it("on PC (non-mobile): Enter submits the prompt", () => {
+    const composer = new OmpComposer();
+    composer.promptEnterMedia = { matches: false };
+    composer.value = "Hello world";
+
+    let submitted = false;
+    composer.addEventListener("submit-prompt", () => {
+      submitted = true;
+    });
+
+    let prevented = false;
+    const event = {
+      key: "Enter",
+      shiftKey: false,
+      preventDefault: () => {
+        prevented = true;
+      },
+    } as unknown as KeyboardEvent;
+
+    (composer as any).handleKeyDown(event);
+
+    expect(submitted).toBe(true);
+    expect(prevented).toBe(true);
+  });
+
+  it("on PC (non-mobile): Shift+Enter does NOT submit (allows newline)", () => {
+    const composer = new OmpComposer();
+    composer.promptEnterMedia = { matches: false };
+    composer.value = "Hello world";
+
+    let submitted = false;
+    composer.addEventListener("submit-prompt", () => {
+      submitted = true;
+    });
+
+    let prevented = false;
+    // User presses Shift
+    (composer as any).handleKeyDown({
+      key: "Shift",
+      shiftKey: true,
+      preventDefault: () => {},
+    } as unknown as KeyboardEvent);
+
+    // User presses Enter while Shift is active
+    const event = {
+      key: "Enter",
+      shiftKey: true,
+      preventDefault: () => {
+        prevented = true;
+      },
+    } as unknown as KeyboardEvent;
+
+    (composer as any).handleKeyDown(event);
+
+    expect(submitted).toBe(false);
+    expect(prevented).toBe(false);
+  });
+
+  it("on Mobile: Enter does NOT submit (allows newline)", () => {
+    const composer = new OmpComposer();
+    composer.promptEnterMedia = { matches: true };
+    composer.value = "Hello mobile";
+
+    let submitted = false;
+    composer.addEventListener("submit-prompt", () => {
+      submitted = true;
+    });
+
+    let prevented = false;
+    const event = {
+      key: "Enter",
+      shiftKey: false,
+      preventDefault: () => {
+        prevented = true;
+      },
+    } as unknown as KeyboardEvent;
+
+    (composer as any).handleKeyDown(event);
+
+    expect(submitted).toBe(false);
+    expect(prevented).toBe(false);
+  });
+
+  it("on Mobile: Shift+Enter with explicit Shift keydown submits", () => {
+    const composer = new OmpComposer();
+    composer.promptEnterMedia = { matches: true };
+    composer.value = "Hello mobile hardware keyboard";
+
+    let submitted = false;
+    composer.addEventListener("submit-prompt", () => {
+      submitted = true;
+    });
+
+    let prevented = false;
+    // Explicit shift keydown (e.g. bluetooth keyboard)
+    (composer as any).handleKeyDown({
+      key: "Shift",
+      shiftKey: true,
+      preventDefault: () => {},
+    } as unknown as KeyboardEvent);
+
+    const event = {
+      key: "Enter",
+      shiftKey: true,
+      preventDefault: () => {
+        prevented = true;
+      },
+    } as unknown as KeyboardEvent;
+
+    (composer as any).handleKeyDown(event);
+
+    expect(submitted).toBe(true);
+    expect(prevented).toBe(true);
+  });
+
+  it("on Mobile: virtual keyboard autocapitalize Shift on Enter does NOT submit", () => {
+    const composer = new OmpComposer();
+    composer.promptEnterMedia = { matches: true };
+    composer.value = "Hello mobile virtual keyboard";
+
+    let submitted = false;
+    composer.addEventListener("submit-prompt", () => {
+      submitted = true;
+    });
+
+    let prevented = false;
+    // No prior explicit Shift keydown, but event has shiftKey: true (touch keyboard autocapitalize)
+    const event = {
+      key: "Enter",
+      shiftKey: true,
+      preventDefault: () => {
+        prevented = true;
+      },
+    } as unknown as KeyboardEvent;
+
+    (composer as any).handleKeyDown(event);
+
+    expect(submitted).toBe(false);
+    expect(prevented).toBe(false);
+  });
+});

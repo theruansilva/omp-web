@@ -26,6 +26,13 @@ import {
   type CapturedAttachment,
 } from "../promptAttachmentCapture";
 import type { PromptAttachment } from "../../../shared/apiTypes";
+import {
+  createMobilePromptEnterMedia,
+  readPromptEnterPreference,
+  shouldSendPromptOnEnterShortcut,
+  shouldUsePromptEnterShiftShortcut,
+  type PromptEnterMedia,
+} from "../promptEnterBehavior";
 
 export interface PendingAttachment extends CapturedAttachment {
   readonly id: string;
@@ -166,6 +173,8 @@ export class OmpComposer extends LitElement {
   @property({ type: Boolean }) isBtwMode = false;
   @property({ attribute: false }) onBranchBtw?: () => void | Promise<void>;
   @property({ attribute: false }) onCloseBtw?: () => void;
+  @property({ attribute: false }) promptEnterMedia?: PromptEnterMedia = createMobilePromptEnterMedia();
+  private explicitShiftKeyActive = false;
 
   @state() private attachments: PendingAttachment[] = [];
   @state() private attachmentError?: string;
@@ -1264,6 +1273,10 @@ export class OmpComposer extends LitElement {
   }
 
   private handleKeyDown(e: KeyboardEvent) {
+    if (e.key === "Shift") {
+      this.explicitShiftKeyActive = true;
+      return;
+    }
     if (this.slashCommandsOpen) {
       if (e.key === "ArrowDown") {
         e.preventDefault();
@@ -1310,10 +1323,38 @@ export class OmpComposer extends LitElement {
       return;
     }
 
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      this.submit();
+    if (e.key === "Enter") {
+      if (e.defaultPrevented || e.isComposing) return;
+      const shiftKey = shouldUsePromptEnterShiftShortcut(
+        e.shiftKey,
+        this.explicitShiftKeyActive,
+        this.promptEnterMedia,
+      );
+      this.explicitShiftKeyActive = false;
+
+      if (
+        shouldSendPromptOnEnterShortcut(
+          shiftKey,
+          this.promptEnterMedia,
+          readPromptEnterPreference(),
+        )
+      ) {
+        e.preventDefault();
+        this.submit();
+      }
+    } else {
+      this.explicitShiftKeyActive = false;
     }
+  }
+
+  private handleKeyUp(e: KeyboardEvent) {
+    if (e.key === "Shift") {
+      this.explicitShiftKeyActive = false;
+    }
+  }
+
+  private handleBlur() {
+    this.explicitShiftKeyActive = false;
   }
 
   private submit() {
@@ -1984,6 +2025,8 @@ export class OmpComposer extends LitElement {
                     .value=${this.value}
                     @input=${(e: Event) => this.handleInput(e)}
                     @keydown=${(e: KeyboardEvent) => this.handleKeyDown(e)}
+                    @keyup=${(e: KeyboardEvent) => this.handleKeyUp(e)}
+                    @blur=${() => this.handleBlur()}
                     @paste=${(e: ClipboardEvent) => this.handlePaste(e)}
                   ></textarea>
                 </div>
