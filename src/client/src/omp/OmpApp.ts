@@ -1,21 +1,21 @@
 import { LitElement, html, nothing } from "lit";
 import { customElement, state } from "lit/decorators.js";
-import "./CopilotSidebar";
-import "./CopilotHeader";
-import "./CopilotHomeView";
-import "./CopilotChatView";
-import "./CopilotDiscoverView";
-import "./CopilotLabsView";
-import "./CopilotImagineView";
-import "./CopilotShoppingView";
-import "./CopilotLoginModal";
-import "./CopilotTasksBanner";
-import "./CopilotLibraryView";
-import type { ChatMessage } from "./CopilotChatView";
-import type { SubmitPromptDetail } from "./CopilotComposer";
+import "./OmpSidebar";
+import "./OmpHeader";
+import "./OmpHomeView";
+import "./OmpChatView";
+import "./OmpDiscoverView";
+import "./OmpLabsView";
+import "./OmpImagineView";
+import "./OmpShoppingView";
+import "./OmpLoginModal";
+import "./OmpTasksBanner";
+import "./OmpLibraryView";
+import type { ChatMessage } from "./OmpChatView";
+import type { SubmitPromptDetail } from "./OmpComposer";
 
-@customElement("copilot-app")
-export class CopilotApp extends LitElement {
+@customElement("omp-app")
+export class OmpApp extends LitElement {
   @state() private activeTab = "new-chat";
   @state() private isSidebarOpen = true;
   @state() private theme: "dark" | "light" = "dark";
@@ -57,13 +57,13 @@ export class CopilotApp extends LitElement {
         {
           id: "msg-1",
           role: "user",
-          text: "Olá! Como o Copilot pode me ajudar?",
+          text: "Olá! Como o OMP pode me ajudar?",
           timestamp: "10:30",
         },
         {
           id: "msg-2",
           role: "assistant",
-          text: "Olá! O Copilot é seu assistente de inteligência artificial recriado com 100% de fidelidade visual, consumindo as classes, fontes e tokens originais da Microsoft!",
+          text: "Olá! O OMP é seu cockpit de inteligência artificial definitivo, com design acrílico e tokens semânticos OKLCH!",
           timestamp: "10:30",
         },
       ];
@@ -146,7 +146,7 @@ export class CopilotApp extends LitElement {
       return `Here is your conceptual visualization:\n\n✨ **Generated Creative Direction:**\n- Style: High-fidelity digital rendering\n- Palette: Atmospheric illumination & cinematic contrast\n- Subject: ${prompt.replace(/create an image:?/i, "").trim()}\n\nWould you like me to refine the color grading, aspect ratio, or artistic medium?`;
     }
     if (lower.includes("audio") || lower.includes("expression")) {
-      return `Copilot Audio Expressions allows generative voice and sound synthesis directly within your workflows.\n\nKey capabilities:\n1. **Zero-shot Emotion Control**: Modulate pitch, cadence, and vocal emphasis.\n2. **Multilingual Resonance**: Real-time translation with preserved timbre.\n3. **Soundscapes**: Ambient generative audio beds generated on demand.`;
+      return `OMP Audio Expressions allows generative voice and sound synthesis directly within your workflows.\n\nKey capabilities:\n1. **Zero-shot Emotion Control**: Modulate pitch, cadence, and vocal emphasis.\n2. **Multilingual Resonance**: Real-time translation with preserved timbre.\n3. **Soundscapes**: Ambient generative audio beds generated on demand.`;
     }
     if (
       lower.includes("shopping") ||
@@ -158,7 +158,7 @@ export class CopilotApp extends LitElement {
     ) {
       return `Here are the top shopping recommendations based on verified buyer reviews, current promotions, and price analysis:\n\n- **Pricing & Discounts**: Filtered for verified seasonal deals with best-price matching.\n- **Review Aggregation**: High-sentiment highlights extracted across major retailers.\n- **Quality Benchmarks**: Premium materials, standard warranty support, and durability ratings.\n\nLet me know if you would like a side-by-side comparison table!`;
     }
-    return `Certainly! Regarding **"${prompt}"**:\n\nCopilot provides straightforward reasoning, real-time research, and creative assistance. Everything is running natively in your Lit components interface with full Light DOM styling, responsive mobile drawer, and Squircles integration.\n\nHow else can I assist your workflow today?`;
+    return `Certainly! Regarding **"${prompt}"**:\n\nOMP provides straightforward reasoning, real-time research, and creative assistance. Everything is running natively in your Lit components interface with full Light DOM styling, responsive mobile drawer, and Squircles integration.\n\nHow else can I assist your workflow today?`;
   }
 
   private getHeaderTitle(): string {
@@ -185,56 +185,56 @@ export class CopilotApp extends LitElement {
       case "new-chat":
         return this.messages.length === 0
           ? html`
-              <copilot-home-view
+              <omp-home-view
                 .isWorking=${this.isStreaming}
                 @submit-prompt=${(e: CustomEvent<SubmitPromptDetail>) => this.handlePromptSubmit(e.detail)}
-              ></copilot-home-view>
+              ></omp-home-view>
             `
           : html`
-              <copilot-chat-view
+              <omp-chat-view
                 .messages=${this.messages}
                 .isStreaming=${this.isStreaming}
                 .isFirstPrompt=${this.isFirstPrompt}
                 @submit-prompt=${(e: CustomEvent<SubmitPromptDetail>) => this.handlePromptSubmit(e.detail)}
-              ></copilot-chat-view>
+              ></omp-chat-view>
             `;
 
       case "discover":
         return html`
-          <copilot-discover-view
+          <omp-discover-view
             .isWorking=${this.isStreaming}
             @submit-prompt=${(e: CustomEvent<SubmitPromptDetail>) => this.handlePromptSubmit(e.detail)}
-          ></copilot-discover-view>
+          ></omp-discover-view>
         `;
 
       case "shopping":
         return html`
-          <copilot-shopping-view
+          <omp-shopping-view
             .isWorking=${this.isStreaming}
             @submit-prompt=${(e: CustomEvent<SubmitPromptDetail>) => this.handlePromptSubmit(e.detail)}
-          ></copilot-shopping-view>
+          ></omp-shopping-view>
         `;
 
       case "imagine":
         return html`
-          <copilot-imagine-view
+          <omp-imagine-view
             @submit-prompt=${(e: CustomEvent<SubmitPromptDetail>) => this.handlePromptSubmit(e.detail)}
-          ></copilot-imagine-view>
+          ></omp-imagine-view>
         `;
 
       case "labs":
         return html`
-          <copilot-labs-view
+          <omp-labs-view
             @submit-prompt=${(e: CustomEvent<SubmitPromptDetail>) => this.handlePromptSubmit(e.detail)}
-          ></copilot-labs-view>
+          ></omp-labs-view>
         `;
 
       case "library":
         return html`
-          <copilot-library-view
+          <omp-library-view
             .isWorking=${this.isStreaming}
             @submit-prompt=${(e: CustomEvent<SubmitPromptDetail>) => this.handlePromptSubmit(e.detail)}
-          ></copilot-library-view>
+          ></omp-library-view>
         `;
 
       case "tasks":
@@ -246,9 +246,9 @@ export class CopilotApp extends LitElement {
               <p class="text-sm text-foreground-500 max-w-sm mb-6">Schedule background reasoning, recurring research summaries, and automated project tracking.</p>
             </div>
             <div class="fixed bottom-0 flex w-full items-center justify-center px-4 pointer-events-none z-20">
-              <copilot-tasks-banner
+              <omp-tasks-banner
                 @sign-in=${() => (this.isLoginModalOpen = true)}
-              ></copilot-tasks-banner>
+              ></omp-tasks-banner>
             </div>
           </div>
         `;
@@ -260,7 +260,7 @@ export class CopilotApp extends LitElement {
 
   override render() {
     return html`
-      <!-- Microsoft Copilot Shell Architecture -->
+      <!-- OMP Web Shell Architecture -->
       <div
         class="flex h-full h-dvh w-full overflow-hidden bg-sidebar-light dark:bg-sidebar-dark font-sans select-none relative"
         data-theme="${this.theme}"
@@ -278,7 +278,7 @@ export class CopilotApp extends LitElement {
         }
 
         <!-- 1. Sidebar Navigation: z-50 fixed on mobile (above backdrop), relative on desktop -->
-        <copilot-sidebar
+        <omp-sidebar
           class="h-full shrink-0 will-change-auto transition-all duration-300 ease-[cubic-bezier(0.43,0.195,0.02,1)] fixed md:relative inset-y-0 left-0 z-50 md:z-auto shadow-2xl md:shadow-none ${
             this.isSidebarOpen
               ? "w-[280px] md:w-[260px] min-w-[260px] translate-x-0 opacity-100"
@@ -289,9 +289,9 @@ export class CopilotApp extends LitElement {
           @nav-select=${(e: CustomEvent<{ tab: string }>) => this.handleNavSelect(e.detail.tab)}
           @toggle-sidebar=${() => (this.isSidebarOpen = !this.isSidebarOpen)}
           @sign-in=${() => (this.isLoginModalOpen = true)}
-        ></copilot-sidebar>
+        ></omp-sidebar>
 
-        <!-- 2. Main Stage with Microsoft Copilot Margin & Rounded Container -->
+        <!-- 2. Main Stage with OMP Web Margin & Rounded Container -->
         <main
           class="relative flex flex-1 flex-col h-full min-w-0 md:py-1.5 md:pe-1.5 transition-all duration-300 ${
             !this.isSidebarOpen ? "md:ps-1.5" : ""
@@ -300,7 +300,7 @@ export class CopilotApp extends LitElement {
           <!-- Canvas stage with background-150 and md:rounded-container -->
           <div class="relative size-full overflow-hidden md:rounded-container bg-background-150 flex flex-col">
             <!-- Topbar Controls (Sidebar toggle ONLY appears when sidebar is closed) -->
-            <copilot-header
+            <omp-header
               .isSidebarOpen=${this.isSidebarOpen}
               .theme=${this.theme}
               .currentUser=${this.currentUser}
@@ -309,7 +309,7 @@ export class CopilotApp extends LitElement {
               @toggle-theme=${() => this.toggleTheme()}
               @sign-in=${() => (this.isLoginModalOpen = true)}
               @sign-out=${() => (this.currentUser = null)}
-            ></copilot-header>
+            ></omp-header>
 
             <!-- Current Active Stage View -->
             <div class="relative flex-1 size-full overflow-hidden">
@@ -318,7 +318,7 @@ export class CopilotApp extends LitElement {
           </div>
         </main>
         <!-- Login Modal Component -->
-        <copilot-login-modal
+        <omp-login-modal
           .isOpen=${this.isLoginModalOpen}
           .theme=${this.theme}
           @close=${() => (this.isLoginModalOpen = false)}
@@ -326,7 +326,7 @@ export class CopilotApp extends LitElement {
             this.currentUser = e.detail.username;
             this.isLoginModalOpen = false;
           }}
-        ></copilot-login-modal>
+        ></omp-login-modal>
       </div>
     `;
   }
@@ -334,6 +334,6 @@ export class CopilotApp extends LitElement {
 
 declare global {
   interface HTMLElementTagNameMap {
-    "copilot-app": CopilotApp;
+    "omp-app": OmpApp;
   }
 }

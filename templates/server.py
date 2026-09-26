@@ -231,7 +231,7 @@ DISCOVERY_MOCK = {
     ]
 }
 
-class CopilotHandler(http.server.BaseHTTPRequestHandler):
+class OmpHandler(http.server.BaseHTTPRequestHandler):
     def log_message(self, format, *args):
         pass
 
@@ -509,8 +509,8 @@ class ThreadingServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
     daemon_threads = True
 
 def run():
-    with ThreadingServer(("", PORT), CopilotHandler) as httpd:
-        print(f"Copilot local server running at http://localhost:{PORT}")
+    with ThreadingServer(("", PORT), OmpHandler) as httpd:
+        print(f"OMP local server running at http://localhost:{PORT}")
         httpd.serve_forever()
 
 if __name__ == '__main__':

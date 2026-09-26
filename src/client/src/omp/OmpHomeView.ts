@@ -1,9 +1,9 @@
 import { LitElement, html } from "lit";
 import { customElement, property } from "lit/decorators.js";
-import "./CopilotComposer";
+import "./OmpComposer";
 
-@customElement("copilot-home-view")
-export class CopilotHomeView extends LitElement {
+@customElement("omp-home-view")
+export class OmpHomeView extends LitElement {
   @property({ type: String }) greeting = "Hey Ruan, what’s on your mind today?";
   @property({ type: Boolean }) isWorking = false;
 
@@ -13,7 +13,7 @@ export class CopilotHomeView extends LitElement {
 
   override render() {
     return html`
-      <!-- Microsoft Copilot Exact Home View Structure -->
+      <!-- OMP Web Exact Home View Structure -->
       <div class="relative size-full overflow-hidden flex flex-col justify-between">
         <!-- Main Vertically Centered Content: Hero Greeting + Input Composer in One Cluster -->
         <div class="flex-1 flex flex-col items-center justify-center px-4 -mt-8 sm:-mt-12 w-full max-w-chat mx-auto gap-8 z-10">
@@ -26,7 +26,7 @@ export class CopilotHomeView extends LitElement {
 
           <!-- Main Input Composer centered directly beneath greeting -->
           <div class="w-full max-w-chat flex justify-center">
-            <copilot-composer
+            <omp-composer
               .isWorking=${this.isWorking}
               @submit-prompt=${(e: CustomEvent) => {
                 this.dispatchEvent(
@@ -37,7 +37,7 @@ export class CopilotHomeView extends LitElement {
                   }),
                 );
               }}
-            ></copilot-composer>
+            ></omp-composer>
           </div>
         </div>
       </div>
@@ -47,6 +47,6 @@ export class CopilotHomeView extends LitElement {
 
 declare global {
   interface HTMLElementTagNameMap {
-    "copilot-home-view": CopilotHomeView;
+    "omp-home-view": OmpHomeView;
   }
 }

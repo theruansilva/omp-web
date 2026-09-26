@@ -1,7 +1,7 @@
 import { LitElement, html } from "lit";
 import { customElement, property } from "lit/decorators.js";
-import "./CopilotComposer";
-import type { SubmitPromptDetail } from "./CopilotComposer";
+import "./OmpComposer";
+import type { SubmitPromptDetail } from "./OmpComposer";
 
 interface ShoppingCardPrompt {
   id: string;
@@ -11,8 +11,8 @@ interface ShoppingCardPrompt {
   image: string;
 }
 
-@customElement("copilot-shopping-view")
-export class CopilotShoppingView extends LitElement {
+@customElement("omp-shopping-view")
+export class OmpShoppingView extends LitElement {
   @property({ type: Boolean }) isWorking = false;
 
   protected override createRenderRoot() {
@@ -62,14 +62,14 @@ export class CopilotShoppingView extends LitElement {
 
   override render() {
     return html`
-      <!-- Microsoft Copilot Shopping Landing Page Architecture from shopping.lazy.js -->
+      <!-- OMP Web Shopping Landing Page Architecture from shopping.lazy.js -->
       <div class="scrollbar-stable t-custom-scrollbar relative flex size-full flex-col items-center overflow-y-auto overflow-x-hidden overscroll-contain">
         <div class="w-full max-w-5xl px-6 py-12 md:py-16 flex flex-col items-center select-none mx-auto">
           <!-- Page Title from shopping.lazy.js -->
           <div class="mb-3 flex w-full justify-center">
             <div class="max-w-xl text-center">
               <h2 class="tracking-tight text-3xl md:text-4xl font-semibold font-ginto text-foreground-800">
-                Shopping with Copilot
+                Shopping with OMP
               </h2>
             </div>
           </div>
@@ -99,10 +99,10 @@ export class CopilotShoppingView extends LitElement {
                   ${this.heroCards.map(
       (card) => html`
                       <div
-                        class="flex h-22 min-w-60 max-w-60 items-center justify-start gap-3 p-2 pe-3 copilot-surface-card backdrop-blur-xl rounded-2xl cursor-pointer transition-transform duration-200 ease-out hover:scale-[1.025] shadow-lg border border-copilot-subtle shrink-0"
+                        class="flex h-22 min-w-60 max-w-60 items-center justify-start gap-3 p-2 pe-3 omp-surface-card backdrop-blur-xl rounded-2xl cursor-pointer transition-transform duration-200 ease-out hover:scale-[1.025] shadow-lg border border-omp-subtle shrink-0"
                         @click=${() => this.handlePromptClick(card.prompt)}
                       >
-                        <div class="aspect-square h-16 w-16 shrink-0 overflow-hidden rounded-xl copilot-surface-subtle flex items-center justify-center p-1">
+                        <div class="aspect-square h-16 w-16 shrink-0 overflow-hidden rounded-xl omp-surface-subtle flex items-center justify-center p-1">
                           <img src="${card.image}" alt="${card.label}" class="size-full object-contain" />
                         </div>
                         <div class="flex flex-col justify-center overflow-hidden">
@@ -120,7 +120,7 @@ export class CopilotShoppingView extends LitElement {
             <div class="flex w-full justify-center -mt-6 relative z-10">
               <button
                 type="button"
-                class="inline-flex items-center gap-3 rounded-full copilot-surface-elevated px-6 py-3 text-foreground-800 border border-copilot-subtle shadow-xl hover:scale-105 active:scale-98 transition-all cursor-pointer font-sans"
+                class="inline-flex items-center gap-3 rounded-full omp-surface-elevated px-6 py-3 text-foreground-800 border border-omp-subtle shadow-xl hover:scale-105 active:scale-98 transition-all cursor-pointer font-sans"
                 @click=${() => this.handlePromptClick("Ideas for the funniest secret santa gifts")}
               >
                 <div class="text-center text-sm md:text-base font-semibold font-ginto">
@@ -136,16 +136,16 @@ export class CopilotShoppingView extends LitElement {
             </div>
           </div>
 
-          <!-- Bottom Floating Composer: Shop with Copilot -->
+          <!-- Bottom Floating Composer: Shop with OMP -->
           <div class="w-full max-w-chat mt-14 flex justify-center">
-            <copilot-composer
-              placeholder="Shop with Copilot"
+            <omp-composer
+              placeholder="Shop with OMP"
               selectedModel="Quick response"
               .isWorking=${this.isWorking}
               @submit-prompt=${(e: CustomEvent<SubmitPromptDetail>) => {
         this.dispatchEvent(new CustomEvent("submit-prompt", { detail: e.detail, bubbles: true, composed: true }));
       }}
-            ></copilot-composer>
+            ></omp-composer>
           </div>
         </div>
       </div>
@@ -155,6 +155,6 @@ export class CopilotShoppingView extends LitElement {
 
 declare global {
   interface HTMLElementTagNameMap {
-    "copilot-shopping-view": CopilotShoppingView;
+    "omp-shopping-view": OmpShoppingView;
   }
 }

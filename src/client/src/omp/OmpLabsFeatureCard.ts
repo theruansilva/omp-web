@@ -10,8 +10,8 @@ export interface LabInitiative {
   badge?: string;
 }
 
-@customElement("copilot-labs-feature-card")
-export class CopilotLabsFeatureCard extends LitElement {
+@customElement("omp-labs-feature-card")
+export class OmpLabsFeatureCard extends LitElement {
   @property({ type: Object }) initiative?: LabInitiative;
 
   protected override createRenderRoot() {
@@ -95,6 +95,6 @@ export class CopilotLabsFeatureCard extends LitElement {
 
 declare global {
   interface HTMLElementTagNameMap {
-    "copilot-labs-feature-card": CopilotLabsFeatureCard;
+    "omp-labs-feature-card": OmpLabsFeatureCard;
   }
 }

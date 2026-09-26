@@ -1,12 +1,12 @@
 import { LitElement, html } from "lit";
 import { customElement, property } from "lit/decorators.js";
-import "./CopilotComposer";
-import type { SubmitPromptDetail } from "./CopilotComposer";
-import "./CopilotDiscoverCard";
-import type { DiscoverCardData } from "./CopilotDiscoverCard";
+import "./OmpComposer";
+import type { SubmitPromptDetail } from "./OmpComposer";
+import "./OmpDiscoverCard";
+import type { DiscoverCardData } from "./OmpDiscoverCard";
 
-@customElement("copilot-discover-view")
-export class CopilotDiscoverView extends LitElement {
+@customElement("omp-discover-view")
+export class OmpDiscoverView extends LitElement {
   @property({ type: Boolean }) isWorking = false;
 
   protected override createRenderRoot() {
@@ -42,7 +42,7 @@ export class CopilotDiscoverView extends LitElement {
 
   override render() {
     return html`
-      <!-- Microsoft Copilot Exact Discover Page Architecture from Image 3 & discover.js -->
+      <!-- OMP Web Exact Discover Page Architecture from Image 3 & discover.js -->
       <div class="scrollbar-stable t-custom-scrollbar relative flex size-full flex-col items-center overflow-y-auto overflow-x-hidden overscroll-contain">
         <div class="w-full max-w-discover px-6 pt-16 pb-28 flex flex-col items-center mx-auto">
           <!-- Section Heading from Image 3 -->
@@ -57,11 +57,11 @@ export class CopilotDiscoverView extends LitElement {
             <div class="grid grid-cols-2 gap-4 @xl/card-section:grid-cols-4">
               ${this.discoverCards.map(
       (card) => html`
-                  <copilot-discover-card
+                  <omp-discover-card
                     .card=${card}
                     .layout=${card.layout ?? "vertical"}
                     @card-click=${() => this.handleCardClick(card.prompt)}
-                  ></copilot-discover-card>
+                  ></omp-discover-card>
                 `
     )}
             </div>
@@ -69,14 +69,14 @@ export class CopilotDiscoverView extends LitElement {
 
           <!-- Bottom Floating Composer in Content Flow (from Image 3) -->
           <div class="w-full max-w-chat mt-14 flex justify-center">
-            <copilot-composer
-              placeholder="Message Copilot"
+            <omp-composer
+              placeholder="Message OMP"
               selectedModel="Quick response"
               .isWorking=${this.isWorking}
               @submit-prompt=${(e: CustomEvent<SubmitPromptDetail>) => {
         this.dispatchEvent(new CustomEvent("submit-prompt", { detail: e.detail, bubbles: true, composed: true }));
       }}
-            ></copilot-composer>
+            ></omp-composer>
           </div>
         </div>
       </div>
@@ -86,6 +86,6 @@ export class CopilotDiscoverView extends LitElement {
 
 declare global {
   interface HTMLElementTagNameMap {
-    "copilot-discover-view": CopilotDiscoverView;
+    "omp-discover-view": OmpDiscoverView;
   }
 }

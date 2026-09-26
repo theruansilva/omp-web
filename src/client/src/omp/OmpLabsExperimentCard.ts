@@ -1,9 +1,9 @@
 import { LitElement, html } from "lit";
 import { customElement, property } from "lit/decorators.js";
-import type { LabInitiative } from "./CopilotLabsFeatureCard";
+import type { LabInitiative } from "./OmpLabsFeatureCard";
 
-@customElement("copilot-labs-experiment-card")
-export class CopilotLabsExperimentCard extends LitElement {
+@customElement("omp-labs-experiment-card")
+export class OmpLabsExperimentCard extends LitElement {
   @property({ type: Object }) experiment?: LabInitiative;
 
   protected override createRenderRoot() {
@@ -87,6 +87,6 @@ export class CopilotLabsExperimentCard extends LitElement {
 
 declare global {
   interface HTMLElementTagNameMap {
-    "copilot-labs-experiment-card": CopilotLabsExperimentCard;
+    "omp-labs-experiment-card": OmpLabsExperimentCard;
   }
 }

@@ -1,9 +1,9 @@
 import { LitElement, html } from "lit";
 import { customElement, property } from "lit/decorators.js";
 
-@customElement("copilot-tasks-banner")
-export class CopilotTasksBanner extends LitElement {
-  @property({ type: String }) override title = "Copilot Tasks";
+@customElement("omp-tasks-banner")
+export class OmpTasksBanner extends LitElement {
+  @property({ type: String }) override title = "OMP Tasks";
   @property({ type: String }) buttonText = "Sign in to join";
 
   protected override createRenderRoot() {
@@ -34,7 +34,7 @@ export class CopilotTasksBanner extends LitElement {
 
   override render() {
     return html`
-      <!-- Microsoft Copilot Tasks Waitlist / Join Pill Banner -->
+      <!-- Microsoft OMP Tasks Waitlist / Join Pill Banner -->
       <div
         class="pointer-events-auto relative flex flex-col rounded-full p-1.5 shadow-tinted-lg mb-5 sm:mb-8 bg-background-100 text-foreground-900 dark:bg-background-150"
       >
@@ -116,6 +116,6 @@ export class CopilotTasksBanner extends LitElement {
 
 declare global {
   interface HTMLElementTagNameMap {
-    "copilot-tasks-banner": CopilotTasksBanner;
+    "omp-tasks-banner": OmpTasksBanner;
   }
 }

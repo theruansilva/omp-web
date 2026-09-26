@@ -1,8 +1,8 @@
 import { LitElement, html, nothing } from "lit";
 import { customElement, property } from "lit/decorators.js";
-import { renderCopilotLogo, renderLoadingDots } from "./icons";
-import "./CopilotComposer";
-import "./CopilotAgentProcess";
+import { renderOmpLogo, renderLoadingDots } from "./icons";
+import "./OmpComposer";
+import "./OmpAgentProcess";
 
 export interface ChatMessage {
   id: string;
@@ -12,8 +12,8 @@ export interface ChatMessage {
   hasAgentProcess?: boolean;
 }
 
-@customElement("copilot-chat-view")
-export class CopilotChatView extends LitElement {
+@customElement("omp-chat-view")
+export class OmpChatView extends LitElement {
   @property({ type: Array }) messages: ChatMessage[] = [];
   @property({ type: Boolean }) isStreaming = false;
   @property({ type: Boolean }) isFirstPrompt = false;
@@ -39,7 +39,7 @@ export class CopilotChatView extends LitElement {
 
   override render() {
     return html`
-      <!-- Microsoft Copilot Exact Chat Page Structure -->
+      <!-- OMP Web Exact Chat Page Structure -->
       <div class="relative flex flex-col h-full w-full overflow-hidden">
         <!-- Scrollable Messages Area matching original @container/chat -->
         <div
@@ -52,7 +52,7 @@ export class CopilotChatView extends LitElement {
             data-copy="false"
             class="grow flex flex-col w-full max-w-chat px-4 sm:px-6"
           >
-            <!-- Date Divider with Microsoft Copilot classes -->
+            <!-- Date Divider with OMP Web classes -->
             <div class="flex items-center gap-3 my-2 opacity-70">
               <span class="text-xs font-semibold text-foreground-800 font-ginto" data-testid="date-divider">Today</span>
               <div class="flex-1 h-px bg-black/10 dark:bg-white/10"></div>
@@ -87,18 +87,18 @@ export class CopilotChatView extends LitElement {
                         </div>
                       `
           : html`
-                        <!-- Assistant Message with Copilot gradient logo -->
+                        <!-- Assistant Message with OMP gradient logo -->
                         <div class="flex flex-col w-full space-y-4">
                           <div class="flex items-start gap-3 w-full">
-                            <div class="size-8 rounded-full copilot-surface-avatar flex items-center justify-center shadow-xs shrink-0 mt-0.5">
-                              ${renderCopilotLogo("size-5")}
+                            <div class="size-8 rounded-full omp-surface-avatar flex items-center justify-center shadow-xs shrink-0 mt-0.5">
+                              ${renderOmpLogo("size-5")}
                             </div>
                             <div class="flex-1 text-[15px] leading-relaxed text-foreground-900 font-sans break-words pt-1 select-text">
                               <div class="whitespace-pre-wrap">${msg.text}</div>
                             </div>
                           </div>
                           ${msg.hasAgentProcess !== false
-                            ? html`<copilot-agent-process @agent-step-changed=${() => this.scrollToBottom()}></copilot-agent-process>`
+                            ? html`<omp-agent-process @agent-step-changed=${() => this.scrollToBottom()}></omp-agent-process>`
                             : nothing}
                         </div>
                       `}
@@ -109,8 +109,8 @@ export class CopilotChatView extends LitElement {
               ${this.isStreaming
         ? html`
                     <div class="flex items-start gap-3 w-full">
-                      <div class="size-8 rounded-full copilot-surface-avatar flex items-center justify-center shadow-xs shrink-0 mt-0.5">
-                        ${renderCopilotLogo("size-5")}
+                      <div class="size-8 rounded-full omp-surface-avatar flex items-center justify-center shadow-xs shrink-0 mt-0.5">
+                        ${renderOmpLogo("size-5")}
                       </div>
                       <div class="flex items-center pt-2">
                         ${renderLoadingDots()}
@@ -128,13 +128,13 @@ export class CopilotChatView extends LitElement {
         <!-- Sticky Bottom Composer Dock with Safe-Area Inset Support and proper bottom margin -->
         <div class="absolute bottom-0 inset-x-0 z-20 flex flex-col items-center px-4 pb-4 sm:pb-6 pb-[max(calc(env(safe-area-inset-bottom)+1rem),1.5rem)] pt-8 bg-gradient-to-t from-background-150 via-background-150/80 to-transparent pointer-events-none">
           <div class="w-full max-w-chat pointer-events-auto ${this.isFirstPrompt ? "animate-composer-dock" : ""}">
-            <copilot-composer
+            <omp-composer
               compact
               .isWorking=${this.isStreaming}
               @submit-prompt=${(e: CustomEvent) => {
         this.dispatchEvent(new CustomEvent("submit-prompt", { detail: e.detail, bubbles: true, composed: true }));
       }}
-            ></copilot-composer>
+            ></omp-composer>
           </div>
         </div>
       </div>
@@ -144,6 +144,6 @@ export class CopilotChatView extends LitElement {
 
 declare global {
   interface HTMLElementTagNameMap {
-    "copilot-chat-view": CopilotChatView;
+    "omp-chat-view": OmpChatView;
   }
 }

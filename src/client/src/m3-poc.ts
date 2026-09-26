@@ -1,12 +1,12 @@
-// Import Copilot's full CSS bundle and Squircles library
-import "../copilot.css";
+// Import OMP's full CSS bundle and Squircles library
+import "../omp.css";
 import "@progmruansilva/squircles/index.css";
 
-// Export all modular Copilot Lit components
-export * from "./copilot";
+// Export all modular OMP Lit components
+export * from "./omp";
 
 // Backwards-compatibility alias for m3-poc-dashboard
-import { CopilotApp } from "./copilot/CopilotApp";
+import { OmpApp } from "./omp/OmpApp";
 if (!customElements.get("m3-poc-dashboard")) {
-  customElements.define("m3-poc-dashboard", class extends CopilotApp { });
+  customElements.define("m3-poc-dashboard", class extends OmpApp { });
 }

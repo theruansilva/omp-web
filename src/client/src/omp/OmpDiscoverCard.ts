@@ -15,8 +15,8 @@ export interface DiscoverCardData {
   hasParticles?: boolean;
 }
 
-@customElement("copilot-discover-card")
-export class CopilotDiscoverCard extends LitElement {
+@customElement("omp-discover-card")
+export class OmpDiscoverCard extends LitElement {
   @property({ type: Object }) card?: DiscoverCardData;
   @property({ type: String }) layout: "vertical" | "horizontal" | "large" | "small" = "vertical";
 
@@ -237,6 +237,6 @@ export class CopilotDiscoverCard extends LitElement {
 
 declare global {
   interface HTMLElementTagNameMap {
-    "copilot-discover-card": CopilotDiscoverCard;
+    "omp-discover-card": OmpDiscoverCard;
   }
 }

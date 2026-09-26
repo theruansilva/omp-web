@@ -1,55 +1,55 @@
-/* Copilot UI Adaptive Theme, Acrylic Translucency & Squircles */
+/* OMP UI Adaptive Theme, Acrylic Translucency & Squircles */
 @import "./squircles.css";
 
 :root {
   /* =========================================================
-     COPILOT SEMANTIC DESIGN TOKENS (OKLCH Color Space)
+     OMP SEMANTIC DESIGN TOKENS (OKLCH Color Space)
      ========================================================= */
 
   /* 1. Surfaces & Canvases */
-  --copilot-bg: oklch(98.5% 0.006 56); /* #FAF7F5 - Canvas background */
-  --copilot-surface-canvas: var(--copilot-bg);
-  --copilot-card-bg: oklch(100% 0 0 / 0.72);
-  --copilot-surface-card: var(--copilot-card-bg);
-  --copilot-surface-elevated: oklch(100% 0 0 / 0.92);
-  --copilot-surface-popover: oklch(100% 0 0 / 0.96);
-  --copilot-surface-avatar: oklch(100% 0 0);
-  --copilot-surface-subtle: oklch(93.5% 0.012 60); /* soft warm stone */
+  --omp-bg: oklch(98.5% 0.006 56); /* #FAF7F5 - Canvas background */
+  --omp-surface-canvas: var(--omp-bg);
+  --omp-card-bg: oklch(100% 0 0 / 0.72);
+  --omp-surface-card: var(--omp-card-bg);
+  --omp-surface-elevated: oklch(100% 0 0 / 0.92);
+  --omp-surface-popover: oklch(100% 0 0 / 0.96);
+  --omp-surface-avatar: oklch(100% 0 0);
+  --omp-surface-subtle: oklch(93.5% 0.012 60); /* soft warm stone */
 
   /* 2. Borders & Strokes */
-  --copilot-card-border: oklch(0% 0 0 / 0.08);
-  --copilot-border-subtle: var(--copilot-card-border);
-  --copilot-card-hover-border: oklch(0% 0 0 / 0.18);
-  --copilot-border-strong: var(--copilot-card-hover-border);
-  --copilot-popover-border: oklch(0% 0 0 / 0.08);
+  --omp-card-border: oklch(0% 0 0 / 0.08);
+  --omp-border-subtle: var(--omp-card-border);
+  --omp-card-hover-border: oklch(0% 0 0 / 0.18);
+  --omp-border-strong: var(--omp-card-hover-border);
+  --omp-popover-border: oklch(0% 0 0 / 0.08);
 
   /* 3. Typography & Text Hierarchy */
-  --copilot-text-primary: oklch(20% 0.006 56); /* #1C1B1A */
-  --copilot-text-secondary: oklch(48% 0.008 56); /* #666666 */
-  --copilot-text-muted: oklch(62% 0.008 56); /* #888888 */
+  --omp-text-primary: oklch(20% 0.006 56); /* #1C1B1A */
+  --omp-text-secondary: oklch(48% 0.008 56); /* #666666 */
+  --omp-text-muted: oklch(62% 0.008 56); /* #888888 */
 
   /* 4. Action & Brand Semantics */
-  --copilot-primary: rgb(var(--color-muted-450, 135 103 78));
-  --copilot-primary-hover: rgb(var(--color-muted-550, 115 85 62));
-  --copilot-on-primary: #ffffff;
+  --omp-primary: rgb(var(--color-muted-450, 135 103 78));
+  --omp-primary-hover: rgb(var(--color-muted-550, 115 85 62));
+  --omp-on-primary: #ffffff;
 
-  --copilot-secondary: oklch(94% 0.008 56);
-  --copilot-secondary-hover: oklch(90% 0.01 56);
-  --copilot-on-secondary: oklch(20% 0.006 56);
+  --omp-secondary: oklch(94% 0.008 56);
+  --omp-secondary-hover: oklch(90% 0.01 56);
+  --omp-on-secondary: oklch(20% 0.006 56);
 
-  --copilot-accent: oklch(58% 0.18 240); /* #0284C7 */
-  --copilot-accent-subtle: oklch(58% 0.18 240 / 0.12);
-  --copilot-on-accent: oklch(100% 0 0);
+  --omp-accent: oklch(58% 0.18 240); /* #0284C7 */
+  --omp-accent-subtle: oklch(58% 0.18 240 / 0.12);
+  --omp-on-accent: oklch(100% 0 0);
 
   /* 5. Composer & Bubble */
-  --copilot-composer-bg: oklch(100% 0 0 / 0.92);
-  --copilot-composer-border: oklch(0% 0 0 / 0.08);
-  --copilot-bubble-bg: oklch(93% 0.02 56 / 0.85);
-  --copilot-bubble-text: oklch(22% 0.01 56);
+  --omp-composer-bg: oklch(100% 0 0 / 0.92);
+  --omp-composer-border: oklch(0% 0 0 / 0.08);
+  --omp-bubble-bg: oklch(93% 0.02 56 / 0.85);
+  --omp-bubble-text: oklch(22% 0.01 56);
 
   /* 6. Acrylic Translucency */
-  --copilot-acrylic-blur: 24px;
-  --copilot-acrylic-saturate: 180%;
+  --omp-acrylic-blur: 24px;
+  --omp-acrylic-saturate: 180%;
 
   /* 7. Nested Radius & Border Experiment Tokens */
   --radius-card-bg: oklch(100% 0 0 / 0.75);
@@ -72,45 +72,45 @@
 
 .dark, [data-theme="dark"] {
   /* 1. Surfaces & Canvases (Dark) */
-  --copilot-bg: oklch(14.5% 0.015 260); /* #0B0E14 */
-  --copilot-surface-canvas: var(--copilot-bg);
-  --copilot-card-bg: oklch(22% 0.02 260 / 0.55); /* #1A1E2B / 0.55 */
-  --copilot-surface-card: var(--copilot-card-bg);
-  --copilot-surface-elevated: oklch(20% 0.02 260 / 0.85);
-  --copilot-surface-popover: oklch(18% 0.02 260 / 0.96);
-  --copilot-surface-avatar: oklch(23% 0.022 260); /* #1E2330 */
-  --copilot-surface-subtle: oklch(18% 0.018 260); /* #161B28 */
+  --omp-bg: oklch(14.5% 0.015 260); /* #0B0E14 */
+  --omp-surface-canvas: var(--omp-bg);
+  --omp-card-bg: oklch(22% 0.02 260 / 0.55); /* #1A1E2B / 0.55 */
+  --omp-surface-card: var(--omp-card-bg);
+  --omp-surface-elevated: oklch(20% 0.02 260 / 0.85);
+  --omp-surface-popover: oklch(18% 0.02 260 / 0.96);
+  --omp-surface-avatar: oklch(23% 0.022 260); /* #1E2330 */
+  --omp-surface-subtle: oklch(18% 0.018 260); /* #161B28 */
 
   /* 2. Borders & Strokes (Dark) */
-  --copilot-card-border: oklch(100% 0 0 / 0.10);
-  --copilot-border-subtle: var(--copilot-card-border);
-  --copilot-card-hover-border: oklch(100% 0 0 / 0.22);
-  --copilot-border-strong: var(--copilot-card-hover-border);
-  --copilot-popover-border: oklch(100% 0 0 / 0.14);
+  --omp-card-border: oklch(100% 0 0 / 0.10);
+  --omp-border-subtle: var(--omp-card-border);
+  --omp-card-hover-border: oklch(100% 0 0 / 0.22);
+  --omp-border-strong: var(--omp-card-hover-border);
+  --omp-popover-border: oklch(100% 0 0 / 0.14);
 
   /* 3. Typography & Text Hierarchy (Dark) */
-  --copilot-text-primary: oklch(97% 0.005 260); /* #F8FAFC */
-  --copilot-text-secondary: oklch(72% 0.015 260); /* #94A3B8 */
-  --copilot-text-muted: oklch(54% 0.02 260); /* #64748B */
+  --omp-text-primary: oklch(97% 0.005 260); /* #F8FAFC */
+  --omp-text-secondary: oklch(72% 0.015 260); /* #94A3B8 */
+  --omp-text-muted: oklch(54% 0.02 260); /* #64748B */
 
   /* 4. Action & Brand Semantics (Dark) */
-  --copilot-primary: rgb(var(--color-muted-450, 82 92 123));
-  --copilot-primary-hover: rgb(var(--color-muted-550, 102 113 148));
-  --copilot-on-primary: #ffffff;
+  --omp-primary: rgb(var(--color-muted-450, 82 92 123));
+  --omp-primary-hover: rgb(var(--color-muted-550, 102 113 148));
+  --omp-on-primary: #ffffff;
 
-  --copilot-secondary: oklch(25% 0.02 260);
-  --copilot-secondary-hover: oklch(30% 0.02 260);
-  --copilot-on-secondary: oklch(97% 0.005 260);
+  --omp-secondary: oklch(25% 0.02 260);
+  --omp-secondary-hover: oklch(30% 0.02 260);
+  --omp-on-secondary: oklch(97% 0.005 260);
 
-  --copilot-accent: oklch(76% 0.15 220); /* #38BDF8 */
-  --copilot-accent-subtle: oklch(76% 0.15 220 / 0.18);
-  --copilot-on-accent: oklch(15% 0.02 240);
+  --omp-accent: oklch(76% 0.15 220); /* #38BDF8 */
+  --omp-accent-subtle: oklch(76% 0.15 220 / 0.18);
+  --omp-on-accent: oklch(15% 0.02 240);
 
   /* 5. Composer & Bubble (Dark) */
-  --copilot-composer-bg: oklch(20% 0.02 260 / 0.75);
-  --copilot-composer-border: oklch(100% 0 0 / 0.12);
-  --copilot-bubble-bg: oklch(25% 0.015 56 / 0.90);
-  --copilot-bubble-text: oklch(95% 0.01 56);
+  --omp-composer-bg: oklch(20% 0.02 260 / 0.75);
+  --omp-composer-border: oklch(100% 0 0 / 0.12);
+  --omp-bubble-bg: oklch(25% 0.015 56 / 0.90);
+  --omp-bubble-text: oklch(95% 0.01 56);
 
   /* 7. Nested Radius & Border Experiment Tokens (Dark) */
   --radius-card-bg: oklch(22% 0.02 260 / 0.65);
@@ -132,32 +132,32 @@
 }
 
 /* =========================================================
-   COPILOT SEMANTIC SURFACE UTILITIES
+   OMP SEMANTIC SURFACE UTILITIES
    ========================================================= */
 
-.copilot-surface-avatar {
-  background-color: var(--copilot-surface-avatar) !important;
-  border: 1px solid var(--copilot-border-subtle) !important;
+.omp-surface-avatar {
+  background-color: var(--omp-surface-avatar) !important;
+  border: 1px solid var(--omp-border-subtle) !important;
 }
 
-.copilot-surface-subtle {
-  background-color: var(--copilot-surface-subtle) !important;
+.omp-surface-subtle {
+  background-color: var(--omp-surface-subtle) !important;
 }
 
-.copilot-surface-card {
-  background-color: var(--copilot-surface-card) !important;
+.omp-surface-card {
+  background-color: var(--omp-surface-card) !important;
 }
 
-.copilot-surface-elevated {
-  background-color: var(--copilot-surface-elevated) !important;
+.omp-surface-elevated {
+  background-color: var(--omp-surface-elevated) !important;
 }
 
-.copilot-border-subtle {
-  border-color: var(--copilot-border-subtle) !important;
+.omp-border-subtle {
+  border-color: var(--omp-border-subtle) !important;
 }
 
-.copilot-border-strong {
-  border-color: var(--copilot-border-strong) !important;
+.omp-border-strong {
+  border-color: var(--omp-border-strong) !important;
 }
 
 /* =========================================================
@@ -210,59 +210,59 @@
 
 
 /* Dedicated Dark Composer for Shopping and Discover (Matches Image 1 & 3) */
-.copilot-dark-composer {
+.omp-dark-composer {
   background-color: #131724 !important;
   color: #FFFFFF !important;
   border: 1px solid rgba(255, 255, 255, 0.15) !important;
   border-radius: 28px !important;
 }
 
-.copilot-dark-composer input,
-.copilot-dark-composer textarea {
+.omp-dark-composer input,
+.omp-dark-composer textarea {
   color: #FFFFFF !important;
 }
 
-.copilot-dark-composer input::placeholder,
-.copilot-dark-composer textarea::placeholder {
+.omp-dark-composer input::placeholder,
+.omp-dark-composer textarea::placeholder {
   color: rgba(255, 255, 255, 0.45) !important;
 }
 
-.copilot-dark-btn {
+.omp-dark-btn {
   background-color: rgba(255, 255, 255, 0.1) !important;
   color: #FFFFFF !important;
   border: 1px solid rgba(255, 255, 255, 0.12) !important;
 }
 
-.copilot-dark-btn:hover {
+.omp-dark-btn:hover {
   background-color: rgba(255, 255, 255, 0.18) !important;
 }
 
 /* Frosted Glass Acrylic Card Base */
-.copilot-acrylic-card {
-  background-color: var(--copilot-card-bg);
+.omp-acrylic-card {
+  background-color: var(--omp-card-bg);
   backdrop-filter: blur(24px) saturate(180%);
   -webkit-backdrop-filter: blur(24px) saturate(180%);
-  border: 1px solid var(--copilot-card-border);
+  border: 1px solid var(--omp-card-border);
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.copilot-acrylic-card:hover {
-  border-color: var(--copilot-card-hover-border);
+.omp-acrylic-card:hover {
+  border-color: var(--omp-card-hover-border);
   transform: translateY(-2px);
   box-shadow: 0 12px 28px -6px rgba(0, 0, 0, 0.12);
 }
 
 /* Titles and descriptions */
-.copilot-card-title {
-  color: var(--copilot-text-primary) !important;
+.omp-card-title {
+  color: var(--omp-text-primary) !important;
 }
 
-.copilot-card-desc {
-  color: var(--copilot-text-secondary) !important;
+.omp-card-desc {
+  color: var(--omp-text-secondary) !important;
 }
 
 /* Squircle Stroke Overlay */
-.copilot-squircle-stroke {
+.omp-squircle-stroke {
   pointer-events: none;
   position: absolute;
   inset: 0;
@@ -271,52 +271,52 @@
   z-index: 20;
 }
 
-.dark .copilot-squircle-stroke,
-[data-theme="dark"] .copilot-squircle-stroke {
+.dark .omp-squircle-stroke,
+[data-theme="dark"] .omp-squircle-stroke {
   background-color: rgba(255, 255, 255, 0.18);
 }
 
 /* Buttons */
-.copilot-btn-pill {
+.omp-btn-pill {
   border-radius: 9999px !important;
-  border: 1px solid var(--copilot-card-border);
-  color: var(--copilot-text-primary);
+  border: 1px solid var(--omp-card-border);
+  color: var(--omp-text-primary);
   transition: all 0.15s ease;
 }
 
-.copilot-btn-pill:hover {
-  border-color: var(--copilot-card-hover-border);
+.omp-btn-pill:hover {
+  border-color: var(--omp-card-hover-border);
   background-color: rgba(128, 128, 128, 0.08);
 }
 
-/* Authentic Microsoft Copilot Sign-in Button (variant="rect", color="strong", rounded-xl) */
-.copilot-btn-signin {
+/* Authentic OMP Web Sign-in Button (variant="rect", color="strong", rounded-xl) */
+.omp-btn-signin {
   border-radius: 0.75rem !important; /* rounded-xl (12px) */
-  background-color: var(--copilot-primary) !important;
-  color: var(--copilot-on-primary) !important;
+  background-color: var(--omp-primary) !important;
+  color: var(--omp-on-primary) !important;
   font-size: 0.875rem !important; /* text-sm (14px) */
   font-weight: 500 !important;
   transition: all 0.15s ease;
   box-shadow: 0 1px 2px 0 oklch(0% 0 0 / 0.05);
 }
 
-.copilot-btn-signin:hover {
-  background-color: var(--copilot-primary-hover) !important;
+.omp-btn-signin:hover {
+  background-color: var(--omp-primary-hover) !important;
 }
 
-.dark .copilot-btn-signin,
-[data-theme="dark"] .copilot-btn-signin {
-  background-color: var(--copilot-primary) !important;
-  color: var(--copilot-on-primary) !important;
+.dark .omp-btn-signin,
+[data-theme="dark"] .omp-btn-signin {
+  background-color: var(--omp-primary) !important;
+  color: var(--omp-on-primary) !important;
 }
 
-.dark .copilot-btn-signin:hover,
-[data-theme="dark"] .copilot-btn-signin:hover {
-  background-color: var(--copilot-primary-hover) !important;
+.dark .omp-btn-signin:hover,
+[data-theme="dark"] .omp-btn-signin:hover {
+  background-color: var(--omp-primary-hover) !important;
 }
 
 /* =========================================================
-   AUTHENTIC MICROSOFT COPILOT TRANSITIONS
+   AUTHENTIC MICROSOFT OMP TRANSITIONS
    ========================================================= */
 
 /* Smooth slide of composer from center to bottom dock on first message */
@@ -356,27 +356,27 @@
    ========================================================= */
 
 :root {
-  --copilot-ask-card-bg: rgba(255, 255, 255, 0.94);
-  --copilot-ask-card-border: rgba(0, 0, 0, 0.08);
+  --omp-ask-card-bg: rgba(255, 255, 255, 0.94);
+  --omp-ask-card-border: rgba(0, 0, 0, 0.08);
   --vt-bounce: linear(0, 0.22 8%, 0.6 18%, 0.94 30%, 1.07 40%, 1.05 48%, 1 60%, 0.99 74%, 1);
 }
 
 .dark, [data-theme="dark"] {
-  --copilot-ask-card-bg: rgba(18, 22, 31, 0.92);
-  --copilot-ask-card-border: rgba(255, 255, 255, 0.12);
+  --omp-ask-card-bg: rgba(18, 22, 31, 0.92);
+  --omp-ask-card-border: rgba(255, 255, 255, 0.12);
 }
 
-::view-transition-group(copilot-ask-island) {
+::view-transition-group(omp-ask-island) {
   animation-duration: 480ms;
   animation-timing-function: var(--vt-bounce);
 }
 
-::view-transition-old(copilot-ask-island) {
+::view-transition-old(omp-ask-island) {
   animation: 150ms linear both vt-dissolve-out,
     480ms var(--vt-bounce) both vt-reveal-out;
 }
 
-::view-transition-new(copilot-ask-island) {
+::view-transition-new(omp-ask-island) {
   animation: 210ms linear both vt-dissolve-in,
     480ms var(--vt-bounce) both vt-reveal-in;
 }
@@ -420,13 +420,13 @@
   to { scale: 0.94; }
 }
 
-.copilot-ask-island {
-  view-transition-name: copilot-ask-island;
+.omp-ask-island {
+  view-transition-name: omp-ask-island;
   animation: ask-spring-bounce-in 480ms var(--vt-bounce) both;
   transform-origin: bottom center;
 }
 
-.copilot-ask-island.closing {
+.omp-ask-island.closing {
   animation: ask-spring-bounce-out 320ms cubic-bezier(0.32, 0.72, 0, 1) both;
 }
 
@@ -493,27 +493,27 @@
 .composer-dropdown-popover {
   position: fixed !important;
   z-index: 9999 !important;
-  background-color: var(--copilot-surface-popover) !important;
-  color: var(--copilot-text-primary) !important;
-  border: 1px solid var(--copilot-popover-border) !important;
+  background-color: var(--omp-surface-popover) !important;
+  color: var(--omp-text-primary) !important;
+  border: 1px solid var(--omp-popover-border) !important;
   border-radius: 20px !important;
   box-shadow: 0 20px 48px -8px oklch(0% 0 0 / 0.22), 0 0 0 1px oklch(0% 0 0 / 0.05) !important;
-  backdrop-filter: blur(var(--copilot-acrylic-blur)) saturate(var(--copilot-acrylic-saturate)) !important;
-  -webkit-backdrop-filter: blur(var(--copilot-acrylic-blur)) saturate(var(--copilot-acrylic-saturate)) !important;
+  backdrop-filter: blur(var(--omp-acrylic-blur)) saturate(var(--omp-acrylic-saturate)) !important;
+  -webkit-backdrop-filter: blur(var(--omp-acrylic-blur)) saturate(var(--omp-acrylic-saturate)) !important;
   padding: 6px !important;
 }
 
 .composer-dropdown-popover [role="menuitem"],
 .composer-dropdown-popover .composer-dropdown-item {
-  color: var(--copilot-text-primary) !important;
+  color: var(--omp-text-primary) !important;
 }
 
 .composer-dropdown-popover .composer-dropdown-desc {
-  color: var(--copilot-text-secondary) !important;
+  color: var(--omp-text-secondary) !important;
 }
 
 .composer-dropdown-popover .composer-dropdown-icon {
-  color: var(--copilot-text-secondary) !important;
+  color: var(--omp-text-secondary) !important;
 }
 
 .dark .composer-dropdown-popover,
@@ -522,9 +522,9 @@ html.dark .composer-dropdown-popover,
 html[data-theme="dark"] .composer-dropdown-popover {
   position: fixed !important;
   z-index: 9999 !important;
-  background-color: var(--copilot-surface-popover) !important;
-  color: var(--copilot-text-primary) !important;
-  border: 1px solid var(--copilot-popover-border) !important;
+  background-color: var(--omp-surface-popover) !important;
+  color: var(--omp-text-primary) !important;
+  border: 1px solid var(--omp-popover-border) !important;
   box-shadow: 0 24px 56px -8px oklch(0% 0 0 / 0.75), 0 0 0 1px oklch(100% 0 0 / 0.08) !important;
 }
 
@@ -532,35 +532,35 @@ html[data-theme="dark"] .composer-dropdown-popover {
 [data-theme="dark"] .composer-dropdown-popover [role="menuitem"],
 html.dark .composer-dropdown-popover [role="menuitem"],
 html[data-theme="dark"] .composer-dropdown-popover [role="menuitem"] {
-  color: var(--copilot-text-primary) !important;
+  color: var(--omp-text-primary) !important;
 }
 
 .dark .composer-dropdown-popover .composer-dropdown-item,
 [data-theme="dark"] .composer-dropdown-popover .composer-dropdown-item,
 html.dark .composer-dropdown-popover .composer-dropdown-item,
 html[data-theme="dark"] .composer-dropdown-popover .composer-dropdown-item {
-  color: var(--copilot-text-primary) !important;
+  color: var(--omp-text-primary) !important;
 }
 
 .dark .composer-dropdown-popover .composer-dropdown-desc,
 [data-theme="dark"] .composer-dropdown-popover .composer-dropdown-desc,
 html.dark .composer-dropdown-popover .composer-dropdown-desc,
 html[data-theme="dark"] .composer-dropdown-popover .composer-dropdown-desc {
-  color: var(--copilot-text-secondary) !important;
+  color: var(--omp-text-secondary) !important;
 }
 
 .dark .composer-dropdown-popover .composer-dropdown-icon,
 [data-theme="dark"] .composer-dropdown-popover .composer-dropdown-icon,
 html.dark .composer-dropdown-popover .composer-dropdown-icon,
 html[data-theme="dark"] .composer-dropdown-popover .composer-dropdown-icon {
-  color: var(--copilot-text-secondary) !important;
+  color: var(--omp-text-secondary) !important;
 }
 
 /* =========================================================
-   COPILOT AGENT PROCESS TIMELINE
+   OMP AGENT PROCESS TIMELINE
    ========================================================= */
 
-.copilot-agent-timeline-container {
+.omp-agent-timeline-container {
   position: relative;
   width: 100%;
   height: 240px;
@@ -571,12 +571,12 @@ html[data-theme="dark"] .composer-dropdown-popover .composer-dropdown-icon {
 }
 
 @media (min-width: 768px) {
-  .copilot-agent-timeline-container {
+  .omp-agent-timeline-container {
     height: 260px;
   }
 }
 
-.copilot-agent-step {
+.omp-agent-step {
   position: absolute;
   top: 50%;
   width: 100%;

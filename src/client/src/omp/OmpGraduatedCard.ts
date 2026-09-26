@@ -11,8 +11,8 @@ export interface GraduatedExperiment {
   showButton?: boolean;
 }
 
-@customElement("copilot-graduated-card")
-export class CopilotGraduatedCard extends LitElement {
+@customElement("omp-graduated-card")
+export class OmpGraduatedCard extends LitElement {
   @property({ type: Object }) experiment?: GraduatedExperiment;
 
   protected override createRenderRoot() {
@@ -41,7 +41,7 @@ export class CopilotGraduatedCard extends LitElement {
     const showBtn = this.experiment.showButton !== false && Boolean(this.experiment.actionText);
 
     return html`
-      <!-- Microsoft Copilot Authentic Graduated Card -->
+      <!-- OMP Web Authentic Graduated Card -->
       <div
         data-testid="labs-graduated-card"
         data-experiment-alias="${this.experiment.id}"
@@ -91,6 +91,6 @@ export class CopilotGraduatedCard extends LitElement {
 
 declare global {
   interface HTMLElementTagNameMap {
-    "copilot-graduated-card": CopilotGraduatedCard;
+    "omp-graduated-card": OmpGraduatedCard;
   }
 }

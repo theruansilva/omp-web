@@ -1,35 +1,35 @@
 import { LitElement, html } from "lit";
 import { customElement } from "lit/decorators.js";
-import "./CopilotLabsFeatureCard";
-import type { LabInitiative } from "./CopilotLabsFeatureCard";
-import "./CopilotLabsExperimentCard";
-import "./CopilotGraduatedCard";
-import type { GraduatedExperiment } from "./CopilotGraduatedCard";
+import "./OmpLabsFeatureCard";
+import type { LabInitiative } from "./OmpLabsFeatureCard";
+import "./OmpLabsExperimentCard";
+import "./OmpGraduatedCard";
+import type { GraduatedExperiment } from "./OmpGraduatedCard";
 
 export type { LabInitiative };
 
-@customElement("copilot-labs-view")
-export class CopilotLabsView extends LitElement {
+@customElement("omp-labs-view")
+export class OmpLabsView extends LitElement {
   protected override createRenderRoot() {
     return this;
   }
 
   private readonly featuredInitiative: LabInitiative = {
     id: "audio-expression",
-    title: "Copilot Audio Expressions",
+    title: "OMP Audio Expressions",
     description:
-      "An experimental tool designed for effortless audio creation using Copilot's latest voice generation models.",
-    image: "/static/copilotlabs/audio-expression-cover-image-small.jpg",
+      "An experimental tool designed for effortless audio creation using OMP's latest voice generation models.",
+    image: "/static/omplabs/audio-expression-cover-image-small.jpg",
     actionText: "Try now",
     badge: "FEATURED",
   };
 
   private readonly gridInitiatives: LabInitiative[] = [
     {
-      id: "copilot-3d",
-      title: "Copilot 3D",
+      id: "omp-3d",
+      title: "OMP 3D",
       description: "Turn images into 3D models with one click.",
-      image: "/static/copilotlabs/copilot-3d-cover-image-small.png",
+      image: "/static/omplabs/omp-3d-cover-image-small.png",
       actionText: "Try now",
     },
     {
@@ -37,15 +37,15 @@ export class CopilotLabsView extends LitElement {
       title: "Portraits",
       description:
         "Talk through big moments with AI that responds with voice and visuals tailored to your identity.",
-      image: "/static/copilotlabs/portrait-cover-image-small--2.jpg",
+      image: "/static/omplabs/portrait-cover-image-small--2.jpg",
       actionText: "Try now",
     },
     {
       id: "gaming",
-      title: "Copilot Gaming Experiences",
+      title: "OMP Gaming Experiences",
       description:
         "A research demo at the intersection of gaming and artificial intelligence.",
-      image: "/static/copilotlabs/copilot-gaming-cover-image-small.jpg",
+      image: "/static/omplabs/omp-gaming-cover-image-small.jpg",
       actionText: "Try now",
     },
   ];
@@ -55,15 +55,15 @@ export class CopilotLabsView extends LitElement {
       id: "mico",
       title: "Mico",
       description: "Now available in Voice mode on desktop and mobile",
-      image: "/static/copilotlabs/copilot-appearance-cover-image-small--2.jpg",
+      image: "/static/omplabs/omp-appearance-cover-image-small--2.jpg",
       showButton: false,
     },
     {
-      id: "copilot-vision",
-      title: "Copilot Vision",
+      id: "omp-vision",
+      title: "OMP Vision",
       description: "Vision available on Edge, Windows, Mac, mobile and Xbox.",
-      image: "/static/copilotlabs/copilot-vision-cover-image-small.jpg",
-      actionText: "Try in Copilot in Edge",
+      image: "/static/omplabs/omp-vision-cover-image-small.jpg",
+      actionText: "Try in OMP",
       showButton: true,
     },
   ];
@@ -72,7 +72,7 @@ export class CopilotLabsView extends LitElement {
     this.dispatchEvent(
       new CustomEvent("submit-prompt", {
         detail: {
-          prompt: `Tell me more about the experimental ${init.title} feature in Copilot Labs and how I can try it.`,
+          prompt: `Tell me more about the experimental ${init.title} feature in OMP Labs and how I can try it.`,
           model: "Smart",
         },
         bubbles: true,
@@ -83,13 +83,13 @@ export class CopilotLabsView extends LitElement {
 
   override render() {
     return html`
-      <!-- Microsoft Copilot Exact Labs View Hierarchy from labs_rendered_main.html -->
+      <!-- OMP Web Exact Labs View Hierarchy from labs_rendered_main.html -->
       <div class="scrollbar-stable t-custom-scrollbar relative flex size-full flex-col items-center overflow-y-auto overflow-x-hidden overscroll-contain">
         <div class="w-full max-w-labs px-6 pt-16 pb-28 flex flex-col items-center mx-auto">
           <!-- Page Titles -->
           <div class="flex w-full flex-col items-center">
             <h1 class="text-center text-foreground-800 text-3xl font-ginto" data-testid="labs-title">
-              <span class="text-[38px] font-semibold">Copilot Labs</span>
+              <span class="text-[38px] font-semibold">OMP Labs</span>
             </h1>
             <h2 class="mt-4 text-center text-foreground-800 text-xl font-ginto [font-variation-settings:'opsz'_40,_'wght'_400]" data-testid="labs-slogan">
               Discover experimental AI initiatives
@@ -98,10 +98,10 @@ export class CopilotLabsView extends LitElement {
 
           <!-- Section: Featured Hero Card -->
           <section class="mt-12 w-full">
-            <copilot-labs-feature-card
+            <omp-labs-feature-card
               .initiative=${this.featuredInitiative}
               @card-click=${() => this.handleAction(this.featuredInitiative)}
-            ></copilot-labs-feature-card>
+            ></omp-labs-feature-card>
           </section>
 
           <!-- Section: Preview Experiments (2-Column Grid) -->
@@ -112,10 +112,10 @@ export class CopilotLabsView extends LitElement {
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
               ${this.gridInitiatives.map(
       (item) => html`
-                  <copilot-labs-experiment-card
+                  <omp-labs-experiment-card
                     .experiment=${item}
                     @card-click=${() => this.handleAction(item)}
-                  ></copilot-labs-experiment-card>
+                  ></omp-labs-experiment-card>
                 `,
     )}
             </div>
@@ -133,10 +133,10 @@ export class CopilotLabsView extends LitElement {
               ${this.graduatedExperiments.map(
       (exp) => html`
                   <li>
-                    <copilot-graduated-card
+                    <omp-graduated-card
                       .experiment=${exp}
                       @card-click=${() => this.handleAction(exp)}
-                    ></copilot-graduated-card>
+                    ></omp-graduated-card>
                   </li>
                 `,
     )}
@@ -165,6 +165,6 @@ export class CopilotLabsView extends LitElement {
 
 declare global {
   interface HTMLElementTagNameMap {
-    "copilot-labs-view": CopilotLabsView;
+    "omp-labs-view": OmpLabsView;
   }
 }

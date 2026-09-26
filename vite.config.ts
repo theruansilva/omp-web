@@ -95,7 +95,7 @@ export default defineConfig({
     rollupOptions: {
       input: {
         main: resolve("src/client/index.html"),
-        copilot: resolve("src/client/copilot.html"),
+        omp: resolve("src/client/omp.html"),
       },
       output: {
         manualChunks(id) {

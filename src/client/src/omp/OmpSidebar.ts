@@ -1,7 +1,7 @@
 import { LitElement, html } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import {
-  renderCopilotLogo,
+  renderOmpLogo,
   renderToggleSidebarIcon,
   renderNewChatIcon,
   renderLibraryIcon,
@@ -18,8 +18,8 @@ export interface NavItem {
   badge?: string;
 }
 
-@customElement("copilot-sidebar")
-export class CopilotSidebar extends LitElement {
+@customElement("omp-sidebar")
+export class OmpSidebar extends LitElement {
   @property({ type: String }) activeTab = "new-chat";
   @property({ type: Boolean }) isOpen = true;
 
@@ -76,18 +76,18 @@ export class CopilotSidebar extends LitElement {
       <aside
         class="w-full h-full flex flex-col justify-between border-e border-black/10 dark:border-white/10 bg-sidebar-light dark:bg-sidebar-dark p-3 select-none pointer-events-auto"
         role="navigation"
-        aria-label="Copilot Navigation"
+        aria-label="OMP Navigation"
       >
         <div class="w-full overflow-hidden">
-          <!-- Header: Copilot Wordmark + Collapse Toggle -->
+          <!-- Header: OMP Wordmark + Collapse Toggle -->
           <div class="flex items-center justify-between px-2 pt-1 pb-3 mb-2">
             <div
               class="flex items-center gap-2.5 cursor-pointer pointer-events-auto"
               @click=${() => this.handleSelect("new-chat")}
             >
-              ${renderCopilotLogo()}
+              ${renderOmpLogo()}
               <span class="text-[17px] font-semibold tracking-[-0.02em] text-foreground-800 font-ginto">
-                Copilot
+                OMP
               </span>
             </div>
             <button
@@ -162,6 +162,6 @@ export class CopilotSidebar extends LitElement {
 
 declare global {
   interface HTMLElementTagNameMap {
-    "copilot-sidebar": CopilotSidebar;
+    "omp-sidebar": OmpSidebar;
   }
 }

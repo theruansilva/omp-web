@@ -1,16 +1,16 @@
 import { describe, expect, it } from "bun:test";
-import "./CopilotAgentProcess";
-import { CopilotAgentProcess } from "./CopilotAgentProcess";
-import "./CopilotChatView";
-import { CopilotChatView, type ChatMessage } from "./CopilotChatView";
+import "./OmpAgentProcess";
+import { OmpAgentProcess } from "./OmpAgentProcess";
+import "./OmpChatView";
+import { OmpChatView, type ChatMessage } from "./OmpChatView";
 
-describe("CopilotAgentProcess", () => {
+describe("OmpAgentProcess", () => {
   it("registers custom element", () => {
-    expect(customElements.get("copilot-agent-process")).toBeDefined();
+    expect(customElements.get("omp-agent-process")).toBeDefined();
   });
 
   it("renders 5 steps timeline with initial step 0", () => {
-    const processEl = new CopilotAgentProcess();
+    const processEl = new OmpAgentProcess();
     processEl.autoAnimate = false;
     expect(processEl.currentStep).toBe(0);
 
@@ -19,7 +19,7 @@ describe("CopilotAgentProcess", () => {
   });
 
   it("navigates through steps with bounds checking", () => {
-    const processEl = new CopilotAgentProcess();
+    const processEl = new OmpAgentProcess();
     processEl.autoAnimate = false;
 
     processEl.goToStep(2);
@@ -38,7 +38,7 @@ describe("CopilotAgentProcess", () => {
   });
 
   it("restarts animation from step 0", () => {
-    const processEl = new CopilotAgentProcess();
+    const processEl = new OmpAgentProcess();
     processEl.autoAnimate = false;
     processEl.goToStep(3);
     expect(processEl.currentStep).toBe(3);
@@ -48,9 +48,9 @@ describe("CopilotAgentProcess", () => {
   });
 });
 
-describe("CopilotChatView with CopilotAgentProcess", () => {
-  it("renders assistant message with copilot-agent-process", () => {
-    const chatView = new CopilotChatView();
+describe("OmpChatView with OmpAgentProcess", () => {
+  it("renders assistant message with omp-agent-process", () => {
+    const chatView = new OmpChatView();
     const messages: ChatMessage[] = [
       {
         id: "msg-1",

@@ -34,8 +34,8 @@ Diferente de interfaces de chat genéricas ou terminais CLI áridos, o OMP Web c
   - `Labs`: Ambiente para prototipar novos recursos e extensões de IA.
   - *(Seções genéricas de consumo como Shopping, Imagine e Discover externo são expressamente descartadas).*
 - **Composer Multifuncional**: Entrada de texto com redimensionamento dinâmico, menus suspensos posicionados, anexo de capturas de tela e arquivos locais.
-- **Rebranding Total**: Eliminação de marcas e logotipos de terceiros ("Microsoft Copilot") em prol da identidade visual oficial "OMP Web".
-- **Design Tokens Rígidos**: Aderência estrita a tokens OKLCH (`copilot-theme.css`), curvatura concêntrica WWDC25 e classes utilitárias de superfície acrílica (`.copilot-surface-*`). Cores hexadecimais brutas são proibidas.
+- **Rebranding Total**: Eliminação de marcas e logotipos de terceiros  em prol da identidade visual oficial "OMP Web".
+- **Design Tokens Rígidos**: Aderência estrita a tokens OKLCH (`omp-theme.css`), curvatura concêntrica WWDC25 e classes utilitárias de superfície acrílica (`.omp-surface-*`). Cores hexadecimais brutas são proibidas.
 
 ## Brand Commitments
 - **Nome Oficial**: OMP Web (Oh My Pi Web).
@@ -43,8 +43,8 @@ Diferente de interfaces de chat genéricas ou terminais CLI áridos, o OMP Web c
 - **Identidade Visual**: Acrílica e contemporânea, suporte nativo a temas Dark/Light de alto contraste, tipografia com ajustes ópticos e proporções concêntricas.
 
 ## Evidence on Hand
-- Implementação de componentes Lit em `src/client/src/copilot/` e template de entrada em `src/client/copilot.html`.
-- Sistema de design semântico documentado em `src/client/copilot-theme.css`, `_rules/copilot-color-and-tokens-convention.md` e `_rules/shape-taxonomy-and-concentricity.md`.
+- Implementação de componentes Lit em `src/client/src/omp/` e template de entrada em `src/client/omp.html`.
+- Sistema de design semântico documentado em `src/client/omp-theme.css`, `_rules/omp-color-and-tokens-convention.md` e `_rules/shape-taxonomy-and-concentricity.md`.
 - Conexão e sincronização com backend em `src/server/` e daemon `sessiond`.
 
 ## Product Principles
@@ -54,5 +54,5 @@ Diferente de interfaces de chat genéricas ou terminais CLI áridos, o OMP Web c
 4. **Laboratório Isolado**: Novas capacidades são validadas no Labs antes de alterar fluxos consolidados do dia a dia.
 
 ## Accessibility & Inclusion
-- Contraste estrito WCAG AA/AAA nos modos claro e escuro através do pareamento de tokens semânticos (`--copilot-surface-*` e `--copilot-text-*`).
+- Contraste estrito WCAG AA/AAA nos modos claro e escuro através do pareamento de tokens semânticos (`--omp-surface-*` e `--omp-text-*`).
 - Suporte a navegação por teclado, foco visível e gaveta colapsável em telas menores (< 768px).

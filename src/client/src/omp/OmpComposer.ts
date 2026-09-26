@@ -28,8 +28,8 @@ interface AskOption {
   desc: string;
 }
 
-@customElement("copilot-composer")
-export class CopilotComposer extends LitElement {
+@customElement("omp-composer")
+export class OmpComposer extends LitElement {
   @property({ type: String }) value = "";
   @property({ type: String }) placeholder =
     "Message to omp, use @ to mention a file or / to start a command";
@@ -613,18 +613,18 @@ export class CopilotComposer extends LitElement {
     return html`
       <style>
         .composer-dropdown-popover {
-          background-color: var(--copilot-surface-popover) !important;
-          color: var(--copilot-text-primary) !important;
-          border: 1px solid var(--copilot-popover-border) !important;
+          background-color: var(--omp-surface-popover) !important;
+          color: var(--omp-text-primary) !important;
+          border: 1px solid var(--omp-popover-border) !important;
         }
 
         .composer-dropdown-popover [role="menuitem"],
         .composer-dropdown-popover .composer-dropdown-item {
-          color: var(--copilot-text-primary) !important;
+          color: var(--omp-text-primary) !important;
         }
 
         .composer-dropdown-popover .composer-dropdown-desc {
-          color: var(--copilot-text-secondary) !important;
+          color: var(--omp-text-secondary) !important;
         }
 
         .composer-ask-expander {
@@ -696,7 +696,7 @@ export class CopilotComposer extends LitElement {
         </div>
 
         <!-- Options 1, 2, 3 -->
-        <div class="flex flex-col gap-1.5" role="radiogroup" aria-label="Opções do Copilot">
+        <div class="flex flex-col gap-1.5" role="radiogroup" aria-label="Opções do OMP">
           ${this.askOptions.map((opt, idx) => {
             const isSelected = this.selectedAskOption === opt.id;
             return html`
@@ -759,7 +759,7 @@ export class CopilotComposer extends LitElement {
         @change=${(e: Event) => this.handleFileChange(e)}
       />
 
-      <!-- Microsoft Copilot Exact 4-Tier Composer Hierarchy with Unclipped Popover Support -->
+      <!-- OMP Web Exact 4-Tier Composer Hierarchy with Unclipped Popover Support -->
       <div class="relative max-h-full min-h-composer min-w-16 w-expanded-composer max-w-chat max-w-full rounded-5xl">
         <!-- 1. Background layer with shadow-tinted-xl and backdrop-blur -->
         <div
@@ -818,14 +818,14 @@ export class CopilotComposer extends LitElement {
                 <!-- Bottom Toolbar Row -->
                 <div class="relative bottom-0 flex items-center justify-between pb-1.5 pe-2.5 ps-1.5 z-10">
                   <div class="flex h-11 items-center gap-2 ps-1">
-                    <!-- Plus / Attachment Button with Microsoft Copilot classes -->
+                    <!-- Plus / Attachment Button with OMP Web classes -->
                     <button
                       id="composer-create-button"
                       data-testid="composer-create-button"
                       data-spatial-navigation-autofocus="false"
-                      title="Attach files, connect apps, or make something with Copilot."
+                      title="Attach files, connect apps, or make something with OMP."
                       type="button"
-                      aria-label="Attach files, connect apps, or make something with Copilot."
+                      aria-label="Attach files, connect apps, or make something with OMP."
                       class="relative flex items-center text-foreground-800 fill-foreground-800 active:text-foreground-600 active:fill-foreground-600 dark:active:text-foreground-650 dark:active:fill-foreground-650 bg-transparent safe-hover:bg-black/5 active:bg-black/3 dark:safe-hover:bg-white/8 dark:active:bg-white/5 text-sm justify-center min-h-9 min-w-9 after:rounded-xl after:absolute after:inset-0 after:pointer-events-none after:border after:border-transparent after:contrast-more:border-2 outline-2 outline-offset-1 focus-visible:z-[1] focus-visible:outline focus-visible:outline-stroke-900 h-9 select-none gap-1 rounded-2xl border border-black/8 dark:border-white/8 p-0 transition-colors"
                       @click=${(e: Event) => {
                         e.stopPropagation();
@@ -835,7 +835,7 @@ export class CopilotComposer extends LitElement {
                       ${renderPlusIcon("size-6")}
                     </button>
 
-                    <!-- Model Selector Pill: "Smart ⌄" with Microsoft Copilot classes -->
+                    <!-- Model Selector Pill: "Smart ⌄" with OMP Web classes -->
                     <div class="relative">
                       <button
                         id="composer-chat-mode-smart-button"
@@ -931,8 +931,8 @@ export class CopilotComposer extends LitElement {
                               id="audio-call-button"
                               data-testid="audio-call-button"
                               type="button"
-                              title="Talk to Copilot"
-                              aria-label="Talk to Copilot"
+                              title="Talk to OMP"
+                              aria-label="Talk to OMP"
                               class="relative flex items-center justify-center text-foreground-800 fill-foreground-800 active:text-foreground-600 active:fill-foreground-600 dark:active:text-foreground-650 dark:active:fill-foreground-650 bg-transparent safe-hover:bg-black/5 active:bg-black/3 dark:safe-hover:bg-white/8 dark:active:bg-white/5 text-sm min-h-9 min-w-9 rounded-2xl p-1.5 transition-colors cursor-pointer select-none"
                             >
                               ${renderWaveformIcon("size-6")}
@@ -952,6 +952,6 @@ export class CopilotComposer extends LitElement {
 
 declare global {
   interface HTMLElementTagNameMap {
-    "copilot-composer": CopilotComposer;
+    "omp-composer": OmpComposer;
   }
 }

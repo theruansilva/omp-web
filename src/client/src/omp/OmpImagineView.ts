@@ -12,8 +12,8 @@ export interface GalleryItem {
   isLiked?: boolean;
 }
 
-@customElement("copilot-imagine-view")
-export class CopilotImagineView extends LitElement {
+@customElement("omp-imagine-view")
+export class OmpImagineView extends LitElement {
   @state() private items: GalleryItem[] = [
     {
       id: "gallery-1",
@@ -123,7 +123,7 @@ export class CopilotImagineView extends LitElement {
 
   override render() {
     return html`
-      <!-- Microsoft Copilot Exact Imagine View from templates/imagine.html -->
+      <!-- OMP Web Exact Imagine View from templates/imagine.html -->
       <div class="scrollbar-stable t-custom-scrollbar relative flex size-full flex-col items-center overflow-y-auto overflow-x-hidden overscroll-contain">
         <div class="w-full max-w-labs px-4 sm:px-6 pt-16 pb-28 flex flex-col items-center mx-auto">
           <!-- Page Header -->
@@ -132,7 +132,7 @@ export class CopilotImagineView extends LitElement {
               Inspire your next image
             </h1>
             <p class="text-sm sm:text-base text-foreground-600 max-w-xl mx-auto font-sans">
-              Explore imaginative prompts and generative creations powered by Microsoft Copilot.
+              Explore imaginative prompts and generative creations powered by OMP Web.
             </p>
           </div>
 
@@ -198,6 +198,6 @@ export class CopilotImagineView extends LitElement {
 
 declare global {
   interface HTMLElementTagNameMap {
-    "copilot-imagine-view": CopilotImagineView;
+    "omp-imagine-view": OmpImagineView;
   }
 }

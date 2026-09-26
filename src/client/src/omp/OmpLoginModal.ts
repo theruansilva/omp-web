@@ -13,8 +13,8 @@ export interface LoginSubmitDetail {
   username: string;
 }
 
-@customElement("copilot-login-modal")
-export class CopilotLoginModal extends LitElement {
+@customElement("omp-login-modal")
+export class OmpLoginModal extends LitElement {
   @property({ type: Boolean }) isOpen = false;
   @property({ type: String }) theme: "dark" | "light" = "dark";
 
@@ -413,8 +413,8 @@ export class CopilotLoginModal extends LitElement {
           width: 100%;
           height: 44px;
           clip-path: var(--clip-path-squircle-16);
-          background-color: var(--copilot-primary);
-          color: var(--copilot-on-primary);
+          background-color: var(--omp-primary);
+          color: var(--omp-on-primary);
           border: none;
           font-size: 13.5px;
           font-weight: 600;
@@ -429,19 +429,19 @@ export class CopilotLoginModal extends LitElement {
 
         .dark .omp-squircle-submit-btn,
         [data-theme="dark"] .omp-squircle-submit-btn {
-          background-color: var(--copilot-primary);
-          color: var(--copilot-on-primary);
+          background-color: var(--omp-primary);
+          color: var(--omp-on-primary);
           box-shadow: 0 2px 10px rgba(0, 0, 0, 0.28);
         }
 
         .omp-squircle-submit-btn:hover:not(:disabled) {
-          background-color: var(--copilot-primary-hover);
+          background-color: var(--omp-primary-hover);
           transform: translateY(-1px);
         }
 
         .dark .omp-squircle-submit-btn:hover:not(:disabled),
         [data-theme="dark"] .omp-squircle-submit-btn:hover:not(:disabled) {
-          background-color: var(--copilot-primary-hover);
+          background-color: var(--omp-primary-hover);
           transform: translateY(-1px);
         }
 
@@ -590,6 +590,6 @@ export class CopilotLoginModal extends LitElement {
 
 declare global {
   interface HTMLElementTagNameMap {
-    "copilot-login-modal": CopilotLoginModal;
+    "omp-login-modal": OmpLoginModal;
   }
 }

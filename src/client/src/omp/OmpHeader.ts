@@ -2,8 +2,8 @@ import { LitElement, html, nothing } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { renderToggleSidebarIcon, renderSunIcon, renderMoonIcon } from "./icons";
 
-@customElement("copilot-header")
-export class CopilotHeader extends LitElement {
+@customElement("omp-header")
+export class OmpHeader extends LitElement {
   @property({ type: Boolean }) isSidebarOpen = true;
   @property({ type: String }) override title = "";
   @property({ type: String }) theme: "dark" | "light" = "light";
@@ -52,9 +52,9 @@ export class CopilotHeader extends LitElement {
             ? html`
                 <div class="flex items-center gap-2">
                   <div
-                    class="h-9 px-3 rounded-xl flex items-center gap-2 text-sm font-medium bg-[var(--copilot-surface-elevated)] border border-[var(--copilot-border-subtle)] text-[var(--copilot-text-primary)] shadow-sm"
+                    class="h-9 px-3 rounded-xl flex items-center gap-2 text-sm font-medium bg-[var(--omp-surface-elevated)] border border-[var(--omp-border-subtle)] text-[var(--omp-text-primary)] shadow-sm"
                   >
-                    <div class="size-5 rounded-full bg-[var(--copilot-accent)] text-[var(--copilot-on-accent)] flex items-center justify-center text-xs font-bold uppercase">
+                    <div class="size-5 rounded-full bg-[var(--omp-accent)] text-[var(--omp-on-accent)] flex items-center justify-center text-xs font-bold uppercase">
                       ${this.currentUser.charAt(0)}
                     </div>
                     <span class="max-w-[120px] truncate">${this.currentUser}</span>
@@ -63,7 +63,7 @@ export class CopilotHeader extends LitElement {
                     type="button"
                     title="Sair"
                     aria-label="Sair da conta"
-                    class="h-9 px-2.5 rounded-xl flex items-center justify-center text-xs font-medium text-[var(--copilot-text-muted)] hover:text-red-500 hover:bg-black/5 dark:hover:bg-white/10 transition-colors cursor-pointer"
+                    class="h-9 px-2.5 rounded-xl flex items-center justify-center text-xs font-medium text-[var(--omp-text-muted)] hover:text-red-500 hover:bg-black/5 dark:hover:bg-white/10 transition-colors cursor-pointer"
                     @click=${() => this.dispatchEvent(new CustomEvent("sign-out", { bubbles: true, composed: true }))}
                   >
                     Sair
@@ -73,7 +73,7 @@ export class CopilotHeader extends LitElement {
             : html`
                 <button
                   type="button"
-                  class="copilot-btn-signin h-9 px-3.5 py-1 rounded-xl flex items-center justify-center text-sm font-medium cursor-pointer shadow-sm active:scale-98"
+                  class="omp-btn-signin h-9 px-3.5 py-1 rounded-xl flex items-center justify-center text-sm font-medium cursor-pointer shadow-sm active:scale-98"
                   @click=${() => this.dispatchEvent(new CustomEvent("sign-in", { bubbles: true, composed: true }))}
                 >
                   Sign in
@@ -87,6 +87,6 @@ export class CopilotHeader extends LitElement {
 
 declare global {
   interface HTMLElementTagNameMap {
-    "copilot-header": CopilotHeader;
+    "omp-header": OmpHeader;
   }
 }

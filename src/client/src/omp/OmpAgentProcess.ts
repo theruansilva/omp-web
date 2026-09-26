@@ -1,8 +1,8 @@
 import { LitElement, html } from "lit";
 import { customElement, property } from "lit/decorators.js";
 
-@customElement("copilot-agent-process")
-export class CopilotAgentProcess extends LitElement {
+@customElement("omp-agent-process")
+export class OmpAgentProcess extends LitElement {
  @property({ type: Number }) currentStep = 0;
  @property({ type: Boolean }) autoAnimate = true;
  private timer: unknown = null;
@@ -68,9 +68,9 @@ export class CopilotAgentProcess extends LitElement {
 
  override render() {
   return html`
-      <!-- Copilot Agent Process Timeline (Compact Agent Workflow) -->
+      <!-- OMP Agent Process Timeline (Compact Agent Workflow) -->
       <div
-        class="copilot-agent-timeline-container relative w-full overflow-hidden select-none my-3"
+        class="omp-agent-timeline-container relative w-full overflow-hidden select-none my-3"
         style="height: 250px; min-height: 250px;"
       >
         <div class="flex size-full flex-col items-center relative">
@@ -118,7 +118,7 @@ export class CopilotAgentProcess extends LitElement {
 
   return html`
       <div
-        class="copilot-agent-step w-full max-w-[min(768px,100%)] will-change-[opacity,transform] gpu-text flex justify-start gap-4 md:gap-6 px-4 sm:px-6 absolute top-[50%] cursor-pointer"
+        class="omp-agent-step w-full max-w-[min(768px,100%)] will-change-[opacity,transform] gpu-text flex justify-start gap-4 md:gap-6 px-4 sm:px-6 absolute top-[50%] cursor-pointer"
         style="min-height: 95px; ${this.getStepStyle(0)}"
         @click=${() => this.goToStep(0)}
       >
@@ -196,7 +196,7 @@ export class CopilotAgentProcess extends LitElement {
 
   return html`
       <div
-        class="copilot-agent-step w-full max-w-[min(768px,100%)] will-change-[opacity,transform] gpu-text flex justify-start gap-4 md:gap-6 px-4 sm:px-6 absolute top-[50%] cursor-pointer"
+        class="omp-agent-step w-full max-w-[min(768px,100%)] will-change-[opacity,transform] gpu-text flex justify-start gap-4 md:gap-6 px-4 sm:px-6 absolute top-[50%] cursor-pointer"
         style="min-height: 95px; ${this.getStepStyle(1)}"
         @click=${() => this.goToStep(1)}
       >
@@ -282,7 +282,7 @@ export class CopilotAgentProcess extends LitElement {
 
   return html`
       <div
-        class="copilot-agent-step w-full max-w-[min(768px,100%)] will-change-[opacity,transform] gpu-text flex justify-start gap-4 md:gap-6 px-4 sm:px-6 absolute top-[50%] cursor-pointer"
+        class="omp-agent-step w-full max-w-[min(768px,100%)] will-change-[opacity,transform] gpu-text flex justify-start gap-4 md:gap-6 px-4 sm:px-6 absolute top-[50%] cursor-pointer"
         style="min-height: 95px; ${this.getStepStyle(2)}"
         @click=${() => this.goToStep(2)}
       >
@@ -368,7 +368,7 @@ export class CopilotAgentProcess extends LitElement {
 
   return html`
       <div
-        class="copilot-agent-step w-full max-w-[min(768px,100%)] will-change-[opacity,transform] gpu-text flex justify-start gap-4 md:gap-6 px-4 sm:px-6 absolute top-[50%] cursor-pointer"
+        class="omp-agent-step w-full max-w-[min(768px,100%)] will-change-[opacity,transform] gpu-text flex justify-start gap-4 md:gap-6 px-4 sm:px-6 absolute top-[50%] cursor-pointer"
         style="min-height: 95px; ${this.getStepStyle(3)}"
         @click=${() => this.goToStep(3)}
       >
@@ -450,7 +450,7 @@ export class CopilotAgentProcess extends LitElement {
 
   return html`
       <div
-        class="copilot-agent-step w-full max-w-[min(768px,100%)] will-change-[opacity,transform] gpu-text flex justify-start gap-4 md:gap-6 px-4 sm:px-6 absolute top-[50%] cursor-pointer"
+        class="omp-agent-step w-full max-w-[min(768px,100%)] will-change-[opacity,transform] gpu-text flex justify-start gap-4 md:gap-6 px-4 sm:px-6 absolute top-[50%] cursor-pointer"
         style="min-height: 95px; ${this.getStepStyle(4)}"
         @click=${() => this.goToStep(4)}
       >
@@ -579,6 +579,6 @@ export class CopilotAgentProcess extends LitElement {
 
 declare global {
  interface HTMLElementTagNameMap {
-  "copilot-agent-process": CopilotAgentProcess;
+  "omp-agent-process": OmpAgentProcess;
  }
 }
