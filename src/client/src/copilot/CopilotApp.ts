@@ -24,6 +24,7 @@ export class CopilotApp extends LitElement {
   @state() private isFirstPrompt = false;
   @state() private isLoginModalOpen = false;
   @state() private currentUser: string | null = null;
+  private lastPromptTime = 0;
 
   protected override createRenderRoot() {
     return this;
@@ -98,6 +99,9 @@ export class CopilotApp extends LitElement {
   }
 
   private handlePromptSubmit(detail: SubmitPromptDetail) {
+    const now = Date.now();
+    if (this.isStreaming || (now - this.lastPromptTime < 350)) return;
+    this.lastPromptTime = now;
     if (this.messages.length === 0) {
       this.isFirstPrompt = true;
       setTimeout(() => {
@@ -125,6 +129,7 @@ export class CopilotApp extends LitElement {
         id: "msg-" + (Date.now() + 1),
         role: "assistant",
         text: assistantText,
+        hasAgentProcess: true,
         timestamp: new Date().toLocaleTimeString([], {
           hour: "2-digit",
           minute: "2-digit",

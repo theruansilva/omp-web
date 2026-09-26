@@ -19,3 +19,4 @@ export * from "./CopilotLibraryView";
 export * from "./CopilotTasksBanner";
 export * from "./CopilotApp";
 export * from "./CopilotLoginModal";
+export * from "./CopilotAgentProcess";

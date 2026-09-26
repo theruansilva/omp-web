@@ -2,12 +2,14 @@ import { LitElement, html, nothing } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { renderCopilotLogo, renderLoadingDots } from "./icons";
 import "./CopilotComposer";
+import "./CopilotAgentProcess";
 
 export interface ChatMessage {
   id: string;
   role: "user" | "assistant";
   text: string;
   timestamp?: string;
+  hasAgentProcess?: boolean;
 }
 
 @customElement("copilot-chat-view")
@@ -86,13 +88,18 @@ export class CopilotChatView extends LitElement {
                       `
           : html`
                         <!-- Assistant Message with Copilot gradient logo -->
-                        <div class="flex items-start gap-3 w-full">
-                          <div class="size-8 rounded-full copilot-surface-avatar flex items-center justify-center shadow-xs shrink-0 mt-0.5">
-                            ${renderCopilotLogo("size-5")}
+                        <div class="flex flex-col w-full space-y-4">
+                          <div class="flex items-start gap-3 w-full">
+                            <div class="size-8 rounded-full copilot-surface-avatar flex items-center justify-center shadow-xs shrink-0 mt-0.5">
+                              ${renderCopilotLogo("size-5")}
+                            </div>
+                            <div class="flex-1 text-[15px] leading-relaxed text-foreground-900 font-sans break-words pt-1 select-text">
+                              <div class="whitespace-pre-wrap">${msg.text}</div>
+                            </div>
                           </div>
-                          <div class="flex-1 text-[15px] leading-relaxed text-foreground-900 font-sans break-words pt-1 select-text">
-                            <div class="whitespace-pre-wrap">${msg.text}</div>
-                          </div>
+                          ${msg.hasAgentProcess !== false
+                            ? html`<copilot-agent-process @agent-step-changed=${() => this.scrollToBottom()}></copilot-agent-process>`
+                            : nothing}
                         </div>
                       `}
                 `
