@@ -5,6 +5,8 @@ import {
   renderPlusIcon,
   renderChevronDownIcon,
   renderSendIcon,
+  renderStopIcon,
+  renderQueueIcon,
   renderWaveformIcon,
   renderSmartModeIcon,
   renderQuickModeIcon,
@@ -43,6 +45,7 @@ export interface SubmitPromptDetail {
   model: string;
   projectId?: string;
   attachments?: PromptAttachment[];
+  streamingBehavior?: "steer" | "followUp";
 }
 
 async function readFileAsBase64(file: File): Promise<string> {
@@ -1357,13 +1360,11 @@ export class OmpComposer extends LitElement {
     this.explicitShiftKeyActive = false;
   }
 
-  private submit() {
+  private submit(streamingBehavior?: "steer" | "followUp") {
     const rawText = this.value.trim();
-    if (
-      (!rawText && this.attachments.length === 0) ||
-      (this.isWorking && !this.pendingAsk)
-    )
-      return;
+    if (!rawText && this.attachments.length === 0) return;
+    const behavior = streamingBehavior ?? (this.isWorking ? "followUp" : undefined);
+    if (this.isWorking && !this.pendingAsk && !behavior) return;
     this.closeMenu();
     this.closeSlashMenu();
 
@@ -1465,6 +1466,7 @@ export class OmpComposer extends LitElement {
           model: this.selectedModel,
           projectId: this.selectedProjectId,
           attachments,
+          streamingBehavior: behavior,
         },
         bubbles: true,
         composed: true,
@@ -2103,8 +2105,8 @@ export class OmpComposer extends LitElement {
                     ${this.customPills}
                   </div>
 
-                  <!-- Right Action Button: Submit (Up Arrow), Stop, or Audio Call / Voice -->
-                  <div class="flex items-center gap-2">
+                  <!-- Right Action Button: Submit (Up Arrow), Stop, Queue, or Audio Call / Voice -->
+                  <div class="flex items-center gap-1.5">
                     ${
                       this.isWorking
                         ? html`
@@ -2114,7 +2116,7 @@ export class OmpComposer extends LitElement {
                             type="button"
                             title="Stop generating"
                             aria-label="Stop generating"
-                            class="relative flex items-center justify-center size-9 rounded-2xl hover:opacity-90 active:scale-95 transition-all shadow-sm cursor-pointer select-none"
+                            class="relative flex items-center justify-center size-9 rounded-2xl bg-black text-white dark:bg-white dark:text-black hover:opacity-90 active:scale-95 transition-all shadow-sm cursor-pointer select-none"
                             @click=${() =>
                               this.dispatchEvent(
                                 new CustomEvent("stop-generation", {
@@ -2123,8 +2125,23 @@ export class OmpComposer extends LitElement {
                                 }),
                               )}
                           >
-                            <div class="size-3.5 rounded bg-current"></div>
+                            ${renderStopIcon("size-4")}
                           </button>
+                          ${(this.value.trim() || this.attachments.length > 0)
+                            ? html`
+                              <button
+                                id="queue-button"
+                                data-testid="queue-button"
+                                type="button"
+                                title="Queue message (agent is working)"
+                                aria-label="Queue message"
+                                class="relative flex items-center justify-center size-9 rounded-2xl bg-black text-white dark:bg-white dark:text-black hover:opacity-90 active:scale-95 transition-all shadow-sm cursor-pointer select-none"
+                                @click=${() => this.submit("followUp")}
+                              >
+                                ${renderQueueIcon("size-4")}
+                              </button>
+                            `
+                            : nothing}
                         `
                         : (this.value.trim() || this.attachments.length > 0)
                           ? html`
@@ -2134,7 +2151,7 @@ export class OmpComposer extends LitElement {
                               type="button"
                               title="Submit"
                               aria-label="Submit"
-                              class="relative flex items-center justify-center size-9 rounded-2xl hover:opacity-90 active:scale-95 transition-all shadow-sm cursor-pointer select-none"
+                              class="relative flex items-center justify-center size-9 rounded-2xl bg-black text-white dark:bg-white dark:text-black hover:opacity-90 active:scale-95 transition-all shadow-sm cursor-pointer select-none"
                               @click=${() => this.submit()}
                             >
                               ${renderSendIcon("size-5")}

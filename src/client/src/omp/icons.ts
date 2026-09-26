@@ -135,6 +135,25 @@ export function renderSendIcon(className = "size-4") {
   `;
 }
 
+export function renderStopIcon(className = "size-4") {
+  return html`
+    <svg viewBox="0 0 24 24" fill="currentColor" class="${className}">
+      <rect x="6.5" y="6.5" width="11" height="11" rx="2.5"></rect>
+    </svg>
+  `;
+}
+
+export function renderQueueIcon(className = "size-4") {
+  return html`
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="${className}">
+      <path d="M4 6h11"></path>
+      <path d="M4 12h7"></path>
+      <path d="M4 18h7"></path>
+      <path d="m15 14 5 3-5 3z" fill="currentColor"></path>
+    </svg>
+  `;
+}
+
 export function renderArrowLeftIcon(className = "size-4") {
   return html`
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="${className}">

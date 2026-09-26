@@ -870,16 +870,16 @@ export class OmpApp extends LitElement {
       if (attachments && attachments.length > 0) {
         const canUseInline = promptAttachmentsCanUseInlineDelivery(attachments);
         if (canUseInline) {
-          await sessionsApi.prompt({ id: sessionId, cwd: ws.path }, promptTrimmed, undefined, "local", attachments);
+          await sessionsApi.prompt({ id: sessionId, cwd: ws.path }, promptTrimmed, detail.streamingBehavior, "local", attachments);
         } else {
           const saved = await sessionsApi.saveAttachments({ id: sessionId, cwd: ws.path }, attachments, "local");
           const files = Array.isArray(saved) ? saved : ((saved as { attachments?: SavedPromptAttachment[] })?.attachments ?? []);
           const references = files.map((file) => `@${file.path}`).join(" ");
           const body = promptTrimmed === "" ? references : `${promptTrimmed}\n\n${references}`;
-          await sessionsApi.prompt({ id: sessionId, cwd: ws.path }, body);
+          await sessionsApi.prompt({ id: sessionId, cwd: ws.path }, body, detail.streamingBehavior);
         }
       } else {
-        await sessionsApi.prompt({ id: sessionId, cwd: ws.path }, promptTrimmed);
+        await sessionsApi.prompt({ id: sessionId, cwd: ws.path }, promptTrimmed, detail.streamingBehavior);
       }
       if (ws && this.sessionsByCwd[ws.path]) {
         this.sessionsByCwd = {
@@ -900,6 +900,20 @@ export class OmpApp extends LitElement {
         timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
       };
       this.messages = [...this.messages, errorMsg];
+    }
+  }
+
+
+  private async handleStopGeneration() {
+    const ws = this.getActiveWorkspace();
+    const sessionId = this.selectedSessionId;
+    if (!sessionId) return;
+    try {
+      await sessionsApi.abort({ id: sessionId, cwd: ws?.path || "" });
+      this.isStreaming = false;
+      this.requestUpdate();
+    } catch (err) {
+      console.error("[OMP] Failed to stop session:", err);
     }
   }
 
@@ -1153,6 +1167,7 @@ Dica: você pode selecionar uma das opções abaixo para testar a injeção auto
                 .selectedProjectId=${this.selectedProjectId}
                 @project-select=${(e: CustomEvent<{ projectId: string }>) => void this.handleProjectSelect(e.detail.projectId)}
                 @submit-prompt=${(e: CustomEvent<SubmitPromptDetail>) => this.handlePromptSubmit(e.detail)}
+                @stop-generation=${() => void this.handleStopGeneration()}
               ></omp-home-view>
             `
           : html`
@@ -1171,6 +1186,7 @@ Dica: você pode selecionar uma das opções abaixo para testar a injeção auto
                 @submit-ask=${(e: CustomEvent<{ requestId: string; result: AskDialogResult }>) => void this.handleSubmitAsk(e.detail.requestId, e.detail.result)}
                 @cancel-ask=${(e: CustomEvent<{ requestId: string }>) => void this.handleCancelAsk(e.detail.requestId)}
                 @submit-prompt=${(e: CustomEvent<SubmitPromptDetail>) => this.handlePromptSubmit(e.detail)}
+                @stop-generation=${() => void this.handleStopGeneration()}
               ></omp-chat-view>
             `;
 
@@ -1207,6 +1223,7 @@ Dica: você pode selecionar uma das opções abaixo para testar a injeção auto
             @submit-prompt=${(e: CustomEvent<SubmitPromptDetail>) => {
               this.handlePromptSubmit(e.detail);
             }}
+            @stop-generation=${() => void this.handleStopGeneration()}
           ></omp-projects-view>
         `;
 
@@ -1242,6 +1259,7 @@ Dica: você pode selecionar uma das opções abaixo para testar a injeção auto
             @submit-prompt=${(e: CustomEvent<SubmitPromptDetail>) => {
               this.handlePromptSubmit(e.detail);
             }}
+            @stop-generation=${() => void this.handleStopGeneration()}
           ></omp-project-detail-view>
         `;
 

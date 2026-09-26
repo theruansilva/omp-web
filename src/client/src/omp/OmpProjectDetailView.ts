@@ -540,6 +540,9 @@ export class OmpProjectDetailView extends LitElement {
         );
       }}
               @submit-prompt=${(e: CustomEvent<SubmitPromptDetail>) => this.handleSubmitPrompt(e.detail)}
+              @stop-generation=${() => {
+        this.dispatchEvent(new CustomEvent("stop-generation", { bubbles: true, composed: true }));
+      }}
             ></omp-composer>
           </div>
         </div>

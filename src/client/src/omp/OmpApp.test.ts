@@ -303,4 +303,39 @@ describe("OmpApp integration", () => {
     expect((app as any).selectedSessionId).toBe("new-sess-456");
     expect((app as any).activeTab).toBe("new-chat");
   });
+  it("handleStopGeneration calls sessionsApi.abort on active session and clears isStreaming", async () => {
+    installMockWindow("http://localhost:8504/omp?tab=new-chat&session=sess-active");
+    const app = new OmpApp();
+    (app as any).selectedSessionId = "sess-active";
+    (app as any).isStreaming = true;
+    (app as any).getActiveWorkspace = () => ({ id: "ws-1", path: "/test/ws" });
+
+    const abortSpy = vi.spyOn(sessionsApi, "abort").mockResolvedValue({ aborted: true } as any);
+
+    await (app as any).handleStopGeneration();
+
+    expect(abortSpy).toHaveBeenCalledWith({ id: "sess-active", cwd: "/test/ws" });
+    expect((app as any).isStreaming).toBe(false);
+  });
+
+  it("handlePromptSubmit forwards streamingBehavior to sessionsApi.prompt", async () => {
+    installMockWindow("http://localhost:8504/omp?tab=new-chat&session=sess-active");
+    const app = new OmpApp();
+    (app as any).selectedSessionId = "sess-active";
+    (app as any).getActiveWorkspace = () => ({ id: "ws-1", path: "/test/ws" });
+
+    const promptSpy = vi.spyOn(sessionsApi, "prompt").mockResolvedValue({ accepted: true } as any);
+
+    await (app as any).handlePromptSubmit({
+      prompt: "Queue this next",
+      model: "default",
+      streamingBehavior: "followUp",
+    });
+
+    expect(promptSpy).toHaveBeenCalledWith(
+      { id: "sess-active", cwd: "/test/ws" },
+      "Queue this next",
+      "followUp"
+    );
+  });
 });

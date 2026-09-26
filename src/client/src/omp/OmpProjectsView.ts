@@ -342,6 +342,9 @@ export class OmpProjectsView extends LitElement {
           }),
         );
       }}
+              @stop-generation=${() => {
+        this.dispatchEvent(new CustomEvent("stop-generation", { bubbles: true, composed: true }));
+      }}
             ></omp-composer>
           </div>
         </div>

@@ -262,6 +262,9 @@ export class OmpChatView extends LitElement {
               @submit-prompt=${(e: CustomEvent) => {
         this.dispatchEvent(new CustomEvent("submit-prompt", { detail: e.detail, bubbles: true, composed: true }));
       }}
+              @stop-generation=${() => {
+        this.dispatchEvent(new CustomEvent("stop-generation", { bubbles: true, composed: true }));
+      }}
             ></omp-composer>
           </div>
         </div>

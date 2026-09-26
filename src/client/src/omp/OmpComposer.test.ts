@@ -220,3 +220,66 @@ describe("OmpComposer Enter Key Behavior (Mobile & PC)", () => {
     expect(prevented).toBe(false);
   });
 });
+
+describe("OmpComposer Stop & Queue Buttons", () => {
+  it("when isWorking is true and empty input: renders stop-button and not queue-button", () => {
+    const composer = new OmpComposer();
+    composer.isWorking = true;
+    composer.value = "";
+
+    const rendered = composer.render();
+    const template = JSON.stringify(rendered);
+
+    expect(template).toContain("stop-button");
+    expect(template).not.toContain("queue-button");
+    expect(template).not.toContain("submit-button");
+  });
+
+  it("when isWorking is true and has text: renders both stop-button and queue-button", () => {
+    const composer = new OmpComposer();
+    composer.isWorking = true;
+    composer.value = "Follow up question";
+
+    const rendered = composer.render();
+    const template = JSON.stringify(rendered);
+
+    expect(template).toContain("stop-button");
+    expect(template).toContain("queue-button");
+    expect(template).not.toContain("submit-button");
+  });
+
+  it("submitting when isWorking is true dispatches submit-prompt with streamingBehavior: 'followUp'", () => {
+    const composer = new OmpComposer();
+    composer.isWorking = true;
+    composer.value = "Queued message";
+
+    let detail: any;
+    composer.addEventListener("submit-prompt", (e: any) => {
+      detail = e.detail;
+    });
+
+    (composer as any).submit();
+
+    expect(detail).toBeDefined();
+    expect(detail.prompt).toBe("Queued message");
+    expect(detail.streamingBehavior).toBe("followUp");
+    expect(composer.value).toBe("");
+  });
+
+  it("explicit submit('followUp') dispatches submit-prompt with streamingBehavior: 'followUp'", () => {
+    const composer = new OmpComposer();
+    composer.isWorking = true;
+    composer.value = "Explicit follow up";
+
+    let detail: any;
+    composer.addEventListener("submit-prompt", (e: any) => {
+      detail = e.detail;
+    });
+
+    (composer as any).submit("followUp");
+
+    expect(detail).toBeDefined();
+    expect(detail.prompt).toBe("Explicit follow up");
+    expect(detail.streamingBehavior).toBe("followUp");
+  });
+});
