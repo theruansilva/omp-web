@@ -1,7 +1,20 @@
 #!/usr/bin/env bun
+import { networkInterfaces } from "node:os";
 import { effectiveOmpWebConfig, maxUploadBytes, ompWebDataDir } from "../config.js";
 import { buildApp } from "./app.js";
 import { getOrGenerateAuthToken } from "./security.js";
+
+function getLanIp(): string | undefined {
+  const nets = networkInterfaces();
+  for (const name of Object.keys(nets)) {
+    for (const net of nets[name] || []) {
+      if (net.family === "IPv4" && !net.internal) {
+        return net.address;
+      }
+    }
+  }
+  return undefined;
+}
 
 const { config } = effectiveOmpWebConfig();
 const authToken = getOrGenerateAuthToken(ompWebDataDir(process.env));
@@ -26,3 +39,9 @@ Bun.serve({
 
 const authSuffix = authRequired ? `?token=${authToken}` : "";
 console.info(`PI WEB server listening on http://${host}:${String(port)}${authSuffix}`);
+if (host === "0.0.0.0") {
+  const lan = getLanIp();
+  if (lan) {
+    console.info(`Network access: http://${lan}:${String(port)}${authSuffix}`);
+  }
+}

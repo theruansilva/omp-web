@@ -1,7 +1,7 @@
 #!/usr/bin/env bun
 import { existsSync, readFileSync, realpathSync } from "node:fs";
 import { mkdir, rm, writeFile } from "node:fs/promises";
-import { homedir, userInfo } from "node:os";
+import { homedir, userInfo, networkInterfaces } from "node:os";
 import { basename, dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { defaultOmpWebConfigPath, defaultOmpWebDataDir, exampleOmpWebConfig, loadOmpWebConfig, saveOmpWebConfig } from "./config.js";
@@ -224,6 +224,8 @@ function parseInstallOptions(args: string[]): InstallOptions {
       i += 1;
     } else if (arg.startsWith("--config=")) {
       options.config = arg.slice("--config=".length);
+    } else if (arg === "--remote" || arg === "-r") {
+      options.host = "0.0.0.0";
     } else if (arg === "--dev") {
       options.mode = "dev";
     } else if (arg === "--user-systemd") {
@@ -1063,17 +1065,66 @@ export async function setPasswordCommand(args: string[] = []): Promise<void> {
   console.log(`Password set successfully for user "${username}".`);
 }
 
+export function getLanIp(): string | undefined {
+  const nets = networkInterfaces();
+  for (const name of Object.keys(nets)) {
+    for (const net of nets[name] || []) {
+      if (net.family === "IPv4" && !net.internal) {
+        return net.address;
+      }
+    }
+  }
+  return undefined;
+}
+
+export async function remoteCommand(args: string[] = []): Promise<void> {
+  const action = args[0]?.toLowerCase();
+  const { config } = loadOmpWebConfig();
+  const lanIp = getLanIp();
+  const port = config.port ?? 8504;
+
+  if (action === "on" || action === "enable" || action === "--enable") {
+    saveOmpWebConfig({
+      ...config,
+      host: "0.0.0.0",
+    });
+    console.log("Remote access enabled: PI WEB will listen on all interfaces (0.0.0.0).");
+    if (lanIp) {
+      console.log(`Network URL: http://${lanIp}:${port}`);
+    }
+    console.log('Run "omp-web restart" to apply changes.');
+  } else if (action === "off" || action === "disable" || action === "--disable") {
+    saveOmpWebConfig({
+      ...config,
+      host: "127.0.0.1",
+    });
+    console.log("Remote access disabled: PI WEB will only listen on localhost (127.0.0.1).");
+    console.log('Run "omp-web restart" to apply changes.');
+  } else {
+    const isRemote = config.host === "0.0.0.0";
+    console.log(`Remote access is currently: ${isRemote ? "ENABLED (0.0.0.0)" : "DISABLED (127.0.0.1)"}`);
+    if (isRemote && lanIp) {
+      console.log(`Network URL: http://${lanIp}:${port}`);
+    }
+    console.log(`Local URL:   http://127.0.0.1:${port}`);
+    console.log("\nUsage:");
+    console.log("  omp-web remote on     Enable remote access from other machines");
+    console.log("  omp-web remote off    Disable remote access (localhost only)");
+  }
+}
+
 function help(): void {
   console.log(`PI WEB
 
 Usage:
-  omp-web install [--dev] [--host 127.0.0.1] [--port 8504] [--config ~/.config/omp-web/config.json]
+  omp-web install [--remote] [--dev] [--host 127.0.0.1] [--port 8504] [--config ~/.config/omp-web/config.json]
   omp-web update
   omp-web uninstall
   omp-web start|stop|status|logs
   omp-web restart [--force] [--wait]
   omp-web sessions [--json]
   omp-web doctor
+  omp-web remote [on|off]            Toggle LAN / remote network access
   omp-web reset-password [username]
   omp-web set-password <user> <pass>
 
@@ -1096,6 +1147,7 @@ async function main(): Promise<void> {
   else if (command === "start" || command === "stop" || command === "status") serviceAction(command);
   else if (command === "logs") logs();
   else if (command === "doctor") await doctor();
+  else if (command === "remote") await remoteCommand(args);
   else if (command === "reset-password" || command === "resetpass") await resetPasswordCommand(args);
   else if (command === "set-password" || command === "setpass") await setPasswordCommand(args);
   else if (command === "version") await printOmpWebVersionReport();

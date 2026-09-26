@@ -2,7 +2,7 @@ import { mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from "node
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "bun:test";
-import { codingAgentCommandWithVersionCheck, commandWithVersionCheck, isCliEntrypoint, resetPasswordCommand, setPasswordCommand, sessionsCommand } from "./cli.js";
+import { codingAgentCommandWithVersionCheck, commandWithVersionCheck, isCliEntrypoint, remoteCommand, resetPasswordCommand, setPasswordCommand, sessionsCommand } from "./cli.js";
 import { loadOmpWebConfig } from "./config.js";
 
 const originalShell = process.env["SHELL"];
@@ -128,6 +128,25 @@ describe("password CLI commands", () => {
       const loaded = loadOmpWebConfig();
       expect(loaded.config.authUsername).toBe("admin");
       expect(loaded.config.authPasswordHash).toContain("$argon2id$");
+    } finally {
+      delete process.env["OMP_WEB_CONFIG"];
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+});
+
+describe("remoteCommand", () => {
+  it("enables and disables remote access via config", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "omp-cli-remote-"));
+    process.env["OMP_WEB_CONFIG"] = join(dir, "config.json");
+    try {
+      await remoteCommand(["on"]);
+      let loaded = loadOmpWebConfig();
+      expect(loaded.config.host).toBe("0.0.0.0");
+
+      await remoteCommand(["off"]);
+      loaded = loadOmpWebConfig();
+      expect(loaded.config.host).toBe("127.0.0.1");
     } finally {
       delete process.env["OMP_WEB_CONFIG"];
       rmSync(dir, { recursive: true, force: true });
