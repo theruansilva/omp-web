@@ -1,6 +1,6 @@
 import type { ReactiveController, ReactiveControllerHost } from "lit";
 
-export const EDGE_SWIPE_THRESHOLD = 60;
+export const EDGE_SWIPE_THRESHOLD = 80;
 export const DIRECTION_LOCK_DEADZONE = 8;
 export const FLING_VELOCITY_THRESHOLD = 0.3; // px/ms
 export const DRAWER_MAX_WIDTH = 320;
@@ -167,18 +167,32 @@ export class MobileDrawerController implements ReactiveController {
     const dy = touch.clientY - this.touchStartY;
 
     if (this.directionLock === null) {
-      if (Math.hypot(dx, dy) < DIRECTION_LOCK_DEADZONE) {
+      const absDx = Math.abs(dx);
+      const absDy = Math.abs(dy);
+
+      // Deadzone: wait until finger moves at least DIRECTION_LOCK_DEADZONE in some direction
+      if (absDx < DIRECTION_LOCK_DEADZONE && absDy < DIRECTION_LOCK_DEADZONE) {
         return;
       }
-      // If primarily vertical, release to native scrolling
-      if (Math.abs(dy) >= Math.abs(dx)) {
+
+      // Check for horizontal intent (accommodating natural thumb diagonal arc)
+      const isHorizontalIntent = this.dragMode === "opening"
+        ? (dx > 6 && absDx >= absDy * 0.7)
+        : (dx < -6 && absDx >= absDy * 0.7);
+
+      if (isHorizontalIntent) {
+        this.directionLock = "horizontal";
+        this.isDragging = true;
+      } else if (absDy > 10 && absDy > absDx * 1.3) {
+        // Clearly vertical movement (scrolling content), cancel tracking
         this.directionLock = "vertical";
         this.isTracking = false;
         this.dragMode = null;
         return;
+      } else {
+        // Ambiguous trajectory, wait for next touchmove frame
+        return;
       }
-      this.directionLock = "horizontal";
-      this.isDragging = true;
     }
 
     if (this.directionLock === "horizontal") {

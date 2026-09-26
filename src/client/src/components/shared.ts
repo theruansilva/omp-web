@@ -135,7 +135,7 @@ export const appStyles = css`
     .shell.hide-breadcrumbs.workspace-view.bottom-mobile-nav app-mobile-main-tabs { grid-row: 2; grid-column: 3; }
   }
   @media (max-width: 760px) {
-    .shell { grid-template-columns: minmax(0, 1fr); }
+    .shell { grid-template-columns: minmax(0, 1fr); touch-action: pan-y; }
     aside, .navigation-panel-edge { display: none; }
     main, .shell.workspace-view > workspace-panel { grid-column: 1; }
     .shell.workspace-view.bottom-mobile-nav .context-bar,

@@ -275,7 +275,8 @@ export async function buildApp(deps: AppDependencies = {}): Promise<BuiltApp> {
   registerPushRoutes(app, pushService);
 
   const packagedClientDist = join(dirname(fileURLToPath(import.meta.url)), "..", "client");
-  const clientDist = deps.clientDist ?? (existsSync(packagedClientDist) ? packagedClientDist : join(process.cwd(), "dist", "client"));
+  const localDistClient = join(process.cwd(), "dist", "client");
+  const clientDist = deps.clientDist ?? (existsSync(join(packagedClientDist, "assets")) ? packagedClientDist : existsSync(localDistClient) ? localDistClient : packagedClientDist);
   if (clientDist !== false && existsSync(clientDist)) {
     app.get("/omp", (c) => {
       const ompHtmlPath = join(clientDist, "omp.html");
