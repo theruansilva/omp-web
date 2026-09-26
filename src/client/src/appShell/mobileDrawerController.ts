@@ -1,10 +1,21 @@
 import type { ReactiveController, ReactiveControllerHost } from "lit";
 
-export const EDGE_SWIPE_THRESHOLD = 80;
 export const DIRECTION_LOCK_DEADZONE = 6;
-export const FLING_VELOCITY_THRESHOLD = 0.25; // px/ms
+export const FLING_VELOCITY_THRESHOLD = 0.2; // px/ms
 export const DRAWER_MAX_WIDTH = 320;
 export const DRAWER_VIEWPORT_RATIO = 0.85;
+
+function isInteractiveInput(target: unknown): boolean {
+  if (!target || typeof target !== "object") return false;
+  if (!("closest" in target) || typeof target.closest !== "function") return false;
+  return Boolean(target.closest("input, textarea, select"));
+}
+
+function isScrollableCodeBlock(target: unknown): boolean {
+  if (!target || typeof target !== "object") return false;
+  if (!("closest" in target) || typeof target.closest !== "function") return false;
+  return Boolean(target.closest("pre, code, .cm-editor, .xterm"));
+}
 
 export interface MobileDrawerControllerOptions {
   isMobileNavigationLayout: () => boolean;
@@ -22,6 +33,8 @@ export class MobileDrawerController implements ReactiveController {
   private touchStartX = 0;
   private touchStartY = 0;
   private touchStartTime = 0;
+  private lastMoveX = 0;
+  private lastMoveTime = 0;
   private directionLock: "horizontal" | "vertical" | null = null;
   private dragMode: "opening" | "closing" | null = null;
   private listenersAttached = false;
@@ -144,11 +157,12 @@ export class MobileDrawerController implements ReactiveController {
 
     const target = event.target;
     // Don't intercept touches if user is interacting with text inputs/textareas
-    const isTextInput = typeof HTMLElement !== "undefined" && target instanceof HTMLElement && Boolean(target.closest("input, textarea, select"));
+    const isTextInput = isInteractiveInput(target);
+    const isCodeBlock = isScrollableCodeBlock(target);
 
     if (!this.isOpen) {
-      // Swipe from left edge (up to EDGE_SWIPE_THRESHOLD)
-      if (touch.clientX > EDGE_SWIPE_THRESHOLD || isTextInput) {
+      // Allow swiping from anywhere across the screen, except within text inputs or scrollable code blocks
+      if (isTextInput || isCodeBlock) {
         return;
       }
       this.dragMode = "opening";
@@ -168,6 +182,8 @@ export class MobileDrawerController implements ReactiveController {
     this.touchStartX = touch.clientX;
     this.touchStartY = touch.clientY;
     this.touchStartTime = Date.now();
+    this.lastMoveX = touch.clientX;
+    this.lastMoveTime = Date.now();
   };
 
   readonly handleTouchMove = (event: TouchEvent): void => {
@@ -217,6 +233,9 @@ export class MobileDrawerController implements ReactiveController {
         this.dragTranslateX = Math.min(0, Math.max(-width, dx));
       }
 
+      this.lastMoveX = touch.clientX;
+      this.lastMoveTime = Date.now();
+
       this.applyDirectStyles(width);
       this.host.requestUpdate();
     }
@@ -226,21 +245,33 @@ export class MobileDrawerController implements ReactiveController {
     if (!this.isTracking && !this.isDragging) return;
 
     if (this.isDragging && this.dragMode) {
-      const dt = Math.max(1, Date.now() - this.touchStartTime);
       const touch = event.changedTouches[0];
-      const finalX = touch ? touch.clientX : this.touchStartX;
-      const dx = finalX - this.touchStartX;
-      const vx = dx / dt;
+      const finalX = touch ? touch.clientX : this.lastMoveX;
+
+      // Calculate recent velocity over the final movement window (handles holding before drag)
+      const recentDt = Math.max(1, Date.now() - this.lastMoveTime);
+      const recentDx = finalX - this.lastMoveX;
+      const recentVx = recentDx / recentDt;
+
+      // Also calculate overall velocity from touch start
+      const totalDt = Math.max(1, Date.now() - this.touchStartTime);
+      const totalDx = finalX - this.touchStartX;
+      const totalVx = totalDx / totalDt;
+
+      const vx = Math.abs(recentVx) > 0.05 ? recentVx : totalVx;
       const width = this.getDrawerWidth();
+      const progress = (this.dragTranslateX + width) / width;
 
       if (this.dragMode === "opening") {
-        if (vx > FLING_VELOCITY_THRESHOLD || this.dragTranslateX > -width * 0.65) {
+        // Snap open if user flicked right or dragged at least 25% of the drawer width
+        if (vx > FLING_VELOCITY_THRESHOLD || progress >= 0.25) {
           this.open();
         } else {
           this.close();
         }
       } else {
-        if (vx < -FLING_VELOCITY_THRESHOLD || this.dragTranslateX < -width * 0.35) {
+        // Snap closed if user flicked left or dragged at least 25% back to left
+        if (vx < -FLING_VELOCITY_THRESHOLD || progress <= 0.75) {
           this.close();
         } else {
           this.open();
@@ -255,14 +286,15 @@ export class MobileDrawerController implements ReactiveController {
   readonly handleTouchCancel = (): void => {
     if (this.isDragging) {
       const width = this.getDrawerWidth();
+      const progress = (this.dragTranslateX + width) / width;
       if (this.dragMode === "opening") {
-        if (this.dragTranslateX > -width * 0.5) {
+        if (progress >= 0.4) {
           this.open();
         } else {
           this.close();
         }
       } else {
-        if (this.dragTranslateX < -width * 0.5) {
+        if (progress <= 0.6) {
           this.close();
         } else {
           this.open();

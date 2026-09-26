@@ -2,7 +2,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "bun:test";
 import type { ReactiveControllerHost } from "lit";
 import {
   MobileDrawerController,
-  EDGE_SWIPE_THRESHOLD,
   DRAWER_MAX_WIDTH,
 } from "./mobileDrawerController";
 
@@ -71,15 +70,17 @@ describe("MobileDrawerController", () => {
 
   afterEach(() => {
     Object.defineProperty(globalThis, "window", { value: originalWindow, configurable: true });
+    vi.useRealTimers();
   });
 
-  function createController(drawerEl?: unknown): MobileDrawerController {
+  function createController(drawerEl?: unknown, backdropEl?: unknown): MobileDrawerController {
     return new MobileDrawerController(host, {
       isMobileNavigationLayout: () => isMobile,
       onStateChange: (open) => {
         stateChanges.push(open);
       },
       getDrawerElement: () => drawerEl as HTMLElement | undefined,
+      getBackdropElement: () => backdropEl as HTMLElement | undefined,
     });
   }
 
@@ -94,10 +95,8 @@ describe("MobileDrawerController", () => {
 
   it("calculates drawer width clamped to max 320px", () => {
     const controller = createController();
-    // window.innerWidth = 400 -> 400 * 0.85 = 340 -> clamped to 320
     expect(controller.getDrawerWidth()).toBe(DRAWER_MAX_WIDTH);
 
-    // smaller mobile screen (320px wide) -> 320 * 0.85 = 272
     Object.defineProperty(globalThis, "window", { value: { ...globalThis.window, innerWidth: 320 }, configurable: true });
     expect(controller.getDrawerWidth()).toBe(272);
   });
@@ -120,33 +119,54 @@ describe("MobileDrawerController", () => {
     expect(controller.isOpen).toBe(false);
   });
 
-  it("ignores edge touch start if touch is past EDGE_SWIPE_THRESHOLD when closed", () => {
+  it("ignores touch start if touch is inside input or code block", () => {
+    const inputElement = {
+      closest: (sel: string) => (sel.includes("input") ? {} : null),
+    };
     const controller = createController();
-    controller.handleTouchStart(createTouchEvent("touchstart", EDGE_SWIPE_THRESHOLD + 10, 100));
-    controller.handleTouchMove(createTouchEvent("touchmove", EDGE_SWIPE_THRESHOLD + 50, 100));
+    controller.handleTouchStart(createTouchEvent("touchstart", 100, 100, inputElement));
+    controller.handleTouchMove(createTouchEvent("touchmove", 150, 100, inputElement));
 
     expect(controller.isDragging).toBe(false);
     expect(controller.isOpen).toBe(false);
   });
 
-  it("tracks horizontal drag when touch starts near left edge and drags right", () => {
+  it("tracks horizontal drag when touch starts in middle of screen and drags right", () => {
     const controller = createController();
-    controller.handleTouchStart(createTouchEvent("touchstart", 10, 100));
-    // Small vertical jitter (< DEADZONE) followed by horizontal drag
-    controller.handleTouchMove(createTouchEvent("touchmove", 15, 102));
-    controller.handleTouchMove(createTouchEvent("touchmove", 80, 103));
+    // Starts in the middle of screen at X = 150
+    controller.handleTouchStart(createTouchEvent("touchstart", 150, 100));
+    controller.handleTouchMove(createTouchEvent("touchmove", 155, 101));
+    controller.handleTouchMove(createTouchEvent("touchmove", 220, 102));
 
     expect(controller.isDragging).toBe(true);
     expect(controller.dragTranslateX).toBeLessThan(0);
     expect(controller.drawerStyle()).toContain("transform: translateX");
     expect(controller.backdropStyle()).toContain("opacity:");
 
-    // Dragged past threshold (> 60% of width) and release slowly
-    controller.handleTouchMove(createTouchEvent("touchmove", 280, 103));
-    controller.handleTouchEnd(createTouchEvent("touchend", 280, 103));
+    // Dragged > 25% of drawer width (width = 320, 25% is 80px)
+    controller.handleTouchMove(createTouchEvent("touchmove", 260, 102));
+    controller.handleTouchEnd(createTouchEvent("touchend", 260, 102));
 
     expect(controller.isOpen).toBe(true);
     expect(controller.isDragging).toBe(false);
+  });
+
+  it("supports holding on the screen before dragging to open", () => {
+    vi.useFakeTimers();
+    const controller = createController();
+    controller.handleTouchStart(createTouchEvent("touchstart", 120, 200));
+
+    // Advance fake timer by 1000ms (simulate holding finger)
+    vi.advanceTimersByTime(1000);
+
+    // Dragging right after hold
+    controller.handleTouchMove(createTouchEvent("touchmove", 130, 201));
+    controller.handleTouchMove(createTouchEvent("touchmove", 230, 202));
+
+    expect(controller.isDragging).toBe(true);
+    controller.handleTouchEnd(createTouchEvent("touchend", 230, 202));
+
+    expect(controller.isOpen).toBe(true);
   });
 
   it("cancels tracking if touch gesture is primarily vertical (scrolling)", () => {
@@ -170,7 +190,6 @@ describe("MobileDrawerController", () => {
 
     expect(controller.isDragging).toBe(true);
 
-    // Fast fling right: touchend simulates quick completion
     controller.handleTouchEnd(createTouchEvent("touchend", 40, 100));
     expect(controller.isOpen).toBe(true);
   });
@@ -193,30 +212,12 @@ describe("MobileDrawerController", () => {
     expect(controller.isDragging).toBe(true);
     expect(controller.dragTranslateX).toBeLessThan(0);
 
-    // Dragged far left (> 35% closed) and release
-    controller.handleTouchMove(createTouchEvent("touchmove", 50, 100, fakeDrawer));
-    controller.handleTouchEnd(createTouchEvent("touchend", 50, 100, fakeDrawer));
+    // Dragged far left (> 25% closed) and release
+    controller.handleTouchMove(createTouchEvent("touchmove", 100, 100, fakeDrawer));
+    controller.handleTouchEnd(createTouchEvent("touchend", 100, 100, fakeDrawer));
 
     expect(controller.isOpen).toBe(false);
     expect(controller.isDragging).toBe(false);
-  });
-
-  it("tracks closing drag when touch starts on backdrop", () => {
-    const fakeBackdrop = {
-      classList: { contains: (cls: string) => cls === "mobile-drawer-backdrop" },
-      closest: () => null,
-    };
-
-    const controller = createController();
-    controller.open();
-    expect(controller.isOpen).toBe(true);
-
-    controller.handleTouchStart(createTouchEvent("touchstart", 350, 100, fakeBackdrop));
-    controller.handleTouchMove(createTouchEvent("touchmove", 200, 100, fakeBackdrop));
-
-    expect(controller.isDragging).toBe(true);
-    controller.handleTouchEnd(createTouchEvent("touchend", 200, 100, fakeBackdrop));
-    expect(controller.isOpen).toBe(false);
   });
 
   it("attaches and detaches listeners based on mobile layout", () => {
