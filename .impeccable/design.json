@@ -1,0 +1,120 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-09-25T20:30:00.000Z",
+  "title": "Design System: OMP Web",
+  "extensions": {
+    "colorMeta": {
+      "primary": {
+        "role": "primary",
+        "displayName": "Muted Slate / Cocoa 450",
+        "canonical": "rgb(var(--color-muted-450))",
+        "tonalRamp": ["rgb(var(--color-muted-100))", "rgb(var(--color-muted-200))", "rgb(var(--color-muted-300))", "rgb(var(--color-muted-400))", "rgb(var(--color-muted-450))", "rgb(var(--color-muted-550))", "rgb(var(--color-muted-700))", "rgb(var(--color-muted-900))"]
+      },
+      "canvas-dark": {
+        "role": "neutral",
+        "displayName": "Deep Slate 900",
+        "canonical": "rgb(var(--color-muted-100))",
+        "tonalRamp": ["#05070a", "#0b0e14", "#121722", "#1a202c", "#2d3748", "#4a5568", "#718096", "#cbd5e1"]
+      },
+      "surface-card-dark": {
+        "role": "neutral",
+        "displayName": "Translucent Slate 850 Card",
+        "canonical": "rgb(var(--color-muted-150) / 0.95)",
+        "tonalRamp": ["rgba(15,17,25,0.95)", "rgba(22,26,36,0.95)", "rgba(31,36,49,0.95)", "rgba(41,47,64,0.95)", "rgba(51,59,79,0.95)", "rgba(62,72,95,0.95)", "rgba(82,92,123,0.95)", "rgba(240,244,252,0.95)"]
+      }
+    },
+    "typographyMeta": {
+      "title": { "displayName": "Direct Header", "purpose": "Títulos limpos e autossuficientes sem subtítulos." },
+      "label": { "displayName": "Field Label", "purpose": "Rótulo superior dos campos." },
+      "body": { "displayName": "Input Value", "purpose": "Texto dos campos e valores digitados." }
+    },
+    "shadows": [
+      {
+        "name": "squircle-drop-shadow",
+        "value": "filter: drop-shadow(0 20px 36px rgba(0, 0, 0, 0.22))",
+        "purpose": "Sombra que segue fielmente o contorno das superelipses recortadas com clip-path."
+      }
+    ],
+    "motion": [
+      {
+        "name": "ease-squircle",
+        "value": "cubic-bezier(0.16, 1, 0.3, 1)",
+        "purpose": "Aceleração suave de escala e entrada de modais."
+      }
+    ],
+    "breakpoints": [
+      { "name": "mobile", "value": "768px" },
+      { "name": "chat-max", "value": "768px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Squircle Input Field",
+      "kind": "input",
+      "refersTo": "input-field",
+      "description": "Entrada de texto com altura de 44px, superelipse squircle-16 e traço perimetral baseado em color-muted-450.",
+      "html": "<div class=\"ds-squircle-input-wrapper\"><div class=\"ds-squircle-input-row\"><input class=\"ds-squircle-input\" placeholder=\"Seu nome\" /></div><div class=\"ds-squircle-input-stroke\"></div></div>",
+      "css": ".ds-squircle-input-wrapper { position: relative; width: 100%; } .ds-squircle-input-row { position: relative; display: flex; align-items: center; height: 44px; clip-path: var(--clip-path-squircle-16); background-color: rgb(var(--color-muted-200) / 0.35); padding: 0 12px; } .ds-squircle-input { width: 100%; border: none; background: transparent; font-size: 13.5px; outline: none; color: inherit; } .ds-squircle-input-stroke { pointer-events: none; position: absolute; inset: 0; clip-path: var(--clip-path-squircle-stroke-16); background-color: rgb(var(--color-muted-450) / 0.20); } .ds-squircle-input-wrapper:focus-within .ds-squircle-input-stroke { background-color: rgb(var(--color-muted-450) / 0.70); }"
+    },
+    {
+      "name": "Squircle Muted Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Botão de ação primária com altura de 44px, squircle-16 e preenchimento color-muted-450 com transição para color-muted-550.",
+      "html": "<button class=\"ds-squircle-btn\">Entrar</button>",
+      "css": ".ds-squircle-btn { width: 100%; height: 44px; clip-path: var(--clip-path-squircle-16); background-color: rgb(var(--color-muted-450)); color: #ffffff; border: none; font-size: 13.5px; font-weight: 600; cursor: pointer; transition: background-color 0.15s, transform 0.15s; } .ds-squircle-btn:hover { background-color: rgb(var(--color-muted-550)); transform: translateY(-1px); } .ds-squircle-btn:active { transform: translateY(0); }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Minimalist Squircle Cockpit (Muted Warmth)",
+    "overview": "O OMP Web expressa uma estética minimalista, orgânica e sóbria que rejeita brancos estéreis ou contrastes agressivos em favor do sistema tonal autêntico do projeto: o espectro --color-muted-* (escala Cocoa no tema claro e escala Slate no tema escuro).",
+    "keyCharacteristics": [
+      "Sistema Tonal Muted Autêntico: Substituição de brancos crus pelos tokens --color-muted-450 e variantes.",
+      "Sem Subtítulos: Títulos concisos e diretos; eliminação de legendas genéricas ou explicações redundantes.",
+      "Geometria Squircle Nativa: Curvatura superelíptica orgânica via clip-path: var(--clip-path-squircle-*) e traço com squircle-stroke.",
+      "Estrutura 2-Tier: Moldura externa de acolhimento (bezel de 6px) envolvendo o cartão de conteúdo interno.",
+      "Altura Unificada de Controles: Entradas de texto e botões de ação primária medem 44px para ritmo visual coeso."
+    ],
+    "rules": [
+      {
+        "name": "The Authentic Muted Rule",
+        "body": "Botões, bordas e superfícies devem priorizar as variáveis --color-muted-* do projeto em vez de brancos duros (#ffffff) ou pretos crus (#000000). O tom deve respirar a escala Cocoa no light e Slate no dark.",
+        "section": "colors"
+      },
+      {
+        "name": "The No-Accent-Clutter Rule",
+        "body": "Cores saturadas (como ciano neon ou azul elétrico) são estritamente evitadas em caixas de ícones e anéis de foco cotidianos; o tom color-muted-450 resolve toda a cadência estrutural.",
+        "section": "colors"
+      },
+      {
+        "name": "The No-Subheading Doctrine",
+        "body": "Somos minimalistas e diretos ao assunto. Títulos de telas, modais e cartões devem ser autossuficientes. Subtítulos descritivos e slogans genéricos são eliminados.",
+        "section": "typography"
+      },
+      {
+        "name": "The Squircle Shadow Rule",
+        "body": "Todo elemento que utiliza clip-path: var(--clip-path-squircle-*) deve projetar sombra a partir do wrapper container com filter: drop-shadow(...), nunca por box-shadow direto.",
+        "section": "elevation"
+      },
+      {
+        "name": "The Pure Squircle Rule",
+        "body": "Componentes principais de interação e cartões usam as superelipses nativas da biblioteca @progmruansilva/squircles, evitando o clássico formato de cantos cilíndricos padrão.",
+        "section": "shapes"
+      }
+    ],
+    "dos": [
+      "Do usar os tokens --color-muted-450 e variantes para botões, bordas e fundos no lugar de brancos estéreis.",
+      "Do utilizar as classes e variáveis de superelipse (squircle-36, squircle-16, squircle-stroke-*).",
+      "Do manter a altura uniforme de 44px em campos de entrada e botões principais.",
+      "Do manter títulos diretos e eliminar subtítulos supérfluos.",
+      "Do usar filter: drop-shadow(...) no elemento pai de um squircle para preservar sombras fiéis à curvatura."
+    ],
+    "donts": [
+      "Don't aplicar branco puro não atenuado em botões principais de tema escuro.",
+      "Don't adicionar subtítulos explicativos, frases de boas-vindas genéricas ou slogans abaixo de cabeçalhos simples.",
+      "Don't aplicar cores de acento neon/ciano em anéis de foco, fundos de ícones ou bordas rotineiras.",
+      "Don't usar box-shadow diretamente em nós com clip-path (ele será cortado).",
+      "Don't criar inputs com alturas díspares da altura dos botões de ação do mesmo formulário."
+    ]
+  }
+}

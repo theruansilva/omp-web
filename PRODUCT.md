@@ -7,49 +7,52 @@
 web
 
 ## Users
-- **Público Primário Expandido**: Usuários que não são da área de TI ou desenvolvedores iniciantes que precisam de agentes autônomos para automatizar tarefas, criar fluxos de trabalho e resolver problemas sem atrito de configuração técnica.
-- **Desenvolvedores & Power-Users**: Desenvolvedores e engenheiros de software que utilizam o Oh My Pi como harness principal para desenvolvimento autônomo, execução de tarefas longas e supervisão em múltiplos dispositivos.
-- **Criadores de Plugins & Adaptadores**: Usuários que adaptam a interface e criam extensões/plugins personalizados para seus próprios casos de uso e rotinas diárias.
+- **Desenvolvedores & Power-Users**: Engenheiros de software e desenvolvedores que utilizam o Oh My Pi como harness principal para desenvolvimento autônomo, execução de tarefas em background e comandos via linguagem natural.
+- **Usuários & Criadores**: Pessoas que buscam automatizar rotinas, gerenciar tarefas e interagir com agentes autônomos sem atrito de configuração técnica em terminais de linha de comando.
+- **Exploradores de Ferramentas & Plugins**: Usuários interessados em testar fluxos generativos e extensões experimentais centralizadas na área de Labs.
 
 ## Product Purpose
-Tornar o ecossistema do Oh My Pi Coding Agent verdadeiramente acessível e amigável para qualquer pessoa (mesmo sem background técnico em TI), permitindo conectar múltiplos provedores e contas de IA via OAuth em poucos cliques, executar agentes autônomos persistentes em segundo plano e estender facilmente a experiência por meio de plugins próprios.
+Ser o cockpit web definitivo do Oh My Pi (OMP Web), substituindo a interface legada pela nova experiência moderna e fluida inspirada na arquitetura de chat acrílico — unificando chat conversacional com modos de raciocínio, execução autônoma em segundo plano e laboratório de extensões.
 
 ## Positioning
-Diferente de IDEs complexas (Cursor, VS Code) ou harnesses restritos a terminais CLI para programadores, o OMP Web é o cockpit de agentes autônomos mais acessível do ecossistema:
-1. **Conectividade Multi-Provedor/Multi-Conta via OAuth**: Conexão simples e transparente de múltiplos provedores e contas sem a barreira de configurar variáveis de ambiente complexas ou arquivos de configuração no terminal.
-2. **Abstração Gradual (Beginner-Friendly com Profundidade)**: Interface intuitiva e limpa para quem está começando, sem jargões desnecessários na visão principal, mantendo o poder de terminais e git worktrees acessível sob demanda para quem precisa.
-3. **Persistência Real**: Daemon desacoplado (`sessiond`) que mantém os agentes trabalhando em segundo plano com segurança, permitindo fechar o navegador ou alternar entre celular e desktop sem interromper o trabalho.
-4. **Ecossistema de Plugins Amigável**: Arquitetura que permite a qualquer usuário adaptar e criar plugins para seu próprio fluxo de trabalho.
+Diferente de interfaces de chat genéricas ou terminais CLI áridos, o OMP Web combina a usabilidade de um assistente moderno de alta fidelidade com o motor real de execução do Oh My Pi:
+1. **Cockpit Moderno Unificado**: Interface limpa com design acrílico, cantos squircle e tokens semânticos OKLCH, substituindo a interface legada como a experiência padrão do ecossistema.
+2. **Composer com Modos de Raciocínio**: Seleção integrada de modos de raciocínio (Smart, Quick, Think), menção rápida de arquivos (`@`) e execução de comandos (`/`).
+3. **Persistência & Daemon Desacoplado**: Conexão com o daemon `sessiond`, mantendo execuções ativas e tarefas em andamento mesmo com aba fechada ou troca de dispositivo.
+4. **Laboratório Dedicado (Labs)**: Área isolada para testes e experimentação de recursos generativos e protótipos de plugins sem poluir o fluxo de trabalho principal.
 
 ## Operating Context
-- Acesso via navegadores web modernos (desktop, tablets e smartphones com modo PWA).
-- Operação em máquinas locais, home labs, servidores remotos ou instâncias em nuvem com o daemon em execução contínua.
-- Sessões de interação via linguagem natural assistidas por componentes ricos de Generative UI, cartões de ferramentas compreensíveis e visualização clara de progresso.
+- Navegadores modernos em desktop e dispositivos móveis (drawer lateral retrátil e layout adaptativo touch-friendly).
+- Comunicação bidirecional contínua em tempo real via WebSockets para streaming de tokens, status de ferramentas e interações do agente.
+- Componentes nativos de Generative UI (`<options>`, `<checklist>`, `<kpi-grid>`, `<card>`) para decisões interativas diretamente no feed de chat.
 
 ## Capabilities and Constraints
-- **Multi-Provedor & OAuth**: Gerenciamento e alternância de múltiplas contas e provedores de IA integrados nativamente.
-- **Sistema de Plugins Extensível**: Suporte a plugins no cliente e servidor para customização de ações, visualizações e ferramentas.
-- **Comunicação em Tempo Real**: Streaming contínuo e bidirecional via WebSockets para chat, ferramentas e terminais.
-- **Workspace & Arquivos**: Gerenciamento de diretórios, git worktrees e arquivos do projeto com edição em tempo real.
-- **Terminais Integrados**: Terminal xterm.js interativo disponível para inspeção técnica quando necessário.
-- **Progressive Disclosure**: A interface deve priorizar simplicidade e clareza visual para iniciantes, revelando detalhes técnicos (logs crus, terminais, diffs de git) de forma progressiva.
+- **Navegação Focada**:
+  - `New chat`: Tela inicial com hero greeting dinâmico e composer centralizado.
+  - `Tasks`: Acompanhamento e controle de tarefas em execução e jobs em segundo plano.
+  - `Library`: Histórico de sessões, workspaces e artefatos gerados.
+  - `Labs`: Ambiente para prototipar novos recursos e extensões de IA.
+  - *(Seções genéricas de consumo como Shopping, Imagine e Discover externo são expressamente descartadas).*
+- **Composer Multifuncional**: Entrada de texto com redimensionamento dinâmico, menus suspensos posicionados, anexo de capturas de tela e arquivos locais.
+- **Rebranding Total**: Eliminação de marcas e logotipos de terceiros ("Microsoft Copilot") em prol da identidade visual oficial "OMP Web".
+- **Design Tokens Rígidos**: Aderência estrita a tokens OKLCH (`copilot-theme.css`), curvatura concêntrica WWDC25 e classes utilitárias de superfície acrílica (`.copilot-surface-*`). Cores hexadecimais brutas são proibidas.
 
 ## Brand Commitments
-- **Nome**: OMP Web (Oh My Pi Web).
-- **Tom de Voz**: Convidativo, claro, empoderador e descomplicado. Evitar jargões técnicos excessivos nas interações principais com o usuário.
-- **Identidade Visual**: Moderna, ergonômica, suporte nativo a temas (Dark/Light) e alta legibilidade.
+- **Nome Oficial**: OMP Web (Oh My Pi Web).
+- **Tom de Voz**: Preciso, elegante, responsivo e descomplicado.
+- **Identidade Visual**: Acrílica e contemporânea, suporte nativo a temas Dark/Light de alto contraste, tipografia com ajustes ópticos e proporções concêntricas.
 
 ## Evidence on Hand
-- Código-fonte e documentação em `docs/frontend-features.md`, `README.md` e `package.json`.
-- Implementação ativa de WebSockets, Hono backend, Lit components e plugins em `src/`.
-- Suporte a comandos do Oh My Pi e arquitetura de sessões daemon em `src/server/sessiond.ts`.
+- Implementação de componentes Lit em `src/client/src/copilot/` e template de entrada em `src/client/copilot.html`.
+- Sistema de design semântico documentado em `src/client/copilot-theme.css`, `_rules/copilot-color-and-tokens-convention.md` e `_rules/shape-taxonomy-and-concentricity.md`.
+- Conexão e sincronização com backend em `src/server/` e daemon `sessiond`.
 
 ## Product Principles
-1. **Simplicidade por Padrão, Poder Sob Demanda**: Qualquer pessoa deve conseguir autenticar suas contas via OAuth e interagir com o agente sem precisar abrir um terminal. O poder técnico existe, mas nunca é imposto como barreira.
-2. **Autonomia Sem Ansiedade**: O usuário deve entender claramente o que o agente está fazendo através de cartões visuais limpos e feedback em tempo real, sem logs indecifráveis.
-3. **Trabalho Contínuo e Sem Fricção**: A sessão do agente pertence ao ambiente, não à aba do navegador. Fechar a aba ou trocar de aparelho não perde o contexto nem interrompe a execução.
-4. **Adaptabilidade Pessoal**: O usuário é dono do seu fluxo e deve conseguir adaptar a ferramenta para suas tarefas do dia a dia através de plugins simples.
+1. **Clareza & Foco em Execução**: O usuário interage com um chat limpo e poderoso; distrações cosméticas de consumo não pertencem ao cockpit de desenvolvimento.
+2. **Raciocínio Sob Medida**: O modo de modelo (Smart para raciocínio geral, Quick para patches ágeis, Think para planejamento complexo) é acessível diretamente no composer.
+3. **Fidelidade Visual Semântica**: Toda elevação, borda e fundo deriva de tokens matematicamente consistentes em OKLCH com acessibilidade visual garantida em qualquer tema.
+4. **Laboratório Isolado**: Novas capacidades são validadas no Labs antes de alterar fluxos consolidados do dia a dia.
 
 ## Accessibility & Inclusion
-- Interface responsiva adaptada para desktop, tablet e celular (touch-friendly com áreas de toque adequadas).
-- Textos claros, suporte a contraste adequado em temas claro e escuro, e semântica web para navegação facilitada.
+- Contraste estrito WCAG AA/AAA nos modos claro e escuro através do pareamento de tokens semânticos (`--copilot-surface-*` e `--copilot-text-*`).
+- Suporte a navegação por teclado, foco visível e gaveta colapsável em telas menores (< 768px).
