@@ -18,3 +18,4 @@ export * from "./OmpLoginModal";
 export * from "./OmpAgentProcess";
 export * from "./OmpProjectsView";
 export * from "./OmpProjectDetailView";
+export * from "./OmpMarkdown";

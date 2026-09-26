@@ -4,6 +4,9 @@ if (typeof globalThis.document === "undefined") {
   Reflect.set(globalThis, "document", {
     createTreeWalker: () => ({}),
     createComment: () => ({}),
+    getElementById: () => null,
+    documentElement: { classList: { add: () => {}, remove: () => {}, toggle: () => {} }, setAttribute: () => {} },
+    body: { appendChild: () => {}, removeChild: () => {} },
     createElement: () => ({
       content: {
         querySelectorAll: () => [],
