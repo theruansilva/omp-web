@@ -10,6 +10,7 @@ import "./OmpTasksBanner";
 import "./OmpLibraryView";
 import "./OmpProjectsView";
 import "./OmpProjectDetailView";
+import "./OmpSettingsView";
 import type { ChatMessage } from "./OmpChatView";
 import type { SubmitPromptDetail, BtwState, ComposerProject } from "./OmpComposer";
 import type { ProjectCardData } from "./OmpProjectsView";
@@ -250,7 +251,7 @@ export class OmpApp extends LitElement {
   private readonly handlePopState = () => {
     if (typeof window === "undefined") return;
     const params = new URLSearchParams(window.location.search);
-    const tab = params.get("tab") || "new-chat";
+    const tab = params.get("tab") || (params.get("settings") ? "settings" : "new-chat");
     const session = params.get("session") || "";
     const project = params.get("project") || "";
     const workspace = params.get("workspace") || "";
@@ -285,7 +286,7 @@ export class OmpApp extends LitElement {
     }
 
     const params = new URLSearchParams(window.location.search);
-    const tabParam = params.get("tab");
+    const tabParam = params.get("tab") || (params.get("settings") ? "settings" : null);
     const sessionParam = params.get("session") || (!tabParam ? this.getStoredSessionId() : null);
     const projectParam = params.get("project") || this.getStoredProjectId();
     const workspaceParam = params.get("workspace");
@@ -1207,6 +1208,8 @@ Dica: você pode selecionar uma das opções abaixo para testar a injeção auto
         return "Projetos";
       case "project-detail":
         return "Projeto";
+      case "settings":
+        return "Configurações";
       default:
         return "";
     }
@@ -1281,6 +1284,14 @@ Dica: você pode selecionar uma das opções abaixo para testar a injeção auto
             }}
             @stop-generation=${() => void this.handleStopGeneration()}
           ></omp-projects-view>
+        `;
+
+      case "settings":
+        return html`
+          <omp-settings-view
+            .theme=${this.theme}
+            @toggle-theme=${() => this.toggleTheme()}
+          ></omp-settings-view>
         `;
 
       case "project-detail":

@@ -197,6 +197,21 @@ describe("OmpApp integration", () => {
     expect(replaced.at(-1)).toContain("session=sess-target-789");
   });
 
+  it("navigates to settings tab and renders omp-settings-view", () => {
+    installMockWindow("http://localhost:8504/omp?tab=settings");
+    const app = new OmpApp();
+    (app as any).performUpdate = () => {};
+    vi.spyOn(app as any, "loadProjects").mockResolvedValue(undefined as any);
+    vi.spyOn((app as any).realtimeSocket, "connect").mockImplementation(() => {});
+    vi.spyOn((app as any), "refreshActiveSessions").mockResolvedValue(undefined as any);
+    app.connectedCallback();
+
+    expect((app as any).activeTab).toBe("settings");
+    expect((app as any).getHeaderTitle()).toBe("Configurações");
+    const str = JSON.stringify(app.render());
+    expect(str).toContain("omp-settings-view");
+  });
+
   it("clears session from URL and storage when navigating to new-chat", () => {
     const { store } = installMockWindow("http://localhost:8504/omp?session=sess-old", {
       "omp:selected-session": "sess-old",

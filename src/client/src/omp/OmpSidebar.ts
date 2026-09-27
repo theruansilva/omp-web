@@ -8,6 +8,7 @@ import {
   renderFolderIcon,
   renderPlusIcon,
   renderProjectsIcon,
+  renderSettingsIcon,
 } from "./icons";
 
 export interface NavItem {
@@ -130,6 +131,7 @@ export class OmpSidebar extends LitElement {
     { id: "new-chat", label: "New chat" },
     { id: "library", label: "Library" },
     { id: "projects", label: "Projetos" },
+    { id: "settings", label: "Configurações" },
   ];
 
   private readonly defaultProjects: SidebarProject[] = [
@@ -207,6 +209,8 @@ export class OmpSidebar extends LitElement {
         return renderLibraryIcon();
       case "projects":
         return renderProjectsIcon("size-5 shrink-0");
+      case "settings":
+        return renderSettingsIcon("size-5 shrink-0");
       default:
         return html``;
     }
