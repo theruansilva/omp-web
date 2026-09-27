@@ -1068,9 +1068,34 @@ export async function setPasswordCommand(args: string[] = []): Promise<void> {
 export function getLanIp(): string | undefined {
   const nets = networkInterfaces();
   for (const name of Object.keys(nets)) {
+    if (/^(tailscale|docker|br-|veth)/i.test(name)) continue;
     for (const net of nets[name] || []) {
       if (net.family === "IPv4" && !net.internal) {
         return net.address;
+      }
+    }
+  }
+  return undefined;
+}
+
+export function getTailscaleIp(): string | undefined {
+  const nets = networkInterfaces();
+  for (const name of Object.keys(nets)) {
+    if (name.toLowerCase().includes("tailscale") || name.toLowerCase().startsWith("utun")) {
+      for (const net of nets[name] || []) {
+        if (net.family === "IPv4" && !net.internal) {
+          return net.address;
+        }
+      }
+    }
+  }
+  for (const name of Object.keys(nets)) {
+    for (const net of nets[name] || []) {
+      if (net.family === "IPv4" && !net.internal) {
+        const [a, b] = net.address.split(".").map(Number);
+        if (a === 100 && b !== undefined && b >= 64 && b <= 127) {
+          return net.address;
+        }
       }
     }
   }
@@ -1081,32 +1106,43 @@ export async function remoteCommand(args: string[] = []): Promise<void> {
   const action = args[0]?.toLowerCase();
   const { config } = loadOmpWebConfig();
   const lanIp = getLanIp();
+  const tailscaleIp = getTailscaleIp();
   const port = config.port ?? 8504;
 
   if (action === "on" || action === "enable" || action === "--enable") {
     saveOmpWebConfig({
       ...config,
       host: "0.0.0.0",
+      allowedHosts: config.allowedHosts ?? true,
     });
     console.log("Remote access enabled: PI WEB will listen on all interfaces (0.0.0.0).");
     if (lanIp) {
-      console.log(`Network URL: http://${lanIp}:${port}`);
+      console.log(`Network URL:   http://${lanIp}:${port}`);
+    }
+    if (tailscaleIp) {
+      console.log(`Tailscale URL: http://${tailscaleIp}:${port}`);
     }
     console.log('Run "omp-web restart" to apply changes.');
   } else if (action === "off" || action === "disable" || action === "--disable") {
     saveOmpWebConfig({
       ...config,
       host: "127.0.0.1",
+      ...(config.allowedHosts === true ? { allowedHosts: [] } : {}),
     });
     console.log("Remote access disabled: PI WEB will only listen on localhost (127.0.0.1).");
     console.log('Run "omp-web restart" to apply changes.');
   } else {
     const isRemote = config.host === "0.0.0.0";
     console.log(`Remote access is currently: ${isRemote ? "ENABLED (0.0.0.0)" : "DISABLED (127.0.0.1)"}`);
-    if (isRemote && lanIp) {
-      console.log(`Network URL: http://${lanIp}:${port}`);
+    if (isRemote) {
+      if (lanIp) {
+        console.log(`Network URL:   http://${lanIp}:${port}`);
+      }
+      if (tailscaleIp) {
+        console.log(`Tailscale URL: http://${tailscaleIp}:${port}`);
+      }
     }
-    console.log(`Local URL:   http://127.0.0.1:${port}`);
+    console.log(`Local URL:     http://127.0.0.1:${port}`);
     console.log("\nUsage:");
     console.log("  omp-web remote on     Enable remote access from other machines");
     console.log("  omp-web remote off    Disable remote access (localhost only)");

@@ -143,6 +143,7 @@ describe("remoteCommand", () => {
       await remoteCommand(["on"]);
       let loaded = loadOmpWebConfig();
       expect(loaded.config.host).toBe("0.0.0.0");
+      expect(loaded.config.allowedHosts).toBe(true);
 
       await remoteCommand(["off"]);
       loaded = loadOmpWebConfig();

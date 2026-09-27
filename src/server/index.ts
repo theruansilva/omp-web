@@ -7,9 +7,34 @@ import { getOrGenerateAuthToken } from "./security.js";
 function getLanIp(): string | undefined {
   const nets = networkInterfaces();
   for (const name of Object.keys(nets)) {
+    if (/^(tailscale|docker|br-|veth)/i.test(name)) continue;
     for (const net of nets[name] || []) {
       if (net.family === "IPv4" && !net.internal) {
         return net.address;
+      }
+    }
+  }
+  return undefined;
+}
+
+function getTailscaleIp(): string | undefined {
+  const nets = networkInterfaces();
+  for (const name of Object.keys(nets)) {
+    if (name.toLowerCase().includes("tailscale") || name.toLowerCase().startsWith("utun")) {
+      for (const net of nets[name] || []) {
+        if (net.family === "IPv4" && !net.internal) {
+          return net.address;
+        }
+      }
+    }
+  }
+  for (const name of Object.keys(nets)) {
+    for (const net of nets[name] || []) {
+      if (net.family === "IPv4" && !net.internal) {
+        const [a, b] = net.address.split(".").map(Number);
+        if (a === 100 && b !== undefined && b >= 64 && b <= 127) {
+          return net.address;
+        }
       }
     }
   }
@@ -43,5 +68,9 @@ if (host === "0.0.0.0") {
   const lan = getLanIp();
   if (lan) {
     console.info(`Network access: http://${lan}:${String(port)}${authSuffix}`);
+  }
+  const ts = getTailscaleIp();
+  if (ts) {
+    console.info(`Tailscale access: http://${ts}:${String(port)}${authSuffix}`);
   }
 }
