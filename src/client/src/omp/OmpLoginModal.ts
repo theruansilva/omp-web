@@ -185,7 +185,7 @@ export class OmpLoginModal extends LitElement {
         this.setupRequired = false;
         this.dispatchEvent(
           new CustomEvent("login-success", {
-            detail: { username: this.username.trim() } as LoginSubmitDetail,
+            detail: { username: (data as any)?.username || this.username.trim() || "admin" } as LoginSubmitDetail,
             bubbles: true,
             composed: true,
           }),
@@ -664,7 +664,7 @@ export class OmpLoginModal extends LitElement {
                 <!-- Username (Squircle-16) -->
                 <div class="omp-squircle-field">
                   <label for="login-username-input" class="omp-squircle-label">
-                    Nome de usuário
+                    Seu nome
                   </label>
                   <div class="omp-squircle-input-wrapper">
                     <div class="omp-squircle-input-row">
@@ -675,7 +675,7 @@ export class OmpLoginModal extends LitElement {
                         id="login-username-input"
                         type="text"
                         autocomplete="username"
-                        placeholder="Seu nome"
+                        placeholder="Como quer ser chamado? (ex: João, Ruan)"
                         .value=${this.username}
                         @input=${(e: Event) => (this.username = (e.target as HTMLInputElement).value)}
                         class="omp-squircle-input"
@@ -688,7 +688,7 @@ export class OmpLoginModal extends LitElement {
                 <!-- Password (Squircle-16) -->
                 <div class="omp-squircle-field">
                   <label for="login-password-input" class="omp-squircle-label">
-                    Senha
+                    Senha de acesso
                   </label>
                   <div class="omp-squircle-input-wrapper">
                     <div class="omp-squircle-input-row">

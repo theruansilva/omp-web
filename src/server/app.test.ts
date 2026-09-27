@@ -569,29 +569,31 @@ describe("buildApp", () => {
         payload: { username: "admin", password: "wrongpassword" },
       });
       expect(wrongPassRes.statusCode).toBe(401);
-      expect(wrongPassRes.json()).toEqual({ error: "Invalid username or password" });
+      expect(wrongPassRes.json()).toEqual({ error: "Invalid password" });
 
-      // 8. Login with correct username and password succeeds and sets cookie
+      // 8. Login with correct password and different custom username succeeds and sets cookies
       const loginRes = await appWithSetup.inject({
         method: "POST",
         url: "/api/omp-web/auth",
-        payload: { username: "admin", password: "mypassword123" },
+        payload: { username: "maria", password: "mypassword123" },
       });
       expect(loginRes.statusCode).toBe(200);
+      expect(loginRes.json()).toEqual({ ok: true, username: "maria" });
       expect(loginRes.headers["set-cookie"]).toContain("omp_web_token=terminal-token-xyz");
+      expect(loginRes.headers["set-cookie"]).toContain("omp_web_user=maria");
 
-      // 9. Auth status now shows authenticated with username and setupRequired = false
+      // 9. Auth status now shows authenticated with custom username and setupRequired = false
       const authedStatus = await appWithSetup.inject({
         method: "GET",
         url: "/api/omp-web/auth",
-        headers: { cookie: "omp_web_token=terminal-token-xyz" },
+        headers: { cookie: "omp_web_token=terminal-token-xyz; omp_web_user=maria" },
       });
       expect(authedStatus.statusCode).toBe(200);
       expect(authedStatus.json()).toEqual({
         authenticated: true,
         authRequired: true,
         setupRequired: false,
-        username: "admin",
+        username: "maria",
       });
     } finally {
       await appWithSetup.close();

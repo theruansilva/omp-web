@@ -537,7 +537,7 @@ export function createSecurityMiddleware(options: SecurityMiddlewareOptions = {}
         const authPasswordHash = typeof options.authPasswordHash === "function"
           ? await options.authPasswordHash()
           : options.authPasswordHash;
-        const setupRequired = hasUserConfig && (!authUsername || !authPasswordHash);
+        const setupRequired = hasUserConfig && !authPasswordHash;
 
         const authHeader = c.req.header("authorization");
         const bearerToken = authHeader?.startsWith("Bearer ") ? authHeader.slice(7).trim() : undefined;

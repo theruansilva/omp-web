@@ -215,21 +215,18 @@ export async function buildApp(deps: AppDependencies = {}): Promise<BuiltApp> {
       if (!authRequired) {
         return c.json({ error: "Authentication is not enabled on this instance" }, 400);
       }
-      if (currentAuthUsername && currentAuthPasswordHash) {
+      if (currentAuthPasswordHash) {
         return c.json({ error: "Setup has already been completed" }, 400);
       }
 
       const body = await c.req.json<{ username?: string; password?: string; token?: string }>().catch(() => ({} as { username?: string; password?: string; token?: string }));
-      const username = body.username?.trim();
+      const username = body.username?.trim() || "admin";
       const password = body.password;
       const token = body.token?.trim();
 
       // Token is optional on first-time setup (makes it seamless like AionUi)
       if (token && !safeTokenCompare(token, authToken)) {
         return c.json({ error: "Invalid activation token" }, 401);
-      }
-      if (!username || username.length < 2) {
-        return c.json({ error: "Username must be at least 2 characters" }, 400);
       }
       if (!password || password.length < 6) {
         return c.json({ error: "Password must be at least 6 characters" }, 400);
@@ -245,7 +242,8 @@ export async function buildApp(deps: AppDependencies = {}): Promise<BuiltApp> {
       currentAuthPasswordHash = passwordHash;
 
       c.header("Set-Cookie", `omp_web_token=${encodeURIComponent(authToken)}; Path=/; HttpOnly; SameSite=Lax`);
-      return c.json({ ok: true });
+      c.header("Set-Cookie", `omp_web_user=${encodeURIComponent(username)}; Path=/; SameSite=Lax`, { append: true });
+      return c.json({ ok: true, username });
     } catch (error) {
       return c.json({ error: error instanceof Error ? error.message : String(error) }, 400);
     }
@@ -255,28 +253,28 @@ export async function buildApp(deps: AppDependencies = {}): Promise<BuiltApp> {
     try {
       const body = await c.req.json<{ username?: string; password?: string; token?: string }>().catch(() => ({} as { username?: string; password?: string; token?: string }));
 
-      // 1. Username + Password login
+      // 1. Username + Password login (single shared password, custom display name per user)
       if (body.username !== undefined || body.password !== undefined) {
-        const setupRequired = authRequired && (!currentAuthUsername || !currentAuthPasswordHash);
+        const setupRequired = authRequired && !currentAuthPasswordHash;
         if (setupRequired) {
-          return c.json({ error: "Setup required: administrator account has not been created", setupRequired: true }, 400);
+          return c.json({ error: "Setup required: instance password has not been created", setupRequired: true }, 400);
         }
 
-        const username = body.username?.trim();
+        const username = body.username?.trim() || "admin";
         const password = body.password;
-        if (!username || !password) {
-          return c.json({ error: "Username and password are required" }, 400);
+        if (!password) {
+          return c.json({ error: "Password is required" }, 400);
         }
 
-        const userMatch = currentAuthUsername && username.toLowerCase() === currentAuthUsername.toLowerCase();
-        const passwordMatch = userMatch && currentAuthPasswordHash && await verifyUserPassword(password, currentAuthPasswordHash);
+        const passwordMatch = currentAuthPasswordHash && await verifyUserPassword(password, currentAuthPasswordHash);
 
         if (!passwordMatch) {
-          return c.json({ error: "Invalid username or password" }, 401);
+          return c.json({ error: "Invalid password" }, 401);
         }
 
         c.header("Set-Cookie", `omp_web_token=${encodeURIComponent(authToken)}; Path=/; HttpOnly; SameSite=Lax`);
-        return c.json({ ok: true });
+        c.header("Set-Cookie", `omp_web_user=${encodeURIComponent(username)}; Path=/; SameSite=Lax`, { append: true });
+        return c.json({ ok: true, username });
       }
 
       // 2. Direct Token login
@@ -293,6 +291,7 @@ export async function buildApp(deps: AppDependencies = {}): Promise<BuiltApp> {
 
   app.delete("/api/omp-web/auth", async (c) => {
     c.header("Set-Cookie", "omp_web_token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; HttpOnly; SameSite=Lax");
+    c.header("Set-Cookie", "omp_web_user=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax", { append: true });
     return c.json({ ok: true });
   });
 
@@ -303,12 +302,14 @@ export async function buildApp(deps: AppDependencies = {}): Promise<BuiltApp> {
     const queryToken = c.req.query("token");
     const token = bearerToken ?? cookieToken ?? queryToken;
     const authenticated = !authRequired || safeTokenCompare(token, authToken);
-    const setupRequired = authRequired && (!currentAuthUsername || !currentAuthPasswordHash);
+    const setupRequired = authRequired && !currentAuthPasswordHash;
+    const cookieUser = parseCookie(c.req.header("cookie"), "omp_web_user");
+    const username = authenticated ? (cookieUser || currentAuthUsername || "admin") : undefined;
     return c.json({
       authenticated,
       authRequired,
       setupRequired,
-      username: authenticated && currentAuthUsername ? currentAuthUsername : undefined,
+      username,
     });
   });
 
@@ -392,9 +393,16 @@ export async function buildApp(deps: AppDependencies = {}): Promise<BuiltApp> {
       if (body !== undefined) init.body = body;
       const response = await app.request(options.url, init);
       const text = await response.text();
+      const headerMap: Record<string, string> = Object.fromEntries(response.headers.entries());
+      if ("getSetCookie" in response.headers && typeof (response.headers as any).getSetCookie === "function") {
+        const cookies = (response.headers as any).getSetCookie() as string[];
+        if (cookies.length > 0) {
+          headerMap["set-cookie"] = cookies.join(", ");
+        }
+      }
       return {
         statusCode: response.status,
-        headers: Object.fromEntries(response.headers.entries()),
+        headers: headerMap,
         body: text,
         json: <T = unknown>() => JSON.parse(text) as T,
       };
