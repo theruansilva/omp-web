@@ -113,7 +113,7 @@ export default defineConfig({
   server: {
     port: 8505,
     strictPort: true,
-    ...(config.allowedHosts === undefined ? {} : { allowedHosts: config.allowedHosts }),
+    allowedHosts: config.allowedHosts ?? true,
     proxy: {
       "/api": { target: `http://localhost:${String(apiPort)}`, ws: true },
       "/omp-web-plugins": { target: `http://localhost:${String(apiPort)}` },
