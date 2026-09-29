@@ -1351,7 +1351,10 @@ Dica: você pode selecionar uma das opções abaixo para testar a injeção auto
         return html`
           <omp-settings-view
             .theme=${this.theme}
+            .currentUser=${this.currentUser}
             @toggle-theme=${() => this.toggleTheme()}
+            @sign-out=${() => { void this.handleSignOut(); }}
+            @sign-in=${() => (this.isLoginModalOpen = true)}
           ></omp-settings-view>
         `;
 
@@ -1461,9 +1464,7 @@ Dica: você pode selecionar uma das opções abaixo para testar a injeção auto
               .currentUser=${this.currentUser}
               .title=${this.getHeaderTitle()}
               @toggle-sidebar=${() => this.toggleSidebar()}
-              @toggle-theme=${() => this.toggleTheme()}
               @sign-in=${() => (this.isLoginModalOpen = true)}
-              @sign-out=${() => { void this.handleSignOut(); }}
             ></omp-header>
 
             <!-- Current Active Stage View -->

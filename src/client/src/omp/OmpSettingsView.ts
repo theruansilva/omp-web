@@ -42,6 +42,7 @@ import {
 export class OmpSettingsView extends LitElement {
   @property({ type: String }) theme: "dark" | "light" = "dark";
   @property({ type: String }) activeSection: SettingsSection = "general";
+  @property({ type: String }) currentUser: string | null = null;
 
   @state() private configResponse?: OmpWebConfigResponse;
   @state() private pluginsResponse?: OmpWebPluginsResponse;
@@ -404,6 +405,65 @@ export class OmpSettingsView extends LitElement {
   private renderGeneralSection() {
     return html`
       <div class="flex flex-col gap-6">
+        <!-- Card 0: Conta & Sessão -->
+        <section
+          class="p-5 md:p-6 rounded-3xl omp-settings-card flex flex-col gap-4"
+          style="clip-path: var(--clip-path-squircle-28, none);"
+        >
+          <div class="flex items-center justify-between">
+            <div class="flex flex-col gap-0.5">
+              <h3 class="text-base font-bold text-foreground-900">Conta & Sessão</h3>
+              <p class="text-xs text-foreground-600">Gerenciamento da sua conta e autenticação no OMP Web</p>
+            </div>
+            ${this.currentUser
+              ? html`
+                  <button
+                    type="button"
+                    class="px-3 py-1.5 rounded-xl text-xs font-semibold text-red-600 dark:text-red-400 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 transition-colors cursor-pointer"
+                    @click=${() => this.dispatchEvent(new CustomEvent("sign-out", { bubbles: true, composed: true }))}
+                  >
+                    Sair da conta
+                  </button>
+                `
+              : html`
+                  <button
+                    type="button"
+                    class="omp-btn-signin px-3.5 py-1.5 rounded-xl text-xs font-semibold cursor-pointer shadow-sm active:scale-98"
+                    @click=${() => this.dispatchEvent(new CustomEvent("sign-in", { bubbles: true, composed: true }))}
+                  >
+                    Entrar
+                  </button>
+                `}
+          </div>
+
+          <div class="flex items-center gap-3 pt-2 border-t border-black/5 dark:border-white/5">
+            ${this.currentUser
+              ? html`
+                  <div class="size-10 rounded-full bg-[var(--omp-accent)] text-[var(--omp-on-accent)] flex items-center justify-center text-sm font-bold uppercase shadow-xs shrink-0">
+                    ${this.currentUser.charAt(0)}
+                  </div>
+                  <div class="flex flex-col min-w-0">
+                    <span class="text-sm font-bold text-foreground-900 truncate">${this.currentUser}</span>
+                    <span class="text-xs text-emerald-600 dark:text-emerald-400 font-medium flex items-center gap-1.5">
+                      <span class="size-1.5 rounded-full bg-emerald-500"></span>
+                      Sessão ativa
+                    </span>
+                  </div>
+                `
+              : html`
+                  <div class="size-10 rounded-full bg-black/5 dark:bg-white/10 flex items-center justify-center text-foreground-400 shrink-0">
+                    <svg class="size-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg>
+                  </div>
+                  <div class="flex flex-col">
+                    <span class="text-sm font-semibold text-foreground-700">Não conectado</span>
+                    <span class="text-xs text-foreground-400">Entre para gerenciar credenciais e configurações</span>
+                  </div>
+                `}
+          </div>
+        </section>
+
         <!-- Card 1: Tema e Aparência -->
         <section
           class="p-5 md:p-6 rounded-3xl omp-settings-card flex flex-col gap-4"

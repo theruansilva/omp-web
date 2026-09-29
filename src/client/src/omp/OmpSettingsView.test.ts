@@ -18,6 +18,27 @@ describe("OmpSettingsView", () => {
     expect(str).toContain("Atalhos");
   });
 
+  it("renders account card with active user and sign-out button when authenticated", () => {
+    const view = new OmpSettingsView();
+    view.activeSection = "general";
+    view.currentUser = "admin";
+    const str = JSON.stringify(view.render());
+    expect(str).toContain("Conta & Sessão");
+    expect(str).toContain("admin");
+    expect(str).toContain("Sessão ativa");
+    expect(str).toContain("Sair da conta");
+  });
+
+  it("renders account card with sign-in button when not authenticated", () => {
+    const view = new OmpSettingsView();
+    view.activeSection = "general";
+    view.currentUser = null;
+    const str = JSON.stringify(view.render());
+    expect(str).toContain("Conta & Sessão");
+    expect(str).toContain("Não conectado");
+    expect(str).toContain("Entrar");
+  });
+
   it("renders general section by default with chat preferences and gateway fields", () => {
     const view = new OmpSettingsView();
     view.activeSection = "general";

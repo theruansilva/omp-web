@@ -1,6 +1,6 @@
 import { LitElement, html, nothing } from "lit";
 import { customElement, property } from "lit/decorators.js";
-import { renderToggleSidebarIcon, renderSunIcon, renderMoonIcon } from "./icons";
+import { renderToggleSidebarIcon } from "./icons";
 
 @customElement("omp-header")
 export class OmpHeader extends LitElement {
@@ -37,48 +37,18 @@ export class OmpHeader extends LitElement {
         </div>
 
         <div class="flex items-center gap-2 pointer-events-auto">
-          <!-- Theme Toggle -->
-          <button
-            type="button"
-            aria-label="Toggle theme"
-            class="flex items-center justify-center size-8 rounded-full text-foreground-700 hover:text-foreground-900 hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
-            @click=${() => this.dispatchEvent(new CustomEvent("toggle-theme", { bubbles: true, composed: true }))}
-          >
-            ${this.theme === "dark" ? renderSunIcon() : renderMoonIcon()}
-          </button>
-
-          <!-- Sign In / Active User Profile -->
-          ${this.currentUser
+          <!-- Sign In Button: Rendered only when user is logged out -->
+          ${!this.currentUser
             ? html`
-                <div class="flex items-center gap-2">
-                  <div
-                    class="h-9 px-3 rounded-xl flex items-center gap-2 text-sm font-medium bg-[var(--omp-surface-elevated)] border border-[var(--omp-border-subtle)] text-[var(--omp-text-primary)] shadow-sm"
-                  >
-                    <div class="size-5 rounded-full bg-[var(--omp-accent)] text-[var(--omp-on-accent)] flex items-center justify-center text-xs font-bold uppercase">
-                      ${this.currentUser.charAt(0)}
-                    </div>
-                    <span class="max-w-[120px] truncate">${this.currentUser}</span>
-                  </div>
-                  <button
-                    type="button"
-                    title="Sair"
-                    aria-label="Sair da conta"
-                    class="h-9 px-2.5 rounded-xl flex items-center justify-center text-xs font-medium text-[var(--omp-text-muted)] hover:text-red-500 hover:bg-black/5 dark:hover:bg-white/10 transition-colors cursor-pointer"
-                    @click=${() => this.dispatchEvent(new CustomEvent("sign-out", { bubbles: true, composed: true }))}
-                  >
-                    Sair
-                  </button>
-                </div>
-              `
-            : html`
                 <button
                   type="button"
                   class="omp-btn-signin h-9 px-3.5 py-1 rounded-xl flex items-center justify-center text-sm font-medium cursor-pointer shadow-sm active:scale-98"
                   @click=${() => this.dispatchEvent(new CustomEvent("sign-in", { bubbles: true, composed: true }))}
                 >
-                  Sign in
+                  Entrar
                 </button>
-              `}
+              `
+            : nothing}
         </div>
       </header>
     `;
