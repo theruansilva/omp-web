@@ -379,4 +379,20 @@ describe("OmpApp integration", () => {
       "remote-1"
     );
   });
+
+  it("intercepts /login slash command and opens authDialog without sending prompt", async () => {
+    installMockWindow("http://localhost:8504/omp?tab=new-chat&session=sess-1");
+    const app = new OmpApp();
+    (app as any).selectedSessionId = "sess-1";
+    (app as any).getActiveWorkspace = () => ({ id: "ws-1", path: "/test/ws" });
+
+    const promptSpy = vi.spyOn(sessionsApi, "prompt").mockResolvedValue({ accepted: true } as any);
+    await (app as any).handlePromptSubmit({
+      prompt: "/login",
+      model: "default",
+    });
+
+    expect(promptSpy).not.toHaveBeenCalled();
+    expect((app as any).authDialog).toEqual({ step: "method" });
+  });
 });

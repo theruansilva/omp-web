@@ -13,6 +13,9 @@ import "./OmpProjectDetailView";
 import "./OmpSettingsView";
 import "../components/MachineDialog";
 import type { MachineDialogSubmit } from "../components/MachineDialog";
+import "../components/AuthDialog";
+import { AuthController, type AuthDialogState } from "../controllers/authController";
+import type { AuthType } from "../api";
 import type { ChatMessage } from "./OmpChatView";
 import type { SubmitPromptDetail, BtwState, ComposerProject } from "./OmpComposer";
 import type { ProjectCardData } from "./OmpProjectsView";
@@ -168,6 +171,7 @@ export class OmpApp extends LitElement {
   @state() private machineStatuses: Record<string, MachineHealth> = {};
   @state() private isMachineDialogOpen = false;
   @state() private machineDialogError = "";
+  @state() private authDialog?: AuthDialogState;
 
   private get currentMachineId(): string {
     return this.selectedMachine?.id || "local";
@@ -192,6 +196,28 @@ export class OmpApp extends LitElement {
 
   private readonly sessionSocket = new SessionSocket();
   private readonly realtimeSocket = new RealtimeSocket();
+  private readonly auth = new AuthController(
+    () => ({
+      authDialog: this.authDialog,
+      selectedMachine: this.selectedMachine,
+      selectedSession: this.selectedSessionId
+        ? ({ id: this.selectedSessionId, cwd: this.getActiveWorkspace()?.path || "" } as any)
+        : undefined,
+    } as any),
+    (patch: any) => {
+      if ("authDialog" in patch) {
+        this.authDialog = patch.authDialog;
+      }
+      if (patch.error) {
+        console.warn("[OMP Auth]", patch.error);
+      }
+    },
+    (status) => {
+      if (status.sessionId === this.selectedSessionId) {
+        this.pendingAsk = status.pendingAsk;
+      }
+    },
+  );
   private readonly mobileDrawer = new MobileDrawerController(this, {
     isMobileNavigationLayout: () => typeof window !== "undefined" && window.innerWidth < 768,
     onStateChange: (open) => {
@@ -427,6 +453,7 @@ export class OmpApp extends LitElement {
       window.removeEventListener("popstate", this.handlePopState);
       window.removeEventListener("resize", this.handleWindowResize);
     }
+    this.auth.dispose();
     this.sessionSocket.close();
     this.realtimeSocket.close();
     preferencesEventTarget()?.removeEventListener(CHAT_PREFERENCES_CHANGED_EVENT, this.handleChatPreferencesChanged);
@@ -1038,6 +1065,10 @@ export class OmpApp extends LitElement {
       }
     }
 
+    if (this.auth.handleSlashCommand(promptTrimmed)) {
+      return;
+    }
+
     const [cmdName = ""] = promptTrimmed.replace(/^\//, "").split(/\s+/);
     const commandLower = cmdName.toLowerCase();
     if (commandLower === "quit" || commandLower === "exit") {
@@ -1497,6 +1528,8 @@ Dica: você pode selecionar uma das opções abaixo para testar a injeção auto
             @toggle-theme=${() => this.toggleTheme()}
             @sign-out=${() => { void this.handleSignOut(); }}
             @sign-in=${() => (this.isLoginModalOpen = true)}
+            @configure-auth=${() => void this.auth.openLogin()}
+            @logout-auth=${() => void this.auth.openLogout()}
           ></omp-settings-view>
         `;
 
@@ -1638,6 +1671,22 @@ Dica: você pode selecionar uma das opções abaixo para testar a injeção auto
             .onSubmit=${(input: MachineDialogSubmit) => void this.handleAddMachineSubmit(input)}
             .onCancel=${() => { this.isMachineDialogOpen = false; }}
           ></machine-dialog>
+        ` : nothing}
+
+        <!-- AI Provider Auth Dialog Component -->
+        ${this.authDialog !== undefined ? html`
+          <auth-dialog
+            .state=${this.authDialog}
+            .onChooseMethod=${(authType: AuthType) => { void this.auth.chooseLoginMethod(authType); }}
+            .onSelectProvider=${(providerId: string, authType?: AuthType) => { void this.auth.selectLoginProvider(providerId, authType); }}
+            .onApiKeyInput=${(value: string) => { this.auth.updateApiKey(value); }}
+            .onSaveApiKey=${() => { void this.auth.saveApiKey(); }}
+            .onLogoutProvider=${(providerId: string) => { void this.auth.logoutProvider(providerId); }}
+            .onOAuthInput=${(value: string) => { this.auth.updateOAuthInput(value); }}
+            .onOAuthRespond=${(value?: string) => { void this.auth.respondOAuth(value); }}
+            .onOAuthCancel=${() => { void this.auth.cancelOAuth(); }}
+            .onCancel=${() => { this.auth.closeDialog(); }}
+          ></auth-dialog>
         ` : nothing}
 
         <!-- Login Modal Component -->

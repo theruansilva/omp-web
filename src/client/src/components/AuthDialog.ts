@@ -145,20 +145,27 @@ export class AuthDialog extends LitElement {
   }
 
   static override styles = [commandPickerStyles, css`
-    .form { display: grid; gap: 12px; padding: 14px; overflow: auto; }
-    .form p { margin: 0; color: var(--pi-text-secondary); overflow-wrap: anywhere; }
-    .form a { color: var(--pi-accent); overflow-wrap: anywhere; }
-    .form code { border: 1px solid var(--pi-border); border-radius: 4px; background: var(--pi-surface); padding: 1px 4px; }
-    label { color: var(--pi-muted); }
-    .actions { display: flex; justify-content: flex-end; gap: 8px; }
-    .actions button, .inline-options button { border: 1px solid var(--pi-border); border-radius: 8px; background: var(--pi-surface); color: var(--pi-text); padding: 7px 9px; }
-    .actions button.primary { border-color: var(--pi-success-border); background: var(--pi-success-surface); color: var(--pi-success); }
+    .form { display: grid; gap: 12px; padding: 18px; overflow: auto; }
+    .form p { margin: 0; color: var(--pi-text-secondary, #9ca3af); overflow-wrap: anywhere; font-size: 13px; line-height: 1.5; }
+    :host-context([data-theme="light"]) .form p { color: #4b5563; }
+    .form a { color: #3b82f6; overflow-wrap: anywhere; text-decoration: underline; }
+    .form code { border: 1px solid var(--pi-border, rgba(255, 255, 255, 0.12)); border-radius: 6px; background: var(--pi-surface, rgba(255, 255, 255, 0.08)); padding: 2px 6px; font-size: 12px; }
+    :host-context([data-theme="light"]) .form code { background: #f3f4f6; border-color: rgba(0, 0, 0, 0.1); color: #111827; }
+    label { color: var(--pi-muted, #9ca3af); font-size: 13px; font-weight: 500; }
+    :host-context([data-theme="light"]) label { color: #4b5563; }
+    .actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 8px; }
+    .actions button, .inline-options button { border: 1px solid var(--pi-border, rgba(255, 255, 255, 0.15)); border-radius: 10px; background: var(--pi-surface, rgba(255, 255, 255, 0.08)); color: var(--pi-text, #f3f4f6); padding: 8px 14px; font-weight: 500; font-size: 13px; cursor: pointer; transition: background 0.15s; }
+    :host-context([data-theme="light"]) .actions button, :host-context([data-theme="light"]) .inline-options button { background: #f3f4f6; color: #1f2937; border-color: rgba(0, 0, 0, 0.12); }
+    .actions button:hover, .inline-options button:hover { background: rgba(255, 255, 255, 0.14); }
+    :host-context([data-theme="light"]) .actions button:hover, :host-context([data-theme="light"]) .inline-options button:hover { background: #e5e7eb; }
+    .actions button.primary { border-color: #2563eb; background: #2563eb; color: #ffffff; }
+    .actions button.primary:hover { background: #1d4ed8; }
     .actions button:disabled { opacity: .6; cursor: wait; }
-    .warning { color: var(--pi-warning); }
-    .error-text { color: var(--pi-danger); }
-    .progress { margin: 0; padding-left: 18px; color: var(--pi-muted); }
+    .warning { color: var(--pi-warning, #f59e0b); }
+    .error-text { color: var(--pi-danger, #ef4444); font-size: 13px; }
+    .progress { margin: 0; padding-left: 18px; color: var(--pi-muted, #9ca3af); font-size: 13px; }
     .inline-options { display: grid; gap: 8px; }
-    em { color: var(--pi-success); font-style: normal; font-size: 12px; }
+    em { color: #10b981; font-style: normal; font-size: 12px; }
   `];
 }
 

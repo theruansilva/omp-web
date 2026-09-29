@@ -36,6 +36,7 @@ import {
   renderRefreshIcon,
   renderPlusIcon,
   renderTrashIcon,
+  renderLockIcon,
 } from "./icons";
 
 @customElement("omp-settings-view")
@@ -482,6 +483,37 @@ export class OmpSettingsView extends LitElement {
               ${this.theme === "dark" ? renderSunIcon("size-4") : renderMoonIcon("size-4")}
               <span>Modo ${this.theme === "dark" ? "Escuro (Dark)" : "Claro (Light)"}</span>
             </button>
+          </div>
+        </section>
+
+        <!-- Card: Provedores de IA (Model Providers) -->
+        <section
+          class="p-5 md:p-6 rounded-3xl omp-settings-card flex flex-col gap-4"
+          style="clip-path: var(--clip-path-squircle-28, none);"
+        >
+          <div class="flex items-center justify-between flex-wrap gap-3">
+            <div class="flex flex-col gap-0.5">
+              <h3 class="text-base font-bold text-foreground-900">Provedores de Inteligência Artificial</h3>
+              <p class="text-xs text-foreground-600">Configure chaves de API e assinaturas OAuth (Anthropic, OpenAI, Google, etc.)</p>
+            </div>
+            <div class="flex items-center gap-2">
+              <button
+                type="button"
+                class="omp-settings-btn-subtle"
+                @click=${() => this.dispatchEvent(new CustomEvent("configure-auth", { bubbles: true, composed: true }))}
+              >
+                ${renderLockIcon("size-4")}
+                <span>Configurar Provedores</span>
+              </button>
+              <button
+                type="button"
+                class="omp-settings-btn-subtle text-red-500 hover:text-red-600"
+                @click=${() => this.dispatchEvent(new CustomEvent("logout-auth", { bubbles: true, composed: true }))}
+                title="Desconectar provedor de IA"
+              >
+                <span>Desconectar</span>
+              </button>
+            </div>
           </div>
         </section>
 
