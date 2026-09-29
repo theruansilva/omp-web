@@ -1,6 +1,6 @@
 import { LitElement, html, nothing } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
-import { renderOmpLogo, renderLoadingDots, renderPaperclipIcon } from "./icons";
+import { renderOmpLogo, renderLoadingDots, renderPaperclipIcon, renderBranchIcon } from "./icons";
 import type { PromptAttachment } from "../../../shared/apiTypes";
 import "./OmpComposer";
 import type { BtwState, ComposerProject } from "./OmpComposer";
@@ -31,6 +31,8 @@ export interface ChatMessage {
   timestamp?: string;
   hasAgentProcess?: boolean;
   attachments?: PromptAttachment[];
+  rawIndex?: number;
+  entryId?: string;
 }
 
 @customElement("omp-chat-view")
@@ -118,6 +120,16 @@ export class OmpChatView extends LitElement {
       scrollContainer.scrollTo({ top: scrollContainer.scrollHeight, behavior: "smooth" });
     }
     this.requestUpdate();
+  }
+
+  private handleRevertTurn(message: ChatMessage, index: number): void {
+    this.dispatchEvent(
+      new CustomEvent("revert-turn", {
+        detail: { message, index },
+        bubbles: true,
+        composed: true,
+      }),
+    );
   }
 
   private handleCopyText(text: string, id: string) {
@@ -451,7 +463,16 @@ export class OmpChatView extends LitElement {
                         <div class="group/user-message space-y-1" role="article">
                           <div class="flex w-full flex-col gap-1">
                             <div class="flex gap-2 justify-end">
-                              <div class="relative z-10 flex opacity-0 transition-opacity duration-200 ease-in-out group-hover/user-message:opacity-100 items-center">
+                              <div class="relative z-10 flex opacity-0 transition-opacity duration-200 ease-in-out group-hover/user-message:opacity-100 items-center gap-1">
+                                <button
+                                  aria-label="Revert turn"
+                                  type="button"
+                                  class="size-8 rounded-xl bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/15 flex items-center justify-center text-foreground-800 transition-colors cursor-pointer"
+                                  @click=${() => this.handleRevertTurn(msg, index)}
+                                  title="Editar e reverter para este turno"
+                                >
+                                  ${renderBranchIcon("size-3.5")}
+                                </button>
                                 <button
                                   aria-label="Copy message"
                                   type="button"

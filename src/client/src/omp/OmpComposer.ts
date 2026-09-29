@@ -554,6 +554,20 @@ export class OmpComposer extends LitElement {
     this.adjustTextareaHeight();
   };
 
+  public setText(val: string, focus = true): void {
+    this.value = val;
+    const textarea = this.querySelector?.("textarea") as HTMLTextAreaElement | null;
+    if (textarea) {
+      textarea.value = val;
+      if (focus) {
+        textarea.focus();
+        textarea.setSelectionRange(val.length, val.length);
+      }
+      this.adjustTextareaHeight();
+    }
+    this.requestUpdate();
+  }
+
   public adjustTextareaHeight(): void {
     const textarea = (this.querySelector?.("textarea") as HTMLTextAreaElement | null);
     if (!textarea) return;

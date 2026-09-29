@@ -218,3 +218,41 @@ describe("OmpHomeView projects binding", () => {
     expect(rendered).toBeDefined();
   });
 });
+
+describe("revert turn functionality", () => {
+  it("preserves rawIndex and entryId on user ChatMessage", () => {
+    const rawLines: ChatLine[] = [
+      {
+        role: "user",
+        parts: [{ type: "text", text: "Turn 1" }],
+        meta: { timestamp: "2026-09-26T06:30:00.000Z", entryId: "entry-turn-1" as any },
+      },
+    ];
+
+    const messages = linesToChatMessages(rawLines);
+    expect(messages[0].rawIndex).toBe(0);
+    expect(messages[0].entryId).toBe("entry-turn-1");
+  });
+
+  it("dispatches revert-turn event when handleRevertTurn is called", () => {
+    const chatView = new OmpChatView();
+    let emittedDetail: any = null;
+    chatView.addEventListener("revert-turn", (e: any) => {
+      emittedDetail = e.detail;
+    });
+
+    const msg: ChatMessage = {
+      id: "user-0",
+      role: "user",
+      text: "Mensagem para reverter",
+      entryId: "entry-123",
+      rawIndex: 0,
+    };
+
+    (chatView as any).handleRevertTurn(msg, 0);
+    expect(emittedDetail).toBeDefined();
+    expect(emittedDetail.message.text).toBe("Mensagem para reverter");
+    expect(emittedDetail.message.entryId).toBe("entry-123");
+    expect(emittedDetail.index).toBe(0);
+  });
+});

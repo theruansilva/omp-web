@@ -256,7 +256,13 @@ function messageText(message: ChatLine): string {
 
 function appendNewMessage(messages: ChatLine[], rawMessage: unknown): ChatLine[] {
   const lines = normalizeMessage(rawMessage);
-  return lines.length === 0 ? messages : [...messages, ...lines];
+  if (lines.length === 0) return messages;
+  const first = lines[0];
+  const last = messages.at(-1);
+  if (last && first && last.role === first.role && sameMessageText(last, first)) {
+    return [...messages.slice(0, -1), { ...last, ...first, meta: { ...last.meta, ...first.meta } }, ...lines.slice(1)];
+  }
+  return [...messages, ...lines];
 }
 
 function appendLine(messages: ChatLine[], line: ChatLine): ChatLine[] {

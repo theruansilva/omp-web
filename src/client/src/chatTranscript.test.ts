@@ -326,6 +326,14 @@ describe("applyTranscriptEvent", () => {
       { ...textMessage("user", "sent prompt"), meta: { timestamp: "2026-05-09T12:00:00.000Z" } },
     ]);
   });
+
+  it("does not duplicate optimistic user message when message.append with same text arrives", () => {
+    const messages = [textMessage("user", "optimistic prompt")];
+
+    expect(applyTranscriptEvent(messages, { type: "message.append", message: { role: "user", content: "optimistic prompt", entryId: "entry-123" } })).toEqual([
+      { ...textMessage("user", "optimistic prompt"), meta: { entryId: "entry-123" } },
+    ]);
+  });
   it("applies fullText updates idempotently without duplicating text when replayed", () => {
     let messages: ChatLine[] = [{ role: "assistant", parts: [{ type: "text", text: "Hello" }] }];
     messages = applyTranscriptEvent(messages, { type: "assistant.delta", text: " world", fullText: "Hello world" }) ?? messages;

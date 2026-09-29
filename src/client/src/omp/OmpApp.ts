@@ -85,6 +85,8 @@ export function linesToChatMessages(lines: ChatLine[]): ChatMessage[] {
         timestamp: line.meta?.timestamp
           ? new Date(line.meta.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
           : undefined,
+        rawIndex: i,
+        entryId: (line.meta as any)?.entryId,
       });
     } else if (line.role === "system") {
       currentAssistant = null;
@@ -1123,6 +1125,38 @@ export class OmpApp extends LitElement {
   }
 
 
+  private async handleRevertTurn(message: ChatMessage, index: number) {
+    const ws = this.getActiveWorkspace();
+    const sessionId = this.selectedSessionId;
+    if (!ws || !sessionId) return;
+
+    try {
+      const command = message.entryId ? `/fork ${message.entryId}` : `/fork`;
+      const res = await sessionsApi.runCommand({ id: sessionId, cwd: ws.path }, command, this.currentMachineId);
+
+      if (res.type === "done" && res.session) {
+        this.selectedSessionId = res.session.id;
+        this.currentConnectedSessionId = res.session.id;
+        this.syncUrl({ replace: true });
+        this.saveSessionToStorage(res.session.id, this.selectedProjectId);
+        this.sessionSocket.connect({ id: res.session.id, cwd: ws.path }, (event) => this.handleSessionEvent(event), undefined, this.currentMachineId);
+        await this.loadSessions(ws.path, false);
+        await this.selectSession(res.session.id, ws.path);
+
+        const draftText = res.promptDraft || message.text || "";
+        if (draftText) {
+          await this.updateComplete;
+          const chatView = this.querySelector("omp-chat-view") as any;
+          await chatView?.updateComplete;
+          const composer = chatView?.querySelector("omp-composer") as any;
+          composer?.setText?.(draftText, true);
+        }
+      }
+    } catch (err) {
+      console.error("[OMP] Failed to revert turn:", err);
+    }
+  }
+
   private async handleStopGeneration() {
     const ws = this.getActiveWorkspace();
     const sessionId = this.selectedSessionId;
@@ -1412,6 +1446,7 @@ Dica: você pode selecionar uma das opções abaixo para testar a injeção auto
                 @close-btw=${() => { this.btwState = undefined; }}
                 @submit-ask=${(e: CustomEvent<{ requestId: string; result: AskDialogResult }>) => void this.handleSubmitAsk(e.detail.requestId, e.detail.result)}
                 @cancel-ask=${(e: CustomEvent<{ requestId: string }>) => void this.handleCancelAsk(e.detail.requestId)}
+                @revert-turn=${(e: CustomEvent<{ message: ChatMessage; index: number }>) => void this.handleRevertTurn(e.detail.message, e.detail.index)}
                 @submit-prompt=${(e: CustomEvent<SubmitPromptDetail>) => this.handlePromptSubmit(e.detail)}
                 @stop-generation=${() => void this.handleStopGeneration()}
               ></omp-chat-view>
