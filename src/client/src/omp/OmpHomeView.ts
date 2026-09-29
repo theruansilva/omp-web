@@ -5,7 +5,8 @@ import type { ComposerProject } from "./OmpComposer";
 
 @customElement("omp-home-view")
 export class OmpHomeView extends LitElement {
-  @property({ type: String }) greeting = "Hey Ruan, what’s on your mind today?";
+  @property({ type: String }) username: string | null = null;
+  @property({ type: String }) greeting = "";
   @property({ type: Boolean }) isWorking = false;
   @property({ attribute: false }) projects: ComposerProject[] = [];
   @property({ type: String }) selectedProjectId = "proj-1";
@@ -15,6 +16,11 @@ export class OmpHomeView extends LitElement {
   }
 
   override render() {
+    const trimmedUser = this.username?.trim();
+    const displayGreeting =
+      this.greeting ||
+      (trimmedUser ? `Hey ${trimmedUser}, what’s on your mind today?` : "Hey, what’s on your mind today?");
+
     return html`
       <!-- OMP Web Exact Home View Structure with Fixed Bottom Composer Dock -->
       <div class="relative size-full overflow-hidden flex flex-col justify-between">
@@ -23,7 +29,7 @@ export class OmpHomeView extends LitElement {
           <h1
             class="text-3xl sm:text-[38px] font-semibold tracking-[-0.02em] text-foreground-800 text-center font-ginto [font-variation-settings:'opsz'_40,_'wght'_500] select-none"
           >
-            ${this.greeting}
+            ${displayGreeting}
           </h1>
         </div>
 

@@ -1,3 +1,4 @@
+import "./OmpStatusButton";
 import { LitElement, html, nothing } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import {
@@ -126,6 +127,11 @@ export class OmpLoginModal extends LitElement {
           this.isLoading = false;
           return;
         }
+        if (data.token || tokenVal) {
+          try {
+            localStorage.setItem("omp_web_token", data.token || tokenVal);
+          } catch { }
+        }
 
         this.isLoading = false;
         this.isSuccess = true;
@@ -179,6 +185,11 @@ export class OmpLoginModal extends LitElement {
           this.isLoading = false;
           return;
         }
+        if (data.token) {
+          try {
+            localStorage.setItem("omp_web_token", data.token);
+          } catch { }
+        }
 
         this.isLoading = false;
         this.isSuccess = true;
@@ -221,6 +232,11 @@ export class OmpLoginModal extends LitElement {
         this.errorMessage = data.error || "Usuário ou senha incorretos";
         this.isLoading = false;
         return;
+      }
+      if (data.token) {
+        try {
+          localStorage.setItem("omp_web_token", data.token);
+        } catch { }
       }
 
       this.isLoading = false;
@@ -591,6 +607,11 @@ export class OmpLoginModal extends LitElement {
           transform: translateY(0);
         }
 
+        .omp-squircle-submit-btn.omp-status-success {
+          background-color: oklch(62% 0.17 145) !important;
+          color: #ffffff !important;
+        }
+
         .omp-squircle-submit-btn:disabled {
           opacity: 0.65;
           cursor: not-allowed;
@@ -748,33 +769,24 @@ export class OmpLoginModal extends LitElement {
               `}
 
               <!-- Error -->
-              ${
-                this.errorMessage
-                  ? html`<div class="omp-squircle-error">${this.errorMessage}</div>`
-                  : nothing
-              }
+              ${this.errorMessage
+        ? html`<div class="omp-squircle-error">${this.errorMessage}</div>`
+        : nothing
+      }
 
               <!-- Submit Button (Squircle-16) with color-muted-450 -->
               <div class="omp-squircle-btn-wrap">
-                <button
+                <omp-status-button
                   type="submit"
+                  class="w-full block"
+                  variant="squircle"
+                  size="lg"
+                  button-class="omp-squircle-submit-btn"
+                  .status=${this.isSuccess ? "success" : this.isLoading ? "loading" : "neutral"}
+                  .label=${this.isSuccess ? "Conectado" : this.isLoading ? (this.setupRequired ? "Salvando..." : "Entrando...") : (this.setupRequired ? "Criar Administrador" : this.tokenMode ? "Entrar com Token" : "Entrar")}
+                  .showIcon=${false}
                   ?disabled=${this.isLoading || this.isSuccess}
-                  class="omp-squircle-submit-btn"
-                >
-                  ${
-                    this.isSuccess
-                      ? html`
-                        ${renderCheckIcon("size-4")}
-                        <span>Conectado</span>
-                      `
-                      : this.isLoading
-                        ? html`
-                          <div class="omp-squircle-spinner"></div>
-                          <span>${this.setupRequired ? "Salvando..." : "Entrando..."}</span>
-                        `
-                        : html`<span>${this.setupRequired ? "Criar Administrador" : this.tokenMode ? "Entrar com Token" : "Entrar"}</span>`
-                  }
-                </button>
+                ></omp-status-button>
 
                 ${!this.setupRequired ? html`
                   <div style="text-align: center; margin-top: 10px;">

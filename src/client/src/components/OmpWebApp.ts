@@ -2133,21 +2133,6 @@ export class OmpWebApp extends LitElement {
     if (!this.appShell.isMobileNavigationLayout) return null;
     const isClosed = !this.mobileDrawer.isOpen;
     return html`
-      <button
-        type="button"
-        class="mobile-drawer-grip ${isClosed ? "" : "hidden"}"
-        title="Open Sessions"
-        aria-label="Open Sessions"
-        @click=${() => { this.mobileDrawer.open(); }}
-        @touchstart=${this.mobileDrawer.handleTouchStart}
-        @touchmove=${this.mobileDrawer.handleTouchMove}
-        @touchend=${this.mobileDrawer.handleTouchEnd}
-        @touchcancel=${this.mobileDrawer.handleTouchCancel}
-      >
-        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-          <polyline points="9 18 15 12 9 6"></polyline>
-        </svg>
-      </button>
       ${isClosed ? html`
         <div
           class="mobile-drawer-edge-swipe-zone"
@@ -2240,7 +2225,7 @@ export class OmpWebApp extends LitElement {
           ${this.renderMobileMainTabs()}
           ${state.error ? html`<div class="error">${state.error}</div>` : null}
           ${state.selectedSession ? html`
-            <chat-view .onFocusPrompt=${() => { void this.focusChatComposer(); }} .sessionId=${state.selectedSession.id} .pendingAsk=${state.askDialog} .onSubmitAsk=${(result: AskDialogSubmitResult, reqId?: string) => { const targetId = reqId || state.askDialog?.requestId; if (targetId) void this.sessions.submitAsk(targetId, result); }} .onCancelAsk=${(reqId?: string) => { const targetId = reqId || state.askDialog?.requestId; if (targetId) void this.sessions.cancelAsk(targetId); }} .messages=${state.messages} .messageStart=${state.messagePageStart} .messageEnd=${state.messagePageEnd} .messageTotal=${state.messagePageTotal} .hasMore=${state.messagePageStart > 0} .loadingMore=${state.isLoadingEarlierMessages} .isSendingPrompt=${state.sendingPrompts[state.selectedSession.id] === true} .isCompacting=${state.status?.isCompacting === true} .pendingMessageCount=${state.status?.pendingMessageCount ?? 0} .clientQueuedMessages=${state.clientQueuedSessionMessages[state.selectedSession.id] ?? []} .status=${state.status} .activity=${state.activity} .onLoadMore=${() => this.withChatPrependTransition(() => this.sessions.loadEarlierMessages())}></chat-view>
+            <chat-view .onRevertMessage=${(message: ChatLine, index: number) => { void this.sessions.revertTurn(message, index); }} .onFocusPrompt=${() => { void this.focusChatComposer(); }} .sessionId=${state.selectedSession.id} .pendingAsk=${state.askDialog} .onSubmitAsk=${(result: AskDialogSubmitResult, reqId?: string) => { const targetId = reqId || state.askDialog?.requestId; if (targetId) void this.sessions.submitAsk(targetId, result); }} .onCancelAsk=${(reqId?: string) => { const targetId = reqId || state.askDialog?.requestId; if (targetId) void this.sessions.cancelAsk(targetId); }} .messages=${state.messages} .messageStart=${state.messagePageStart} .messageEnd=${state.messagePageEnd} .messageTotal=${state.messagePageTotal} .hasMore=${state.messagePageStart > 0} .loadingMore=${state.isLoadingEarlierMessages} .isSendingPrompt=${state.sendingPrompts[state.selectedSession.id] === true} .isCompacting=${state.status?.isCompacting === true} .pendingMessageCount=${state.status?.pendingMessageCount ?? 0} .clientQueuedMessages=${state.clientQueuedSessionMessages[state.selectedSession.id] ?? []} .status=${state.status} .activity=${state.activity} .onLoadMore=${() => this.withChatPrependTransition(() => this.sessions.loadEarlierMessages())}></chat-view>
             ${state.btwState !== undefined ? html`
               <btw-panel
                 .state=${state.btwState}

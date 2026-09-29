@@ -20,3 +20,4 @@ export * from "./OmpProjectsView";
 export * from "./OmpProjectDetailView";
 export * from "./OmpMarkdown";
 export * from "./OmpSettingsView";
+export * from "./OmpStatusButton";

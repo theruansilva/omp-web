@@ -70,6 +70,7 @@ export class ChatView extends LitElement {
   private statusDurationTimer: ReturnType<typeof setInterval> | undefined = undefined;
   @property({ attribute: false }) onLoadMore?: () => void;
   @property({ attribute: false }) onFocusPrompt?: () => void;
+  @property({ attribute: false }) onRevertMessage?: (message: ChatLine, index: number) => void;
   @query(".chat") private chat?: HTMLDivElement;
   @state() private pinnedToBottom = true;
   @state() private expandedMetaKey: string | undefined;
@@ -394,6 +395,7 @@ export class ChatView extends LitElement {
         <div class="msg-content">
           ${message.parts.map((part) => this.renderPart(part, message))}
         </div>
+        ${message.role === "user" ? this.renderUserMessageActions(message, index) : null}
       </article>
     `;
   }
@@ -616,7 +618,39 @@ export class ChatView extends LitElement {
     `;
   }
 
-    private renderScrollMarker(markerId: string) {
+    private renderUserMessageActions(message: ChatLine, index: number) {
+    const key = `user:${String(index)}`;
+    const copied = this.copiedMessageKey === key;
+    return html`
+      <div class="user-msg-actions" aria-label="Ações da mensagem">
+        <button
+          type="button"
+          class="user-msg-action revert-btn"
+          title="Reverter / Editar prompt a partir deste ponto"
+          aria-label="Reverter prompt"
+          @click=${(event: MouseEvent) => {
+            event.stopPropagation();
+            this.onRevertMessage?.(message, index);
+          }}
+        >
+          <span aria-hidden="true" style="margin-right: 4px;">↺</span> Reverter
+        </button>
+        <button
+          type="button"
+          class="user-msg-action copy-btn"
+          title=${copied ? "Copiado!" : "Copiar mensagem"}
+          aria-label="Copiar mensagem"
+          @click=${(event: MouseEvent) => {
+            void this.copyMessage(message, key, event);
+          }}
+        >
+          <span aria-hidden="true">${copied ? "✓" : "⧉"}</span>
+        </button>
+      </div>
+    `;
+  }
+
+  private renderScrollMarker(markerId: string) {
     return html`<span class="scroll-marker" data-marker-id=${markerId} aria-hidden="true"></span>`;
   }
 

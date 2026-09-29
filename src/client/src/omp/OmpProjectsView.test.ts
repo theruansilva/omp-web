@@ -94,6 +94,18 @@ describe("OmpHomeView", () => {
     expect(allText).toContain("omp-composer");
     expect(allText).toContain("absolute bottom-0");
   });
+
+  it("renders username dynamically in greeting", () => {
+    const homeView = new OmpHomeView();
+    homeView.username = "Alice";
+    const rendered = homeView.render();
+    const text = getAllTemplateText(rendered);
+    expect(text).toContain("Hey Alice, what’s on your mind today?");
+
+    const homeViewNoUser = new OmpHomeView();
+    const textNoUser = getAllTemplateText(homeViewNoUser.render());
+    expect(textNoUser).toContain("Hey, what’s on your mind today?");
+  });
 });
 
 describe("OmpComposer Extensibility & Project Selector", () => {
