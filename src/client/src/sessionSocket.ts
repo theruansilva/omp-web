@@ -30,7 +30,7 @@ export class SessionSocket {
 
   close(): void {
     this.shouldReconnect = false;
-    window.clearTimeout(this.reconnectTimer);
+    clearTimeout(this.reconnectTimer);
     closeSocketQuietly(this.socket);
     this.socket = undefined;
     this.session = undefined;
@@ -59,10 +59,10 @@ export class SessionSocket {
 
   private scheduleReconnect(): void {
     if (!this.shouldReconnect) return;
-    window.clearTimeout(this.reconnectTimer);
+    clearTimeout(this.reconnectTimer);
     const delay = this.reconnectDelay;
     this.reconnectDelay = Math.min(this.reconnectDelay * 1.6, 5000);
-    this.reconnectTimer = window.setTimeout(() => { this.open(); }, delay);
+    this.reconnectTimer = setTimeout(() => { this.open(); }, delay);
   }
 
   private async handleMessage(data: MessageEvent["data"]): Promise<void> {
@@ -91,7 +91,7 @@ export class RealtimeSocket {
 
   close(): void {
     this.shouldReconnect = false;
-    window.clearTimeout(this.reconnectTimer);
+    clearTimeout(this.reconnectTimer);
     closeSocketQuietly(this.socket);
     this.socket = undefined;
     this.onEvent = undefined;
@@ -117,10 +117,10 @@ export class RealtimeSocket {
 
   private scheduleReconnect(): void {
     if (!this.shouldReconnect) return;
-    window.clearTimeout(this.reconnectTimer);
+    clearTimeout(this.reconnectTimer);
     const delay = this.reconnectDelay;
     this.reconnectDelay = Math.min(this.reconnectDelay * 1.6, 5000);
-    this.reconnectTimer = window.setTimeout(() => { this.open(); }, delay);
+    this.reconnectTimer = setTimeout(() => { this.open(); }, delay);
   }
 
   private async handleMessage(data: MessageEvent["data"]): Promise<void> {

@@ -75,6 +75,7 @@ describe("OmpModelsView component", () => {
       provider: "openai",
       modelId: "gpt-4o",
       persist: true,
+      role: undefined,
     });
   });
 
@@ -87,5 +88,26 @@ describe("OmpModelsView component", () => {
 
     (view as unknown as Record<string, (...args: unknown[]) => unknown>).handleSetThinking("high");
     expect(levelReceived).toBe("high");
+  });
+
+  it("dispatches select-model with role when assigned to a TUI role", () => {
+    const view = new OmpModelsView();
+    let detailReceived: unknown = null;
+    view.addEventListener("select-model", (e: Event) => {
+      const custom = e as CustomEvent;
+      detailReceived = custom.detail;
+    });
+
+    (view as unknown as Record<string, (...args: unknown[]) => unknown>).handleSelectModel(
+      { provider: "anthropic", id: "claude-3-5-haiku" },
+      true,
+      "smol",
+    );
+    expect(detailReceived).toEqual({
+      provider: "anthropic",
+      modelId: "claude-3-5-haiku",
+      persist: true,
+      role: "smol",
+    });
   });
 });

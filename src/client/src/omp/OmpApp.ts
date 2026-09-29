@@ -179,7 +179,7 @@ export class OmpApp extends LitElement {
   @state() private availableModels: SessionModel[] = [];
   @state() private currentSessionModel?: SessionModel;
   @state() private currentThinkingLevel = "medium";
-  @state() private pendingSelectedModel?: { provider: string; modelId: string; persist?: boolean };
+  @state() private pendingSelectedModel?: { provider: string; modelId: string; persist?: boolean; role?: string };
 
   private get currentMachineId(): string {
     return this.selectedMachine?.id || "local";
@@ -1275,10 +1275,12 @@ export class OmpApp extends LitElement {
     }
   }
 
-  private async handleModelSelect(provider: string, modelId: string, persist = false) {
+  private async handleModelSelect(provider: string, modelId: string, persist = false, role?: string) {
     const ws = this.getActiveWorkspace();
-    this.currentSessionModel = { provider, id: modelId };
-    this.pendingSelectedModel = { provider, modelId, persist };
+    if (!role || role === "default") {
+      this.currentSessionModel = { provider, id: modelId };
+    }
+    this.pendingSelectedModel = { provider, modelId, persist, role };
     this.requestUpdate();
     if (!ws) return;
     try {
@@ -1288,10 +1290,10 @@ export class OmpApp extends LitElement {
           { id: sessionId, cwd: ws.path },
           provider,
           modelId,
-          persist,
+          { persist, role: role || "default" },
           this.currentMachineId,
         );
-        if (updatedStatus?.model) {
+        if (updatedStatus?.model && (!role || role === "default")) {
           this.currentSessionModel = updatedStatus.model;
         }
         if (updatedStatus?.thinkingLevel) {
@@ -1675,7 +1677,7 @@ Dica: você pode selecionar uma das opções abaixo para testar a injeção auto
             .currentModel=${this.currentSessionModel}
             .thinkingLevel=${this.currentThinkingLevel}
             .isWorking=${this.isStreaming}
-            @select-model=${(e: CustomEvent<ModelSelectDetail>) => void this.handleModelSelect(e.detail.provider, e.detail.modelId, e.detail.persist)}
+            @select-model=${(e: CustomEvent<ModelSelectDetail>) => void this.handleModelSelect(e.detail.provider, e.detail.modelId, e.detail.persist, e.detail.role)}
             @set-thinking-level=${(e: CustomEvent<{ level: string }>) => void this.handleSetThinkingLevel(e.detail.level)}
             @close=${() => {
               this.activeTab = "new-chat";

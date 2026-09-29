@@ -575,15 +575,163 @@ export function renderModelsIcon(className = "size-5 shrink-0") {
   `;
 }
 
+
+export function renderMetaIcon(className = "size-4") {
+  return html`
+    <svg viewBox="0 0 24 24" fill="currentColor" class="${className}">
+      <path d="M12 16.5c-2.4 0-4.3-1.6-5.4-3.6C5.5 11 4.5 9.7 3.4 9.7c-1.3 0-2.4 1.4-2.4 3.5 0 2.8 1.8 5.3 4.2 5.3 1.8 0 3.2-1 4.5-2.7 1.2 1.7 2.7 2.7 4.5 2.7 2.4 0 4.2-2.5 4.2-5.3 0-2.1-1.1-3.5-2.4-3.5-1.1 0-2.1 1.3-3.2 3.2-1.1 2-3 3.6-5.4 3.6h2.6z"/>
+    </svg>
+  `;
+}
+
+export function renderXAiIcon(className = "size-4") {
+  return html`
+    <svg viewBox="0 0 24 24" fill="currentColor" class="${className}">
+      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+    </svg>
+  `;
+}
+
+export function renderAwsIcon(className = "size-4") {
+  return html`
+    <svg viewBox="0 0 24 24" fill="currentColor" class="${className}">
+      <path d="M18.5 14.5c-3.5 2.5-8.5 3.8-13 1.8-.6-.3-1.3.3-.8.8 4.2 3.8 10.5 4.2 15.2 1 .7-.5.2-1.5-.7-1.1M19.7 16.7c.4-.5.8-1.3.8-2 0-.2-.2-.4-.4-.3-.7.3-1.6.6-2.5.6-.2 0-.3.2-.2.4.4.6 1.4 1.2 2.3 1.3"/>
+    </svg>
+  `;
+}
+
+export function renderAzureIcon(className = "size-4") {
+  return html`
+    <svg viewBox="0 0 24 24" fill="currentColor" class="${className}">
+      <path d="M13.05 2.25l-6.8 11.75h5.5l-4.5 7.75 14.5-13h-6.2z"/>
+    </svg>
+  `;
+}
+
+export function renderCloudflareIcon(className = "size-4") {
+  return html`
+    <svg viewBox="0 0 24 24" fill="currentColor" class="${className}">
+      <path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96z"/>
+    </svg>
+  `;
+}
+
+export function renderOpenRouterIcon(className = "size-4") {
+  return html`
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="${className}">
+      <circle cx="12" cy="12" r="10"/>
+      <line x1="2" y1="12" x2="22" y2="12"/>
+      <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+    </svg>
+  `;
+}
+
+export function renderAppleIcon(className = "size-4") {
+  return html`
+    <svg viewBox="0 0 24 24" fill="currentColor" class="${className}">
+      <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M15.97 6.37c.63-.77 1.06-1.85.94-2.93-.93.04-2.02.63-2.67 1.4-.57.65-1.08 1.75-.95 2.8 1.04.08 2.05-.5 2.68-1.27z"/>
+    </svg>
+  `;
+}
+
+export function renderNvidiaIcon(className = "size-4") {
+  return html`
+    <svg viewBox="0 0 24 24" fill="currentColor" class="${className}">
+      <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 14.5c-3 0-5.5-2.5-5.5-5.5S10 5.5 13 5.5c2 0 3.7 1.1 4.6 2.7l-2.1 1.2c-.6-1-1.5-1.6-2.5-1.6-1.8 0-3.2 1.4-3.2 3.2s1.4 3.2 3.2 3.2c1.2 0 2.2-.6 2.7-1.5H13v-2.3h5.2c.1.4.1.8.1 1.2 0 3-2.4 4.9-5.3 4.9z"/>
+    </svg>
+  `;
+}
+
+export function renderMoonshotIcon(className = "size-4") {
+  return html`
+    <svg viewBox="0 0 24 24" fill="currentColor" class="${className}">
+      <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z"/>
+    </svg>
+  `;
+}
+
+export function renderCerebrasIcon(className = "size-4") {
+  return html`
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="${className}">
+      <rect x="4" y="4" width="16" height="16" rx="2"/>
+      <rect x="9" y="9" width="6" height="6"/>
+      <path d="M9 1v3M15 1v3M9 20v3M15 20v3M20 9h3M20 14h3M1 9h3M1 14h3"/>
+    </svg>
+  `;
+}
+
+export function renderCohereIcon(className = "size-4") {
+  return html`
+    <svg viewBox="0 0 24 24" fill="currentColor" class="${className}">
+      <path d="M17.5 3A6.5 6.5 0 0 0 11 9.5c0 1.2.3 2.3.9 3.3L3.5 21.2a1 1 0 0 0 1.4 1.4l8.4-8.4c1 .6 2.1.9 3.3.9A6.5 6.5 0 0 0 23 8.6 6.5 6.5 0 0 0 17.5 3z"/>
+    </svg>
+  `;
+}
+
+export function renderTogetherIcon(className = "size-4") {
+  return html`
+    <svg viewBox="0 0 24 24" fill="currentColor" class="${className}">
+      <circle cx="6" cy="6" r="3"/>
+      <circle cx="18" cy="6" r="3"/>
+      <circle cx="12" cy="18" r="3"/>
+      <path d="M6 9v2c0 2 2 4 4 4h4c2 0 4-2 4-4V9" fill="none" stroke="currentColor" stroke-width="2"/>
+    </svg>
+  `;
+}
+
+export function renderGitLabIcon(className = "size-4") {
+  return html`
+    <svg viewBox="0 0 24 24" fill="currentColor" class="${className}">
+      <path d="m23.6 9.6-1.5-4.7c-.2-.5-.8-.8-1.3-.5-.3.1-.5.4-.6.7l-2.4 7.3H6.2L3.8 5.1c-.2-.5-.8-.8-1.3-.5-.3.1-.5.4-.6.7L.4 9.6c-.2.5 0 1.1.4 1.4L12 19.8l11.2-8.8c.4-.3.6-.9.4-1.4z"/>
+    </svg>
+  `;
+}
+
+export function renderPerplexityIcon(className = "size-4") {
+  return html`
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="${className}">
+      <line x1="12" y1="2" x2="12" y2="22"/>
+      <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/>
+      <line x1="2" y1="12" x2="22" y2="12"/>
+      <line x1="4.93" y1="19.07" x2="19.07" y2="4.93"/>
+    </svg>
+  `;
+}
+
+export function renderChipIcon(className = "size-4") {
+  return html`
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="${className}">
+      <rect x="4" y="4" width="16" height="16" rx="2"/>
+      <circle cx="12" cy="12" r="3"/>
+      <path d="M12 1v3M12 20v3M20 12h3M1 12h3"/>
+    </svg>
+  `;
+}
+
 export function renderModelProviderIcon(provider?: string, className = "size-4") {
   const p = (provider || "").toLowerCase();
   if (p.includes("anthropic") || p.includes("claude")) return renderAnthropicIcon(className);
-  if (p.includes("openai") || p.includes("gpt") || p.includes("codex")) return renderOpenAIIcon(className);
+  if (p.includes("openai") || p.includes("gpt") || p.includes("codex") || p.includes("chatgpt")) return renderOpenAIIcon(className);
   if (p.includes("google") || p.includes("gemini") || p.includes("antigravity")) return renderGoogleGeminiIcon(className);
   if (p.includes("deepseek")) return renderDeepSeekIcon(className);
-  if (p.includes("ollama") || p.includes("local")) return renderOllamaIcon(className);
+  if (p.includes("ollama")) return renderOllamaIcon(className);
   if (p.includes("groq")) return renderGroqIcon(className);
-  if (p.includes("mistral")) return renderMistralIcon(className);
+  if (p.includes("mistral") || p.includes("codestral")) return renderMistralIcon(className);
+  if (p.includes("meta") || p.includes("llama")) return renderMetaIcon(className);
+  if (p.includes("xai") || p.includes("grok")) return renderXAiIcon(className);
   if (p.includes("copilot") || p.includes("github")) return renderCopilotIcon(className);
+  if (p.includes("gitlab")) return renderGitLabIcon(className);
+  if (p.includes("amazon") || p.includes("bedrock") || p.includes("aws")) return renderAwsIcon(className);
+  if (p.includes("azure")) return renderAzureIcon(className);
+  if (p.includes("cloudflare")) return renderCloudflareIcon(className);
+  if (p.includes("openrouter")) return renderOpenRouterIcon(className);
+  if (p.includes("apple")) return renderAppleIcon(className);
+  if (p.includes("nvidia")) return renderNvidiaIcon(className);
+  if (p.includes("moonshot") || p.includes("kimi")) return renderMoonshotIcon(className);
+  if (p.includes("cerebras")) return renderCerebrasIcon(className);
+  if (p.includes("cohere")) return renderCohereIcon(className);
+  if (p.includes("together")) return renderTogetherIcon(className);
+  if (p.includes("perplexity")) return renderPerplexityIcon(className);
+  if (p.includes("local") || p.includes("vllm") || p.includes("lm-studio")) return renderChipIcon(className);
   return renderSparklesIcon(className);
 }

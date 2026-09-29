@@ -240,10 +240,35 @@ export const sessionsApi = {
     request<SessionStatus>(sessionQueryUrl(session, "status", machineId)),
   models: (session: SessionLookup, machineId = "local") =>
     request<ModelSelectionResponse>(sessionQueryUrl(session, "models", machineId)),
-  setModel: (session: SessionLookup, provider: string, modelId: string, persistOrMachineId?: boolean | string, machineId?: string) => {
-    const persist = typeof persistOrMachineId === "boolean" ? persistOrMachineId : undefined;
-    const effectiveMachineId = typeof persistOrMachineId === "string" ? persistOrMachineId : (machineId ?? "local");
-    return request<SessionStatus>(sessionUrl(session, "model", effectiveMachineId), { method: "POST", body: sessionBody(session, { provider, modelId, ...(persist === true ? { persist: true } : {}) }) });
+  setModel: (
+    session: SessionLookup,
+    provider: string,
+    modelId: string,
+    optionsOrPersist?: boolean | string | { persist?: boolean; role?: string },
+    machineId?: string,
+  ) => {
+    let persist: boolean | undefined;
+    let role: string | undefined;
+    let effectiveMachineId = machineId ?? "local";
+
+    if (typeof optionsOrPersist === "boolean") {
+      persist = optionsOrPersist;
+    } else if (typeof optionsOrPersist === "string") {
+      effectiveMachineId = optionsOrPersist;
+    } else if (optionsOrPersist && typeof optionsOrPersist === "object") {
+      persist = optionsOrPersist.persist;
+      role = optionsOrPersist.role;
+    }
+
+    return request<SessionStatus>(sessionUrl(session, "model", effectiveMachineId), {
+      method: "POST",
+      body: sessionBody(session, {
+        provider,
+        modelId,
+        ...(persist === true ? { persist: true } : {}),
+        ...(role !== undefined && role !== "" ? { role } : {}),
+      }),
+    });
   },
   cycleModel: (session: SessionLookup, direction: "forward" | "backward", machineId = "local") =>
     request<SessionStatus>(sessionUrl(session, "model/cycle", machineId), { method: "POST", body: sessionBody(session, { direction }) }),

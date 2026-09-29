@@ -10,13 +10,38 @@ import {
   renderBrainIcon,
   renderFeatherIcon,
   renderSparklesIcon,
+  renderChevronDownIcon,
 } from "./icons";
 
 export interface ModelSelectDetail {
   provider: string;
   modelId: string;
   persist?: boolean;
+  role?: string;
 }
+
+export interface ModelRoleItem {
+  id: string;
+  tag: string;
+  name: string;
+  desc: string;
+  color: string;
+}
+
+export const TUI_ROLES: ModelRoleItem[] = [
+  { id: "default", tag: "@default", name: "Padrão", desc: "Modelo principal para chat e raciocínio geral", color: "text-emerald-500" },
+  { id: "smol", tag: "@smol", name: "Fast / Smol", desc: "Execução rápida para tarefas cotidianas e edições", color: "text-amber-500" },
+  { id: "slow", tag: "@slow", name: "Thinking / Slow", desc: "Raciocínio profundo e planejamento de arquitetura", color: "text-blue-500" },
+  { id: "tiny", tag: "@tiny", name: "Tiny", desc: "Modelos ultraleves ou locais para reparo de sintaxe", color: "text-purple-500" },
+  { id: "advisor", tag: "@advisor", name: "Advisor", desc: "Consultor de estratégia, vendas e arquitetura", color: "text-cyan-500" },
+  { id: "image", tag: "@image", name: "Imagem", desc: "Geração e transformação de imagens", color: "text-pink-500" },
+  { id: "vision", tag: "@vision", name: "Visão", desc: "Análise multimodal de imagens e capturas de tela", color: "text-rose-500" },
+  { id: "commit", tag: "@commit", name: "Commit", desc: "Geração de mensagens semânticas de commit", color: "text-orange-500" },
+  { id: "plan", tag: "@plan", name: "Arquiteto", desc: "Geração e validação de planos de execução", color: "text-indigo-500" },
+  { id: "task", tag: "@task", name: "Subtarefa", desc: "Execução autônoma de subtarefas e subagentes", color: "text-teal-500" },
+  { id: "memory", tag: "@memory", name: "Memória", desc: "Extração, sumarização e consolidação na memória", color: "text-yellow-500" },
+  { id: "web", tag: "@web", name: "Web Search", desc: "Busca na web e raspagem de dados", color: "text-green-500" },
+];
 
 @customElement("omp-models-view")
 export class OmpModelsView extends LitElement {
@@ -27,6 +52,8 @@ export class OmpModelsView extends LitElement {
 
   @state() private searchQuery = "";
   @state() private selectedCategory = "all";
+  @state() private selectedRoleFilter = "all";
+  @state() private activeRoleMenuModelKey: string | null = null;
   @state() private feedbackMessage = "";
 
   protected override createRenderRoot() {
@@ -41,28 +68,32 @@ export class OmpModelsView extends LitElement {
     this.feedbackTimer = setTimeout(() => {
       this.feedbackMessage = "";
       this.requestUpdate();
-    }, 3000);
+    }, 3500);
   }
 
-  private handleSelectModel(model: SessionModel, persist = false) {
+  private handleSelectModel(model: SessionModel, persist = false, role?: string) {
     if (!model.provider || !model.id) return;
+    this.activeRoleMenuModelKey = null;
     this.dispatchEvent(
       new CustomEvent<ModelSelectDetail>("select-model", {
         detail: {
           provider: model.provider,
           modelId: model.id,
           persist,
+          role,
         },
         bubbles: true,
         composed: true,
       }),
     );
     const normalized = normalizeModelName(model.provider, model.id, model.name);
-    this.showFeedback(
-      persist
-        ? `Modelo ${normalized} definido como padrão global!`
-        : `Modelo ${normalized} ativado para esta sessão!`,
-    );
+    if (role && role !== "default") {
+      this.showFeedback(`Modelo ${normalized} associado ao papel @${role}!`);
+    } else if (persist) {
+      this.showFeedback(`Modelo ${normalized} salvo como padrão global (@default)!`);
+    } else {
+      this.showFeedback(`Modelo ${normalized} ativado para a sessão atual!`);
+    }
   }
 
   private handleSetThinking(level: string) {
@@ -96,11 +127,11 @@ export class OmpModelsView extends LitElement {
       if (this.selectedCategory === "all") return true;
 
       const category = classifyModelSource(m.provider || "", m.id || "").category.toLowerCase();
-      return category.includes(this.selectedCategory.toLowerCase());
+      return category.includes(this.selectedCategory.toLowerCase()) || provider.includes(this.selectedCategory.toLowerCase());
     });
   }
 
-  private getAvailableCategories(): Array<{ id: string; label: string; icon: string }> {
+  private getAvailableCategories(): Array<{ id: string; label: string }> {
     const categoriesSet = new Set<string>();
     for (const m of this.models) {
       const info = classifyModelSource(m.provider || "", m.id || "");
@@ -109,9 +140,8 @@ export class OmpModelsView extends LitElement {
     const categories = Array.from(categoriesSet).map((cat) => ({
       id: cat.toLowerCase(),
       label: cat,
-      icon: "",
     }));
-    return [{ id: "all", label: "Todos", icon: "🌐" }, ...categories];
+    return [{ id: "all", label: "Todos os Provedores" }, ...categories];
   }
 
   override render() {
@@ -124,155 +154,118 @@ export class OmpModelsView extends LitElement {
       : "Padrão (@default)";
 
     return html`
-      <style>
-        .omp-models-card {
-          background-color: #ffffff;
-          border: 1px solid rgba(0, 0, 0, 0.1);
-          color: #111827;
-        }
-        .dark .omp-models-card,
-        [data-theme="dark"] .omp-models-card {
-          background-color: #1a1a20 !important;
-          border: 1px solid rgba(255, 255, 255, 0.12) !important;
-          color: #f3f4f6 !important;
-        }
-        .omp-models-card:hover {
-          border-color: rgba(59, 130, 246, 0.4) !important;
-        }
-        .omp-models-card.selected {
-          border-color: rgba(59, 130, 246, 0.8) !important;
-          box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.25);
-        }
-        .omp-models-input {
-          background-color: #ffffff;
-          border: 1px solid rgba(0, 0, 0, 0.12);
-          color: #111827;
-        }
-        .dark .omp-models-input,
-        [data-theme="dark"] .omp-models-input {
-          background-color: #111115 !important;
-          border: 1px solid rgba(255, 255, 255, 0.15) !important;
-          color: #f3f4f6 !important;
-        }
-        .omp-models-btn-subtle {
-          background-color: rgba(0, 0, 0, 0.05);
-          color: #1f2937;
-          border: 1px solid rgba(0, 0, 0, 0.08);
-        }
-        .dark .omp-models-btn-subtle,
-        [data-theme="dark"] .omp-models-btn-subtle {
-          background-color: rgba(255, 255, 255, 0.08) !important;
-          color: #f3f4f6 !important;
-          border: 1px solid rgba(255, 255, 255, 0.12) !important;
-        }
-        .omp-models-btn-subtle:hover {
-          background-color: rgba(0, 0, 0, 0.08);
-        }
-        .dark .omp-models-btn-subtle:hover,
-        [data-theme="dark"] .omp-models-btn-subtle:hover {
-          background-color: rgba(255, 255, 255, 0.14) !important;
-        }
-      </style>
-
-      <div class="h-full flex flex-col overflow-y-auto font-sans select-text p-4 md:p-8 space-y-6 max-w-5xl mx-auto">
+      <div
+        class="h-full flex flex-col overflow-y-auto font-sans select-text p-4 md:p-8 space-y-6 max-w-6xl mx-auto"
+        @click=${() => { if (this.activeRoleMenuModelKey) this.activeRoleMenuModelKey = null; }}
+      >
         <!-- Top Navigation & Header -->
         <div class="flex items-center justify-between flex-wrap gap-4 pb-2 border-b border-black/10 dark:border-white/10">
-          <div class="flex items-center gap-3">
+          <div class="flex items-center gap-3.5">
             <button
               type="button"
-              class="flex items-center gap-2 px-3 py-1.5 rounded-xl omp-models-btn-subtle text-sm font-semibold transition-colors cursor-pointer"
+              class="flex items-center gap-2 px-3.5 py-2 rounded-2xl bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/15 text-sm font-semibold text-foreground-800 transition-colors cursor-pointer border border-black/10 dark:border-white/10 shadow-xs"
               @click=${() => this.dispatchEvent(new CustomEvent("close", { bubbles: true, composed: true }))}
             >
               ${renderArrowLeftIcon("size-4")}
-              <span>Voltar</span>
+              <span>Voltar ao Chat</span>
             </button>
             <div class="flex flex-col">
               <h1 class="text-xl md:text-2xl font-black text-foreground-900 tracking-tight flex items-center gap-2">
-                <span>Modelos de IA</span>
-                <span class="text-xs px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 font-bold">
-                  ${this.models.length} disponíveis
+                <span>Catálogo de Modelos de IA</span>
+                <span class="text-xs px-2.5 py-0.5 rounded-full bg-blue-500/15 text-blue-600 dark:text-blue-400 font-bold">
+                  ${this.models.length} modelos
                 </span>
               </h1>
-              <p class="text-xs text-foreground-500">
-                Selecione o modelo do agente para raciocínio, geração de código e uso de ferramentas
+              <p class="text-xs text-foreground-500 mt-0.5">
+                Selecione o modelo ativo ou associe modelos específicos a cada papel da TUI (@default, @smol, @slow, @tiny, etc.)
               </p>
             </div>
           </div>
 
           ${this.feedbackMessage
         ? html`
-                <div class="px-3 py-1 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs font-semibold animate-fade-in">
+                <div class="px-3.5 py-1.5 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 text-xs font-bold animate-fade-in shadow-xs flex items-center gap-1.5">
+                  <span class="size-1.5 rounded-full bg-emerald-500"></span>
                   ${this.feedbackMessage}
                 </div>
               `
         : nothing}
         </div>
 
-        <!-- TUI Roles & Current Active Model Banner -->
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <!-- TUI Roles & Current Active Model Banner (Acrylic Squircles) -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
           <!-- 1. Default Role -->
-          <div class="p-4 rounded-2xl omp-models-card shadow-xs flex flex-col justify-between gap-2">
+          <div
+            class="p-5 rounded-3xl omp-settings-card flex flex-col justify-between gap-3 shadow-xs"
+            style="clip-path: var(--clip-path-squircle-28, none);"
+          >
             <div class="flex items-center justify-between">
               <span class="text-xs font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
                 ${renderSparklesIcon("size-3.5")}
                 Modelo Ativo
               </span>
-              <span class="text-[10px] px-1.5 py-0.5 rounded-md bg-black/5 dark:bg-white/10 font-mono text-foreground-600">
+              <span class="text-[10px] px-2 py-0.5 rounded-lg bg-black/5 dark:bg-white/10 font-mono font-bold text-foreground-700 border border-black/5 dark:border-white/10">
                 @default
               </span>
             </div>
-            <div class="flex items-center gap-2.5 mt-1">
-              <div class="size-7 rounded-lg bg-black/5 dark:bg-white/10 flex items-center justify-center shrink-0">
-                ${renderModelProviderIcon(activeProvider, "size-4 text-foreground-800")}
+            <div class="flex items-center gap-3">
+              <div class="size-10 rounded-2xl bg-black/5 dark:bg-white/10 flex items-center justify-center shrink-0 border border-black/5 dark:border-white/10 shadow-xs">
+                ${renderModelProviderIcon(activeProvider, "size-5 text-foreground-800")}
               </div>
               <div class="flex flex-col min-w-0">
-                <span class="text-sm font-bold text-foreground-900 truncate" title="${activeNormalized}">
+                <span class="text-base font-bold text-foreground-900 truncate" title="${activeNormalized}">
                   ${activeNormalized}
                 </span>
-                <span class="text-[11px] text-foreground-500 font-mono truncate">
-                  ${activeProvider ? `${activeProvider}/${activeId}` : "auto"}
+                <span class="text-xs text-foreground-500 font-mono truncate">
+                  ${activeProvider ? `${activeProvider}/${activeId}` : "automático"}
                 </span>
               </div>
             </div>
           </div>
 
           <!-- 2. Fast / Smol Role -->
-          <div class="p-4 rounded-2xl omp-models-card shadow-xs flex flex-col justify-between gap-2">
+          <div
+            class="p-5 rounded-3xl omp-settings-card flex flex-col justify-between gap-3 shadow-xs"
+            style="clip-path: var(--clip-path-squircle-28, none);"
+          >
             <div class="flex items-center justify-between">
               <span class="text-xs font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400 flex items-center gap-1.5">
                 ${renderBoltIcon("size-3.5")}
                 Fast / Smol
               </span>
-              <span class="text-[10px] px-1.5 py-0.5 rounded-md bg-black/5 dark:bg-white/10 font-mono text-foreground-600">
+              <span class="text-[10px] px-2 py-0.5 rounded-lg bg-black/5 dark:bg-white/10 font-mono font-bold text-foreground-700 border border-black/5 dark:border-white/10">
                 @smol
               </span>
             </div>
-            <p class="text-xs text-foreground-600 mt-1 leading-relaxed">
-              Execução ultrarrápida para tarefas leves, commits e reparo de sintaxe.
+            <p class="text-xs text-foreground-600 leading-relaxed">
+              Execução com baixa latência e custo reduzido para tarefas leves, commits e reparo automático de sintaxe.
             </p>
           </div>
 
-          <!-- 3. Thinking / Slow Role -->
-          <div class="p-4 rounded-2xl omp-models-card shadow-xs flex flex-col justify-between gap-2">
+          <!-- 3. Thinking / Slow Role + Reasoning Level -->
+          <div
+            class="p-5 rounded-3xl omp-settings-card flex flex-col justify-between gap-3 shadow-xs sm:col-span-2 lg:col-span-1"
+            style="clip-path: var(--clip-path-squircle-28, none);"
+          >
             <div class="flex items-center justify-between">
               <span class="text-xs font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400 flex items-center gap-1.5">
                 ${renderBrainIcon("size-3.5")}
                 Thinking / Slow
               </span>
-              <span class="text-[10px] px-1.5 py-0.5 rounded-md bg-black/5 dark:bg-white/10 font-mono text-foreground-600">
+              <span class="text-[10px] px-2 py-0.5 rounded-lg bg-black/5 dark:bg-white/10 font-mono font-bold text-foreground-700 border border-black/5 dark:border-white/10">
                 @slow
               </span>
             </div>
-            <div class="flex items-center gap-1.5 mt-1">
-              <span class="text-xs text-foreground-600">Raciocínio:</span>
-              <div class="flex items-center gap-1">
+            <div class="flex items-center justify-between gap-2 flex-wrap">
+              <span class="text-xs font-semibold text-foreground-700">Nível de Raciocínio:</span>
+              <div class="flex items-center gap-1 p-0.5 rounded-xl bg-black/5 dark:bg-white/10 border border-black/5 dark:border-white/10">
                 ${["off", "low", "medium", "high"].map(
           (lvl) => html`
                     <button
                       type="button"
-                      class="px-2 py-0.5 rounded text-[11px] font-semibold transition-colors cursor-pointer ${this.thinkingLevel === lvl
-              ? "bg-blue-600 text-white font-bold"
-              : "omp-models-btn-subtle text-foreground-600 hover:text-foreground-900"
+                      class="px-2 py-0.5 rounded-lg text-[10px] font-bold transition-all cursor-pointer ${this.thinkingLevel === lvl
+              ? "bg-blue-600 text-white shadow-xs"
+              : "text-foreground-600 hover:text-foreground-900"
             }"
                       @click=${() => this.handleSetThinking(lvl)}
                     >
@@ -285,19 +278,39 @@ export class OmpModelsView extends LitElement {
           </div>
         </div>
 
-        <!-- Search and Filter Bar -->
+        <!-- TUI Roles Quick Strip -->
+        <div class="flex flex-col gap-2">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold text-foreground-700 uppercase tracking-wider">Papéis Disponíveis na TUI:</span>
+          </div>
+          <div class="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar">
+            ${TUI_ROLES.map(
+          (role) => html`
+                <div
+                  class="flex items-center gap-1.5 px-3 py-1.5 rounded-2xl omp-settings-card shrink-0 text-xs shadow-xs"
+                  style="clip-path: var(--clip-path-squircle-20, none);"
+                >
+                  <span class="font-bold ${role.color}">${role.tag}</span>
+                  <span class="text-foreground-600 font-medium">${role.name}</span>
+                </div>
+              `,
+        )}
+          </div>
+        </div>
+
+        <!-- Search Bar and Category Filters -->
         <div class="flex flex-col gap-3">
           <div class="relative w-full">
             <input
               type="text"
-              class="w-full px-4 py-2.5 pl-10 rounded-2xl omp-models-input text-sm text-foreground-900 placeholder:text-foreground-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 shadow-xs transition-all"
+              class="w-full px-4 py-3 pl-11 rounded-2xl omp-settings-card text-sm text-foreground-900 placeholder:text-foreground-400 outline-none focus:ring-2 focus:ring-blue-500/30 transition-all shadow-xs"
               placeholder="Pesquisar por modelo ou provedor (ex: claude, gpt-4o, gemini, deepseek, ollama)..."
               .value=${this.searchQuery}
               @input=${(e: Event) => {
         this.searchQuery = (e.target as HTMLInputElement).value;
       }}
             />
-            <div class="absolute left-3.5 top-1/2 -translate-y-1/2 text-foreground-400 pointer-events-none">
+            <div class="absolute left-4 top-1/2 -translate-y-1/2 text-foreground-400 pointer-events-none">
               <svg class="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                 <circle cx="11" cy="11" r="8"></circle>
                 <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
@@ -311,9 +324,9 @@ export class OmpModelsView extends LitElement {
         (cat) => html`
                 <button
                   type="button"
-                  class="px-3 py-1 rounded-xl text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer ${this.selectedCategory === cat.id
-            ? "bg-foreground-900 text-background-100 dark:bg-foreground-100 dark:text-background-900 shadow-xs font-bold"
-            : "omp-models-btn-subtle text-foreground-700"
+                  class="px-3.5 py-1.5 rounded-2xl text-xs font-semibold whitespace-nowrap transition-all cursor-pointer border shadow-xs ${this.selectedCategory === cat.id
+            ? "bg-foreground-900 text-background-100 dark:bg-foreground-100 dark:text-background-900 border-transparent font-bold"
+            : "omp-settings-card text-foreground-700 hover:text-foreground-900"
           }"
                   @click=${() => {
             this.selectedCategory = cat.id;
@@ -326,66 +339,70 @@ export class OmpModelsView extends LitElement {
           </div>
         </div>
 
-        <!-- Models Cards List -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+        <!-- Models Grid (Acrylic Squircles with Provider Logos & Role Assignment) -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pb-12">
           ${filtered.length === 0
         ? html`
-                <div class="col-span-full py-12 text-center text-foreground-400 text-sm">
-                  Nenhum modelo encontrado correspondente a "${this.searchQuery}".
+                <div class="col-span-full py-16 text-center text-foreground-400 text-sm">
+                  Nenhum modelo encontrado correspondente ao filtro "${this.searchQuery}".
                 </div>
               `
         : filtered.map((m) => {
           const provider = m.provider || "";
           const id = m.id || "";
+          const key = `${provider}/${id}`;
           const normalized = normalizeModelName(provider, id, m.name);
           const isSelected = provider === activeProvider && id === activeId;
+          const isRoleMenuOpen = this.activeRoleMenuModelKey === key;
           const contextStr = m.contextWindow
-            ? `${Math.round(m.contextWindow / 1000)}k tokens`
+            ? `${Math.round(m.contextWindow / 1000)}k contexto`
             : undefined;
           const hasReasoning = Boolean(m.reasoning);
 
           return html`
                   <div
-                    class="p-4 rounded-2xl omp-models-card transition-all duration-150 flex flex-col justify-between gap-3 shadow-xs ${isSelected ? "selected" : ""
+                    class="p-5 rounded-3xl omp-settings-card flex flex-col justify-between gap-4 transition-all duration-200 hover:scale-[1.01] shadow-xs relative ${isSelected ? "ring-2 ring-blue-500/60" : ""
             }"
+                    style="clip-path: var(--clip-path-squircle-28, none);"
                   >
+                    <!-- Header with Provider Icon, Normalized Title and Badges -->
                     <div class="flex items-start justify-between gap-3">
-                      <div class="flex items-start gap-3 min-w-0">
-                        <div class="size-9 rounded-xl bg-black/5 dark:bg-white/10 flex items-center justify-center shrink-0 mt-0.5">
-                          ${renderModelProviderIcon(provider, "size-5 text-foreground-800")}
+                      <div class="flex items-start gap-3.5 min-w-0">
+                        <div class="size-11 rounded-2xl bg-black/5 dark:bg-white/10 flex items-center justify-center shrink-0 border border-black/5 dark:border-white/10 shadow-xs mt-0.5">
+                          ${renderModelProviderIcon(provider, "size-6 text-foreground-900")}
                         </div>
                         <div class="flex flex-col min-w-0">
-                          <div class="flex items-center gap-1.5 flex-wrap">
-                            <span class="text-sm font-bold text-foreground-900 leading-tight">
+                          <div class="flex items-center gap-2 flex-wrap">
+                            <span class="text-base font-bold text-foreground-900 leading-tight">
                               ${normalized}
                             </span>
                             ${isSelected
               ? html`
-                                  <span class="text-[10px] font-bold px-1.5 py-0.2 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
-                                    <span class="size-1 rounded-full bg-emerald-500"></span>
+                                  <span class="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                                    <span class="size-1.5 rounded-full bg-emerald-500"></span>
                                     Ativo
                                   </span>
                                 `
               : nothing}
                           </div>
-                          <span class="text-xs text-foreground-400 font-mono truncate mt-0.5" title="${provider}/${id}">
+                          <span class="text-xs text-foreground-500 font-mono truncate mt-1" title="${provider}/${id}">
                             ${provider}/${id}
                           </span>
                         </div>
                       </div>
 
-                      <!-- Badges (Context, Reasoning) -->
-                      <div class="flex items-center gap-1 shrink-0">
+                      <!-- Context Window & Thinking Badges -->
+                      <div class="flex items-center gap-1.5 shrink-0 flex-wrap justify-end">
                         ${contextStr
               ? html`
-                              <span class="text-[10px] px-2 py-0.5 rounded-md bg-black/5 dark:bg-white/10 text-foreground-600 font-mono">
+                              <span class="text-[10px] px-2 py-0.5 rounded-lg bg-black/5 dark:bg-white/10 text-foreground-600 font-mono border border-black/5 dark:border-white/10">
                                 ${contextStr}
                               </span>
                             `
               : nothing}
                         ${hasReasoning
               ? html`
-                              <span class="text-[10px] px-2 py-0.5 rounded-md bg-purple-500/10 text-purple-600 dark:text-purple-400 font-bold" title="Suporta raciocínio profundo">
+                              <span class="text-[10px] px-2 py-0.5 rounded-lg bg-purple-500/15 text-purple-600 dark:text-purple-400 font-bold border border-purple-500/20" title="Suporta raciocínio profundo">
                                 🧠 Think
                               </span>
                             `
@@ -393,26 +410,69 @@ export class OmpModelsView extends LitElement {
                       </div>
                     </div>
 
-                    <!-- Action Buttons -->
-                    <div class="flex items-center justify-end gap-2 pt-2 border-t border-black/5 dark:border-white/5">
-                      <button
-                        type="button"
-                        class="px-3 py-1.5 rounded-xl text-xs font-semibold transition-colors cursor-pointer ${isSelected
-              ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 cursor-default"
-              : "omp-models-btn-subtle text-foreground-800"
+                    <!-- Action Buttons: Usar na Sessão, Definir Padrão, Atribuir a Papel -->
+                    <div class="flex items-center justify-between gap-2 pt-3 border-t border-black/5 dark:border-white/5 relative">
+                      <!-- Dropdown to assign this model to ANY TUI role -->
+                      <div class="relative">
+                        <button
+                          type="button"
+                          class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/15 text-foreground-700 transition-colors cursor-pointer border border-black/5 dark:border-white/10"
+                          @click=${(e: Event) => {
+              e.stopPropagation();
+              this.activeRoleMenuModelKey = isRoleMenuOpen ? null : key;
+            }}
+                        >
+                          <span>Papéis TUI</span>
+                          ${renderChevronDownIcon("size-3")}
+                        </button>
+
+                        ${isRoleMenuOpen
+              ? html`
+                              <div
+                                class="absolute left-0 bottom-full mb-2 z-50 min-w-[200px] max-h-[280px] overflow-y-auto p-1.5 rounded-2xl shadow-2xl flex flex-col gap-0.5 text-xs font-sans pointer-events-auto select-none"
+                                style="background: var(--omp-surface-popover, #1e2330); color: var(--omp-text-primary, #fff); border: 1px solid var(--omp-popover-border, rgba(255, 255, 255, 0.15)); backdrop-filter: blur(24px) saturate(180%); -webkit-backdrop-filter: blur(24px) saturate(180%); box-shadow: 0 16px 36px -4px rgba(0, 0, 0, 0.5);"
+                                @click=${(e: Event) => e.stopPropagation()}
+                              >
+                                <span class="px-2.5 py-1 text-[10px] font-bold text-foreground-400 uppercase tracking-wider">
+                                  Atribuir a papel:
+                                </span>
+                                ${TUI_ROLES.map(
+                (r) => html`
+                                    <button
+                                      type="button"
+                                      class="flex items-center justify-between px-2.5 py-1.5 rounded-xl hover:bg-black/5 dark:hover:bg-white/10 text-left transition-colors cursor-pointer"
+                                      @click=${() => this.handleSelectModel(m, true, r.id)}
+                                    >
+                                      <span class="font-bold ${r.color}">${r.tag}</span>
+                                      <span class="text-foreground-500 text-[11px]">${r.name}</span>
+                                    </button>
+                                  `,
+              )}
+                              </div>
+                            `
+              : nothing}
+                      </div>
+
+                      <div class="flex items-center gap-2">
+                        <button
+                          type="button"
+                          class="px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${isSelected
+              ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 cursor-default font-bold"
+              : "bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/15 text-foreground-800 border border-black/5 dark:border-white/10"
             }"
-                        @click=${() => this.handleSelectModel(m, false)}
-                      >
-                        ${isSelected ? "✓ Selecionado" : "Usar nesta sessão"}
-                      </button>
-                      <button
-                        type="button"
-                        class="px-3 py-1.5 rounded-xl text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white transition-colors cursor-pointer shadow-xs"
-                        @click=${() => this.handleSelectModel(m, true)}
-                        title="Definir como modelo padrão global para todas as conversas"
-                      >
-                        Definir Padrão
-                      </button>
+                          @click=${() => this.handleSelectModel(m, false, "default")}
+                        >
+                          ${isSelected ? "✓ Ativo" : "Usar na Sessão"}
+                        </button>
+                        <button
+                          type="button"
+                          class="px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white transition-all cursor-pointer shadow-xs font-bold"
+                          @click=${() => this.handleSelectModel(m, true, "default")}
+                          title="Definir como modelo padrão global (@default)"
+                        >
+                          Definir Padrão
+                        </button>
+                      </div>
                     </div>
                   </div>
                 `;

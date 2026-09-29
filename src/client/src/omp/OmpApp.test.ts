@@ -415,7 +415,7 @@ describe("OmpApp integration", () => {
       { id: "sess-created", cwd: "/test/ws" },
       "anthropic",
       "claude-3-7-sonnet",
-      false,
+      { persist: false, role: "default" },
       "local"
     );
     expect((app as any).currentSessionModel).toEqual({ provider: "anthropic", id: "claude-3-7-sonnet" });
