@@ -4,10 +4,11 @@ import type { IncomingMessage, ServerResponse } from "node:http";
 import { extname, join, resolve, sep } from "node:path";
 import type { Plugin } from "vite";
 import { defineConfig } from "vite";
-import { effectiveOmpWebConfig } from "./src/config";
+import { defaultDevApiPort, effectiveOmpWebConfig } from "./src/config";
 
 const { config } = effectiveOmpWebConfig();
-const apiPort = config.port ?? 8504;
+const devPort = Number(process.env["OMP_WEB_DEV_PORT"] ?? config.port ?? 8504);
+const apiPort = Number(process.env["OMP_WEB_DEV_API_PORT"] ?? defaultDevApiPort(devPort));
 const docsRoot = resolve("docs");
 const docsPrefix = "/site";
 
@@ -89,6 +90,11 @@ function devDocsPlugin(): Plugin {
 export default defineConfig({
   plugins: [devDocsPlugin()],
   root: "src/client",
+  resolve: {
+    alias: {
+      "@oh-my-pi/pi-utils/mermaid-ascii": resolve("src/client/src/formatting/mermaid-ascii-shim.ts"),
+    },
+  },
   build: {
     outDir: "../../dist/client",
     emptyOutDir: true,
@@ -111,7 +117,8 @@ export default defineConfig({
     },
   },
   server: {
-    port: 8505,
+    host: config.host === "0.0.0.0" ? "0.0.0.0" : (process.env["OMP_WEB_HOST"] ?? "localhost"),
+    port: devPort,
     strictPort: true,
     allowedHosts: config.allowedHosts ?? true,
     proxy: {
