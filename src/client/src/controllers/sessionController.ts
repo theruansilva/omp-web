@@ -289,6 +289,19 @@ export class SessionController {
     await this.runCommand("/btw branch");
   }
 
+  async revertTurn(message: ChatLine, index?: number): Promise<void> {
+    const session = this.getState().selectedSession;
+    if (!session) return;
+    const entryId = typeof message.meta?.["entryId"] === "string"
+      ? (message.meta["entryId"] as string)
+      : undefined;
+    if (entryId) {
+      await this.runCommand(`/fork ${entryId}`);
+      return;
+    }
+    await this.runCommand("/fork");
+  }
+
   private async deliverPromptToSession(session: SessionInfo, text: string, streamingBehavior: "steer" | "followUp" | undefined, attachments: PromptAttachment[] | undefined, delivery: PromptAttachmentDelivery, machineId: string, options: { markSending: boolean }): Promise<boolean> {
     const hasAttachments = attachments !== undefined && attachments.length > 0;
     if (options.markSending) this.markSendingPrompt(session.id, true);
@@ -1000,8 +1013,7 @@ export class SessionController {
     if (this.pendingTranscriptEvents.length > 0) {
       const events = this.pendingTranscriptEvents;
       this.pendingTranscriptEvents = [];
-      let messages = this.getState().messages;
-      for (const event of events) messages = this.transcripts.applyLiveEvent(messages, event) ?? messages;
+      const messages = this.transcripts.applyLiveEvents(this.getState().messages, events);
       if (messages !== this.getState().messages) this.setState({ messages });
     }
     if (this.pendingActivityBySession.size > 0) {

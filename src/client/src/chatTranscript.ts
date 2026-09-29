@@ -4,6 +4,35 @@ import type { ChatLine, ToolExecutionPart } from "./components/shared";
 import { appendShellChunk, finalizeShellMessage, shellStartMessage } from "./shellMessages";
 import type { SessionUiEvent } from "./sessionSocket";
 
+export function coalesceTranscriptEvents(events: SessionUiEvent[]): SessionUiEvent[] {
+  if (events.length <= 1) return events;
+  const result: SessionUiEvent[] = [];
+  for (const event of events) {
+    const last = result[result.length - 1];
+    if (last && last.type === "assistant.delta" && event.type === "assistant.delta") {
+      last.text = (last.text || "") + (event.text || "");
+      if (event.fullText !== undefined) last.fullText = event.fullText;
+    } else if (last && last.type === "assistant.thinking.delta" && event.type === "assistant.thinking.delta") {
+      last.text = (last.text || "") + (event.text || "");
+      if (event.fullText !== undefined) last.fullText = event.fullText;
+    } else if (last && last.type === "shell.chunk" && event.type === "shell.chunk") {
+      last.chunk = (last.chunk || "") + (event.chunk || "");
+    } else {
+      result.push({ ...event });
+    }
+  }
+  return result;
+}
+
+export function applyTranscriptEvents(messages: ChatLine[], events: SessionUiEvent[]): ChatLine[] {
+  const coalesced = coalesceTranscriptEvents(events);
+  let next = messages;
+  for (const event of coalesced) {
+    next = applyTranscriptEvent(next, event) ?? next;
+  }
+  return next;
+}
+
 export function applyTranscriptEvent(messages: ChatLine[], event: SessionUiEvent): ChatLine[] | undefined {
   if (event.type === "message.append") return appendNewMessage(messages, event.message);
   if (event.type === "assistant.delta") return appendText(messages, "assistant", event.text, event.fullText);

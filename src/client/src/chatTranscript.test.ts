@@ -1,6 +1,6 @@
 import { describe, expect, it } from "bun:test";
 import { textMessage } from "./chatMessages";
-import { applyTranscriptEvent } from "./chatTranscript";
+import { applyTranscriptEvent, applyTranscriptEvents, coalesceTranscriptEvents } from "./chatTranscript";
 import type { ChatLine } from "./components/shared";
 
 const finalAssistant = {
@@ -13,6 +13,39 @@ const finalAssistant = {
   provider: "test",
   model: "model",
 };
+
+describe("coalesceTranscriptEvents", () => {
+  it("coalesces consecutive assistant.delta chunks into one event", () => {
+    const events = [
+      { type: "assistant.delta" as const, text: "hello " },
+      { type: "assistant.delta" as const, text: "world" },
+    ];
+    const result = coalesceTranscriptEvents(events);
+    expect(result).toHaveLength(1);
+    expect((result[0] as any).text).toBe("hello world");
+  });
+
+  it("coalesces consecutive thinking chunks into one event", () => {
+    const events = [
+      { type: "assistant.thinking.delta" as const, text: "think " },
+      { type: "assistant.thinking.delta" as const, text: "more" },
+    ];
+    const result = coalesceTranscriptEvents(events);
+    expect(result).toHaveLength(1);
+    expect((result[0] as any).text).toBe("think more");
+  });
+
+  it("applies a burst of coalesced events cleanly to messages", () => {
+    const events = [
+      { type: "assistant.delta" as const, text: "one " },
+      { type: "assistant.delta" as const, text: "two" },
+    ];
+    const messages = applyTranscriptEvents([], events);
+    expect(messages).toEqual([
+      { role: "assistant", parts: [{ type: "text", text: "one two" }] },
+    ]);
+  });
+});
 
 describe("applyTranscriptEvent", () => {
   it("streams thinking and text into one assistant message", () => {

@@ -8,7 +8,8 @@ export interface ChatPreferences {
   hideWorkspaces: boolean;
   bottomMobileNav: boolean;
   hideBreadcrumbs: boolean;
-}
+  progressStyle?: "minimal" | "steps";
+};
 
 export const DEFAULT_CHAT_PREFERENCES: ChatPreferences = {
   showThinking: true,
@@ -20,6 +21,7 @@ export const DEFAULT_CHAT_PREFERENCES: ChatPreferences = {
   hideWorkspaces: false,
   bottomMobileNav: true,
   hideBreadcrumbs: true,
+  progressStyle: "steps",
 };
 
 export const CHAT_PREFERENCES_CHANGED_EVENT = "omp-web-chat-preferences-changed";
@@ -59,7 +61,8 @@ export function isChatPreferences(value: unknown): value is ChatPreferences {
     typeof candidate["showStatusBar"] === "boolean" &&
     typeof candidate["hideWorkspaces"] === "boolean" &&
     typeof candidate["bottomMobileNav"] === "boolean" &&
-    typeof candidate["hideBreadcrumbs"] === "boolean"
+    typeof candidate["hideBreadcrumbs"] === "boolean" &&
+    (candidate["progressStyle"] === undefined || candidate["progressStyle"] === "minimal" || candidate["progressStyle"] === "steps")
   );
 }
 
@@ -82,6 +85,7 @@ export function loadChatPreferences(): ChatPreferences {
       hideWorkspaces: typeof record["hideWorkspaces"] === "boolean" ? record["hideWorkspaces"] : defaults.hideWorkspaces,
       bottomMobileNav: typeof record["bottomMobileNav"] === "boolean" ? record["bottomMobileNav"] : defaults.bottomMobileNav,
       hideBreadcrumbs: typeof record["hideBreadcrumbs"] === "boolean" ? record["hideBreadcrumbs"] : defaults.hideBreadcrumbs,
+      progressStyle: record["progressStyle"] === "minimal" || record["progressStyle"] === "steps" ? record["progressStyle"] : defaults.progressStyle ?? "steps",
     };
   } catch {
     return defaults;

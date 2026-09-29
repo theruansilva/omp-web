@@ -10,7 +10,6 @@ import {
   type OmpWebPluginInfo,
   type PiPackagesResponse,
   type PiPackageInfo,
-  type PiPackageScope,
 } from "../api";
 import {
   loadChatPreferences,
@@ -194,6 +193,12 @@ export class OmpSettingsView extends LitElement {
     this.showNotification("success", "Preferência do chat atualizada.");
   }
 
+  private setProgressStyle(style: "minimal" | "steps"): void {
+    saveChatPreferenceOverrides({ progressStyle: style });
+    this.chatPrefs = { ...this.chatPrefs, progressStyle: style };
+    this.showNotification("success", "Estilo de progresso atualizado.");
+  }
+
   private async handleSaveGatewayConfig(event?: Event): Promise<void> {
     event?.preventDefault();
     this.saving = true;
@@ -217,8 +222,8 @@ export class OmpSettingsView extends LitElement {
         ...(allowedHosts === true
           ? { allowedHosts: true }
           : Array.isArray(allowedHosts) && allowedHosts.length > 0
-          ? { allowedHosts }
-          : {}),
+            ? { allowedHosts }
+            : {}),
       };
 
       const updated = await configApi.saveConfig(patch);
@@ -329,12 +334,10 @@ export class OmpSettingsView extends LitElement {
 
     return html`
       <div
-        class="fixed top-16 right-4 z-50 flex items-center gap-3 px-4 py-3 rounded-2xl shadow-xl border backdrop-blur-xl transition-all duration-300 font-sans text-sm animate-in fade-in slide-in-from-top-4 ${isSuccess
-        ? "bg-emerald-500/15 border-emerald-500/30 text-emerald-600 dark:text-emerald-400"
-        : "bg-red-500/15 border-red-500/30 text-red-600 dark:text-red-400"
-      }"
+        role="alert"
+        class="omp-settings-notification ${isSuccess ? "success" : "error"}"
       >
-        <span class="size-5 rounded-full flex items-center justify-center ${isSuccess ? "bg-emerald-500/20" : "bg-red-500/20"
+        <span class="size-5 rounded-full flex items-center justify-center shrink-0 ${isSuccess ? "bg-emerald-500/20 text-emerald-600 dark:text-emerald-400" : "bg-red-500/20 text-red-600 dark:text-red-400"
       }">
           ${isSuccess ? renderCheckIcon("size-3.5") : renderCloseIcon("size-3.5")}
         </span>
@@ -342,7 +345,7 @@ export class OmpSettingsView extends LitElement {
         <button
           type="button"
           aria-label="Fechar notificação"
-          class="size-5 rounded-lg flex items-center justify-center opacity-70 hover:opacity-100 hover:bg-black/5 dark:hover:bg-white/10 cursor-pointer"
+          class="size-5 rounded-lg flex items-center justify-center opacity-70 hover:opacity-100 hover:bg-black/5 dark:hover:bg-white/10 cursor-pointer ml-1"
           @click=${() => {
         this.notification = undefined;
       }}
@@ -360,22 +363,16 @@ export class OmpSettingsView extends LitElement {
         role="switch"
         aria-checked=${checked ? "true" : "false"}
         ?disabled=${disabled}
-        class="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${checked
-        ? "bg-blue-600 dark:bg-blue-500"
-        : "bg-black/20 dark:bg-white/20"
-      } ${disabled ? "opacity-50 cursor-not-allowed" : ""}"
+        class="omp-toggle-switch ${checked ? "checked" : ""} ${disabled ? "disabled" : ""}"
         @click=${onChange}
       >
-        <span
-          class="pointer-events-none inline-block size-5 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out ${checked ? "translate-x-5" : "translate-x-0"
-      }"
-        ></span>
+        <span class="omp-toggle-thumb"></span>
       </button>
     `;
   }
 
   private renderNavPills() {
-    const items: Array<{ id: SettingsSection; label: string; icon: unknown }> = [
+    const items: { id: SettingsSection; label: string; icon: unknown }[] = [
       { id: "general", label: "Geral", icon: renderSettingsIcon("size-4") },
       { id: "sessiond", label: "Sessões & Daemon", icon: renderWaveformIcon("size-4") },
       { id: "plugins", label: "Plugins", icon: renderPluginsIcon("size-4") },
@@ -385,18 +382,15 @@ export class OmpSettingsView extends LitElement {
 
     return html`
       <nav
-        class="flex items-center gap-1.5 p-1 rounded-2xl bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 backdrop-blur-md overflow-x-auto max-w-full font-sans select-none shrink-0"
+        class="omp-settings-nav"
         aria-label="Seções de Configuração"
       >
         ${items.map(
       (item) => html`
             <button
               type="button"
-              class="flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${this.activeSection === item.id
-          ? "bg-white dark:bg-white/15 text-foreground-900 shadow-sm font-extrabold"
-          : "text-foreground-600 hover:text-foreground-900 hover:bg-black/5 dark:hover:bg-white/8"
-        }"
-              @click=${() => this.handleSectionSelect(item.id)}
+              class="omp-settings-nav-btn ${this.activeSection === item.id ? "active" : ""}"
+              @click=${() => { this.handleSectionSelect(item.id); }}
             >
               ${item.icon}
               <span>${item.label}</span>
@@ -412,7 +406,7 @@ export class OmpSettingsView extends LitElement {
       <div class="flex flex-col gap-6">
         <!-- Card 1: Tema e Aparência -->
         <section
-          class="p-5 md:p-6 rounded-3xl bg-white/70 dark:bg-background-850/70 border border-black/10 dark:border-white/10 backdrop-blur-xl shadow-sm flex flex-col gap-4"
+          class="p-5 md:p-6 rounded-3xl omp-settings-card flex flex-col gap-4"
           style="clip-path: var(--clip-path-squircle-28, none);"
         >
           <div class="flex items-center justify-between">
@@ -422,7 +416,7 @@ export class OmpSettingsView extends LitElement {
             </div>
             <button
               type="button"
-              class="flex items-center gap-2 px-4 py-2 rounded-xl border border-black/10 dark:border-white/10 bg-black/5 dark:bg-white/8 hover:bg-black/10 dark:hover:bg-white/15 text-foreground-800 text-xs font-bold transition-colors cursor-pointer"
+              class="omp-settings-btn-subtle"
               @click=${() => this.dispatchEvent(new CustomEvent("toggle-theme", { bubbles: true, composed: true }))}
             >
               ${this.theme === "dark" ? renderSunIcon("size-4") : renderMoonIcon("size-4")}
@@ -433,7 +427,7 @@ export class OmpSettingsView extends LitElement {
 
         <!-- Card 2: Preferências de Exibição do Chat -->
         <section
-          class="p-5 md:p-6 rounded-3xl bg-white/70 dark:bg-background-850/70 border border-black/10 dark:border-white/10 backdrop-blur-xl shadow-sm flex flex-col gap-4"
+          class="p-5 md:p-6 rounded-3xl omp-settings-card flex flex-col gap-4"
           style="clip-path: var(--clip-path-squircle-28, none);"
         >
           <div class="flex flex-col gap-0.5">
@@ -441,14 +435,14 @@ export class OmpSettingsView extends LitElement {
             <p class="text-xs text-foreground-600">Personalize o que é renderizado nas respostas e status do agente</p>
           </div>
 
-          <div class="flex flex-col divide-y divide-black/5 dark:divide-white/5">
+          <div class="flex flex-col omp-settings-divide">
             <!-- Show Thinking -->
             <div class="flex items-center justify-between py-3">
               <div class="flex flex-col pr-4">
                 <span class="text-sm font-semibold text-foreground-800">Raciocínio do Modelo</span>
                 <span class="text-xs text-foreground-500">Exibir bloco expansível de raciocínio (thinking)</span>
               </div>
-              ${this.renderToggleSwitch(this.chatPrefs.showThinking, () => this.updateChatPref("showThinking"))}
+              ${this.renderToggleSwitch(this.chatPrefs.showThinking, () => { this.updateChatPref("showThinking"); })}
             </div>
 
             <!-- Show Tool Executions -->
@@ -457,7 +451,31 @@ export class OmpSettingsView extends LitElement {
                 <span class="text-sm font-semibold text-foreground-800">Execuções de Ferramentas</span>
                 <span class="text-xs text-foreground-500">Mostrar detalhes e retornos das tool calls acionadas</span>
               </div>
-              ${this.renderToggleSwitch(this.chatPrefs.showToolExecutions, () => this.updateChatPref("showToolExecutions"))}
+              ${this.renderToggleSwitch(this.chatPrefs.showToolExecutions, () => { this.updateChatPref("showToolExecutions"); })}
+            </div>
+
+            <!-- Estilo do Progresso de Ferramentas -->
+            <div class="flex items-center justify-between py-3">
+              <div class="flex flex-col pr-4">
+                <span class="text-sm font-semibold text-foreground-800">Estilo de Progresso do Agente</span>
+                <span class="text-xs text-foreground-500">Alternar entre etapas verticais conectadas (Steps) ou pílulas compactas (Minimal)</span>
+              </div>
+              <div class="inline-flex rounded-xl p-1 bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/10 text-xs font-medium">
+                <button
+                  type="button"
+                  class="px-2.5 py-1 rounded-lg transition-colors cursor-pointer ${this.chatPrefs.progressStyle === "steps" ? "bg-accent-250 dark:bg-accent-200 text-foreground-900 font-semibold shadow-xs" : "text-foreground-500 hover:text-foreground-800"}"
+                  @click=${() => this.setProgressStyle("steps")}
+                >
+                  Etapas (Steps)
+                </button>
+                <button
+                  type="button"
+                  class="px-2.5 py-1 rounded-lg transition-colors cursor-pointer ${this.chatPrefs.progressStyle === "minimal" ? "bg-accent-250 dark:bg-accent-200 text-foreground-900 font-semibold shadow-xs" : "text-foreground-500 hover:text-foreground-800"}"
+                  @click=${() => this.setProgressStyle("minimal")}
+                >
+                  Minimalista
+                </button>
+              </div>
             </div>
 
             <!-- Show Events -->
@@ -466,7 +484,7 @@ export class OmpSettingsView extends LitElement {
                 <span class="text-sm font-semibold text-foreground-800">Eventos de Sessão</span>
                 <span class="text-xs text-foreground-500">Mostrar logs de ciclo de vida e eventos de grupo</span>
               </div>
-              ${this.renderToggleSwitch(this.chatPrefs.showEvents, () => this.updateChatPref("showEvents"))}
+              ${this.renderToggleSwitch(this.chatPrefs.showEvents, () => { this.updateChatPref("showEvents"); })}
             </div>
 
             <!-- Vim Mode -->
@@ -475,14 +493,14 @@ export class OmpSettingsView extends LitElement {
                 <span class="text-sm font-semibold text-foreground-800">Modo Vim</span>
                 <span class="text-xs text-foreground-500">Habilitar atalhos e keybindings Vim no editor de código</span>
               </div>
-              ${this.renderToggleSwitch(this.chatPrefs.vimMode, () => this.updateChatPref("vimMode"))}
+              ${this.renderToggleSwitch(this.chatPrefs.vimMode, () => { this.updateChatPref("vimMode"); })}
             </div>
           </div>
         </section>
 
         <!-- Card 3: Servidor Gateway -->
         <section
-          class="p-5 md:p-6 rounded-3xl bg-white/70 dark:bg-background-850/70 border border-black/10 dark:border-white/10 backdrop-blur-xl shadow-sm flex flex-col gap-4"
+          class="p-5 md:p-6 rounded-3xl omp-settings-card flex flex-col gap-4"
           style="clip-path: var(--clip-path-squircle-28, none);"
         >
           <div class="flex items-center justify-between">
@@ -506,7 +524,7 @@ export class OmpSettingsView extends LitElement {
                   id="gw-host"
                   type="text"
                   placeholder="127.0.0.1 (ou 0.0.0.0 para acesso remoto)"
-                  class="w-full px-3.5 py-2 rounded-xl text-xs font-mono bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 text-foreground-900 placeholder:text-foreground-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30"
+                  class="omp-settings-input font-mono"
                   .value=${this.hostDraft}
                   @input=${(e: Event) => {
         this.hostDraft = (e.target as HTMLInputElement).value;
@@ -521,7 +539,7 @@ export class OmpSettingsView extends LitElement {
                   id="gw-port"
                   type="text"
                   placeholder="8504"
-                  class="w-full px-3.5 py-2 rounded-xl text-xs font-mono bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 text-foreground-900 placeholder:text-foreground-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30"
+                  class="omp-settings-input font-mono"
                   .value=${this.portDraft}
                   @input=${(e: Event) => {
         this.portDraft = (e.target as HTMLInputElement).value;
@@ -535,7 +553,7 @@ export class OmpSettingsView extends LitElement {
               <label class="text-xs font-bold text-foreground-700" for="gw-hosts-mode">Hosts Autorizados (Allowed Hosts)</label>
               <select
                 id="gw-hosts-mode"
-                class="w-full px-3.5 py-2 rounded-xl text-xs font-sans bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 text-foreground-900 focus:outline-none focus:ring-2 focus:ring-blue-500/30"
+                class="omp-settings-input font-sans"
                 .value=${this.allowedHostsMode}
                 @change=${(e: Event) => {
         this.allowedHostsMode = (e.target as HTMLSelectElement).value as "all" | "list";
@@ -550,7 +568,7 @@ export class OmpSettingsView extends LitElement {
                     <textarea
                       rows="3"
                       placeholder="localhost&#10;127.0.0.1&#10;192.168.0.*"
-                      class="w-full px-3.5 py-2 rounded-xl text-xs font-mono bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 text-foreground-900 placeholder:text-foreground-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30 mt-1"
+                      class="omp-settings-input font-mono mt-1"
                       .value=${this.allowedHostsText}
                       @input=${(e: Event) => {
             this.allowedHostsText = (e.target as HTMLTextAreaElement).value;
@@ -576,7 +594,7 @@ export class OmpSettingsView extends LitElement {
               <button
                 type="submit"
                 ?disabled=${this.saving}
-                class="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 active:scale-98 text-white text-xs font-bold transition-all shadow-sm cursor-pointer disabled:opacity-50"
+                class="omp-settings-btn-primary"
               >
                 ${this.saving ? "Salvando…" : "Salvar Configurações do Gateway"}
               </button>
@@ -586,7 +604,7 @@ export class OmpSettingsView extends LitElement {
 
         <!-- Card 4: Autenticação -->
         <section
-          class="p-5 md:p-6 rounded-3xl bg-white/70 dark:bg-background-850/70 border border-black/10 dark:border-white/10 backdrop-blur-xl shadow-sm flex flex-col gap-3"
+          class="p-5 md:p-6 rounded-3xl omp-settings-card flex flex-col gap-3"
           style="clip-path: var(--clip-path-squircle-28, none);"
         >
           <h3 class="text-base font-bold text-foreground-900">Autenticação & Segurança</h3>
@@ -617,7 +635,7 @@ export class OmpSettingsView extends LitElement {
       <div class="flex flex-col gap-6">
         <!-- Card 1: Autonomia e Subsessões -->
         <section
-          class="p-5 md:p-6 rounded-3xl bg-white/70 dark:bg-background-850/70 border border-black/10 dark:border-white/10 backdrop-blur-xl shadow-sm flex flex-col gap-4"
+          class="p-5 md:p-6 rounded-3xl omp-settings-card flex flex-col gap-4"
           style="clip-path: var(--clip-path-squircle-28, none);"
         >
           <div class="flex flex-col gap-0.5">
@@ -625,7 +643,7 @@ export class OmpSettingsView extends LitElement {
             <p class="text-xs text-foreground-600">Controle a capacidade do agente de orquestrar novas sessões e filhos</p>
           </div>
 
-          <div class="flex flex-col divide-y divide-black/5 dark:divide-white/5">
+          <div class="flex flex-col omp-settings-divide">
             <!-- Spawn Sessions -->
             <div class="flex items-center justify-between py-3">
               <div class="flex flex-col pr-4">
@@ -652,7 +670,7 @@ export class OmpSettingsView extends LitElement {
 
         <!-- Card 2: Uploads e Limites -->
         <section
-          class="p-5 md:p-6 rounded-3xl bg-white/70 dark:bg-background-850/70 border border-black/10 dark:border-white/10 backdrop-blur-xl shadow-sm flex flex-col gap-4"
+          class="p-5 md:p-6 rounded-3xl omp-settings-card flex flex-col gap-4"
           style="clip-path: var(--clip-path-squircle-28, none);"
         >
           <div class="flex flex-col gap-0.5">
@@ -667,7 +685,7 @@ export class OmpSettingsView extends LitElement {
                 id="up-folder"
                 type="text"
                 placeholder="uploads (ou deixe vazio para raiz)"
-                class="w-full px-3.5 py-2 rounded-xl text-xs font-mono bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 text-foreground-900 placeholder:text-foreground-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30"
+                class="omp-settings-input font-mono"
                 .value=${this.uploadsDefaultFolder}
                 @input=${(e: Event) => {
         this.uploadsDefaultFolder = (e.target as HTMLInputElement).value;
@@ -683,7 +701,7 @@ export class OmpSettingsView extends LitElement {
                 min="1"
                 max="500"
                 placeholder="20"
-                class="w-full px-3.5 py-2 rounded-xl text-xs font-mono bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 text-foreground-900 placeholder:text-foreground-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30"
+                class="omp-settings-input font-mono"
                 .value=${this.maxUploadBytesMb}
                 @input=${(e: Event) => {
         this.maxUploadBytesMb = (e.target as HTMLInputElement).value;
@@ -695,7 +713,7 @@ export class OmpSettingsView extends LitElement {
               <button
                 type="submit"
                 ?disabled=${this.saving}
-                class="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 active:scale-98 text-white text-xs font-bold transition-all shadow-sm cursor-pointer disabled:opacity-50"
+                class="omp-settings-btn-primary"
               >
                 ${this.saving ? "Salvando…" : "Salvar Configurações de Sessão"}
               </button>
@@ -712,7 +730,7 @@ export class OmpSettingsView extends LitElement {
     return html`
       <div class="flex flex-col gap-6">
         <section
-          class="p-5 md:p-6 rounded-3xl bg-white/70 dark:bg-background-850/70 border border-black/10 dark:border-white/10 backdrop-blur-xl shadow-sm flex flex-col gap-4"
+          class="p-5 md:p-6 rounded-3xl omp-settings-card flex flex-col gap-4"
           style="clip-path: var(--clip-path-squircle-28, none);"
         >
           <div class="flex items-center justify-between">
@@ -722,7 +740,7 @@ export class OmpSettingsView extends LitElement {
             </div>
             <button
               type="button"
-              class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-black/10 dark:border-white/10 bg-black/5 dark:bg-white/8 hover:bg-black/10 text-xs font-bold text-foreground-800 transition-colors cursor-pointer"
+              class="omp-settings-btn-subtle"
               @click=${() => void this.loadPlugins()}
             >
               ${renderRefreshIcon("size-3.5")}
@@ -737,7 +755,7 @@ export class OmpSettingsView extends LitElement {
                 </div>
               `
         : html`
-                <div class="flex flex-col divide-y divide-black/5 dark:divide-white/5">
+                <div class="flex flex-col omp-settings-divide">
                   ${plugins.map(
           (plugin) => html`
                       <div class="flex items-center justify-between py-3.5 gap-4">
@@ -770,7 +788,7 @@ export class OmpSettingsView extends LitElement {
       <div class="flex flex-col gap-6">
         <!-- Instalar novo pacote -->
         <section
-          class="p-5 md:p-6 rounded-3xl bg-white/70 dark:bg-background-850/70 border border-black/10 dark:border-white/10 backdrop-blur-xl shadow-sm flex flex-col gap-4"
+          class="p-5 md:p-6 rounded-3xl omp-settings-card flex flex-col gap-4"
           style="clip-path: var(--clip-path-squircle-28, none);"
         >
           <div class="flex flex-col gap-0.5">
@@ -782,7 +800,7 @@ export class OmpSettingsView extends LitElement {
             <input
               type="text"
               placeholder="ex: @oh-my-pi/pi-catalog ou repositório git"
-              class="flex-1 px-3.5 py-2.5 rounded-xl text-xs font-mono bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 text-foreground-900 placeholder:text-foreground-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30"
+              class="omp-settings-input font-mono flex-1"
               .value=${this.newPackageSource}
               @input=${(e: Event) => {
         this.newPackageSource = (e.target as HTMLInputElement).value;
@@ -791,7 +809,7 @@ export class OmpSettingsView extends LitElement {
             <button
               type="submit"
               ?disabled=${this.installingPackage || !this.newPackageSource.trim()}
-              class="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 active:scale-98 text-white text-xs font-bold transition-all shadow-sm cursor-pointer disabled:opacity-50 shrink-0"
+              class="omp-settings-btn-primary shrink-0"
             >
               ${renderPlusIcon("size-3.5")}
               <span>${this.installingPackage ? "Instalando…" : "Instalar"}</span>
@@ -801,7 +819,7 @@ export class OmpSettingsView extends LitElement {
 
         <!-- Lista de Pacotes -->
         <section
-          class="p-5 md:p-6 rounded-3xl bg-white/70 dark:bg-background-850/70 border border-black/10 dark:border-white/10 backdrop-blur-xl shadow-sm flex flex-col gap-4"
+          class="p-5 md:p-6 rounded-3xl omp-settings-card flex flex-col gap-4"
           style="clip-path: var(--clip-path-squircle-28, none);"
         >
           <div class="flex items-center justify-between">
@@ -813,7 +831,7 @@ export class OmpSettingsView extends LitElement {
               <button
                 type="button"
                 ?disabled=${this.updatingPackages}
-                class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-black/10 dark:border-white/10 bg-black/5 dark:bg-white/8 hover:bg-black/10 text-xs font-bold text-foreground-800 transition-colors cursor-pointer disabled:opacity-50"
+                class="omp-settings-btn-subtle disabled:opacity-50"
                 @click=${() => void this.handleUpdatePackages()}
               >
                 ${renderRefreshIcon("size-3.5")}
@@ -829,7 +847,7 @@ export class OmpSettingsView extends LitElement {
                 </div>
               `
         : html`
-                <div class="flex flex-col divide-y divide-black/5 dark:divide-white/5">
+                <div class="flex flex-col omp-settings-divide">
                   ${packages.map(
           (pkg) => html`
                       <div class="flex items-center justify-between py-3.5 gap-4">
@@ -879,7 +897,7 @@ export class OmpSettingsView extends LitElement {
     return html`
       <div class="flex flex-col gap-6">
         <section
-          class="p-5 md:p-6 rounded-3xl bg-white/70 dark:bg-background-850/70 border border-black/10 dark:border-white/10 backdrop-blur-xl shadow-sm flex flex-col gap-4"
+          class="p-5 md:p-6 rounded-3xl omp-settings-card flex flex-col gap-4"
           style="clip-path: var(--clip-path-squircle-28, none);"
         >
           <div class="flex flex-col gap-0.5">
@@ -887,12 +905,12 @@ export class OmpSettingsView extends LitElement {
             <p class="text-xs text-foreground-600">Comandos rápidos para aumentar sua produtividade no OMP Web</p>
           </div>
 
-          <div class="flex flex-col divide-y divide-black/5 dark:divide-white/5 mt-2">
+          <div class="flex flex-col omp-settings-divide mt-2">
             ${shortcuts.map(
       (item) => html`
                 <div class="flex items-center justify-between py-3 gap-4">
                   <span class="text-xs text-foreground-700">${item.desc}</span>
-                  <kbd class="px-2.5 py-1 rounded-lg bg-black/5 dark:bg-white/10 border border-black/10 dark:border-white/10 text-xs font-mono font-bold text-foreground-800 shrink-0">
+                  <kbd class="omp-settings-kbd">
                     ${item.key}
                   </kbd>
                 </div>

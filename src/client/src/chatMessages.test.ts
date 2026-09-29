@@ -13,6 +13,11 @@ describe("chat message normalization", () => {
     ]);
   });
 
+  it("preserves entryId in message metadata", () => {
+    const normalized = normalizeMessage({ role: "user", content: "hello", entryId: "entry-123" });
+    expect(normalized[0]?.meta?.entryId).toBe("entry-123");
+  });
+
   it("preserves already-normalized chat lines", () => {
     const line = { role: "assistant" as const, parts: [{ type: "text" as const, text: "cached" }] };
 

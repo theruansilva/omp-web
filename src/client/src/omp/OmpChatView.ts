@@ -11,6 +11,8 @@ import type { AskDialogQuestion } from "../api";
 export interface ToolItem {
   toolName: string;
   summary?: string;
+  target?: string;
+  diffStats?: { added: number; removed: number };
   status?: "pending" | "running" | "completed" | "error";
   isError?: boolean;
 }
@@ -35,6 +37,7 @@ export class OmpChatView extends LitElement {
   @property({ type: String }) selectedProjectId = "proj-1";
   @property({ attribute: false }) btwState?: BtwState;
   @property({ attribute: false }) pendingAsk?: { requestId: string; questions: AskDialogQuestion[] };
+  @property({ type: String }) progressStyle: "minimal" | "steps" = "steps";
 
   protected override createRenderRoot() {
     return this;
@@ -86,7 +89,7 @@ export class OmpChatView extends LitElement {
     `;
   }
 
-  private renderToolsBlock(tools: ToolItem[]) {
+  private renderToolsMinimal(tools: ToolItem[]) {
     return html`
       <div class="flex flex-wrap items-center gap-1.5 my-2">
         ${tools.map(
@@ -94,12 +97,86 @@ export class OmpChatView extends LitElement {
             <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-[11px] font-mono border border-black/5 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.04] text-foreground-600">
               <span class="size-1.5 rounded-full ${t.isError ? "bg-red-500" : t.status === "running" ? "bg-amber-500 animate-ping" : "bg-emerald-500"}"></span>
               <span class="font-semibold text-foreground-800 dark:text-foreground-200">${t.toolName}</span>
-              ${t.summary ? html`<span class="opacity-70 truncate max-w-[200px]">${t.summary}</span>` : nothing}
+              ${t.target || t.summary ? html`<span class="opacity-70 truncate max-w-[200px]">${t.target || t.summary}</span>` : nothing}
+              ${t.diffStats ? html`<span class="text-[10px] font-semibold"><span class="text-emerald-500">+${t.diffStats.added}</span> <span class="text-red-500">-${t.diffStats.removed}</span></span>` : nothing}
             </span>
           `,
     )}
+        <button
+          type="button"
+          class="text-[10px] text-foreground-400 hover:text-foreground-700 dark:hover:text-foreground-200 transition-colors ml-1 cursor-pointer font-sans"
+          title="Mudar visualização para etapas"
+          @click=${() => this.toggleProgressStyle()}
+        >
+          Ver etapas
+        </button>
       </div>
     `;
+  }
+
+  private renderToolsSteps(tools: ToolItem[]) {
+    const hasRunning = tools.some((t) => t.status === "running" || t.status === "pending");
+    return html`
+      <div class="my-2.5 rounded-2xl border border-black/8 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.03] p-3 text-xs">
+        <div class="flex items-center justify-between pb-2 mb-2 border-b border-black/5 dark:border-white/5 text-[11px] font-medium text-foreground-500">
+          <div class="flex items-center gap-2">
+            <span class="font-semibold text-foreground-700 dark:text-foreground-300 font-sans">Etapas do Agente</span>
+            <span class="px-1.5 py-0.5 rounded-md bg-black/5 dark:bg-white/10 font-mono text-[10px]">${tools.length}</span>
+            ${hasRunning ? html`<span class="inline-flex items-center gap-1 text-amber-500 font-medium font-sans"><span class="size-1.5 rounded-full bg-amber-500 animate-ping"></span>Executando</span>` : nothing}
+          </div>
+          <button
+            type="button"
+            class="text-[10px] text-foreground-400 hover:text-foreground-700 dark:hover:text-foreground-200 transition-colors cursor-pointer font-sans"
+            title="Mudar visualização para minimalista"
+            @click=${() => this.toggleProgressStyle()}
+          >
+            Ver pílulas
+          </button>
+        </div>
+        <div class="relative pl-3.5 space-y-2.5 before:absolute before:left-1 before:top-1.5 before:bottom-1.5 before:w-px before:bg-black/10 dark:before:bg-white/10">
+          ${tools.map((t) => {
+      const isRunning = t.status === "running" || t.status === "pending";
+      return html`
+              <div class="relative flex items-center justify-between gap-3 text-xs">
+                <span class="absolute -left-[14px] top-1/2 -translate-y-1/2 size-2 rounded-full ring-2 ring-background-150 ${t.isError ? "bg-red-500" : isRunning ? "bg-amber-500 animate-pulse" : "bg-emerald-500/80"}"></span>
+                <div class="flex items-center gap-2 min-w-0 flex-1">
+                  <span class="font-mono font-semibold text-foreground-800 dark:text-foreground-200 shrink-0">${t.toolName}</span>
+                  ${t.target || t.summary
+          ? html`<span class="font-mono text-[11px] text-foreground-500 truncate" title="${t.target || t.summary}">${t.target || t.summary}</span>`
+          : nothing}
+                </div>
+                <div class="flex items-center gap-2 shrink-0">
+                  ${t.diffStats
+          ? html`<span class="font-mono text-[10px] font-semibold"><span class="text-emerald-500">+${t.diffStats.added}</span> <span class="text-red-500">-${t.diffStats.removed}</span></span>`
+          : nothing}
+                  ${isRunning
+          ? html`<svg class="size-3 text-amber-500 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><circle cx="12" cy="12" r="10" stroke-opacity="0.25"/><path d="M12 2a10 10 0 0 1 10 10"/></svg>`
+          : nothing}
+                </div>
+              </div>
+            `;
+    })}
+        </div>
+      </div>
+    `;
+  }
+
+  private renderToolsBlock(tools: ToolItem[]) {
+    return this.progressStyle === "minimal"
+      ? this.renderToolsMinimal(tools)
+      : this.renderToolsSteps(tools);
+  }
+
+  private toggleProgressStyle() {
+    const next = this.progressStyle === "minimal" ? "steps" : "minimal";
+    this.progressStyle = next;
+    this.dispatchEvent(
+      new CustomEvent("progress-style-change", {
+        detail: { progressStyle: next },
+        bubbles: true,
+        composed: true,
+      })
+    );
   }
 
   override render() {
@@ -148,11 +225,11 @@ export class OmpChatView extends LitElement {
 
                               <div class="flex flex-col gap-2 items-end">
                                 ${msg.attachments && msg.attachments.length > 0
-                                  ? html`
+              ? html`
                                     <div class="flex flex-wrap gap-2 justify-end">
                                       ${msg.attachments.map((att) =>
-                                        att.kind === "image"
-                                          ? html`
+                att.kind === "image"
+                  ? html`
                                             <div class="overflow-hidden rounded-2xl max-w-xs max-h-60 border border-black/10 dark:border-white/10 shadow-xs">
                                               <img
                                                 src="data:${att.mimeType};base64,${att.data}"
@@ -161,19 +238,19 @@ export class OmpChatView extends LitElement {
                                               />
                                             </div>
                                           `
-                                          : html`
+                  : html`
                                             <div class="flex items-center gap-2 px-3 py-2 rounded-xl bg-black/5 dark:bg-white/10 text-xs text-foreground-800">
                                               ${renderPaperclipIcon("size-3.5")}
                                               <span>${att.name || "Arquivo anexado"}</span>
                                             </div>
                                           `
-                                      )}
+              )}
                                     </div>
                                   `
-                                  : nothing}
+              : nothing}
                                 ${msg.text
-                                  ? html`<div class="font-ligatures-none relative h-fit max-w-user-text-message whitespace-pre-wrap break-words px-4 py-2.5 squircle-16 bg-accent-250/60 dark:bg-accent-200 text-base self-end text-foreground-900 shadow-xs select-text font-sans" data-content="user-message">${msg.text}</div>`
-                                  : nothing}
+              ? html`<div class="font-ligatures-none relative h-fit max-w-user-text-message whitespace-pre-wrap break-words px-4 py-2.5 squircle-16 bg-accent-250/60 dark:bg-accent-200 text-base self-end text-foreground-900 shadow-xs select-text font-sans" data-content="user-message">${msg.text}</div>`
+              : nothing}
                               </div>
                             </div>
                           </div>

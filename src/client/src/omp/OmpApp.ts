@@ -29,7 +29,15 @@ import {
 } from "../api";
 import { SessionSocket, RealtimeSocket, type RealtimeEvent } from "../sessionSocket";
 import { normalizeMessages, textMessage } from "../chatMessages";
-import { applyTranscriptEvent } from "../chatTranscript";
+import { applyTranscriptEvent, applyTranscriptEvents } from "../chatTranscript";
+import { pathFromArgs, toolTarget, diffFromDetails, countDiffLines } from "../components/ToolExecutionView";
+import {
+  loadChatPreferences,
+  saveChatPreferenceOverrides,
+  CHAT_PREFERENCES_CHANGED_EVENT,
+  preferencesEventTarget,
+  type ChatPreferences,
+} from "../chatPreferences";
 import type { ChatLine, ToolExecutionPart } from "../components/shared";
 import { promptAttachmentsCanUseInlineDelivery } from "../promptAttachmentCapture";
 import type { SavedPromptAttachment } from "../api";
@@ -111,11 +119,17 @@ export function linesToChatMessages(lines: ChatLine[]): ChatMessage[] {
             ? `${currentAssistant.thinking}\n\n${part.text}`
             : part.text;
         } else if (part.type === "toolExecution") {
+          const path = pathFromArgs(part.args);
+          const target = toolTarget(part, path)?.text;
+          const diff = diffFromDetails(part.details) ?? part.preview?.diff;
+          const diffStats = diff ? countDiffLines(diff) : undefined;
           const summary = part.summary ? `${part.toolName}: ${part.summary}` : part.toolName;
           currentAssistant.tools = currentAssistant.tools || [];
           currentAssistant.tools.push({
             toolName: part.toolName,
             summary,
+            target,
+            diffStats,
             status: part.status,
             isError: part.isError,
           });
@@ -163,6 +177,34 @@ export class OmpApp extends LitElement {
   private lastPromptTime = 0;
   private currentConnectedSessionId = "";
 
+  @state() private chatPrefs: ChatPreferences = loadChatPreferences();
+  private pendingTranscriptEvents: SessionUiEvent[] = [];
+  private pendingTranscriptFrame?: number;
+
+  private readonly handleChatPreferencesChanged = (event: Event) => {
+    if (event instanceof CustomEvent && event.detail) {
+      this.chatPrefs = event.detail as ChatPreferences;
+    }
+  };
+
+  private scheduleTranscriptFlush(): void {
+    if (this.pendingTranscriptFrame !== undefined) return;
+    this.pendingTranscriptFrame = requestAnimationFrame(() => {
+      this.pendingTranscriptFrame = undefined;
+      this.flushPendingTranscript();
+    });
+  }
+
+  private flushPendingTranscript(): void {
+    if (this.pendingTranscriptEvents.length === 0) return;
+    const events = this.pendingTranscriptEvents;
+    this.pendingTranscriptEvents = [];
+    const nextLines = applyTranscriptEvents(this.rawLines, events);
+    if (nextLines !== this.rawLines) {
+      this.rawLines = nextLines;
+      this.messages = linesToChatMessages(this.rawLines);
+    }
+  }
   private readonly handleWindowResize = () => {
     this.mobileDrawer.updateListeners();
   };
@@ -320,6 +362,7 @@ export class OmpApp extends LitElement {
       window.addEventListener("popstate", this.handlePopState);
       window.addEventListener("resize", this.handleWindowResize);
     }
+    preferencesEventTarget()?.addEventListener(CHAT_PREFERENCES_CHANGED_EVENT, this.handleChatPreferencesChanged);
     this.mobileDrawer.updateListeners();
 
     if (params.get("mock") === "chat") {
@@ -358,6 +401,11 @@ export class OmpApp extends LitElement {
     }
     this.sessionSocket.close();
     this.realtimeSocket.close();
+    preferencesEventTarget()?.removeEventListener(CHAT_PREFERENCES_CHANGED_EVENT, this.handleChatPreferencesChanged);
+    if (this.pendingTranscriptFrame !== undefined) {
+      cancelAnimationFrame(this.pendingTranscriptFrame);
+      this.pendingTranscriptFrame = undefined;
+    }
   }
 
   private async checkAuthStatus(): Promise<void> {
@@ -801,10 +849,12 @@ export class OmpApp extends LitElement {
       }
     }
 
-    const nextLines = applyTranscriptEvent(this.rawLines, event);
-    if (nextLines) {
-      this.rawLines = nextLines;
-      this.messages = linesToChatMessages(this.rawLines);
+    if (event.type === "message.end" || event.type === "agent.end" || event.type === "session.error") {
+      this.pendingTranscriptEvents.push(event);
+      this.flushPendingTranscript();
+    } else {
+      this.pendingTranscriptEvents.push(event);
+      this.scheduleTranscriptFlush();
     }
   }
 
@@ -911,8 +961,8 @@ export class OmpApp extends LitElement {
         ...(promptTrimmed ? [{ type: "text" as const, text: promptTrimmed }] : []),
         ...(attachments
           ? attachments
-              .filter((a): a is import("../../../shared/apiTypes").PromptImageAttachment => a.kind === "image")
-              .map((a) => ({ type: "image" as const, mimeType: a.mimeType, data: a.data }))
+            .filter((a): a is import("../../../shared/apiTypes").PromptImageAttachment => a.kind === "image")
+            .map((a) => ({ type: "image" as const, mimeType: a.mimeType, data: a.data }))
           : []),
       ],
       meta: { timestamp: Date.now() },
@@ -1224,6 +1274,7 @@ Dica: você pode selecionar uma das opções abaixo para testar a injeção auto
                 .isWorking=${this.isStreaming}
                 .projects=${this.getComposerProjects()}
                 .selectedProjectId=${this.selectedProjectId}
+                .username=${this.currentUser}
                 @project-select=${(e: CustomEvent<{ projectId: string }>) => void this.handleProjectSelect(e.detail.projectId)}
                 @submit-prompt=${(e: CustomEvent<SubmitPromptDetail>) => this.handlePromptSubmit(e.detail)}
                 @stop-generation=${() => void this.handleStopGeneration()}
@@ -1238,6 +1289,11 @@ Dica: você pode selecionar uma das opções abaixo para testar a injeção auto
                 .selectedProjectId=${this.selectedProjectId}
                 .btwState=${this.btwState}
                 .pendingAsk=${this.pendingAsk}
+                .progressStyle=${this.chatPrefs.progressStyle ?? "steps"}
+                @progress-style-change=${(e: CustomEvent<{ progressStyle: "minimal" | "steps" }>) => {
+              saveChatPreferenceOverrides({ progressStyle: e.detail.progressStyle });
+              this.chatPrefs = { ...this.chatPrefs, progressStyle: e.detail.progressStyle };
+            }}
                 @project-select=${(e: CustomEvent<{ projectId: string }>) => void this.handleProjectSelect(e.detail.projectId)}
                 @submit-btw=${(e: CustomEvent<{ question: string }>) => this.handleBtwSubmit(e.detail.question)}
                 @branch-btw=${(e: CustomEvent<{ state?: BtwState }>) => this.handleBranchBtw(e.detail?.state)}
@@ -1269,19 +1325,19 @@ Dica: você pode selecionar uma das opções abaixo para testar a injeção auto
             .selectedProjectId=${this.selectedProjectId}
             .isWorking=${this.isStreaming}
             @project-open=${(e: CustomEvent<{ projectId: string }>) => {
-              this.selectedProjectId = e.detail.projectId;
-              this.activeTab = "project-detail";
-              void this.loadWorkspaces(this.selectedProjectId);
-            }}
+            this.selectedProjectId = e.detail.projectId;
+            this.activeTab = "project-detail";
+            void this.loadWorkspaces(this.selectedProjectId);
+          }}
             @project-select=${(e: CustomEvent<{ projectId: string }>) => {
-              void this.handleProjectSelect(e.detail.projectId);
-            }}
+            void this.handleProjectSelect(e.detail.projectId);
+          }}
             @project-add=${() => this.handleProjectAdd()}
             @project-delete=${(e: CustomEvent<{ projectId: string }>) => this.handleProjectDelete(e.detail.projectId)}
             @start-new-session=${(e: CustomEvent<{ projectId?: string }>) => void this.handleStartNewSession(e.detail?.projectId)}
             @submit-prompt=${(e: CustomEvent<SubmitPromptDetail>) => {
-              this.handlePromptSubmit(e.detail);
-            }}
+            this.handlePromptSubmit(e.detail);
+          }}
             @stop-generation=${() => void this.handleStopGeneration()}
           ></omp-projects-view>
         `;
@@ -1304,28 +1360,28 @@ Dica: você pode selecionar uma das opções abaixo para testar a injeção auto
             .sessions=${this.getSidebarSessions()}
             .isWorking=${this.isStreaming}
             @back-to-projects=${() => {
-              this.activeTab = "projects";
-            }}
+            this.activeTab = "projects";
+          }}
             @branch-select=${(e: CustomEvent<{ projectId: string; branch: string }>) => {
-              this.handleBranchSelect(e.detail.branch);
-            }}
+            this.handleBranchSelect(e.detail.branch);
+          }}
             @project-select=${(e: CustomEvent<{ projectId: string }>) => {
-              this.selectedProjectId = e.detail.projectId;
-              this.activeTab = "project-detail";
-              void this.loadWorkspaces(this.selectedProjectId);
-            }}
+            this.selectedProjectId = e.detail.projectId;
+            this.activeTab = "project-detail";
+            void this.loadWorkspaces(this.selectedProjectId);
+          }}
             @project-delete=${(e: CustomEvent<{ projectId: string }>) => {
-              this.handleProjectDelete(e.detail.projectId);
-            }}
+            this.handleProjectDelete(e.detail.projectId);
+          }}
             @session-select=${(e: CustomEvent<{ sessionId: string }>) => {
-              void this.handleSessionSelect(e.detail.sessionId);
-            }}
+            void this.handleSessionSelect(e.detail.sessionId);
+          }}
             @start-new-session=${(e: CustomEvent<{ projectId?: string }>) => {
-              void this.handleStartNewSession(e.detail?.projectId);
-            }}
+            void this.handleStartNewSession(e.detail?.projectId);
+          }}
             @submit-prompt=${(e: CustomEvent<SubmitPromptDetail>) => {
-              this.handlePromptSubmit(e.detail);
-            }}
+            this.handlePromptSubmit(e.detail);
+          }}
             @stop-generation=${() => void this.handleStopGeneration()}
           ></omp-project-detail-view>
         `;
@@ -1344,9 +1400,8 @@ Dica: você pode selecionar uma das opções abaixo para testar a injeção auto
       >
         <!-- Mobile Backdrop Overlay when Drawer is open (z-40) -->
         <div
-          class="mobile-sidebar-backdrop fixed inset-0 bg-black/40 backdrop-blur-xs z-40 md:hidden transition-opacity duration-300 ease-[cubic-bezier(0.43,0.195,0.02,1)] ${
-            this.isSidebarOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
-          }"
+          class="mobile-sidebar-backdrop fixed inset-0 bg-black/40 backdrop-blur-xs z-40 md:hidden transition-opacity duration-300 ease-[cubic-bezier(0.43,0.195,0.02,1)] ${this.isSidebarOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+      }"
           @click=${() => this.mobileDrawer.close()}
           @touchstart=${this.mobileDrawer.handleTouchStart}
           @touchmove=${this.mobileDrawer.handleTouchMove}
@@ -1356,11 +1411,10 @@ Dica: você pode selecionar uma das opções abaixo para testar a injeção auto
 
         <!-- 1. Sidebar Navigation: z-50 fixed on mobile (above backdrop), relative on desktop -->
         <omp-sidebar
-          class="h-full shrink-0 will-change-auto transition-all duration-300 ease-[cubic-bezier(0.43,0.195,0.02,1)] fixed md:relative inset-y-0 left-0 z-50 md:z-auto shadow-2xl md:shadow-none ${
-            this.isSidebarOpen || this.mobileDrawer.isDragging
-              ? "w-[280px] md:w-[260px] min-w-[260px] translate-x-0 opacity-100"
-              : "-translate-x-full md:translate-x-0 w-0 md:w-0 min-w-0 md:min-w-0 p-0 m-0 overflow-hidden md:opacity-0 pointer-events-none"
-          }"
+          class="h-full shrink-0 will-change-auto transition-all duration-300 ease-[cubic-bezier(0.43,0.195,0.02,1)] fixed md:relative inset-y-0 left-0 z-50 md:z-auto shadow-2xl md:shadow-none ${this.isSidebarOpen || this.mobileDrawer.isDragging
+        ? "w-[280px] md:w-[260px] min-w-[260px] translate-x-0 opacity-100"
+        : "-translate-x-full md:translate-x-0 w-0 md:w-0 min-w-0 md:min-w-0 p-0 m-0 overflow-hidden md:opacity-0 pointer-events-none"
+      }"
           .activeTab=${this.activeTab}
           .isOpen=${this.isSidebarOpen}
           .projects=${this.getSidebarProjects()}
@@ -1372,15 +1426,15 @@ Dica: você pode selecionar uma das opções abaixo para testar a injeção auto
           @touchend=${this.mobileDrawer.handleTouchEnd}
           @touchcancel=${this.mobileDrawer.handleTouchCancel}
           @project-select=${(e: CustomEvent<{ projectId: string }>) => {
-            this.selectedProjectId = e.detail.projectId;
-            this.activeTab = "project-detail";
-            this.syncUrl();
-            this.saveSessionToStorage(this.selectedSessionId, this.selectedProjectId);
-            void this.loadWorkspaces(this.selectedProjectId);
-          }}
+        this.selectedProjectId = e.detail.projectId;
+        this.activeTab = "project-detail";
+        this.syncUrl();
+        this.saveSessionToStorage(this.selectedSessionId, this.selectedProjectId);
+        void this.loadWorkspaces(this.selectedProjectId);
+      }}
           @session-select=${(e: CustomEvent<{ sessionId: string; projectId?: string }>) => {
-            void this.handleSessionSelect(e.detail.sessionId, e.detail.projectId);
-          }}
+        void this.handleSessionSelect(e.detail.sessionId, e.detail.projectId);
+      }}
           @start-new-session=${(e: CustomEvent<{ projectId?: string }>) => void this.handleStartNewSession(e.detail?.projectId)}
           @archive-session=${(e: CustomEvent<{ sessionId: string; projectId?: string }>) => void this.handleArchiveSession(e.detail.sessionId, e.detail.projectId)}
           @nav-select=${(e: CustomEvent<{ tab: string }>) => this.handleNavSelect(e.detail.tab)}
@@ -1390,9 +1444,8 @@ Dica: você pode selecionar uma das opções abaixo para testar a injeção auto
 
         <!-- 2. Main Stage with OMP Web Margin & Rounded Container -->
         <main
-          class="relative flex flex-1 flex-col h-full min-w-0 md:py-1.5 md:pe-1.5 transition-all duration-300 ${
-            !this.isSidebarOpen ? "md:ps-1.5" : ""
-          }"
+          class="relative flex flex-1 flex-col h-full min-w-0 md:py-1.5 md:pe-1.5 transition-all duration-300 ${!this.isSidebarOpen ? "md:ps-1.5" : ""
+      }"
         >
           <!-- Canvas stage with background-150 and md:rounded-container -->
           <div class="relative size-full overflow-hidden md:rounded-container bg-background-150 flex flex-col">
@@ -1412,13 +1465,13 @@ Dica: você pode selecionar uma das opções abaixo para testar a injeção auto
             <div
               class="relative flex-1 size-full overflow-hidden"
               @project-select=${(e: CustomEvent<{ projectId: string }>) => {
-                this.selectedProjectId = e.detail.projectId;
-                this.activeTab = "project-detail";
-                void this.loadWorkspaces(this.selectedProjectId);
-              }}
+        this.selectedProjectId = e.detail.projectId;
+        this.activeTab = "project-detail";
+        void this.loadWorkspaces(this.selectedProjectId);
+      }}
               @start-new-session=${(e: CustomEvent<{ projectId?: string }>) => {
-                void this.handleStartNewSession(e.detail?.projectId);
-              }}
+        void this.handleStartNewSession(e.detail?.projectId);
+      }}
             >
               ${this.renderActiveView()}
             </div>
@@ -1430,9 +1483,9 @@ Dica: você pode selecionar uma das opções abaixo para testar a injeção auto
           .theme=${this.theme}
           @close=${() => (this.isLoginModalOpen = false)}
           @login-success=${(e: CustomEvent<{ username: string }>) => {
-            this.currentUser = e.detail.username;
-            this.isLoginModalOpen = false;
-          }}
+        this.currentUser = e.detail.username;
+        this.isLoginModalOpen = false;
+      }}
         ></omp-login-modal>
       </div>
     `;

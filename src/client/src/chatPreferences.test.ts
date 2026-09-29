@@ -67,6 +67,7 @@ describe("chatPreferences", () => {
       hideWorkspaces: true,
       bottomMobileNav: true,
       hideBreadcrumbs: true,
+      progressStyle: "minimal",
     };
     saveChatPreferenceOverrides(custom);
     expect(loadChatPreferences()).toEqual(custom);
@@ -91,6 +92,7 @@ describe("chatPreferences", () => {
     expect(loaded.hideWorkspaces).toBe(false);
     expect(loaded.bottomMobileNav).toBe(true);
     expect(loaded.hideBreadcrumbs).toBe(true);
+    expect(loaded.progressStyle).toBe("steps");
   });
 
   it("dispatches custom event on save", () => {
@@ -112,6 +114,7 @@ describe("chatPreferences", () => {
       hideWorkspaces: true,
       bottomMobileNav: true,
       hideBreadcrumbs: true,
+      progressStyle: "steps",
     };
     saveChatPreferenceOverrides(next);
     testTarget.removeEventListener(CHAT_PREFERENCES_CHANGED_EVENT, handler);

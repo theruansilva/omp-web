@@ -145,8 +145,13 @@ function normalizeSource(message: unknown): ChatLine["source"] | undefined {
 function normalizeMeta(message: unknown): ChatLine["meta"] | undefined {
   const timestamp = normalizeTimestamp(getProperty(message, "timestamp"));
   const model = normalizeModel(message);
-  if (timestamp === undefined && model === undefined) return undefined;
-  return { ...(timestamp === undefined ? {} : { timestamp }), ...(model === undefined ? {} : { model }) };
+  const entryId = getString(message, "entryId") ?? getString(message, "id");
+  if (timestamp === undefined && model === undefined && entryId === undefined) return undefined;
+  return {
+    ...(timestamp === undefined ? {} : { timestamp }),
+    ...(model === undefined ? {} : { model }),
+    ...(entryId === undefined ? {} : { entryId }),
+  };
 }
 
 function normalizeTimestamp(value: unknown): string | undefined {

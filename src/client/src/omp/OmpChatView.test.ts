@@ -121,6 +121,40 @@ describe("OmpChatView rendering", () => {
     expect(text).toContain("grep");
     expect(text).toContain("Funciona perfeitamente.");
   });
+
+  it("renders tools in steps timeline mode by default and minimal mode when configured", () => {
+    const chatView = new OmpChatView();
+    chatView.messages = [
+      {
+        id: "msg-1",
+        role: "assistant",
+        text: "Executando...",
+        tools: [
+          { toolName: "read", target: "src/cli.ts", status: "completed" },
+          { toolName: "edit", target: "src/cli.ts", diffStats: { added: 5, removed: 2 }, status: "running" },
+        ],
+      },
+    ];
+
+    // Default: steps
+    expect(chatView.progressStyle).toBe("steps");
+    let rendered = chatView.render();
+    let text = getAllTemplateText(rendered);
+    expect(text).toContain("Etapas do Agente");
+    expect(text).toContain("Ver pílulas");
+    expect(text).toContain("read");
+    expect(text).toContain("edit");
+    expect(text).toContain("+ 5");
+    expect(text).toContain("- 2");
+
+    // Minimal mode
+    chatView.progressStyle = "minimal";
+    rendered = chatView.render();
+    text = getAllTemplateText(rendered);
+    expect(text).toContain("Ver etapas");
+    expect(text).toContain("read");
+    expect(text).toContain("edit");
+  });
 });
 
 describe("OmpHomeView projects binding", () => {

@@ -1,5 +1,5 @@
 import { normalizeMessages } from "./chatMessages";
-import { applyTranscriptEvent } from "./chatTranscript";
+import { applyTranscriptEvent, applyTranscriptEvents } from "./chatTranscript";
 import { mergeChatHistory, readChatHistoryCache, removeChatHistoryCache, writeChatHistoryCache, type RawMessagePage } from "./chatHistoryCache";
 import type { ChatLine } from "./components/shared";
 import type { SessionUiEvent } from "./sessionSocket";
@@ -43,6 +43,10 @@ export class ChatTranscriptStore {
 
   applyLiveEvent(messages: ChatLine[], event: SessionUiEvent): ChatLine[] | undefined {
     return applyTranscriptEvent(messages, event);
+  }
+
+  applyLiveEvents(messages: ChatLine[], events: SessionUiEvent[]): ChatLine[] {
+    return applyTranscriptEvents(messages, events);
   }
 
   discard(sessionId: string): void {
