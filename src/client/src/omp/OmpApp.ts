@@ -179,6 +179,7 @@ export class OmpApp extends LitElement {
   @state() private availableModels: SessionModel[] = [];
   @state() private currentSessionModel?: SessionModel;
   @state() private currentThinkingLevel = "medium";
+  @state() private pendingSelectedModel?: { provider: string; modelId: string; persist?: boolean };
 
   private get currentMachineId(): string {
     return this.selectedMachine?.id || "local";
@@ -604,6 +605,14 @@ export class OmpApp extends LitElement {
   private handleRealtimeEvent(event: RealtimeEvent) {
     if (event.type === "status.update") {
       const status = event.status;
+      if (status.sessionId === this.selectedSessionId) {
+        if (status.model) {
+          this.currentSessionModel = status.model;
+        }
+        if (status.thinkingLevel) {
+          this.currentThinkingLevel = status.thinkingLevel;
+        }
+      }
       const isWorking = status.isStreaming || status.isBashRunning || status.isCompacting || (status.pendingMessageCount ?? 0) > 0;
       const wasWorking = this.workingSessionIds.has(status.sessionId);
 
@@ -977,6 +986,12 @@ export class OmpApp extends LitElement {
     } else if (event.type === "status.update") {
       if (event.status.sessionId === this.selectedSessionId) {
         this.pendingAsk = event.status.pendingAsk;
+        if (event.status.model) {
+          this.currentSessionModel = event.status.model;
+        }
+        if (event.status.thinkingLevel) {
+          this.currentThinkingLevel = event.status.thinkingLevel;
+        }
       }
       const ws = this.getActiveWorkspace();
       if (ws && this.sessionsByCwd[ws.path] && event.status.archived !== undefined) {
@@ -1068,6 +1083,21 @@ export class OmpApp extends LitElement {
         this.saveSessionToStorage(sessionId, this.selectedProjectId);
         this.sessionSocket.connect({ id: sessionId, cwd: ws.path }, (event) => this.handleSessionEvent(event), undefined, this.currentMachineId);
         void this.loadSessions(ws.path, false);
+
+        if (this.pendingSelectedModel) {
+          try {
+            const status = await sessionsApi.setModel(
+              { id: sessionId, cwd: ws.path },
+              this.pendingSelectedModel.provider,
+              this.pendingSelectedModel.modelId,
+              this.pendingSelectedModel.persist ?? false,
+              this.currentMachineId,
+            );
+            if (status?.model) this.currentSessionModel = status.model;
+          } catch (err) {
+            console.warn("[OMP] Could not apply model to new session:", err);
+          }
+        }
       } catch (err) {
         console.error("[OMP] Failed to start new session:", err);
         return;
@@ -1226,20 +1256,48 @@ export class OmpApp extends LitElement {
     }
   }
 
+  private async ensureSession(): Promise<string | undefined> {
+    if (this.selectedSessionId) return this.selectedSessionId;
+    const ws = this.getActiveWorkspace();
+    if (!ws) return undefined;
+    try {
+      const newSession = await sessionsApi.startSession(ws.path, this.currentMachineId);
+      this.selectedSessionId = newSession.id;
+      this.currentConnectedSessionId = newSession.id;
+      this.syncUrl({ replace: true });
+      this.saveSessionToStorage(newSession.id, this.selectedProjectId);
+      this.sessionSocket.connect({ id: newSession.id, cwd: ws.path }, (event) => this.handleSessionEvent(event), undefined, this.currentMachineId);
+      void this.loadSessions(ws.path, false);
+      return newSession.id;
+    } catch (err) {
+      console.error("[OMP] Failed to ensure session for model change:", err);
+      return undefined;
+    }
+  }
+
   private async handleModelSelect(provider: string, modelId: string, persist = false) {
     const ws = this.getActiveWorkspace();
+    this.currentSessionModel = { provider, id: modelId };
+    this.pendingSelectedModel = { provider, modelId, persist };
+    this.requestUpdate();
     if (!ws) return;
     try {
-      if (this.selectedSessionId) {
-        await sessionsApi.setModel(
-          { id: this.selectedSessionId, cwd: ws.path },
+      const sessionId = await this.ensureSession();
+      if (sessionId) {
+        const updatedStatus = await sessionsApi.setModel(
+          { id: sessionId, cwd: ws.path },
           provider,
           modelId,
           persist,
           this.currentMachineId,
         );
+        if (updatedStatus?.model) {
+          this.currentSessionModel = updatedStatus.model;
+        }
+        if (updatedStatus?.thinkingLevel) {
+          this.currentThinkingLevel = updatedStatus.thinkingLevel;
+        }
       }
-      this.currentSessionModel = { provider, id: modelId };
       this.requestUpdate();
     } catch (err) {
       console.error("[OMP] Failed to set model:", err);
@@ -1248,16 +1306,18 @@ export class OmpApp extends LitElement {
 
   private async handleSetThinkingLevel(level: string) {
     const ws = this.getActiveWorkspace();
+    this.currentThinkingLevel = level;
+    this.requestUpdate();
     if (!ws) return;
     try {
-      if (this.selectedSessionId) {
+      const sessionId = await this.ensureSession();
+      if (sessionId) {
         await sessionsApi.setThinkingLevel(
-          { id: this.selectedSessionId, cwd: ws.path },
+          { id: sessionId, cwd: ws.path },
           level,
           this.currentMachineId,
         );
       }
-      this.currentThinkingLevel = level;
       this.requestUpdate();
     } catch (err) {
       console.error("[OMP] Failed to set thinking level:", err);
@@ -1266,17 +1326,27 @@ export class OmpApp extends LitElement {
 
   private async handleModelTierChange(tier: "fast" | "thinking" | "smol") {
     const ws = this.getActiveWorkspace();
-    if (!ws || !this.selectedSessionId) return;
+    if (!ws) return;
     const role = tier === "fast" ? "smol" : tier === "thinking" ? "slow" : "tiny";
     try {
-      await sessionsApi.runCommand(
-        { id: this.selectedSessionId, cwd: ws.path },
-        `/model @${role}`,
-        this.currentMachineId,
-      );
-      void this.loadSessionModels(ws.path, this.selectedSessionId);
+      const sessionId = await this.ensureSession();
+      if (sessionId) {
+        await sessionsApi.runCommand(
+          { id: sessionId, cwd: ws.path },
+          `/model @${role}`,
+          this.currentMachineId,
+        );
+        void this.loadSessionModels(ws.path, sessionId);
+      }
     } catch (err) {
       console.error("[OMP] Failed to change model tier:", err);
+    }
+  }
+
+  private async handleModelChange(detail: { model: string; role?: string }) {
+    if (detail.role) {
+      const tier = detail.role === "smol" ? "fast" : detail.role === "slow" ? "thinking" : "smol";
+      await this.handleModelTierChange(tier);
     }
   }
 
@@ -1561,6 +1631,7 @@ Dica: você pode selecionar uma das opções abaixo para testar a injeção auto
                 .username=${this.currentUser}
                 @project-select=${(e: CustomEvent<{ projectId: string }>) => void this.handleProjectSelect(e.detail.projectId)}
                 @open-models=${() => { this.activeTab = "models"; this.syncUrl(); }}
+                @model-change=${(e: CustomEvent<{ model: string; role?: string }>) => void this.handleModelChange(e.detail)}
                 @model-tier-change=${(e: CustomEvent<{ tier: "fast" | "thinking" | "smol" }>) => void this.handleModelTierChange(e.detail.tier)}
                 @submit-prompt=${(e: CustomEvent<SubmitPromptDetail>) => this.handlePromptSubmit(e.detail)}
                 @stop-generation=${() => void this.handleStopGeneration()}
@@ -1584,6 +1655,7 @@ Dica: você pode selecionar uma das opções abaixo para testar a injeção auto
             }}
                 @project-select=${(e: CustomEvent<{ projectId: string }>) => void this.handleProjectSelect(e.detail.projectId)}
                 @open-models=${() => { this.activeTab = "models"; this.syncUrl(); }}
+                @model-change=${(e: CustomEvent<{ model: string; role?: string }>) => void this.handleModelChange(e.detail)}
                 @model-tier-change=${(e: CustomEvent<{ tier: "fast" | "thinking" | "smol" }>) => void this.handleModelTierChange(e.detail.tier)}
                 @submit-btw=${(e: CustomEvent<{ question: string }>) => this.handleBtwSubmit(e.detail.question)}
                 @branch-btw=${(e: CustomEvent<{ state?: BtwState }>) => this.handleBranchBtw(e.detail?.state)}

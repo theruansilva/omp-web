@@ -45,6 +45,7 @@ export class OmpHomeView extends LitElement {
               .selectedModel=${this.selectedModel}
               .selectedProvider=${this.selectedProvider}
               @open-models=${() => this.dispatchEvent(new CustomEvent("open-models", { bubbles: true, composed: true }))}
+              @model-change=${(e: CustomEvent) => this.dispatchEvent(new CustomEvent("model-change", { detail: e.detail, bubbles: true, composed: true }))}
               @model-tier-change=${(e: CustomEvent) => this.dispatchEvent(new CustomEvent("model-tier-change", { detail: e.detail, bubbles: true, composed: true }))}
               @project-select=${(e: CustomEvent<{ projectId: string }>) => {
         this.selectedProjectId = e.detail.projectId;

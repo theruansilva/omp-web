@@ -395,4 +395,29 @@ describe("OmpApp integration", () => {
     expect(promptSpy).not.toHaveBeenCalled();
     expect((app as any).authDialog).toEqual({ step: "method" });
   });
+
+  it("applies model selection when selecting a model before session is active", async () => {
+    installMockWindow("http://localhost:8504/omp?tab=new-chat");
+    const app = new OmpApp();
+    (app as any).selectedSessionId = "";
+    (app as any).getActiveWorkspace = () => ({ id: "ws-1", path: "/test/ws" });
+
+    const startSpy = vi.spyOn(sessionsApi, "startSession").mockResolvedValue({ id: "sess-created", cwd: "/test/ws" } as any);
+    const setModelSpy = vi.spyOn(sessionsApi, "setModel").mockResolvedValue({
+      sessionId: "sess-created",
+      model: { provider: "anthropic", id: "claude-3-7-sonnet" },
+    } as any);
+
+    await (app as any).handleModelSelect("anthropic", "claude-3-7-sonnet", false);
+
+    expect(startSpy).toHaveBeenCalledWith("/test/ws", "local");
+    expect(setModelSpy).toHaveBeenCalledWith(
+      { id: "sess-created", cwd: "/test/ws" },
+      "anthropic",
+      "claude-3-7-sonnet",
+      false,
+      "local"
+    );
+    expect((app as any).currentSessionModel).toEqual({ provider: "anthropic", id: "claude-3-7-sonnet" });
+  });
 });

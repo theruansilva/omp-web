@@ -614,6 +614,7 @@ export class OmpChatView extends LitElement {
               .btwState=${this.btwState}
               .pendingAsk=${this.pendingAsk}
               @open-models=${() => this.dispatchEvent(new CustomEvent("open-models", { bubbles: true, composed: true }))}
+              @model-change=${(e: CustomEvent) => this.dispatchEvent(new CustomEvent("model-change", { detail: e.detail, bubbles: true, composed: true }))}
               @model-tier-change=${(e: CustomEvent) => this.dispatchEvent(new CustomEvent("model-tier-change", { detail: e.detail, bubbles: true, composed: true }))}
               @submit-ask=${(e: CustomEvent) => {
                 this.dispatchEvent(new CustomEvent("submit-ask", { detail: e.detail, bubbles: true, composed: true }));
