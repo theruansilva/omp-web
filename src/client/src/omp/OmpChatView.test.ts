@@ -157,6 +157,55 @@ describe("OmpChatView rendering", () => {
   });
 });
 
+  it("renders assistant header with OMP branding, copy action, and full width content", () => {
+    const chatView = new OmpChatView();
+    chatView.messages = [
+      {
+        id: "asst-1",
+        role: "assistant",
+        text: "Resposta completa do modelo.",
+        timestamp: "14:30",
+      },
+    ];
+
+    const rendered = chatView.render();
+    const text = getAllTemplateText(rendered);
+    expect(text).toContain("OMP");
+    expect(text).toContain("14:30");
+    expect(text).toContain("Resposta completa do modelo.");
+    expect(text).toContain("Copiar resposta");
+  });
+
+  it("renders tool inspection details when expanded", () => {
+    const chatView = new OmpChatView();
+    chatView.messages = [
+      {
+        id: "msg-1",
+        role: "assistant",
+        text: "Teste de erro",
+        tools: [
+          {
+            toolName: "bash",
+            status: "error",
+            isError: true,
+            errorText: "Command failed: exit code 1",
+            args: { command: "npm test" },
+          },
+        ],
+      },
+    ];
+
+    // Expand the tool
+    (chatView as any).expandedToolKey = "msg-1-tool-0";
+
+    const rendered = chatView.render();
+    const text = getAllTemplateText(rendered);
+    expect(text).toContain("bash");
+    expect(text).toContain("Erro");
+    expect(text).toContain("Command failed: exit code 1");
+    expect(text).toContain("npm test");
+  });
+
 describe("OmpHomeView projects binding", () => {
   it("accepts and binds projects down to composer", () => {
     const homeView = new OmpHomeView();

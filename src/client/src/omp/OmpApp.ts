@@ -124,6 +124,7 @@ export function linesToChatMessages(lines: ChatLine[]): ChatMessage[] {
           const diff = diffFromDetails(part.details) ?? part.preview?.diff;
           const diffStats = diff ? countDiffLines(diff) : undefined;
           const summary = part.summary ? `${part.toolName}: ${part.summary}` : part.toolName;
+          const errorText = part.status === "error" ? part.resultText : part.preview?.error;
           currentAssistant.tools = currentAssistant.tools || [];
           currentAssistant.tools.push({
             toolName: part.toolName,
@@ -131,7 +132,11 @@ export function linesToChatMessages(lines: ChatLine[]): ChatMessage[] {
             target,
             diffStats,
             status: part.status,
-            isError: part.isError,
+            isError: part.isError || part.status === "error",
+            args: part.args,
+            resultText: part.resultText,
+            errorText,
+            diff,
           });
         }
       }
