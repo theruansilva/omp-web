@@ -11,6 +11,10 @@ import "./OmpLibraryView";
 import "./OmpProjectsView";
 import "./OmpProjectDetailView";
 import "./OmpSettingsView";
+import "./OmpModelsView";
+import type { ModelSelectDetail } from "./OmpModelsView";
+import { normalizeModelName } from "../modelCategories";
+import type { SessionModel } from "../../../shared/apiTypes";
 import "../components/MachineDialog";
 import type { MachineDialogSubmit } from "../components/MachineDialog";
 import "../components/AuthDialog";
@@ -172,6 +176,9 @@ export class OmpApp extends LitElement {
   @state() private isMachineDialogOpen = false;
   @state() private machineDialogError = "";
   @state() private authDialog?: AuthDialogState;
+  @state() private availableModels: SessionModel[] = [];
+  @state() private currentSessionModel?: SessionModel;
+  @state() private currentThinkingLevel = "medium";
 
   private get currentMachineId(): string {
     return this.selectedMachine?.id || "local";
@@ -445,6 +452,7 @@ export class OmpApp extends LitElement {
     void this.loadMachines(machineParam);
     void this.refreshActiveSessions();
     void this.checkAuthStatus();
+    void this.loadSessionModels();
   }
 
   override disconnectedCallback() {
@@ -920,6 +928,7 @@ export class OmpApp extends LitElement {
       this.rawLines = normalizeMessages(rawList);
       this.messages = linesToChatMessages(this.rawLines);
       this.pendingAsk = status?.pendingAsk;
+      void this.loadSessionModels(effectiveCwd, sessionId);
     } catch (err) {
       console.warn(`[OMP] Could not load messages for session ${sessionId}:`, err);
       this.rawLines = [];
@@ -1188,6 +1197,100 @@ export class OmpApp extends LitElement {
     }
   }
 
+  private async loadSessionModels(cwd?: string, sessionId?: string) {
+    const ws = this.getActiveWorkspace();
+    const effectiveCwd = cwd || ws?.path;
+    const targetSessionId = sessionId || this.selectedSessionId;
+    if (!effectiveCwd) return;
+
+    try {
+      const sessionRef = { id: targetSessionId || "", cwd: effectiveCwd };
+      const [modelsRes, statusRes] = await Promise.all([
+        sessionsApi.models(sessionRef, this.currentMachineId).catch(() => ({ models: [] })),
+        targetSessionId
+          ? sessionsApi.status(sessionRef, this.currentMachineId).catch(() => undefined)
+          : undefined,
+      ]);
+
+      if (Array.isArray(modelsRes?.models) && modelsRes.models.length > 0) {
+        this.availableModels = modelsRes.models;
+      }
+      if (statusRes?.model) {
+        this.currentSessionModel = statusRes.model;
+      }
+      if (statusRes?.thinkingLevel) {
+        this.currentThinkingLevel = statusRes.thinkingLevel;
+      }
+    } catch (err) {
+      console.warn("[OMP] Could not load available models:", err);
+    }
+  }
+
+  private async handleModelSelect(provider: string, modelId: string, persist = false) {
+    const ws = this.getActiveWorkspace();
+    if (!ws) return;
+    try {
+      if (this.selectedSessionId) {
+        await sessionsApi.setModel(
+          { id: this.selectedSessionId, cwd: ws.path },
+          provider,
+          modelId,
+          persist,
+          this.currentMachineId,
+        );
+      }
+      this.currentSessionModel = { provider, id: modelId };
+      this.requestUpdate();
+    } catch (err) {
+      console.error("[OMP] Failed to set model:", err);
+    }
+  }
+
+  private async handleSetThinkingLevel(level: string) {
+    const ws = this.getActiveWorkspace();
+    if (!ws) return;
+    try {
+      if (this.selectedSessionId) {
+        await sessionsApi.setThinkingLevel(
+          { id: this.selectedSessionId, cwd: ws.path },
+          level,
+          this.currentMachineId,
+        );
+      }
+      this.currentThinkingLevel = level;
+      this.requestUpdate();
+    } catch (err) {
+      console.error("[OMP] Failed to set thinking level:", err);
+    }
+  }
+
+  private async handleModelTierChange(tier: "fast" | "thinking" | "smol") {
+    const ws = this.getActiveWorkspace();
+    if (!ws || !this.selectedSessionId) return;
+    const role = tier === "fast" ? "smol" : tier === "thinking" ? "slow" : "tiny";
+    try {
+      await sessionsApi.runCommand(
+        { id: this.selectedSessionId, cwd: ws.path },
+        `/model @${role}`,
+        this.currentMachineId,
+      );
+      void this.loadSessionModels(ws.path, this.selectedSessionId);
+    } catch (err) {
+      console.error("[OMP] Failed to change model tier:", err);
+    }
+  }
+
+  private getActiveModelDisplayName(): string {
+    if (this.currentSessionModel?.id) {
+      return normalizeModelName(
+        this.currentSessionModel.provider || "",
+        this.currentSessionModel.id,
+        this.currentSessionModel.name,
+      );
+    }
+    return "Default";
+  }
+
   private async handleStopGeneration() {
     const ws = this.getActiveWorkspace();
     const sessionId = this.selectedSessionId;
@@ -1435,6 +1538,8 @@ Dica: você pode selecionar uma das opções abaixo para testar a injeção auto
         return "Projetos";
       case "project-detail":
         return "Projeto";
+      case "models":
+        return "Modelos de IA";
       case "settings":
         return "Configurações";
       default:
@@ -1451,8 +1556,12 @@ Dica: você pode selecionar uma das opções abaixo para testar a injeção auto
                 .isWorking=${this.isStreaming}
                 .projects=${this.getComposerProjects()}
                 .selectedProjectId=${this.selectedProjectId}
+                .selectedModel=${this.getActiveModelDisplayName()}
+                .selectedProvider=${this.currentSessionModel?.provider || ""}
                 .username=${this.currentUser}
                 @project-select=${(e: CustomEvent<{ projectId: string }>) => void this.handleProjectSelect(e.detail.projectId)}
+                @open-models=${() => { this.activeTab = "models"; this.syncUrl(); }}
+                @model-tier-change=${(e: CustomEvent<{ tier: "fast" | "thinking" | "smol" }>) => void this.handleModelTierChange(e.detail.tier)}
                 @submit-prompt=${(e: CustomEvent<SubmitPromptDetail>) => this.handlePromptSubmit(e.detail)}
                 @stop-generation=${() => void this.handleStopGeneration()}
               ></omp-home-view>
@@ -1464,6 +1573,8 @@ Dica: você pode selecionar uma das opções abaixo para testar a injeção auto
                 .isFirstPrompt=${this.isFirstPrompt}
                 .projects=${this.getComposerProjects()}
                 .selectedProjectId=${this.selectedProjectId}
+                .selectedModel=${this.getActiveModelDisplayName()}
+                .selectedProvider=${this.currentSessionModel?.provider || ""}
                 .btwState=${this.btwState}
                 .pendingAsk=${this.pendingAsk}
                 .progressStyle=${this.chatPrefs.progressStyle ?? "steps"}
@@ -1472,6 +1583,8 @@ Dica: você pode selecionar uma das opções abaixo para testar a injeção auto
               this.chatPrefs = { ...this.chatPrefs, progressStyle: e.detail.progressStyle };
             }}
                 @project-select=${(e: CustomEvent<{ projectId: string }>) => void this.handleProjectSelect(e.detail.projectId)}
+                @open-models=${() => { this.activeTab = "models"; this.syncUrl(); }}
+                @model-tier-change=${(e: CustomEvent<{ tier: "fast" | "thinking" | "smol" }>) => void this.handleModelTierChange(e.detail.tier)}
                 @submit-btw=${(e: CustomEvent<{ question: string }>) => this.handleBtwSubmit(e.detail.question)}
                 @branch-btw=${(e: CustomEvent<{ state?: BtwState }>) => this.handleBranchBtw(e.detail?.state)}
                 @close-btw=${() => { this.btwState = undefined; }}
@@ -1482,6 +1595,22 @@ Dica: você pode selecionar uma das opções abaixo para testar a injeção auto
                 @stop-generation=${() => void this.handleStopGeneration()}
               ></omp-chat-view>
             `;
+
+      case "models":
+        return html`
+          <omp-models-view
+            .models=${this.availableModels}
+            .currentModel=${this.currentSessionModel}
+            .thinkingLevel=${this.currentThinkingLevel}
+            .isWorking=${this.isStreaming}
+            @select-model=${(e: CustomEvent<ModelSelectDetail>) => void this.handleModelSelect(e.detail.provider, e.detail.modelId, e.detail.persist)}
+            @set-thinking-level=${(e: CustomEvent<{ level: string }>) => void this.handleSetThinkingLevel(e.detail.level)}
+            @close=${() => {
+              this.activeTab = "new-chat";
+              this.syncUrl();
+            }}
+          ></omp-models-view>
+        `;
 
       case "library":
         return html`

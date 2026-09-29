@@ -473,3 +473,117 @@ export function renderChevronUpIcon(className = "size-4 shrink-0") {
     </svg>
   `;
 }
+
+export function renderAnthropicIcon(className = "size-4") {
+  return html`
+    <svg viewBox="0 0 24 24" fill="currentColor" class="${className}">
+      <path d="M13.8 3L22 21h-4.3l-1.8-4.2H8.1L6.3 21H2L10.2 3h3.6zm-1.8 5.4L9.6 13.8h4.8L12 8.4z"/>
+    </svg>
+  `;
+}
+
+export function renderOpenAIIcon(className = "size-4") {
+  return html`
+    <svg viewBox="0 0 24 24" fill="currentColor" class="${className}">
+      <path d="M22.28 9.5a5.52 5.52 0 0 0-.49-4.66 5.58 5.58 0 0 0-4.08-2.6 5.68 5.68 0 0 0-4.73 1.15 5.58 5.58 0 0 0-3.95-1.74A5.63 5.63 0 0 0 4 3.7a5.56 5.56 0 0 0-2.28 4.41 5.6 5.6 0 0 0 .5 4.67 5.58 5.58 0 0 0 4.08 2.6 5.68 5.68 0 0 0 4.73-1.15 5.58 5.58 0 0 0 3.95 1.74 5.63 5.63 0 0 0 5.08-2.05 5.56 5.56 0 0 0 2.22-4.42zm-8.8 9.85a4.1 4.1 0 0 1-2.45-.8l1.32-2.29a2.6 2.6 0 0 0 2.7.2 2.65 2.65 0 0 0 1.34-2.31v-2.9l2.25 1.3v3.74a4.1 4.1 0 0 1-5.16 3.06zm-7.6-4.4a4.1 4.1 0 0 1-.53-2.54l2.64.03a2.6 2.6 0 0 0 1.55 2.22 2.65 2.65 0 0 0 2.67-.03l2.5-1.46v2.6l-3.23 1.87a4.1 4.1 0 0 1-5.6-2.69zm-.94-7.46a4.1 4.1 0 0 1 1.93-1.74l1.32 2.3a2.6 2.6 0 0 0-1.15 2.45 2.65 2.65 0 0 0 1.33 2.32l2.52 1.45-1.3 2.26-3.24-1.87a4.1 4.1 0 0 1-1.41-7.17zm11.2 2.32l-2.52-1.45 1.3-2.26 3.24 1.87a4.1 4.1 0 0 1 1.41 7.17 4.1 4.1 0 0 1-1.93 1.74l-1.32-2.3a2.6 2.6 0 0 0 1.15-2.45 2.65 2.65 0 0 0-1.33-2.32zm2.08-3.03a4.1 4.1 0 0 1 .53 2.54l-2.64-.03a2.6 2.6 0 0 0-1.55-2.22 2.65 2.65 0 0 0-2.67.03l-2.5 1.46V5.9l3.23-1.87a4.1 4.1 0 0 1 5.6 2.75zM12 13.5a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3z"/>
+    </svg>
+  `;
+}
+
+export function renderGoogleGeminiIcon(className = "size-4") {
+  return html`
+    <svg viewBox="0 0 24 24" fill="currentColor" class="${className}">
+      <path d="M12 2C12 7.52285 7.52285 12 2 12C7.52285 12 12 16.4771 12 22C12 16.4771 16.4771 12 22 12C16.4771 12 12 7.52285 12 2Z"/>
+    </svg>
+  `;
+}
+
+export function renderDeepSeekIcon(className = "size-4") {
+  return html`
+    <svg viewBox="0 0 24 24" fill="currentColor" class="${className}">
+      <path d="M19 12c-1.5 0-3-1-4-2.5-1.5-2.2-3.8-3.5-6.5-3.5C4.9 6 2 8.9 2 12.5S4.9 19 8.5 19c3.2 0 6-2 7.2-5h3.3c-.6 1.8-1.8 3.3-3.4 4.3 1.2.5 2.5.7 3.9.7 2.5 0 4.5-1.5 5.5-3.5-1.3-.3-3.2-.5-6-3.5z"/>
+    </svg>
+  `;
+}
+
+export function renderOllamaIcon(className = "size-4") {
+  return html`
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="${className}">
+      <path d="M8 3v4M16 3v4M7 7h10a4 4 0 0 1 4 4v7a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3v-7a4 4 0 0 1 4-4z"/>
+      <circle cx="9" cy="13" r="1" fill="currentColor"/>
+      <circle cx="15" cy="13" r="1" fill="currentColor"/>
+    </svg>
+  `;
+}
+
+export function renderGroqIcon(className = "size-4") {
+  return html`
+    <svg viewBox="0 0 24 24" fill="currentColor" class="${className}">
+      <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+    </svg>
+  `;
+}
+
+export function renderCopilotIcon(className = "size-4") {
+  return html`
+    <svg viewBox="0 0 24 24" fill="currentColor" class="${className}">
+      <path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/>
+    </svg>
+  `;
+}
+
+export function renderMistralIcon(className = "size-4") {
+  return html`
+    <svg viewBox="0 0 24 24" fill="currentColor" class="${className}">
+      <path d="M3 4h4v4H3V4zm7 0h4v4h-4V4zm7 0h4v4h-4V4zM3 11h4v4H3v-4zm7 0h4v4h-4v-4zm7 0h4v4h-4v-4zM3 18h4v4H3v-4zm7 0h4v4h-4v-4zm7 0h4v4h-4v-4z"/>
+    </svg>
+  `;
+}
+
+export function renderFeatherIcon(className = "size-4") {
+  return html`
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="${className}">
+      <path d="M20.24 12.24a6 6 0 0 0-8.49-8.49L5 10.5V19h8.5z"/>
+      <line x1="16" y1="8" x2="2" y2="22"/>
+      <line x1="17.5" y1="15" x2="9" y2="15"/>
+    </svg>
+  `;
+}
+
+export function renderBoltIcon(className = "size-4") {
+  return html`
+    <svg viewBox="0 0 24 24" fill="currentColor" class="${className}">
+      <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+    </svg>
+  `;
+}
+
+export function renderBrainIcon(className = "size-4") {
+  return html`
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="${className}">
+      <path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96.44 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 4.44-2.54Z"/>
+      <path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96.44 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-4.44-2.54Z"/>
+    </svg>
+  `;
+}
+
+export function renderModelsIcon(className = "size-5 shrink-0") {
+  return html`
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="${className}">
+      <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+    </svg>
+  `;
+}
+
+export function renderModelProviderIcon(provider?: string, className = "size-4") {
+  const p = (provider || "").toLowerCase();
+  if (p.includes("anthropic") || p.includes("claude")) return renderAnthropicIcon(className);
+  if (p.includes("openai") || p.includes("gpt") || p.includes("codex")) return renderOpenAIIcon(className);
+  if (p.includes("google") || p.includes("gemini") || p.includes("antigravity")) return renderGoogleGeminiIcon(className);
+  if (p.includes("deepseek")) return renderDeepSeekIcon(className);
+  if (p.includes("ollama") || p.includes("local")) return renderOllamaIcon(className);
+  if (p.includes("groq")) return renderGroqIcon(className);
+  if (p.includes("mistral")) return renderMistralIcon(className);
+  if (p.includes("copilot") || p.includes("github")) return renderCopilotIcon(className);
+  return renderSparklesIcon(className);
+}

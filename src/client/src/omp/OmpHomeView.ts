@@ -10,6 +10,8 @@ export class OmpHomeView extends LitElement {
   @property({ type: Boolean }) isWorking = false;
   @property({ attribute: false }) projects: ComposerProject[] = [];
   @property({ type: String }) selectedProjectId = "proj-1";
+  @property({ type: String }) selectedModel = "Default";
+  @property({ type: String }) selectedProvider = "";
 
   protected override createRenderRoot() {
     return this;
@@ -40,6 +42,10 @@ export class OmpHomeView extends LitElement {
               .isWorking=${this.isWorking}
               .projects=${this.projects}
               .selectedProjectId=${this.selectedProjectId}
+              .selectedModel=${this.selectedModel}
+              .selectedProvider=${this.selectedProvider}
+              @open-models=${() => this.dispatchEvent(new CustomEvent("open-models", { bubbles: true, composed: true }))}
+              @model-tier-change=${(e: CustomEvent) => this.dispatchEvent(new CustomEvent("model-tier-change", { detail: e.detail, bubbles: true, composed: true }))}
               @project-select=${(e: CustomEvent<{ projectId: string }>) => {
         this.selectedProjectId = e.detail.projectId;
         this.dispatchEvent(

@@ -22,6 +22,11 @@ import {
   renderLightbulbIcon,
   renderBranchIcon,
   renderCloseIcon,
+  renderBoltIcon,
+  renderBrainIcon,
+  renderFeatherIcon,
+  renderModelsIcon,
+  renderModelProviderIcon,
 } from "./icons";
 import {
   capturePromptAttachments,
@@ -135,7 +140,8 @@ export class OmpComposer extends LitElement {
   @property({ type: String }) value = "";
   @property({ type: String }) placeholder =
     "Message to omp, use @ to mention a file or / to start a command";
-  @property({ type: String }) selectedModel = "Gemini 3.8";
+  @property({ type: String }) selectedModel = "Default";
+  @property({ type: String }) selectedProvider = "";
   @property({ type: Boolean }) isWorking = false;
   @property({ type: Boolean }) compact = false;
   @property({ type: Boolean }) isAskOpen = false;
@@ -775,12 +781,12 @@ export class OmpComposer extends LitElement {
     return portal;
   }
 
-  private selectModel(model: string) {
+  private selectModel(model: string, role?: string) {
     this.selectedModel = model;
     this.closeMenu();
     this.dispatchEvent(
       new CustomEvent("model-change", {
-        detail: { model },
+        detail: { model, role },
         bubbles: true,
         composed: true,
       }),
@@ -790,6 +796,16 @@ export class OmpComposer extends LitElement {
         "#composer-chat-mode-smart-button",
       ) as HTMLElement | null
     )?.focus();
+  }
+
+  private handleOpenModels() {
+    this.closeMenu();
+    this.dispatchEvent(
+      new CustomEvent("open-models", {
+        bubbles: true,
+        composed: true,
+      }),
+    );
   }
 
   private handleCreateAction(action: string) {
@@ -1040,39 +1056,21 @@ export class OmpComposer extends LitElement {
               type="button"
               role="menuitem"
               tabindex="0"
-              data-selected=${this.selectedModel === "Smart" ? "true" : "false"}
-              class="group flex w-full items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium transition-colors hover:bg-black/5 dark:hover:bg-white/10 focus:bg-black/5 dark:focus:bg-white/10 focus:outline-none focus:ring-1 focus:ring-blue-500/40 active:bg-black/8 dark:active:bg-white/15 cursor-pointer select-none text-left ${this.selectedModel === "Smart" ? "bg-black/5 dark:bg-white/10" : ""}"
-              @click=${() => this.selectModel("Smart")}
+              data-selected=${this.selectedModel === "Fast" ? "true" : "false"}
+              class="group flex w-full items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium transition-colors hover:bg-black/5 dark:hover:bg-white/10 focus:bg-black/5 dark:focus:bg-white/10 focus:outline-none focus:ring-1 focus:ring-blue-500/40 active:bg-black/8 dark:active:bg-white/15 cursor-pointer select-none text-left ${this.selectedModel === "Fast" ? "bg-black/5 dark:bg-white/10" : ""}"
+              @click=${() => this.selectModel("Fast", "smol")}
             >
-              <div class="composer-dropdown-icon size-5 shrink-0 flex items-center justify-center ${this.selectedModel === "Smart" ? "!text-blue-600 dark:!text-blue-400" : ""}">
-                ${renderSmartModeIcon()}
+              <div class="composer-dropdown-icon size-5 shrink-0 flex items-center justify-center ${this.selectedModel === "Fast" ? "!text-amber-500" : "text-amber-500"}">
+                ${renderBoltIcon()}
               </div>
               <div class="grow flex flex-col min-w-0">
                 <div class="inline-flex items-center gap-1.5 text-sm font-medium leading-tight">
-                  <span class="composer-dropdown-item ${this.selectedModel === "Smart" ? "!text-blue-600 dark:!text-blue-400 font-semibold" : ""}">Smart</span>
-                  <span class="text-[10px] font-semibold px-1.5 py-0.2 rounded-full bg-blue-500/10 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400">Default</span>
+                  <span class="composer-dropdown-item ${this.selectedModel === "Fast" ? "!text-amber-600 dark:!text-amber-400 font-semibold" : ""}">Fast</span>
+                  <span class="text-[10px] font-semibold px-1.5 py-0.2 rounded-full bg-amber-500/10 text-amber-600 dark:bg-amber-500/20 dark:text-amber-400 font-mono">@smol</span>
                 </div>
-                <span class="composer-dropdown-desc text-xs font-normal leading-4 mt-0.5">Balanced for everyday tasks</span>
+                <span class="composer-dropdown-desc text-xs font-normal leading-4 mt-0.5">Execução rápida para tarefas do dia a dia</span>
               </div>
-              ${this.selectedModel === "Smart" ? renderCheckIcon("size-4 text-blue-600 dark:text-blue-400 shrink-0") : nothing}
-            </button>
-
-            <button
-              type="button"
-              role="menuitem"
-              tabindex="0"
-              data-selected=${this.selectedModel === "Fast" ? "true" : "false"}
-              class="group flex w-full items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium transition-colors hover:bg-black/5 dark:hover:bg-white/10 focus:bg-black/5 dark:focus:bg-white/10 focus:outline-none focus:ring-1 focus:ring-blue-500/40 active:bg-black/8 dark:active:bg-white/15 cursor-pointer select-none text-left ${this.selectedModel === "Fast" ? "bg-black/5 dark:bg-white/10" : ""}"
-              @click=${() => this.selectModel("Fast")}
-            >
-              <div class="composer-dropdown-icon size-5 shrink-0 flex items-center justify-center ${this.selectedModel === "Fast" ? "!text-blue-600 dark:!text-blue-400" : ""}">
-                ${renderQuickModeIcon()}
-              </div>
-              <div class="grow flex flex-col min-w-0">
-                <span class="composer-dropdown-item text-sm font-medium leading-tight ${this.selectedModel === "Fast" ? "!text-blue-600 dark:!text-blue-400 font-semibold" : ""}">Fast</span>
-                <span class="composer-dropdown-desc text-xs font-normal leading-4 mt-0.5">Quickest answers for simpler queries</span>
-              </div>
-              ${this.selectedModel === "Fast" ? renderCheckIcon("size-4 text-blue-600 dark:text-blue-400 shrink-0") : nothing}
+              ${this.selectedModel === "Fast" ? renderCheckIcon("size-4 text-amber-500 shrink-0") : nothing}
             </button>
 
             <button
@@ -1081,16 +1079,62 @@ export class OmpComposer extends LitElement {
               tabindex="0"
               data-selected=${this.selectedModel === "Thinking" ? "true" : "false"}
               class="group flex w-full items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium transition-colors hover:bg-black/5 dark:hover:bg-white/10 focus:bg-black/5 dark:focus:bg-white/10 focus:outline-none focus:ring-1 focus:ring-blue-500/40 active:bg-black/8 dark:active:bg-white/15 cursor-pointer select-none text-left ${this.selectedModel === "Thinking" ? "bg-black/5 dark:bg-white/10" : ""}"
-              @click=${() => this.selectModel("Thinking")}
+              @click=${() => this.selectModel("Thinking", "slow")}
             >
-              <div class="composer-dropdown-icon size-5 shrink-0 flex items-center justify-center ${this.selectedModel === "Thinking" ? "!text-blue-600 dark:!text-blue-400" : ""}">
-                ${renderThinkModeIcon()}
+              <div class="composer-dropdown-icon size-5 shrink-0 flex items-center justify-center ${this.selectedModel === "Thinking" ? "!text-blue-500" : "text-blue-500"}">
+                ${renderBrainIcon()}
               </div>
               <div class="grow flex flex-col min-w-0">
-                <span class="composer-dropdown-item text-sm font-medium leading-tight ${this.selectedModel === "Thinking" ? "!text-blue-600 dark:!text-blue-400 font-semibold" : ""}">Deep Thinking</span>
-                <span class="composer-dropdown-desc text-xs font-normal leading-4 mt-0.5">Multi-step reasoning for complex problems</span>
+                <div class="inline-flex items-center gap-1.5 text-sm font-medium leading-tight">
+                  <span class="composer-dropdown-item ${this.selectedModel === "Thinking" ? "!text-blue-600 dark:!text-blue-400 font-semibold" : ""}">Thinking</span>
+                  <span class="text-[10px] font-semibold px-1.5 py-0.2 rounded-full bg-blue-500/10 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400 font-mono">@slow</span>
+                </div>
+                <span class="composer-dropdown-desc text-xs font-normal leading-4 mt-0.5">Raciocínio profundo e arquitetura</span>
               </div>
-              ${this.selectedModel === "Thinking" ? renderCheckIcon("size-4 text-blue-600 dark:text-blue-400 shrink-0") : nothing}
+              ${this.selectedModel === "Thinking" ? renderCheckIcon("size-4 text-blue-500 shrink-0") : nothing}
+            </button>
+
+            <button
+              type="button"
+              role="menuitem"
+              tabindex="0"
+              data-selected=${this.selectedModel === "Smol" ? "true" : "false"}
+              class="group flex w-full items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium transition-colors hover:bg-black/5 dark:hover:bg-white/10 focus:bg-black/5 dark:focus:bg-white/10 focus:outline-none focus:ring-1 focus:ring-blue-500/40 active:bg-black/8 dark:active:bg-white/15 cursor-pointer select-none text-left ${this.selectedModel === "Smol" ? "bg-black/5 dark:bg-white/10" : ""}"
+              @click=${() => this.selectModel("Smol", "tiny")}
+            >
+              <div class="composer-dropdown-icon size-5 shrink-0 flex items-center justify-center ${this.selectedModel === "Smol" ? "!text-purple-500" : "text-purple-500"}">
+                ${renderFeatherIcon()}
+              </div>
+              <div class="grow flex flex-col min-w-0">
+                <div class="inline-flex items-center gap-1.5 text-sm font-medium leading-tight">
+                  <span class="composer-dropdown-item ${this.selectedModel === "Smol" ? "!text-purple-600 dark:!text-purple-400 font-semibold" : ""}">Smol</span>
+                  <span class="text-[10px] font-semibold px-1.5 py-0.2 rounded-full bg-purple-500/10 text-purple-600 dark:bg-purple-500/20 dark:text-purple-400 font-mono">@tiny</span>
+                </div>
+                <span class="composer-dropdown-desc text-xs font-normal leading-4 mt-0.5">Modelo leve e compacto</span>
+              </div>
+              ${this.selectedModel === "Smol" ? renderCheckIcon("size-4 text-purple-500 shrink-0") : nothing}
+            </button>
+
+            <div class="my-1 h-px bg-black/10 dark:bg-white/10"></div>
+
+            <!-- Option to view all models -->
+            <button
+              type="button"
+              role="menuitem"
+              tabindex="0"
+              class="group flex w-full items-center gap-3 px-3 py-2 rounded-xl text-sm font-semibold transition-colors hover:bg-black/5 dark:hover:bg-white/10 focus:bg-black/5 dark:focus:bg-white/10 focus:outline-none focus:ring-1 focus:ring-blue-500/40 cursor-pointer select-none text-left text-blue-600 dark:text-blue-400"
+              @click=${() => this.handleOpenModels()}
+            >
+              <div class="size-5 shrink-0 flex items-center justify-center">
+                ${renderModelsIcon("size-4")}
+              </div>
+              <div class="grow flex flex-col min-w-0">
+                <span class="text-sm font-semibold leading-tight">Ver todos os modelos...</span>
+                <span class="text-xs text-foreground-500 font-normal leading-4 mt-0.5">Explorar catálogo completo de modelos e provedores</span>
+              </div>
+              <svg class="size-4 shrink-0 text-foreground-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <polyline points="9 18 15 12 9 6"></polyline>
+              </svg>
             </button>
           </div>
         </div>
@@ -2067,7 +2111,7 @@ export class OmpComposer extends LitElement {
                       ${renderPlusIcon("size-6")}
                     </button>
 
-                    <!-- Model Selector Pill: "Smart ⌄" with OMP Web classes -->
+                    <!-- Model Selector Pill with Provider Icon & Normalized Name -->
                     <div class="relative">
                       <button
                         id="composer-chat-mode-smart-button"
@@ -2076,7 +2120,7 @@ export class OmpComposer extends LitElement {
                         title="${this.selectedModel}"
                         type="button"
                         aria-label="${this.selectedModel}"
-                        class="relative flex items-center text-foreground-800 fill-foreground-800 active:text-foreground-600 active:fill-foreground-600 dark:active:text-foreground-650 dark:active:fill-foreground-650 bg-transparent safe-hover:bg-black/5 active:bg-black/3 dark:safe-hover:bg-white/8 dark:active:bg-white/5 text-sm justify-center min-h-9 min-w-9 px-2.5 py-1 rounded-2xl gap-1 select-none font-medium border border-black/8 dark:border-white/10"
+                        class="relative flex items-center text-foreground-800 fill-foreground-800 active:text-foreground-600 active:fill-foreground-600 dark:active:text-foreground-650 dark:active:fill-foreground-650 bg-transparent safe-hover:bg-black/5 active:bg-black/3 dark:safe-hover:bg-white/8 dark:active:bg-white/5 text-sm justify-center min-h-9 min-w-9 px-2.5 py-1 rounded-2xl gap-1.5 select-none font-medium border border-black/8 dark:border-white/10 cursor-pointer pointer-events-auto"
                         @click=${(e: Event) => {
                           e.stopPropagation();
                           this.toggleMenu(
@@ -2085,7 +2129,10 @@ export class OmpComposer extends LitElement {
                           );
                         }}
                       >
-                        <span class="text-sm font-medium">${this.selectedModel}</span>
+                        <div class="size-4 flex items-center justify-center shrink-0">
+                          ${renderModelProviderIcon(this.selectedProvider || this.selectedModel, "size-3.5 text-foreground-700")}
+                        </div>
+                        <span class="text-sm font-medium truncate max-w-[130px]">${this.selectedModel}</span>
                         ${renderChevronDownIcon()}
                       </button>
                     </div>

@@ -10,6 +10,7 @@ import {
   renderProjectsIcon,
   renderSettingsIcon,
   renderServerIcon,
+  renderModelsIcon,
   renderChevronUpIcon,
   renderPlusIcon as renderPlusIconBase,
 } from "./icons";
@@ -142,6 +143,7 @@ export class OmpSidebar extends LitElement {
     { id: "new-chat", label: "New chat" },
     { id: "library", label: "Library" },
     { id: "projects", label: "Projetos" },
+    { id: "models", label: "Modelos" },
     { id: "settings", label: "Configurações" },
   ];
 
@@ -220,6 +222,8 @@ export class OmpSidebar extends LitElement {
         return renderLibraryIcon();
       case "projects":
         return renderProjectsIcon("size-5 shrink-0");
+      case "models":
+        return renderModelsIcon("size-5 shrink-0");
       case "settings":
         return renderSettingsIcon("size-5 shrink-0");
       default:

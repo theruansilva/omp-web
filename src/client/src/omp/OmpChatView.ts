@@ -42,6 +42,8 @@ export class OmpChatView extends LitElement {
   @property({ type: Boolean }) isFirstPrompt = false;
   @property({ attribute: false }) projects: ComposerProject[] = [];
   @property({ type: String }) selectedProjectId = "proj-1";
+  @property({ type: String }) selectedModel = "Default";
+  @property({ type: String }) selectedProvider = "";
   @property({ attribute: false }) btwState?: BtwState;
   @property({ attribute: false }) pendingAsk?: { requestId: string; questions: AskDialogQuestion[] };
   @property({ type: String }) progressStyle: "minimal" | "steps" = "steps";
@@ -607,8 +609,12 @@ export class OmpChatView extends LitElement {
               .isWorking=${this.isStreaming}
               .projects=${this.projects}
               .selectedProjectId=${this.selectedProjectId}
+              .selectedModel=${this.selectedModel}
+              .selectedProvider=${this.selectedProvider}
               .btwState=${this.btwState}
               .pendingAsk=${this.pendingAsk}
+              @open-models=${() => this.dispatchEvent(new CustomEvent("open-models", { bubbles: true, composed: true }))}
+              @model-tier-change=${(e: CustomEvent) => this.dispatchEvent(new CustomEvent("model-tier-change", { detail: e.detail, bubbles: true, composed: true }))}
               @submit-ask=${(e: CustomEvent) => {
                 this.dispatchEvent(new CustomEvent("submit-ask", { detail: e.detail, bubbles: true, composed: true }));
               }}
