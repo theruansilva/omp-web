@@ -79,7 +79,7 @@ export class MachineList extends LitElement implements KeyboardNavigableSection 
         @keydown=${(event: KeyboardEvent) => { this.handleMachineKeydown(event, machine); }}
       >
         <div class="action-main">
-          <span class="action-name machine-primary"><span class="machine-primary-label">${machine.name}</span></span><small>${machine.kind === "local" ? "Local Pi Web" : machine.baseUrl ?? "Remote Pi Web"} · ${statusLabel}</small>
+          <span class="action-name machine-primary"><span class="machine-primary-label">${machine.name}</span></span><small>${machine.kind === "local" ? "Local OMP Web" : machine.baseUrl ?? "Remote OMP Web"} · ${statusLabel}</small>
           ${this.renderActivity(machine)}
         </div>
         ${hasRemoveAction ? this.renderMachineMenu(machine) : null}

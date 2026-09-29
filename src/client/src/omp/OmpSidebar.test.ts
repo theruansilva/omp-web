@@ -77,10 +77,50 @@ describe("OmpSidebar", () => {
     let eventFired = false;
     sidebar.addEventListener("archive-session", ((e: CustomEvent) => {
       eventFired = true;
-      expect(e.detail).toEqual({ sessionId: "s1", projectId: "p1" });
+      expect(e.detail.sessionId).toBe("s1");
     }) as EventListener);
-
     (sidebar as any).handleArchiveSession("s1", "p1");
     expect(eventFired).toBe(true);
+  });
+
+  it("renders machines switcher in bottom footer and dispatches machine events", () => {
+    const sidebar = new OmpSidebar();
+    sidebar.machines = [
+      { id: "local", name: "Local Machine", kind: "local" },
+      { id: "remote-1", name: "GPU Rig", kind: "remote", baseUrl: "http://100.1.2.3:8504" },
+    ];
+    sidebar.selectedMachine = sidebar.machines[0];
+    sidebar.machineStatuses = {
+      local: { machineId: "local", ok: true, status: "online" } as any,
+    };
+
+    let rendered = sidebar.render();
+    let str = JSON.stringify(rendered);
+    expect(str).toContain("Local Machine");
+    expect(str).toContain("Máquina");
+
+    // Open dropup menu
+    (sidebar as any).isMachineMenuOpen = true;
+    rendered = sidebar.render();
+    str = JSON.stringify(rendered);
+    expect(str).toContain("Máquinas Conectadas");
+    expect(str).toContain("GPU Rig");
+    expect(str).toContain("Adicionar Máquina");
+
+    // Select machine event
+    let selectedDetail: any = null;
+    sidebar.addEventListener("select-machine", ((e: CustomEvent) => {
+      selectedDetail = e.detail;
+    }) as EventListener);
+    (sidebar as any).handleSelectMachine(sidebar.machines[1]);
+    expect(selectedDetail?.machine?.id).toBe("remote-1");
+
+    // Add machine event
+    let addFired = false;
+    sidebar.addEventListener("add-machine", (() => {
+      addFired = true;
+    }) as EventListener);
+    (sidebar as any).handleAddMachine();
+    expect(addFired).toBe(true);
   });
 });

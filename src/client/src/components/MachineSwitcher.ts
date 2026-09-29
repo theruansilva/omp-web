@@ -98,7 +98,7 @@ export class MachineSwitcher extends LitElement implements KeyboardNavigableSect
           @keydown=${(event: KeyboardEvent) => { this.handleMachineOptionKeydown(event); }}
         >
           <span class="machine-option-name">${this.renderActivity(machine)}<span>${machine.name}</span></span>
-          <small>${machine.kind === "local" ? "Local Pi Web" : machine.baseUrl ?? "Remote Pi Web"} · ${machineStatusLabel(status)}</small>
+          <small>${machine.kind === "local" ? "Local OMP Web" : machine.baseUrl ?? "Remote OMP Web"} · ${machineStatusLabel(status)}</small>
         </button>
         ${hasActions ? html`
           <div class="machine-option-actions">

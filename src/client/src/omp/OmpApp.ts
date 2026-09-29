@@ -11,6 +11,8 @@ import "./OmpLibraryView";
 import "./OmpProjectsView";
 import "./OmpProjectDetailView";
 import "./OmpSettingsView";
+import "../components/MachineDialog";
+import type { MachineDialogSubmit } from "../components/MachineDialog";
 import type { ChatMessage } from "./OmpChatView";
 import type { SubmitPromptDetail, BtwState, ComposerProject } from "./OmpComposer";
 import type { ProjectCardData } from "./OmpProjectsView";
@@ -20,6 +22,9 @@ import {
   projectsApi,
   workspacesApi,
   sessionsApi,
+  machinesApi,
+  type Machine,
+  type MachineHealth,
   type Project,
   type Workspace,
   type SessionInfo,
@@ -156,6 +161,11 @@ export class OmpApp extends LitElement {
   @state() private isFirstPrompt = false;
   @state() private isLoginModalOpen = false;
   @state() private currentUser: string | null = null;
+  @state() private machines: Machine[] = [];
+  @state() private selectedMachine?: Machine;
+  @state() private machineStatuses: Record<string, MachineHealth> = {};
+  @state() private isMachineDialogOpen = false;
+  @state() private machineDialogError = "";
   @state() private selectedProjectId = "";
   @state() private selectedWorkspaceId = "";
   @state() private selectedSessionId = "";
@@ -394,6 +404,8 @@ export class OmpApp extends LitElement {
       (event) => this.handleRealtimeEvent(event),
       () => { void this.refreshActiveSessions(); },
     );
+    const machineParam = params.get("machine") || undefined;
+    void this.loadMachines(machineParam);
     void this.refreshActiveSessions();
     void this.checkAuthStatus();
   }
@@ -410,6 +422,88 @@ export class OmpApp extends LitElement {
     if (this.pendingTranscriptFrame !== undefined) {
       cancelAnimationFrame(this.pendingTranscriptFrame);
       this.pendingTranscriptFrame = undefined;
+    }
+  }
+
+  private async loadMachines(routeMachineId?: string) {
+    try {
+      if (typeof window === "undefined" || !window.location?.origin) return;
+      const list = await machinesApi.machines();
+      if (Array.isArray(list) && list.length > 0) {
+        this.machines = list;
+        const requested = routeMachineId
+          ? list.find(m => m.id === routeMachineId)
+          : undefined;
+        this.selectedMachine = requested || this.selectedMachine || list.find(m => m.id === "local") || list[0];
+        void this.refreshMachineStatuses(list);
+      }
+    } catch (err) {
+      console.warn("[OMP] Could not load machines:", err);
+    }
+  }
+
+  private async refreshMachineStatuses(machines: Machine[]) {
+    const results = await Promise.allSettled(machines.map(m => machinesApi.health(m.id)));
+    const statuses: Record<string, MachineHealth> = {};
+    for (const r of results) {
+      if (r.status === "fulfilled" && r.value) {
+        statuses[r.value.machineId] = r.value;
+      }
+    }
+    this.machineStatuses = { ...this.machineStatuses, ...statuses };
+  }
+
+  private async handleSelectMachine(machine: Machine) {
+    if (this.selectedMachine?.id === machine.id) return;
+    this.selectedMachine = machine;
+    this.selectedProjectId = "";
+    this.selectedWorkspaceId = "";
+    this.selectedSessionId = "";
+    this.messages = [];
+    this.rawLines = [];
+    this.sessionSocket.close();
+    this.currentConnectedSessionId = "";
+    const url = new URL(window.location.href);
+    if (machine.id !== "local") {
+      url.searchParams.set("machine", machine.id);
+    } else {
+      url.searchParams.delete("machine");
+    }
+    url.searchParams.delete("project");
+    url.searchParams.delete("workspace");
+    url.searchParams.delete("session");
+    window.history.pushState({}, "", url);
+    await this.loadProjects();
+  }
+
+  private async handleAddMachineSubmit(input: MachineDialogSubmit) {
+    try {
+      const machine = await machinesApi.addMachine(input);
+      if (machine) {
+        this.machines = [...this.machines.filter(m => m.id !== machine.id), machine];
+        this.isMachineDialogOpen = false;
+        this.machineDialogError = "";
+        await this.handleSelectMachine(machine);
+      }
+    } catch (err) {
+      this.machineDialogError = String(err);
+    }
+  }
+
+  private async handleRemoveMachine(machine: Machine) {
+    if (machine.kind === "local") return;
+    if (!window.confirm(`Remover máquina ${machine.name}?\n\nIsso removerá a conexão com esta máquina remota.`)) return;
+    try {
+      await machinesApi.deleteMachine(machine.id);
+      this.machines = this.machines.filter(m => m.id !== machine.id);
+      if (this.selectedMachine?.id === machine.id) {
+        const fallback = this.machines.find(m => m.id === "local") || this.machines[0];
+        if (fallback) {
+          await this.handleSelectMachine(fallback);
+        }
+      }
+    } catch (err) {
+      console.warn("[OMP] Could not remove machine:", err);
     }
   }
 
@@ -590,7 +684,7 @@ export class OmpApp extends LitElement {
 
   private async loadProjects() {
     try {
-      const list = await projectsApi.projects();
+      const list = await projectsApi.projects(this.selectedMachine?.id || "local");
       if (Array.isArray(list) && list.length > 0) {
         this.realProjects = list;
 
@@ -601,14 +695,14 @@ export class OmpApp extends LitElement {
         if (!activeProjId && this.selectedSessionId) {
           for (const p of list) {
             try {
-              const workspaces = await workspacesApi.workspaces(p.id);
+              const workspaces = await workspacesApi.workspaces(p.id, this.selectedMachine?.id || "local");
               if (Array.isArray(workspaces) && workspaces.length > 0) {
                 this.workspacesByProject = {
                   ...this.workspacesByProject,
                   [p.id]: workspaces,
                 };
                 for (const w of workspaces) {
-                  const sessions = await sessionsApi.sessions(w.path);
+                  const sessions = await sessionsApi.sessions(w.path, this.selectedMachine?.id || "local");
                   if (Array.isArray(sessions)) {
                     this.sessionsByCwd = { ...this.sessionsByCwd, [w.path]: sessions };
                     if (sessions.some(s => s.id === this.selectedSessionId)) {
@@ -647,7 +741,7 @@ export class OmpApp extends LitElement {
 
   private async loadProjectWorkspacesAndSessions(projectId: string) {
     try {
-      const workspaces = await workspacesApi.workspaces(projectId);
+      const workspaces = await workspacesApi.workspaces(projectId, this.selectedMachine?.id || "local");
       if (Array.isArray(workspaces) && workspaces.length > 0) {
         this.workspacesByProject = {
           ...this.workspacesByProject,
@@ -655,7 +749,7 @@ export class OmpApp extends LitElement {
         };
         const primary = workspaces.find(w => w.isPrimary) || workspaces[0];
         if (primary && !this.sessionsByCwd[primary.path]) {
-          const sessions = await sessionsApi.sessions(primary.path);
+          const sessions = await sessionsApi.sessions(primary.path, this.selectedMachine?.id || "local");
           if (Array.isArray(sessions)) {
             this.sessionsByCwd = {
               ...this.sessionsByCwd,
@@ -672,7 +766,7 @@ export class OmpApp extends LitElement {
 
   private async loadWorkspaces(projectId: string, selectIfNone = true) {
     try {
-      const workspaces = await workspacesApi.workspaces(projectId);
+      const workspaces = await workspacesApi.workspaces(projectId, this.selectedMachine?.id || "local");
       if (Array.isArray(workspaces) && workspaces.length > 0) {
         this.workspacesByProject = {
           ...this.workspacesByProject,
@@ -1185,7 +1279,7 @@ export class OmpApp extends LitElement {
     const path = window.prompt("Digite o caminho do diretório local do projeto (ex: ~/code/meu-projeto):");
     if (!path || !path.trim()) return;
     try {
-      const created = await projectsApi.addProject(path.trim());
+      const created = await projectsApi.addProject(path.trim(), undefined, false, this.selectedMachine?.id || "local");
       await this.loadProjects();
       if (created?.id) {
         this.selectedProjectId = created.id;
@@ -1200,7 +1294,7 @@ export class OmpApp extends LitElement {
 
   private async handleProjectDelete(projectId: string) {
     try {
-      await projectsApi.closeProject(projectId);
+      await projectsApi.closeProject(projectId, this.selectedMachine?.id || "local");
       await this.loadProjects();
       if (this.selectedProjectId === projectId) {
         this.selectedProjectId = this.realProjects[0]?.id || "";
@@ -1429,6 +1523,9 @@ Dica: você pode selecionar uma das opções abaixo para testar a injeção auto
           .sessions=${this.getSidebarSessions()}
           .selectedProjectId=${this.selectedProjectId}
           .selectedSessionId=${this.selectedSessionId}
+          .machines=${this.machines}
+          .selectedMachine=${this.selectedMachine}
+          .machineStatuses=${this.machineStatuses}
           @touchstart=${this.mobileDrawer.handleTouchStart}
           @touchmove=${this.mobileDrawer.handleTouchMove}
           @touchend=${this.mobileDrawer.handleTouchEnd}
@@ -1448,6 +1545,9 @@ Dica: você pode selecionar uma das opções abaixo para testar a injeção auto
           @nav-select=${(e: CustomEvent<{ tab: string }>) => this.handleNavSelect(e.detail.tab)}
           @toggle-sidebar=${() => this.toggleSidebar()}
           @sign-in=${() => (this.isLoginModalOpen = true)}
+          @select-machine=${(e: CustomEvent<{ machine: Machine }>) => void this.handleSelectMachine(e.detail.machine)}
+          @add-machine=${() => { this.machineDialogError = ""; this.isMachineDialogOpen = true; }}
+          @remove-machine=${(e: CustomEvent<{ machine: Machine }>) => void this.handleRemoveMachine(e.detail.machine)}
         ></omp-sidebar>
 
         <!-- 2. Main Stage with OMP Web Margin & Rounded Container -->
@@ -1483,6 +1583,15 @@ Dica: você pode selecionar uma das opções abaixo para testar a injeção auto
             </div>
           </div>
         </main>
+        <!-- Machine Dialog Component -->
+        ${this.isMachineDialogOpen ? html`
+          <machine-dialog
+            .error=${this.machineDialogError}
+            .onSubmit=${(input: MachineDialogSubmit) => void this.handleAddMachineSubmit(input)}
+            .onCancel=${() => { this.isMachineDialogOpen = false; }}
+          ></machine-dialog>
+        ` : nothing}
+
         <!-- Login Modal Component -->
         <omp-login-modal
           .isOpen=${this.isLoginModalOpen}

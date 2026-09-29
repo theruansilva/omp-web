@@ -9,7 +9,11 @@ import {
   renderPlusIcon,
   renderProjectsIcon,
   renderSettingsIcon,
+  renderServerIcon,
+  renderChevronUpIcon,
+  renderPlusIcon as renderPlusIconBase,
 } from "./icons";
+import type { Machine, MachineHealth } from "../api";
 
 export interface NavItem {
   id: string;
@@ -42,6 +46,10 @@ export class OmpSidebar extends LitElement {
   @property({ type: String }) selectedProjectId = "proj-1";
   @property({ attribute: false }) sessions: SidebarSession[] = [];
   @property({ type: String }) selectedSessionId = "sess-1";
+  @property({ attribute: false }) machines: Machine[] = [];
+  @property({ attribute: false }) selectedMachine?: Machine;
+  @property({ attribute: false }) machineStatuses: Record<string, MachineHealth> = {};
+  @state() private isMachineMenuOpen = false;
   @state() private activeMenuSessionId: string | null = null;
 
   protected override createRenderRoot() {
@@ -66,6 +74,9 @@ export class OmpSidebar extends LitElement {
   private readonly handleGlobalClick = () => {
     if (this.activeMenuSessionId) {
       this.activeMenuSessionId = null;
+    }
+    if (this.isMachineMenuOpen) {
+      this.isMachineMenuOpen = false;
     }
   };
 
@@ -214,6 +225,41 @@ export class OmpSidebar extends LitElement {
       default:
         return html``;
     }
+  }
+
+  private handleSelectMachine(machine: Machine, e?: Event) {
+    e?.stopPropagation();
+    this.isMachineMenuOpen = false;
+    this.dispatchEvent(
+      new CustomEvent("select-machine", {
+        detail: { machine },
+        bubbles: true,
+        composed: true,
+      }),
+    );
+  }
+
+  private handleAddMachine(e?: Event) {
+    e?.stopPropagation();
+    this.isMachineMenuOpen = false;
+    this.dispatchEvent(
+      new CustomEvent("add-machine", {
+        bubbles: true,
+        composed: true,
+      }),
+    );
+  }
+
+  private handleRemoveMachine(machine: Machine, e?: Event) {
+    e?.stopPropagation();
+    this.isMachineMenuOpen = false;
+    this.dispatchEvent(
+      new CustomEvent("remove-machine", {
+        detail: { machine },
+        bubbles: true,
+        composed: true,
+      }),
+    );
   }
 
   override render() {
@@ -384,6 +430,100 @@ export class OmpSidebar extends LitElement {
                 }
               `;
             })}
+          </div>
+
+          <!-- Bottom Footer: Machines Selector (New UI) -->
+          <div class="pt-2 mt-auto shrink-0 border-t border-black/10 dark:border-white/10 relative">
+            ${(() => {
+              const currentMachine = this.selectedMachine || this.machines.find(m => m.id === "local") || this.machines[0] || { id: "local", name: "Local", kind: "local" as const };
+              const currentHealth = this.machineStatuses[currentMachine.id];
+              const isOnline = currentMachine.kind === "local" ? true : (currentHealth?.status === "online" || (currentHealth?.ok ?? true));
+              const isError = currentHealth?.status === "error" || currentHealth?.status === "offline";
+
+              return html`
+                <div class="relative w-full">
+                  <button
+                    type="button"
+                    class="group flex w-full items-center justify-between px-2.5 py-2 rounded-xl text-xs font-sans transition-colors cursor-pointer pointer-events-auto select-none ${this.isMachineMenuOpen ? "bg-black/8 dark:bg-white/10 text-foreground-900" : "text-foreground-700 hover:bg-black/5 dark:hover:bg-white/8 hover:text-foreground-900"}"
+                    aria-label="Selecionar Máquina: ${currentMachine.name}"
+                    aria-expanded=${String(this.isMachineMenuOpen)}
+                    @click=${(e: Event) => {
+                      e.stopPropagation();
+                      this.isMachineMenuOpen = !this.isMachineMenuOpen;
+                    }}
+                  >
+                    <div class="flex items-center gap-2.5 min-w-0 flex-1">
+                      <div class="relative flex items-center justify-center size-7 rounded-lg bg-black/5 dark:bg-white/10 text-foreground-700 dark:text-foreground-300 shrink-0">
+                        ${renderServerIcon("size-4")}
+                        <span class="absolute -bottom-0.5 -right-0.5 size-2 rounded-full border border-sidebar-light dark:border-sidebar-dark ${isError ? "bg-red-500" : isOnline ? "bg-emerald-500" : "bg-zinc-400"}"></span>
+                      </div>
+                      <div class="flex flex-col text-left min-w-0 flex-1">
+                        <span class="text-[10px] uppercase font-bold tracking-wider text-foreground-450 leading-none mb-0.5">Máquina</span>
+                        <span class="text-xs font-bold text-foreground-900 truncate leading-tight">${currentMachine.name}</span>
+                      </div>
+                    </div>
+                    ${renderChevronUpIcon("size-3.5 text-foreground-450 transition-transform duration-200 " + (this.isMachineMenuOpen ? "rotate-180" : ""))}
+                  </button>
+
+                  <!-- Popover Dropup Menu -->
+                  ${this.isMachineMenuOpen ? html`
+                    <div
+                      class="absolute bottom-full left-0 mb-1.5 w-full z-40 p-1.5 rounded-2xl border border-black/10 dark:border-white/10 bg-surface-150/95 dark:bg-background-800/95 backdrop-blur-xl shadow-2xl flex flex-col gap-1 font-sans select-none pointer-events-auto"
+                      @click=${(e: Event) => e.stopPropagation()}
+                    >
+                      <div class="px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-wider text-foreground-500 flex items-center justify-between">
+                        <span>Máquinas Conectadas</span>
+                        <span class="font-mono text-[9px] px-1.5 py-0.2 rounded bg-black/5 dark:bg-white/10">${this.machines.length || 1}</span>
+                      </div>
+
+                      <div class="flex flex-col gap-0.5 max-h-48 overflow-y-auto">
+                        ${(this.machines.length > 0 ? this.machines : [currentMachine]).map((m) => {
+                          const isSelected = m.id === currentMachine.id;
+                          const health = this.machineStatuses[m.id];
+                          const mOnline = m.kind === "local" ? true : (health?.status === "online" || (health?.ok ?? true));
+                          const mError = health?.status === "error" || health?.status === "offline";
+                          const canRemove = m.kind === "remote";
+
+                          return html`
+                            <div class="group/item flex items-center justify-between px-2 py-1.5 rounded-xl transition-colors cursor-pointer ${isSelected ? "bg-black/8 dark:bg-white/10 text-foreground-900 font-bold" : "hover:bg-black/5 dark:hover:bg-white/8 text-foreground-700"}"
+                              @click=${(e: Event) => this.handleSelectMachine(m, e)}
+                            >
+                              <div class="flex items-center gap-2 min-w-0 flex-1">
+                                <span class="size-2 rounded-full shrink-0 ${mError ? "bg-red-500" : mOnline ? "bg-emerald-500" : "bg-zinc-400"}"></span>
+                                <div class="flex flex-col min-w-0 flex-1">
+                                  <span class="text-xs truncate">${m.name}</span>
+                                  <span class="text-[10px] opacity-60 font-mono truncate leading-none">${m.kind === "local" ? "Local OMP Web" : (m.baseUrl || "Remote OMP Web")}</span>
+                                </div>
+                              </div>
+                              ${canRemove ? html`
+                                <button
+                                  type="button"
+                                  class="opacity-0 group-hover/item:opacity-100 p-1 rounded-md hover:bg-red-500/10 text-foreground-450 hover:text-red-500 transition-opacity"
+                                  title="Remover ${m.name}"
+                                  @click=${(e: Event) => this.handleRemoveMachine(m, e)}
+                                >
+                                  ×
+                                </button>
+                              ` : nothing}
+                            </div>
+                          `;
+                        })}
+                      </div>
+
+                      <div class="h-px bg-black/10 dark:bg-white/10 my-0.5"></div>
+                      <button
+                        type="button"
+                        class="flex items-center gap-2 w-full px-2.5 py-1.5 rounded-xl text-xs font-bold text-foreground-700 hover:text-foreground-900 hover:bg-black/5 dark:hover:bg-white/8 transition-colors cursor-pointer text-left"
+                        @click=${(e: Event) => this.handleAddMachine(e)}
+                      >
+                        ${renderPlusIcon("size-3.5")}
+                        <span>Adicionar Máquina</span>
+                      </button>
+                    </div>
+                  ` : nothing}
+                </div>
+              `;
+            })()}
           </div>
         </div>
       </aside>

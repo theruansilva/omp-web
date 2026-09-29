@@ -454,3 +454,22 @@ export function renderRefreshIcon(className = "size-4") {
     </svg>
   `;
 }
+
+export function renderServerIcon(className = "size-5 shrink-0") {
+  return html`
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="${className}">
+      <rect width="20" height="8" x="2" y="2" rx="2" ry="2"/>
+      <rect width="20" height="8" x="2" y="14" rx="2" ry="2"/>
+      <line x1="6" x2="6.01" y1="6" y2="6"/>
+      <line x1="6" x2="6.01" y1="18" y2="18"/>
+    </svg>
+  `;
+}
+
+export function renderChevronUpIcon(className = "size-4 shrink-0") {
+  return html`
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="${className}">
+      <polyline points="18 15 12 9 6 15"></polyline>
+    </svg>
+  `;
+}

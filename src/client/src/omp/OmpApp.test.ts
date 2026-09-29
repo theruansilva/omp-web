@@ -133,6 +133,7 @@ describe("OmpApp integration", () => {
     const app = new OmpApp();
     (app as any).performUpdate = () => {};
     vi.spyOn(app as any, "loadProjects").mockResolvedValue(undefined as any);
+    vi.spyOn(app as any, "loadMachines").mockResolvedValue(undefined as any);
     vi.spyOn((app as any).realtimeSocket, "connect").mockImplementation(() => {});
     vi.spyOn((app as any), "refreshActiveSessions").mockResolvedValue(undefined as any);
     app.connectedCallback();
@@ -150,6 +151,7 @@ describe("OmpApp integration", () => {
     const app = new OmpApp();
     (app as any).performUpdate = () => {};
     vi.spyOn(app as any, "loadProjects").mockResolvedValue(undefined as any);
+    vi.spyOn(app as any, "loadMachines").mockResolvedValue(undefined as any);
     vi.spyOn((app as any).realtimeSocket, "connect").mockImplementation(() => {});
     vi.spyOn((app as any), "refreshActiveSessions").mockResolvedValue(undefined as any);
     app.connectedCallback();
@@ -167,6 +169,7 @@ describe("OmpApp integration", () => {
     const app = new OmpApp();
     (app as any).performUpdate = () => {};
     vi.spyOn(app as any, "loadProjects").mockResolvedValue(undefined as any);
+    vi.spyOn(app as any, "loadMachines").mockResolvedValue(undefined as any);
     vi.spyOn((app as any).realtimeSocket, "connect").mockImplementation(() => {});
     vi.spyOn((app as any), "refreshActiveSessions").mockResolvedValue(undefined as any);
     app.connectedCallback();
@@ -202,6 +205,7 @@ describe("OmpApp integration", () => {
     const app = new OmpApp();
     (app as any).performUpdate = () => {};
     vi.spyOn(app as any, "loadProjects").mockResolvedValue(undefined as any);
+    vi.spyOn(app as any, "loadMachines").mockResolvedValue(undefined as any);
     vi.spyOn((app as any).realtimeSocket, "connect").mockImplementation(() => {});
     vi.spyOn((app as any), "refreshActiveSessions").mockResolvedValue(undefined as any);
     app.connectedCallback();
