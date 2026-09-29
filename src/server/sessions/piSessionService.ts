@@ -36,88 +36,88 @@ import { createSchedulePromptToolDefinition } from "./schedulePrompt/tool.js";
 import { OMP_WEB_GENERATIVE_UI_PROMPT } from "./generativeUiPrompt.js";
 import type { PushNotificationService } from "../push/PushNotificationService.js";
 import {
-  type AgentModel,
-  type CreateAgentRuntime,
-  type CreateAgentRuntimeOptions,
-  type ModelRegistryInstance,
-  type OmpWebCreateAgentSessionRuntimeFactory,
-  type PiAgentSession,
-  type PiSessionManager,
-  type PiSessionManagerGateway,
-  type PiSessionRuntime,
-  DefaultPiAgentSession,
-  DefaultPiSessionRuntime,
-  defaultCreateAgentRuntime,
+ type AgentModel,
+ type CreateAgentRuntime,
+ type CreateAgentRuntimeOptions,
+ type ModelRegistryInstance,
+ type OmpWebCreateAgentSessionRuntimeFactory,
+ type PiAgentSession,
+ type PiSessionManager,
+ type PiSessionManagerGateway,
+ type PiSessionRuntime,
+ DefaultPiAgentSession,
+ DefaultPiSessionRuntime,
+ defaultCreateAgentRuntime,
 } from "./piAgentSession.js";
 import { createOmpWebEditToolDefinition } from "./editTool.js";
 import { toClientEvent } from "./sessionEventMapper.js";
 import {
-  SUBSESSION_LINK_CUSTOM_TYPE,
-  SUBSESSION_CHILD_LINK_CUSTOM_TYPE,
-  SUBSESSION_NOTIFICATION_CUSTOM_TYPE,
-  type TrackedSubsessionLink,
-  type PersistedParentSubsessionLink,
-  type PersistedChildSubsessionLink,
-  trackedSubsessionLinkFromParentLink,
-  persistedParentSubsessionLinkData,
-  persistedChildSubsessionLinkData,
-  parsePersistedParentSubsessionLink,
-  parsePersistedChildSubsessionLink,
-  nonEmptyString,
-  subsessionHydratedParentKey,
-  sessionPathsEqual,
-  sessionFileExists,
-  sessionFileMatches,
-  activeSessionFileMatches,
-  trackedLinkParentFileMatches,
-  readSessionHeaderSummary,
-  sessionFileHeaderMatches,
-  clearParentSession,
-  clearParentSessionHeader,
-  truncateForNotification,
-  finalAssistantText,
+ SUBSESSION_LINK_CUSTOM_TYPE,
+ SUBSESSION_CHILD_LINK_CUSTOM_TYPE,
+ SUBSESSION_NOTIFICATION_CUSTOM_TYPE,
+ type TrackedSubsessionLink,
+ type PersistedParentSubsessionLink,
+ type PersistedChildSubsessionLink,
+ trackedSubsessionLinkFromParentLink,
+ persistedParentSubsessionLinkData,
+ persistedChildSubsessionLinkData,
+ parsePersistedParentSubsessionLink,
+ parsePersistedChildSubsessionLink,
+ nonEmptyString,
+ subsessionHydratedParentKey,
+ sessionPathsEqual,
+ sessionFileExists,
+ sessionFileMatches,
+ activeSessionFileMatches,
+ trackedLinkParentFileMatches,
+ readSessionHeaderSummary,
+ sessionFileHeaderMatches,
+ clearParentSession,
+ clearParentSessionHeader,
+ truncateForNotification,
+ finalAssistantText,
 } from "./subsessionLinks.js";
 import {
-  type PiSessionLookup,
-  type PiSessionListEntry,
-  type WorkspaceArchiveCandidate,
-  type BulkSessionLookupContext,
-  type BulkArchivePlanItem,
-  type BulkDeletePlanItem,
-  previewResponseFromPlan,
-  uniqueBulkSessionRefs,
-  bulkRefToLookup,
-  findArchivedRecordForBulkRef,
-  findListedSessionForBulkRef,
-  findSessionByIdOrPrefix,
-  uniqueStrings,
-  modelToClientModel,
-  clientSessionFromListEntry,
-  archiveInputFromListEntry,
-  archiveInputFromActiveSession,
-  archiveCandidateFromListEntry,
-  archiveCandidateFromArchivedRecord,
-  archiveCandidateFromActiveSession,
-  archiveInputFromCandidate,
-  sessionHasActiveWork,
-  clientSessionFromArchivedRecord,
-  addSessionName,
-  compareArchivedRecords,
-  isDefined,
+ type PiSessionLookup,
+ type PiSessionListEntry,
+ type WorkspaceArchiveCandidate,
+ type BulkSessionLookupContext,
+ type BulkArchivePlanItem,
+ type BulkDeletePlanItem,
+ previewResponseFromPlan,
+ uniqueBulkSessionRefs,
+ bulkRefToLookup,
+ findArchivedRecordForBulkRef,
+ findListedSessionForBulkRef,
+ findSessionByIdOrPrefix,
+ uniqueStrings,
+ modelToClientModel,
+ clientSessionFromListEntry,
+ archiveInputFromListEntry,
+ archiveInputFromActiveSession,
+ archiveCandidateFromListEntry,
+ archiveCandidateFromArchivedRecord,
+ archiveCandidateFromActiveSession,
+ archiveInputFromCandidate,
+ sessionHasActiveWork,
+ clientSessionFromArchivedRecord,
+ addSessionName,
+ compareArchivedRecords,
+ isDefined,
 } from "./sessionArchiveHelpers.js";
 
 export type {
-  AgentModel,
-  CreateAgentRuntime,
-  CreateAgentRuntimeOptions,
-  ModelRegistryInstance,
-  OmpWebCreateAgentSessionRuntimeFactory,
-  PiAgentSession,
-  PiSessionManager,
-  PiSessionManagerGateway,
-  PiSessionRuntime,
-  PiSessionListEntry,
-  PiSessionLookup,
+ AgentModel,
+ CreateAgentRuntime,
+ CreateAgentRuntimeOptions,
+ ModelRegistryInstance,
+ OmpWebCreateAgentSessionRuntimeFactory,
+ PiAgentSession,
+ PiSessionManager,
+ PiSessionManagerGateway,
+ PiSessionRuntime,
+ PiSessionListEntry,
+ PiSessionLookup,
 };
 
 
@@ -495,6 +495,22 @@ export class PiSessionService {
    }
    return clientSession;
   });
+  for (const [id, active] of this.active.entries()) {
+   if (active.runtime.cwd === cwd && !sessionsById.has(id) && !archivedById.has(id)) {
+    const session = active.runtime.session;
+    unarchivedSessions.unshift({
+     id: session.sessionId,
+     path: session.sessionFile ?? "",
+     cwd,
+     persisted: sessionFileExists(session.sessionFile),
+     created: new Date().toISOString(),
+     modified: new Date().toISOString(),
+     messageCount: session.messages.length,
+     firstMessage: "",
+     ...(session.sessionName !== undefined && session.sessionName !== "" ? { name: session.sessionName } : {}),
+    });
+   }
+  }
   this.workspaceActivity?.reconcileSessionActivity(cwd, this.reconcilableSessionIds(cwd, unarchivedSessions.map((session) => session.id), archivedById));
   const archivedSessions = archivedForCwd
    .sort(compareArchivedRecords)
@@ -2136,7 +2152,14 @@ function historyMessages(session: PiAgentSession): unknown[] {
  const messages: unknown[] = [];
  for (const entry of session.sessionManager.getBranch()) {
   if (!isRecord(entry)) continue;
-  if (entry["type"] === "message") messages.push(entry["message"]);
+  if (entry["type"] === "message") {
+    const rawMsg = entry["message"];
+    if (isRecord(rawMsg)) {
+      messages.push({ ...rawMsg, entryId: entry["id"], id: entry["id"] });
+    } else {
+      messages.push(rawMsg);
+    }
+  }
   else if (entry["type"] === "custom_message" && entry["display"] !== false) messages.push({ role: "custom", content: entry["content"], customType: entry["customType"], details: entry["details"], ...(typeof entry["timestamp"] === "string" || typeof entry["timestamp"] === "number" ? { timestamp: entry["timestamp"] } : {}) });
   else if (entry["type"] === "compaction") messages.push({ role: "system", source: "compaction", content: `Compacted history:\n\n${stringValue(entry["summary"])}` });
   else if (entry["type"] === "branch_summary") messages.push({ role: "system", source: "branch_summary", content: `Branch summary:\n\n${stringValue(entry["summary"])}` });

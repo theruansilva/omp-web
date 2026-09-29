@@ -213,8 +213,8 @@ class DefaultUsageService implements UsageService {
     const authStorage = await discoverAuthStorage();
     try {
       const modelRegistry = new ModelRegistry(authStorage);
-      const rawReports = await authStorage.fetchUsageReports({
-        baseUrlResolver: (p) => modelRegistry.getProviderBaseUrl(p),
+      const rawReports = await authStorage.usage.reports({
+        baseUrlResolver: (p: string) => modelRegistry.getProviderBaseUrl(p),
       });
 
       const reports: UsageReport[] = (rawReports ?? []).map((r) => ({

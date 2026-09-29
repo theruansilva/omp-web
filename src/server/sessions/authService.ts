@@ -15,8 +15,8 @@ function toAuthProviderModelRegistry(mr: ModelRegistry): AuthProviderModelRegist
 					id: provider.id,
 					name: provider.name,
 				})),
-			list: () => authStorage.list(),
-			get: (provider: string) => authStorage.get(provider),
+			list: () => [...new Set(authStorage.credentials.list().map((c) => c.provider))],
+			get: (provider: string) => authStorage.credentials.get(provider),
 		},
 		getAll: () => mr.getAll().map((m) => ({ provider: m.provider })),
 		getProviderDisplayName: (provider: string) => {
@@ -29,7 +29,7 @@ function toAuthProviderModelRegistry(mr: ModelRegistry): AuthProviderModelRegist
 			return mr.getProviderBaseUrl(provider) ?? provider;
 		},
 		getProviderAuthStatus: (provider: string): AuthProviderStatus => {
-			const hasAuth = authStorage.has(provider);
+			const hasAuth = authStorage.credentials.has(provider);
 			return {
 				configured: hasAuth,
 				...(hasAuth ? { source: "stored" as const } : {}),
@@ -85,13 +85,13 @@ export class AuthService {
 
 	async saveApiKey(providerId: string, key: string): Promise<{ accepted: true }> {
 		if (key.trim() === "") throw new Error("API key is required");
-		await this.modelRegistry.authStorage.set(providerId, { type: "api_key" as const, key });
+		await this.modelRegistry.authStorage.credentials.set(providerId, { type: "api_key" as const, key });
 		await this.refreshAuthState();
 		return { accepted: true };
 	}
 
 	async logoutProvider(providerId: string): Promise<{ accepted: true }> {
-		await this.modelRegistry.authStorage.logout(providerId);
+		await this.modelRegistry.authStorage.credentials.remove(providerId);
 		await this.refreshAuthState({ removedProviderId: providerId });
 		return { accepted: true };
 	}
@@ -101,7 +101,7 @@ export class AuthService {
 		const view = this.authFlows.start({
 			providerId,
 			providerName: provider.name,
-			authStorage: this.modelRegistry.authStorage,
+			authStorage: this.modelRegistry.authStorage.oauth,
 		});
 		return { ...view, providerId, providerName: provider.name };
 	}

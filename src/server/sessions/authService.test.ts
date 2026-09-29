@@ -8,7 +8,7 @@ describe("AuthService", () => {
 
     await auth.saveApiKey("anthropic", "sk-test");
 
-    expect(authStorage.get("anthropic")).toEqual({ type: "api_key", key: "sk-test" });
+    expect(authStorage.credentials.get("anthropic")).toEqual({ type: "api_key", key: "sk-test" });
     expect(changes).toEqual([{}]);
     auth.dispose();
     authStorage.close();
@@ -19,7 +19,7 @@ describe("AuthService", () => {
 
     await auth.logoutProvider("anthropic");
 
-    expect(authStorage.get("anthropic")).toBeUndefined();
+    expect(authStorage.credentials.get("anthropic")).toBeUndefined();
     expect(changes).toEqual([{ removedProviderId: "anthropic" }]);
     auth.dispose();
     authStorage.close();
@@ -70,7 +70,7 @@ async function createAuthService(data: Record<string, AuthCredentialEntry> = {})
   const authStorage = await AuthStorage.create(":memory:");
   // Seed initial data
   for (const [provider, credential] of Object.entries(data)) {
-    await authStorage.set(provider, credential);
+    await authStorage.credentials.set(provider, credential);
   }
   await authStorage.reload();
   const modelRegistry = new ModelRegistry(authStorage);

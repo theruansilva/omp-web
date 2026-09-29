@@ -118,14 +118,14 @@ describe("OAuthLoginFlowService", () => {
  });
 });
 
-function fakeAuthStorage(login: LoginHandler): Pick<AuthStorage, "login"> {
+function fakeAuthStorage(login: LoginHandler): Pick<AuthStorage["oauth"], "login"> {
  return {
   /* eslint-disable @typescript-eslint/consistent-type-assertions */
-  login: (providerId, ctrl) => (login(providerId, {
+  login: (providerId: string, ctrl: { signal?: AbortSignal; onAuth: (info: { url?: string; instructions?: string }) => void; onPrompt: (prompt: { message: string; placeholder?: string }) => Promise<string> }) => (login(providerId, {
    ...(ctrl.signal !== undefined ? { signal: ctrl.signal } : {}),
    onAuth: (info) => { ctrl.onAuth({ url: info.url ?? "", ...(info.instructions !== undefined ? { instructions: info.instructions } : {}) }); },
    onPrompt: (prompt) => ctrl.onPrompt(prompt),
-  }) as unknown) as ReturnType<AuthStorage["login"]>,
+  }) as unknown) as Promise<undefined>,
   /* eslint-enable @typescript-eslint/consistent-type-assertions */
  };
 }

@@ -157,6 +157,17 @@ describe("SessionCommandService", () => {
     expect(reloadSession).not.toHaveBeenCalled();
   });
 
+  it("directly forks when entryId argument is provided to /fork", async () => {
+    const active = activeSession();
+    (active.runtime.fork as any).mockResolvedValueOnce({ cancelled: false, selectedText: "selected message" });
+    const service = new SessionCommandService(() => getActive(active), vi.fn(), eventPublisher());
+
+    const result = await service.run("s1", "/fork msg-entry-42");
+
+    expect(result).toMatchObject({ type: "done", message: "Session forked", promptDraft: "selected message" });
+    expect(active.runtime.fork).toHaveBeenCalledWith("msg-entry-42");
+  });
+
   it("creates fork selection requests from newest message to oldest and responds with selected entry", async () => {
     const active = activeSession({
       getUserMessagesForForking: vi.fn(() => [

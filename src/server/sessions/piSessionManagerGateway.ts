@@ -24,21 +24,21 @@ export interface SessionDirResolverOptions {
 
 
 function readConfiguredSessionDir(cwd: string, agentDir: string): string | undefined {
-  const localPath = join(cwd, ".pi", "settings.json");
-  try {
-    const raw = readFileSync(localPath, "utf8");
-    const parsed = JSON.parse(raw);
-    if (typeof parsed?.sessionDir === "string" && parsed.sessionDir !== "") return parsed.sessionDir;
-  } catch {}
+ const localPath = join(cwd, ".pi", "settings.json");
+ try {
+  const raw = readFileSync(localPath, "utf8");
+  const parsed = JSON.parse(raw);
+  if (typeof parsed?.sessionDir === "string" && parsed.sessionDir !== "") return parsed.sessionDir;
+ } catch { }
 
-  const globalPath = join(agentDir, "settings.json");
-  try {
-    const raw = readFileSync(globalPath, "utf8");
-    const parsed = JSON.parse(raw);
-    if (typeof parsed?.sessionDir === "string" && parsed.sessionDir !== "") return parsed.sessionDir;
-  } catch {}
+ const globalPath = join(agentDir, "settings.json");
+ try {
+  const raw = readFileSync(globalPath, "utf8");
+  const parsed = JSON.parse(raw);
+  if (typeof parsed?.sessionDir === "string" && parsed.sessionDir !== "") return parsed.sessionDir;
+ } catch { }
 
-  return undefined;
+ return undefined;
 }
 
 export class SessionDirResolver {
@@ -77,42 +77,64 @@ export class SessionDirResolver {
 }
 
 export interface PiSessionManagerGateway {
-  list(cwd: string): Promise<PiSessionListEntry[]>;
-  create(cwd: string, _options?: { parentSession?: string }): PiSessionManager;
-  listAll?(): Promise<PiSessionListEntry[]>;
-  open(path: string): Promise<PiSessionManager>;
+ list(cwd: string): Promise<PiSessionListEntry[]>;
+ create(cwd: string, _options?: { parentSession?: string }): PiSessionManager;
+ listAll?(): Promise<PiSessionListEntry[]>;
+ open(path: string): Promise<PiSessionManager>;
 }
 
 export type PiSessionManagerGatewayOptions = SessionDirResolverOptions;
 
 export class DefaultPiSessionManagerGateway implements PiSessionManagerGateway {
-  constructor(private readonly resolver: SessionDirResolver = new SessionDirResolver()) {}
+ constructor(private readonly resolver: SessionDirResolver = new SessionDirResolver()) { }
 
-  async list(cwd: string): Promise<PiSessionListEntry[]> {
-    const resolution = this.resolver.resolve(cwd);
-    return filterSessionsForCwd(await listSessionsInDir(resolution.sessionDir), cwd);
+ async list(cwd: string): Promise<PiSessionListEntry[]> {
+  const resolution = this.resolver.resolve(cwd);
+  const sessions = await listSessionsInDir(resolution.sessionDir);
+  if (!resolution.usesConfiguredSessionDir) {
+   const legacyDir = sessionDirInDefaultPiStore(this.resolver.defaultSessionsRoot(), cwd);
+   if (legacyDir !== resolution.sessionDir) {
+    try {
+     const legacySessions = await listSessionsInDir(legacyDir);
+     const existingIds = new Set(sessions.map((s) => s.id));
+     for (const ls of legacySessions) {
+      if (!existingIds.has(ls.id)) {
+       sessions.push(ls);
+      }
+     }
+    } catch { }
+   }
   }
+  return filterSessionsForCwd(sessions, cwd);
+ }
 
-  async listAll(): Promise<PiSessionListEntry[]> {
-    const globalEnv = this.resolver.globalEnvSessionDir();
-    const defaultSessions = await listSessionsInDefaultPiStore(this.resolver.defaultSessionsRoot());
-    if (globalEnv === undefined) return defaultSessions;
-    const envSessions = await listSessionsInDir(globalEnv);
-    return [...defaultSessions, ...envSessions].sort((a, b) => b.modified.getTime() - a.modified.getTime());
+ async listAll(): Promise<PiSessionListEntry[]> {
+  const globalEnv = this.resolver.globalEnvSessionDir();
+  const defaultSessions = await listSessionsInDefaultPiStore(this.resolver.defaultSessionsRoot());
+  if (globalEnv === undefined) return defaultSessions;
+  const envSessions = await listSessionsInDir(globalEnv);
+  const combined = [...defaultSessions, ...envSessions];
+  const unique = new Map<string, PiSessionListEntry>();
+  for (const session of combined) {
+   const existing = unique.get(session.id);
+   if (!existing || session.modified.getTime() > existing.modified.getTime()) {
+    unique.set(session.id, session);
+   }
   }
+  return Array.from(unique.values()).sort((a, b) => b.modified.getTime() - a.modified.getTime());
+ }
+ create(cwd: string, _options?: { parentSession?: string }): PiSessionManager {
+  const resolution = this.resolver.resolve(cwd);
+  return SessionManager.create(cwd, resolution.sessionDir);
+ }
 
-  create(cwd: string, _options?: { parentSession?: string }): PiSessionManager {
-    const resolution = this.resolver.resolve(cwd);
-    return SessionManager.create(cwd, resolution.sessionDir);
-  }
-
-  async open(path: string): Promise<PiSessionManager> {
-    return SessionManager.open(path, dirname(path));
-  }
+ async open(path: string): Promise<PiSessionManager> {
+  return SessionManager.open(path, dirname(path));
+ }
 }
 
 export function createPiSessionManagerGateway(options: PiSessionManagerGatewayOptions = {}): PiSessionManagerGateway {
-  return new DefaultPiSessionManagerGateway(new SessionDirResolver(options));
+ return new DefaultPiSessionManagerGateway(new SessionDirResolver(options));
 }
 export async function listSessionsInDir(sessionDir: string): Promise<PiSessionListEntry[]> {
  // Use SessionManager.list() which lists by cwd but also accepts an explicit
@@ -154,7 +176,11 @@ export function defaultPiSessionsRoot(agentDir = getAgentDir()): string {
 }
 
 export function defaultPiSessionDir(cwd: string, agentDir = getAgentDir()): string {
- return sessionDirInDefaultPiStore(defaultPiSessionsRoot(agentDir), cwd);
+ try {
+  return SessionManager.getDefaultSessionDir(cwd, agentDir);
+ } catch {
+  return sessionDirInDefaultPiStore(defaultPiSessionsRoot(agentDir), cwd);
+ }
 }
 
 export function sessionDirInDefaultPiStore(storeRoot: string, cwd: string): string {

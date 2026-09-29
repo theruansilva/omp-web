@@ -198,26 +198,26 @@ async function waitFor(fn: () => void | Promise<void>, timeoutMs = 2000): Promis
 }
 
 describe("PiSessionService", () => {
-    it("includes in-flight streamMessage when session is streaming", async () => {
-      const hub = new CapturingSessionEventHub();
-      const fake = fakeRuntime("stream-session", {
-        isStreaming: true,
-        streamMessage: { role: "assistant", content: [{ type: "text", text: "in-flight partial" }] },
-        sessionManager: fakeSessionManager("/workspace", {
-          getBranch: () => [{ type: "message", message: { role: "user", content: "hello" } }],
-        }),
-      });
-      const service = new PiSessionService(hub, {
-        createAgentRuntime: runtimeCreator(fake.runtime),
-        sessionManager: sessionGateway([sessionRecord("stream-session")]),
-      });
-
-      const messages = await service.messages(sessionRef("stream-session"));
-      expect(messages).toEqual([
-        { role: "user", content: "hello" },
-        { role: "assistant", content: [{ type: "text", text: "in-flight partial" }] },
-      ]);
+  it("includes in-flight streamMessage when session is streaming", async () => {
+    const hub = new CapturingSessionEventHub();
+    const fake = fakeRuntime("stream-session", {
+      isStreaming: true,
+      streamMessage: { role: "assistant", content: [{ type: "text", text: "in-flight partial" }] },
+      sessionManager: fakeSessionManager("/workspace", {
+        getBranch: () => [{ type: "message", message: { role: "user", content: "hello" } }],
+      }),
     });
+    const service = new PiSessionService(hub, {
+      createAgentRuntime: runtimeCreator(fake.runtime),
+      sessionManager: sessionGateway([sessionRecord("stream-session")]),
+    });
+
+    const messages = await service.messages(sessionRef("stream-session"));
+    expect(messages).toEqual([
+      { role: "user", content: "hello" },
+      { role: "assistant", content: [{ type: "text", text: "in-flight partial" }] },
+    ]);
+  });
   it("starts sessions through an injected runtime creator", async () => {
     const hub = new CapturingSessionEventHub();
     const fake = fakeRuntime();
@@ -442,6 +442,34 @@ describe("PiSessionService", () => {
 
     await service.dispose();
   });
+  it("includes in-memory active sessions when they have not appeared on disk yet", async () => {
+    const fake = fakeRuntime("memory-only");
+    const service = new PiSessionService(new CapturingSessionEventHub(), {
+      createAgentRuntime: runtimeCreator(fake.runtime),
+      archiveStore: {
+        list: () => Promise.resolve([]),
+        get: () => Promise.resolve(undefined),
+        archive: () => Promise.resolve([]),
+        restore: () => Promise.resolve(),
+        isArchived: () => Promise.resolve(false),
+      },
+      sessionManager: {
+        create: () => fakeSessionManager("/workspace"),
+        list: () => Promise.resolve([]),
+        open: () => Promise.resolve(fakeSessionManager("/workspace")),
+      },
+      heartbeatIntervalMs: 60_000,
+    });
+
+    await service.start("/workspace");
+    const sessions = await service.list("/workspace");
+
+    expect(sessions).toHaveLength(1);
+    expect(sessions[0]).toMatchObject({ id: "memory-only", cwd: "/workspace" });
+
+    await service.dispose();
+  });
+
 
   it("lists archived records that have been moved out of the active session directory", async () => {
     const service = new PiSessionService(new CapturingSessionEventHub(), {
@@ -1242,7 +1270,7 @@ describe("PiSessionService", () => {
   it("refreshes auth state and dedupes warnings when logout removes the current model's credentials", async () => {
     const hub = new CapturingSessionEventHub();
     const authStorage = await AuthStorage.create(":memory:");
-    await authStorage.set("anthropic", { type: "api_key", key: "sk-test" });
+    await authStorage.credentials.set("anthropic", { type: "api_key", key: "sk-test" });
     const modelRegistry = new ModelRegistry(authStorage);
     const model = modelRegistry.find("anthropic", "claude-3-5-sonnet-20241022");
     if (model === undefined) throw new Error("Expected Anthropic model fixture");
@@ -1259,7 +1287,7 @@ describe("PiSessionService", () => {
     hub.sessionEvents.length = 0;
     hub.globalEvents.length = 0;
 
-    await authStorage.logout("anthropic");
+    await authStorage.credentials.remove("anthropic");
     service.applyAuthChange({ removedProviderId: "anthropic" });
     service.applyAuthChange({ removedProviderId: "anthropic" });
 
@@ -1267,9 +1295,9 @@ describe("PiSessionService", () => {
     expect(warningCount()).toBe(1);
     expect(hub.globalEvents.some((event) => event.type === "status.update" && event.status.sessionId === "auth-session")).toBe(true);
 
-    await authStorage.set("anthropic", { type: "api_key", key: "sk-new" });
+    await authStorage.credentials.set("anthropic", { type: "api_key", key: "sk-new" });
     service.applyAuthChange();
-    await authStorage.logout("anthropic");
+    await authStorage.credentials.remove("anthropic");
     service.applyAuthChange({ removedProviderId: "anthropic" });
     expect(warningCount()).toBe(2);
 
@@ -2300,7 +2328,7 @@ describe("PiSessionService", () => {
       const hub = new CapturingSessionEventHub();
       let listener: ((event: unknown) => void) | undefined;
       const fake = fakeRuntime("session-active", {
-        subscribe: (next) => { listener = next; return () => {}; },
+        subscribe: (next) => { listener = next; return () => { }; },
       });
       let currentTime = 1000;
       const originalNow = Date.now;

@@ -2,7 +2,7 @@ import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "bun:test";
-import { createPiSessionManagerGateway, defaultPiSessionDir, defaultPiSessionsRoot, filterSessionsForCwd, SessionDirResolver } from "./piSessionManagerGateway.js";
+import { createPiSessionManagerGateway, defaultPiSessionDir, defaultPiSessionsRoot, filterSessionsForCwd, sessionDirInDefaultPiStore, SessionDirResolver } from "./piSessionManagerGateway.js";
 import type { PiSessionListEntry } from "./piSessionService.js";
 import type { PiSessionManager } from "./piSessionService.js";
 import { sep } from "node:path";
@@ -111,6 +111,13 @@ describe("Pi session manager gateway", () => {
     const gateway = createPiSessionManagerGateway({ agentDir, env: {} });
 
     await expect(gateway.list(cwd)).resolves.toMatchObject([{ id: "session-with-title", cwd, name: "My Cool Session" }]);
+  });
+  it("discovers legacy unmigrated session files in the legacy store directory", async () => {
+    const legacyDir = sessionDirInDefaultPiStore(defaultPiSessionsRoot(agentDir), cwd);
+    await writeSessionFile(legacyDir, "legacy-session", cwd, "Legacy Session");
+    const gateway = createPiSessionManagerGateway({ agentDir, env: {} });
+
+    await expect(gateway.list(cwd)).resolves.toMatchObject([{ id: "legacy-session", cwd, name: "Legacy Session" }]);
   });
 });
 

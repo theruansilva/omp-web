@@ -1,7 +1,7 @@
 import crypto from "node:crypto";
 import type { AuthStorage } from "@oh-my-pi/pi-coding-agent";
 
-type OAuthLoginStorage = Pick<AuthStorage, "login">;
+type OAuthLoginStorage = Pick<AuthStorage["oauth"], "login">;
 
 const DEFAULT_RUNNING_TTL_MS = 600_000; // 10 minutes
 const DEFAULT_TERMINAL_TTL_MS = 60_000; // 1 minute
@@ -157,7 +157,7 @@ export class OAuthLoginFlowService {
     state.resolvedLogin = resolve;
     state.rejectedLogin = reject;
 
-    options.authStorage.login(options.providerId, {
+    options.authStorage.login(options.providerId as never, {
      signal: new AbortController().signal,
      onAuth: (info: { url?: string; instructions?: string }) => {
       if (typeof info.url === "string" && info.url !== "") {

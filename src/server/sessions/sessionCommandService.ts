@@ -118,7 +118,7 @@ export class SessionCommandService<TSession extends CommandSession = CommandSess
     if (name === "reload") return this.reload(session);
     if (name === "exit" || name === "quit") return this.archive(session);
     if (name === "clone") return this.clone(active);
-    if (name === "fork") return this.fork(active);
+    if (name === "fork") return rest === "" ? this.fork(active) : this.executeFork(active, rest);
 
     return { type: "unsupported", message: `/${name} is not implemented in the web UI yet` };
   }
@@ -129,9 +129,13 @@ export class SessionCommandService<TSession extends CommandSession = CommandSess
     this.pendingSelects.delete(requestId);
 
     const active = await this.getActive(sessionId);
+    return this.executeFork(active, value);
+  }
+
+  private async executeFork(active: CommandActiveSession<TSession>, entryId: string): Promise<ClientCommandResult> {
     if (sessionHasActiveWork(active.runtime.session)) return forkActiveUnsupported("fork");
     const relatedName = await this.nextRelatedSessionName(active, "fork");
-    const result = await active.runtime.fork(value);
+    const result = await active.runtime.fork(entryId);
     if (result.cancelled) return { type: "done", message: "Fork cancelled" };
     this.tryNameRelatedSession(active.runtime.session, relatedName);
     return { type: "done", message: "Session forked", session: clientSessionFromRuntime(active.runtime), ...promptDraft(result.selectedText) };
