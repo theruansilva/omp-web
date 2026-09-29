@@ -166,6 +166,18 @@ export class OmpApp extends LitElement {
   @state() private machineStatuses: Record<string, MachineHealth> = {};
   @state() private isMachineDialogOpen = false;
   @state() private machineDialogError = "";
+
+  private get currentMachineId(): string {
+    return this.selectedMachine?.id || "local";
+  }
+
+  private connectRealtimeSocket(machineId = this.currentMachineId): void {
+    this.realtimeSocket.connect(
+      (event) => this.handleRealtimeEvent(event),
+      () => { void this.refreshActiveSessions(); },
+      machineId,
+    );
+  }
   @state() private selectedProjectId = "";
   @state() private selectedWorkspaceId = "";
   @state() private selectedSessionId = "";
@@ -400,10 +412,7 @@ export class OmpApp extends LitElement {
     }
     this.applyTheme(this.theme);
 
-    this.realtimeSocket.connect(
-      (event) => this.handleRealtimeEvent(event),
-      () => { void this.refreshActiveSessions(); },
-    );
+    this.connectRealtimeSocket();
     const machineParam = params.get("machine") || undefined;
     void this.loadMachines(machineParam);
     void this.refreshActiveSessions();
@@ -436,6 +445,7 @@ export class OmpApp extends LitElement {
           : undefined;
         this.selectedMachine = requested || this.selectedMachine || list.find(m => m.id === "local") || list[0];
         void this.refreshMachineStatuses(list);
+        this.connectRealtimeSocket(this.currentMachineId);
       }
     } catch (err) {
       console.warn("[OMP] Could not load machines:", err);
@@ -462,6 +472,7 @@ export class OmpApp extends LitElement {
     this.messages = [];
     this.rawLines = [];
     this.sessionSocket.close();
+    this.connectRealtimeSocket(machine.id);
     this.currentConnectedSessionId = "";
     const url = new URL(window.location.href);
     if (machine.id !== "local") {
@@ -537,7 +548,7 @@ export class OmpApp extends LitElement {
 
   private async refreshActiveSessions() {
     try {
-      const active = await sessionsApi.activeSessions();
+      const active = await sessionsApi.activeSessions(this.currentMachineId);
       if (Array.isArray(active)) {
         for (const item of active) {
           if (item.status === "working") {
@@ -781,7 +792,7 @@ export class OmpApp extends LitElement {
         if (!targetWs && this.selectedSessionId) {
           for (const w of workspaces) {
             try {
-              const sessions = await sessionsApi.sessions(w.path);
+              const sessions = await sessionsApi.sessions(w.path, this.currentMachineId);
               if (Array.isArray(sessions)) {
                 this.sessionsByCwd = { ...this.sessionsByCwd, [w.path]: sessions };
                 if (sessions.some(s => s.id === this.selectedSessionId)) {
@@ -809,7 +820,7 @@ export class OmpApp extends LitElement {
 
   private async loadSessions(cwd: string, selectIfNone = false) {
     try {
-      const sessions = await sessionsApi.sessions(cwd);
+      const sessions = await sessionsApi.sessions(cwd, this.currentMachineId);
       if (Array.isArray(sessions)) {
         this.sessionsByCwd = {
           ...this.sessionsByCwd,
@@ -871,8 +882,8 @@ export class OmpApp extends LitElement {
 
     try {
       const [history, status] = await Promise.all([
-        sessionsApi.messages({ id: sessionId, cwd: effectiveCwd }),
-        sessionsApi.status({ id: sessionId, cwd: effectiveCwd }).catch(() => undefined),
+        sessionsApi.messages({ id: sessionId, cwd: effectiveCwd }, undefined, this.currentMachineId),
+        sessionsApi.status({ id: sessionId, cwd: effectiveCwd }, this.currentMachineId).catch(() => undefined),
       ]);
       const rawList = Array.isArray(history)
         ? history
@@ -890,6 +901,8 @@ export class OmpApp extends LitElement {
     this.sessionSocket.connect(
       { id: sessionId, cwd: effectiveCwd },
       (event) => this.handleSessionEvent(event),
+      undefined,
+      this.currentMachineId,
     );
     this.currentConnectedSessionId = sessionId;
   }
@@ -1009,13 +1022,13 @@ export class OmpApp extends LitElement {
     let sessionId = this.selectedSessionId;
     if (!sessionId) {
       try {
-        const newSession = await sessionsApi.startSession(ws.path);
+        const newSession = await sessionsApi.startSession(ws.path, this.currentMachineId);
         sessionId = newSession.id;
         this.selectedSessionId = sessionId;
         this.currentConnectedSessionId = sessionId;
         this.syncUrl({ replace: true });
         this.saveSessionToStorage(sessionId, this.selectedProjectId);
-        this.sessionSocket.connect({ id: sessionId, cwd: ws.path }, (event) => this.handleSessionEvent(event));
+        this.sessionSocket.connect({ id: sessionId, cwd: ws.path }, (event) => this.handleSessionEvent(event), undefined, this.currentMachineId);
         void this.loadSessions(ws.path, false);
       } catch (err) {
         console.error("[OMP] Failed to start new session:", err);
@@ -1035,7 +1048,7 @@ export class OmpApp extends LitElement {
       this.btwState = { status: "running", question: question || "Pergunta lateral", answer: "", canBranch: true };
       this.activeTab = "new-chat";
       try {
-        await sessionsApi.runCommand({ id: sessionId, cwd: ws.path }, promptTrimmed);
+        await sessionsApi.runCommand({ id: sessionId, cwd: ws.path }, promptTrimmed, this.currentMachineId);
       } catch (err) {
         console.error("[OMP] Failed to run /btw:", err);
         this.btwState = { status: "error", question: question || "", answer: "", error: String(err), canBranch: false };
@@ -1076,16 +1089,16 @@ export class OmpApp extends LitElement {
       if (attachments && attachments.length > 0) {
         const canUseInline = promptAttachmentsCanUseInlineDelivery(attachments);
         if (canUseInline) {
-          await sessionsApi.prompt({ id: sessionId, cwd: ws.path }, promptTrimmed, detail.streamingBehavior, "local", attachments);
+          await sessionsApi.prompt({ id: sessionId, cwd: ws.path }, promptTrimmed, detail.streamingBehavior, this.currentMachineId, attachments);
         } else {
-          const saved = await sessionsApi.saveAttachments({ id: sessionId, cwd: ws.path }, attachments, "local");
+          const saved = await sessionsApi.saveAttachments({ id: sessionId, cwd: ws.path }, attachments, this.currentMachineId);
           const files = Array.isArray(saved) ? saved : ((saved as { attachments?: SavedPromptAttachment[] })?.attachments ?? []);
           const references = files.map((file) => `@${file.path}`).join(" ");
           const body = promptTrimmed === "" ? references : `${promptTrimmed}\n\n${references}`;
-          await sessionsApi.prompt({ id: sessionId, cwd: ws.path }, body, detail.streamingBehavior);
+          await sessionsApi.prompt({ id: sessionId, cwd: ws.path }, body, detail.streamingBehavior, this.currentMachineId);
         }
       } else {
-        await sessionsApi.prompt({ id: sessionId, cwd: ws.path }, promptTrimmed, detail.streamingBehavior);
+        await sessionsApi.prompt({ id: sessionId, cwd: ws.path }, promptTrimmed, detail.streamingBehavior, this.currentMachineId);
       }
       if (ws && this.sessionsByCwd[ws.path]) {
         this.sessionsByCwd = {
@@ -1115,7 +1128,7 @@ export class OmpApp extends LitElement {
     const sessionId = this.selectedSessionId;
     if (!sessionId) return;
     try {
-      await sessionsApi.abort({ id: sessionId, cwd: ws?.path || "" });
+      await sessionsApi.abort({ id: sessionId, cwd: ws?.path || "" }, this.currentMachineId);
       this.isStreaming = false;
       this.requestUpdate();
     } catch (err) {
@@ -1129,7 +1142,7 @@ export class OmpApp extends LitElement {
     this.pendingAsk = undefined;
     if (!ws || !sessionId) return;
     try {
-      await sessionsApi.respondToAsk({ id: sessionId, cwd: ws.path }, requestId, result);
+      await sessionsApi.respondToAsk({ id: sessionId, cwd: ws.path }, requestId, result, this.currentMachineId);
     } catch (err) {
       console.error("[OMP] Failed to respond to ask:", err);
     }
@@ -1141,7 +1154,7 @@ export class OmpApp extends LitElement {
     this.pendingAsk = undefined;
     if (!ws || !sessionId) return;
     try {
-      await sessionsApi.respondToAsk({ id: sessionId, cwd: ws.path }, requestId, undefined);
+      await sessionsApi.respondToAsk({ id: sessionId, cwd: ws.path }, requestId, undefined, this.currentMachineId);
     } catch (err) {
       console.error("[OMP] Failed to cancel ask:", err);
     }
@@ -1169,7 +1182,7 @@ export class OmpApp extends LitElement {
     if (!ws || !sessionId) return;
     this.btwState = undefined;
     try {
-      const res = await sessionsApi.runCommand({ id: sessionId, cwd: ws.path }, "/btw branch");
+      const res = await sessionsApi.runCommand({ id: sessionId, cwd: ws.path }, "/btw branch", this.currentMachineId);
       if (res.type === "done" && res.session) {
         this.selectedSessionId = res.session.id;
         this.currentConnectedSessionId = res.session.id;
@@ -1209,7 +1222,7 @@ export class OmpApp extends LitElement {
     const targetCwd = cwd || ws?.path;
     if (!sessionId) return;
     try {
-      await sessionsApi.archive({ id: sessionId, cwd: targetCwd || "" });
+      await sessionsApi.archive({ id: sessionId, cwd: targetCwd || "" }, this.currentMachineId);
       for (const [p, sessions] of Object.entries(this.sessionsByCwd)) {
         this.sessionsByCwd[p] = sessions.map(s => s.id === sessionId ? { ...s, archived: true } : s);
       }
@@ -1252,7 +1265,7 @@ export class OmpApp extends LitElement {
     }
     this.selectedWorkspaceId = ws.id;
     try {
-      const newSession = await sessionsApi.startSession(ws.path);
+      const newSession = await sessionsApi.startSession(ws.path, this.currentMachineId);
       this.selectedSessionId = newSession.id;
       this.currentConnectedSessionId = newSession.id;
       this.messages = [];
@@ -1260,7 +1273,7 @@ export class OmpApp extends LitElement {
       this.activeTab = "new-chat";
       this.syncUrl();
       this.saveSessionToStorage(newSession.id, this.selectedProjectId);
-      this.sessionSocket.connect({ id: newSession.id, cwd: ws.path }, (event) => this.handleSessionEvent(event));
+      this.sessionSocket.connect({ id: newSession.id, cwd: ws.path }, (event) => this.handleSessionEvent(event), undefined, this.currentMachineId);
       await this.loadSessions(ws.path, false);
     } catch (err) {
       console.warn("[OMP] Could not start new session via API, falling back to clean composer:", err);

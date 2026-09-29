@@ -129,25 +129,192 @@ export class MachineDialog extends LitElement {
   }
 
   static override styles = css`
-    :host { position: fixed; inset: 0; z-index: 30; color: var(--pi-text); font: 14px system-ui, sans-serif; }
-    .backdrop { display: grid; place-items: start center; width: 100%; height: 100%; padding-top: min(12vh, 90px); box-sizing: border-box; background: var(--pi-overlay); }
-    section { width: min(560px, calc(100vw - 40px)); max-height: min(640px, calc(100vh - 40px)); border: 1px solid var(--pi-border); border-radius: 12px; background: var(--pi-bg); box-shadow: 0 20px 60px var(--pi-shadow-strong); overflow: hidden; }
-    form { display: flex; flex-direction: column; max-height: inherit; min-height: 0; }
-    header, footer { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 12px; border-bottom: 1px solid var(--pi-border); }
-    footer { border-top: 1px solid var(--pi-border); border-bottom: 0; justify-content: end; }
-    .body { display: grid; gap: 8px; padding: 12px; min-height: 0; overflow: auto; }
-    label { display: grid; gap: 6px; color: var(--pi-muted); }
-    input { box-sizing: border-box; width: 100%; border: 1px solid var(--pi-border); border-radius: 8px; background: var(--pi-bg); color: var(--pi-text); padding: 9px; font: var(--pi-control-font-size, 16px) var(--pi-control-monospace-font-family, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace); }
-    input:focus-visible { outline: 2px solid var(--pi-accent); outline-offset: 1px; }
-    .hint { color: var(--pi-muted); }
-    .intro { margin: 4px 0 0; line-height: 1.4; }
-    .optional { color: var(--pi-muted); font-weight: 400; }
-    .field-error { color: var(--pi-danger); }
-    .dialog-error { border: 1px solid var(--pi-danger); border-radius: 8px; background: color-mix(in srgb, var(--pi-danger) 10%, transparent); color: var(--pi-danger); padding: 9px; line-height: 1.35; }
-    button { border: 1px solid var(--pi-border); border-radius: 8px; background: var(--pi-surface); color: var(--pi-text); padding: 7px 9px; cursor: pointer; }
-    header button { border: 0; background: transparent; color: var(--pi-muted); font-size: 22px; padding: 0 8px; }
-    .primary { border-color: var(--pi-success-border); background: var(--pi-success-border); }
-    button:disabled { opacity: .5; cursor: not-allowed; }
+    :host {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      color: var(--pi-text, #e6edf3);
+      font: 14px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+    .backdrop {
+      display: grid;
+      place-items: center;
+      width: 100%;
+      height: 100%;
+      box-sizing: border-box;
+      background: var(--pi-overlay, rgba(0, 0, 0, 0.65));
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      padding: 16px;
+    }
+    section {
+      width: min(520px, calc(100vw - 32px));
+      max-height: min(640px, calc(100vh - 40px));
+      border: 1px solid var(--pi-border, rgba(255, 255, 255, 0.12));
+      border-radius: 16px;
+      background: var(--pi-bg, #1a1a20);
+      color: var(--pi-text, #f3f4f6);
+      box-shadow: 0 24px 64px rgba(0, 0, 0, 0.55);
+      overflow: hidden;
+      animation: dialogIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    :host-context([data-theme="light"]) section,
+    :host-context(.light) section {
+      background: #ffffff;
+      color: #111827;
+      border-color: rgba(0, 0, 0, 0.12);
+      box-shadow: 0 20px 48px rgba(0, 0, 0, 0.15);
+    }
+    form {
+      display: flex;
+      flex-direction: column;
+      max-height: inherit;
+      min-height: 0;
+    }
+    header, footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--pi-border, rgba(255, 255, 255, 0.1));
+      background: var(--pi-surface, rgba(255, 255, 255, 0.03));
+    }
+    :host-context([data-theme="light"]) header,
+    :host-context([data-theme="light"]) footer {
+      border-color: rgba(0, 0, 0, 0.08);
+      background: #fcfcfd;
+    }
+    footer {
+      border-top: 1px solid var(--pi-border, rgba(255, 255, 255, 0.1));
+      border-bottom: 0;
+      justify-content: flex-end;
+    }
+    .body {
+      display: grid;
+      gap: 12px;
+      padding: 18px;
+      min-height: 0;
+      overflow: auto;
+    }
+    label {
+      display: grid;
+      gap: 6px;
+      color: var(--pi-muted, #9ca3af);
+      font-size: 13px;
+      font-weight: 500;
+    }
+    :host-context([data-theme="light"]) label {
+      color: #4b5563;
+    }
+    input {
+      box-sizing: border-box;
+      width: 100%;
+      border: 1px solid var(--pi-border, rgba(255, 255, 255, 0.15));
+      border-radius: 10px;
+      background: var(--pi-bg, #111115);
+      color: var(--pi-text, #f3f4f6);
+      padding: 10px 12px;
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    :host-context([data-theme="light"]) input {
+      background: #f9fafb;
+      color: #111827;
+      border-color: rgba(0, 0, 0, 0.15);
+    }
+    input:focus {
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.25);
+    }
+    .hint {
+      color: var(--pi-muted, #9ca3af);
+      font-size: 12px;
+      line-height: 1.4;
+    }
+    :host-context([data-theme="light"]) .hint {
+      color: #6b7280;
+    }
+    .intro {
+      margin: 4px 0 0;
+      line-height: 1.5;
+    }
+    .optional {
+      color: var(--pi-muted, #6b7280);
+      font-weight: 400;
+      font-size: 11px;
+    }
+    .field-error {
+      color: var(--pi-danger, #ef4444);
+      font-size: 12px;
+    }
+    .dialog-error {
+      border: 1px solid var(--pi-danger, #ef4444);
+      border-radius: 10px;
+      background: rgba(239, 68, 68, 0.1);
+      color: var(--pi-danger, #f87171);
+      padding: 10px 12px;
+      font-size: 13px;
+      line-height: 1.4;
+    }
+    button {
+      border: 1px solid var(--pi-border, rgba(255, 255, 255, 0.15));
+      border-radius: 10px;
+      background: var(--pi-surface, rgba(255, 255, 255, 0.08));
+      color: var(--pi-text, #f3f4f6);
+      padding: 8px 14px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background-color 0.15s, opacity 0.15s;
+    }
+    button:hover:not(:disabled) {
+      background: rgba(255, 255, 255, 0.12);
+    }
+    :host-context([data-theme="light"]) button:not(.primary) {
+      background: #f3f4f6;
+      color: #1f2937;
+      border-color: rgba(0, 0, 0, 0.12);
+    }
+    :host-context([data-theme="light"]) button:not(.primary):hover:not(:disabled) {
+      background: #e5e7eb;
+    }
+    header button {
+      border: 0;
+      background: transparent;
+      color: var(--pi-muted, #9ca3af);
+      font-size: 20px;
+      padding: 4px 8px;
+      border-radius: 6px;
+    }
+    header button:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: var(--pi-text, #f3f4f6);
+    }
+    :host-context([data-theme="light"]) header button {
+      color: #6b7280;
+    }
+    :host-context([data-theme="light"]) header button:hover {
+      background: rgba(0, 0, 0, 0.06);
+      color: #111827;
+    }
+    .primary {
+      border-color: #2563eb;
+      background: #2563eb;
+      color: #ffffff;
+    }
+    .primary:hover:not(:disabled) {
+      background: #1d4ed8;
+    }
+    button:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+    @keyframes dialogIn {
+      from { opacity: 0; transform: scale(0.96) translateY(6px); }
+      to { opacity: 1; transform: scale(1) translateY(0); }
+    }
   `;
 }
 

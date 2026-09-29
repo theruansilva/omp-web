@@ -220,6 +220,8 @@ export const workspacesApi = {
 };
 
 export const sessionsApi = {
+  activeSessions: (machineId = "local") =>
+    request<Array<{ sessionId: string; status: "working" | "idle" }>>(`${machinePrefix(machineId)}/sessions/active`),
   sessions: (cwd: string, machineId = "local") =>
     request<SessionInfo[]>(`${machinePrefix(machineId)}/sessions?cwd=${encodeURIComponent(cwd)}`),
   startSession: (cwd: string, machineId = "local") =>

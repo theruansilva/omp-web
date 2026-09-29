@@ -288,7 +288,7 @@ describe("OmpApp integration", () => {
 
     await (app as any).handleStartNewSession("proj-1");
 
-    expect(startSpy).toHaveBeenCalledWith("/test/ws");
+    expect(startSpy).toHaveBeenCalledWith("/test/ws", "local");
     expect((app as any).selectedSessionId).toBe("new-sess-123");
     expect((app as any).activeTab).toBe("new-chat");
     expect((app as any).selectedWorkspaceId).toBe("ws-1");
@@ -333,7 +333,7 @@ describe("OmpApp integration", () => {
 
     await (app as any).handleStopGeneration();
 
-    expect(abortSpy).toHaveBeenCalledWith({ id: "sess-active", cwd: "/test/ws" });
+    expect(abortSpy).toHaveBeenCalledWith({ id: "sess-active", cwd: "/test/ws" }, "local");
     expect((app as any).isStreaming).toBe(false);
   });
 
@@ -354,7 +354,29 @@ describe("OmpApp integration", () => {
     expect(promptSpy).toHaveBeenCalledWith(
       { id: "sess-active", cwd: "/test/ws" },
       "Queue this next",
-      "followUp"
+      "followUp",
+      "local"
+    );
+  });
+
+  it("forwards remote machineId to sessionsApi and sockets when remote machine is selected", async () => {
+    installMockWindow("http://localhost:8504/omp?tab=new-chat&session=sess-remote&machine=remote-1");
+    const app = new OmpApp();
+    (app as any).selectedMachine = { id: "remote-1", name: "Remote Box", kind: "remote" };
+    (app as any).selectedSessionId = "sess-remote";
+    (app as any).getActiveWorkspace = () => ({ id: "ws-remote", path: "/remote/ws" });
+
+    const promptSpy = vi.spyOn(sessionsApi, "prompt").mockResolvedValue({ accepted: true } as any);
+    await (app as any).handlePromptSubmit({
+      prompt: "Hello remote machine",
+      model: "default",
+    });
+
+    expect(promptSpy).toHaveBeenCalledWith(
+      { id: "sess-remote", cwd: "/remote/ws" },
+      "Hello remote machine",
+      undefined,
+      "remote-1"
     );
   });
 });
