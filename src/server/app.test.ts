@@ -5,6 +5,7 @@ import { Readable } from "node:stream";
 import { afterEach, beforeEach, describe, expect, it, vi } from "bun:test";
 import { isRecord } from "./utils.js";
 import { buildApp, type BuiltApp } from "./app.js";
+import { OmpWebConfigService } from "./configRoutes.js";
 import { ProjectService } from "./projects/projectService.js";
 import { ProjectStore } from "./storage/projectStore.js";
 import { RemoteMachineRequestError, type MachineClient } from "./machines/machineClient.js";
@@ -496,6 +497,36 @@ describe("buildApp", () => {
     }
   });
 
+  it("enforces allowedHosts dependency when provided", async () => {
+    const customHostApp = await buildApp({
+      allowedHosts: ["custom.example.test"],
+      projects: new ProjectService(new ProjectStore(join(tempDir, "custom-host-projects.json"))),
+      workspaces: new WorkspaceService(),
+      config: fakeConfigService(),
+      sessionDaemon: fakeSessionDaemon(),
+      clientDist: false,
+      logger: false,
+    });
+
+    try {
+      const allowedRes = await customHostApp.inject({
+        method: "GET",
+        url: "/api/machines",
+        headers: { host: "custom.example.test" },
+      });
+      expect(allowedRes.statusCode).toBe(200);
+
+      const blockedRes = await customHostApp.inject({
+        method: "GET",
+        url: "/api/machines",
+        headers: { host: "evil.example.test" },
+      });
+      expect(blockedRes.statusCode).toBe(403);
+    } finally {
+      await customHostApp.close();
+    }
+  });
+
   it("handles first-time setup wizard and username/password authentication", async () => {
     const configDir = join(tempDir, "auth-user-config");
     const testConfigService = fakeConfigService();
@@ -578,7 +609,7 @@ describe("buildApp", () => {
         payload: { username: "maria", password: "mypassword123" },
       });
       expect(loginRes.statusCode).toBe(200);
-      expect(loginRes.json()).toEqual({ ok: true, username: "maria" });
+      expect(loginRes.json()).toEqual({ ok: true, username: "maria", token: "terminal-token-xyz" });
       expect(loginRes.headers["set-cookie"]).toContain("omp_web_token=terminal-token-xyz");
       expect(loginRes.headers["set-cookie"]).toContain("omp_web_user=maria");
 
@@ -597,6 +628,44 @@ describe("buildApp", () => {
       });
     } finally {
       await appWithSetup.close();
+    }
+  });
+  it("allows remote access and preserves host setting when setting password", async () => {
+    const remoteConfigService = fakeConfigService({ host: "0.0.0.0" });
+
+    const remoteApp = await buildApp({
+      authRequired: true,
+      config: remoteConfigService,
+      authToken: "remote-token-123",
+      sessionDaemon: fakeSessionDaemon(),
+      clientDist: false,
+      logger: false,
+    });
+    try {
+      // 1. External Tailscale Host header is permitted when host is 0.0.0.0
+      const tailscaleRes = await remoteApp.inject({
+        method: "GET",
+        url: "/api/omp-web/auth",
+        headers: { host: "100.121.192.121:8504" },
+      });
+      expect(tailscaleRes.statusCode).toBe(200);
+
+      // 2. Setup password
+      const setupRes = await remoteApp.inject({
+        method: "POST",
+        url: "/api/omp-web/setup",
+        headers: { host: "100.121.192.121:8504" },
+        payload: { username: "admin", password: "securepassword123" },
+      });
+      expect(setupRes.statusCode).toBe(200);
+
+      // 3. Verify host: "0.0.0.0" was preserved in config after setup
+      const configAfterSetup = (await remoteConfigService.read()).config;
+      expect(configAfterSetup.host).toBe("0.0.0.0");
+      expect(configAfterSetup.authUsername).toBe("admin");
+      expect(configAfterSetup.authRequired).toBe(true);
+    } finally {
+      await remoteApp.close();
     }
   });
 
@@ -1218,12 +1287,13 @@ interface CapturedPiPackageRequest {
   scope?: "user" | "project";
 }
 
-function fakeConfigService() {
+function fakeConfigService(initialConfig?: OmpWebConfigValues) {
+  let stored = initialConfig ?? ompWebConfig;
   return {
-    read: () => ompWebConfigResponse(ompWebConfig),
+    read: () => ompWebConfigResponse(stored),
     write: (config: OmpWebConfigValues) => {
-      ompWebConfig = config;
-      return ompWebConfigResponse(config);
+      stored = { ...stored, ...config };
+      return ompWebConfigResponse(stored);
     },
   };
 }

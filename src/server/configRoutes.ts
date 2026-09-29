@@ -16,14 +16,15 @@ export const SELECTED_MACHINE_CONFIG_KEYS = [
 const SELECTED_MACHINE_CONFIG_KEY_SET = new Set<string>(SELECTED_MACHINE_CONFIG_KEYS);
 
 export class OmpWebConfigService {
-  constructor(readonly options?: LoadOptions) {}
+  constructor(readonly options?: LoadOptions) { }
 
   read(): OmpWebConfigResponse | Promise<OmpWebConfigResponse> {
     return currentOmpWebConfigResponse(this.options);
   }
 
   write(config: OmpWebConfigValues): OmpWebConfigResponse | Promise<OmpWebConfigResponse> {
-    saveOmpWebConfig(config, this.options);
+    const current = loadOmpWebConfig(this.options).config;
+    saveOmpWebConfig({ ...current, ...config }, this.options);
     return currentOmpWebConfigResponse(this.options);
   }
 }
@@ -162,6 +163,11 @@ function parseConfigRequest(value: unknown): OmpWebConfigValues {
     if (typeof subsessions !== "boolean") throw new Error("PI WEB config subsessions must be a boolean");
     config.subsessions = subsessions;
   }
+  if (value["allowPrivateMachines"] !== undefined) config.allowPrivateMachines = Boolean(value["allowPrivateMachines"]);
+  if (value["authRequired"] !== undefined) config.authRequired = Boolean(value["authRequired"]);
+  if (typeof value["authUsername"] === "string") config.authUsername = value["authUsername"];
+  if (typeof value["authPasswordHash"] === "string") config.authPasswordHash = value["authPasswordHash"];
+  if (typeof value["authToken"] === "string") config.authToken = value["authToken"];
   return config;
 }
 

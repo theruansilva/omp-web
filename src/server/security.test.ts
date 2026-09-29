@@ -31,6 +31,13 @@ describe("security utils", () => {
       expect(validateHostHeader("any.site", true)).toBe(true);
     });
 
+    it("allows loopback hosts by default", () => {
+      expect(validateHostHeader("127.0.0.1:8504", undefined)).toBe(true);
+      expect(validateHostHeader("localhost:8504", undefined)).toBe(true);
+      expect(validateHostHeader("[::1]:8504", undefined)).toBe(true);
+      expect(validateHostHeader("0.0.0.0:8504", undefined)).toBe(true);
+    });
+
     it("rejects missing or empty host headers", () => {
       expect(validateHostHeader(undefined, ["localhost"])).toBe(false);
       expect(validateHostHeader("", ["localhost"])).toBe(false);

@@ -53,13 +53,19 @@ export function getOrGenerateAuthToken(dataDir = defaultOmpWebDataDir(), env: No
 export function parseHostHeader(hostHeader: string | undefined): string | undefined {
   if (hostHeader === undefined || hostHeader.trim() === "") return undefined;
   const raw = hostHeader.trim().toLowerCase();
-  // Handle IPv6 bracketed hosts like [::1]:8504
   if (raw.startsWith("[")) {
     const bracketEnd = raw.indexOf("]");
     if (bracketEnd !== -1) return raw.slice(1, bracketEnd);
   }
-  const colonIdx = raw.indexOf(":");
-  return colonIdx !== -1 ? raw.slice(0, colonIdx) : raw;
+  const firstColon = raw.indexOf(":");
+  const lastColon = raw.lastIndexOf(":");
+  if (firstColon !== -1) {
+    if (firstColon !== lastColon || firstColon === 0) {
+      return raw;
+    }
+    return raw.slice(0, firstColon);
+  }
+  return raw;
 }
 
 export function normalizeAllowedHost(entry: string): string {
@@ -90,7 +96,7 @@ export function validateHostHeader(hostHeader: string | undefined, allowedHosts:
   const requestHost = parseHostHeader(hostHeader);
   if (requestHost === undefined) return false;
 
-  const baseAllowed = ["127.0.0.1", "localhost", "::1"];
+  const baseAllowed = ["127.0.0.1", "localhost", "::1", "0.0.0.0"];
   const allowedList = Array.isArray(allowedHosts) ? [...baseAllowed, ...allowedHosts] : baseAllowed;
   return allowedList.some((h) => matchAllowedHost(requestHost, normalizeAllowedHost(h)));
 }
@@ -115,7 +121,7 @@ export function validateOriginHeader(originHeader: string | undefined, hostHeade
   }
 
   // Check against allowedHosts
-  const baseAllowed = ["127.0.0.1", "localhost", "::1"];
+  const baseAllowed = ["127.0.0.1", "localhost", "::1", "0.0.0.0"];
   const allowedList = Array.isArray(allowedHosts) ? [...baseAllowed, ...allowedHosts] : baseAllowed;
   return allowedList.some((h) => matchAllowedHost(originHost, normalizeAllowedHost(h)));
 }
@@ -309,17 +315,15 @@ export function renderLoginPage(options: RenderLoginOptions = {}): string {
   <div class="card">
     <div class="badge">${isSetup ? "Primeiro Acesso" : "Segurança"}</div>
     <h1>PI WEB</h1>
-    <p>${
-      isSetup
-        ? "Crie suas credenciais de administrador para proteger este painel."
-        : "Autenticação necessária para acessar esta instância."
+    <p>${isSetup
+      ? "Crie suas credenciais de administrador para proteger este painel."
+      : "Autenticação necessária para acessar esta instância."
     }</p>
 
     <div id="errorBox" class="error-box"></div>
 
-    ${
-      isSetup
-        ? `<form id="setupForm">
+    ${isSetup
+      ? `<form id="setupForm">
       <div class="form-group">
         <label for="username">Nome de Usuário</label>
         <input type="text" id="username" name="username" placeholder="ex: admin" autocomplete="username" autofocus required />
@@ -336,7 +340,7 @@ export function renderLoginPage(options: RenderLoginOptions = {}): string {
       <button type="submit" class="btn">Criar Administrador e Entrar</button>
     </form>
     `
-        : `<form id="loginForm">
+      : `<form id="loginForm">
       <div class="form-group">
         <label for="username">Nome de Usuário</label>
         <input type="text" id="username" name="username" placeholder="Seu usuário" autocomplete="username" autofocus required />
@@ -368,9 +372,8 @@ export function renderLoginPage(options: RenderLoginOptions = {}): string {
       errorBox.style.display = 'block';
     }
 
-    ${
-      isSetup
-        ? `
+    ${isSetup
+      ? `
     const urlParams = new URLSearchParams(window.location.search);
     const queryToken = urlParams.get('token');
     if (queryToken) {
@@ -412,7 +415,7 @@ export function renderLoginPage(options: RenderLoginOptions = {}): string {
         showError('Erro de conexão ao salvar credenciais.');
       }
     });`
-        : `
+      : `
     const loginForm = document.getElementById('loginForm');
     const tokenForm = document.getElementById('tokenForm');
     const showTokenBtn = document.getElementById('showTokenBtn');
@@ -527,8 +530,9 @@ export function createSecurityMiddleware(options: SecurityMiddlewareOptions = {}
         || path === "/api/omp-web/runtime"
         || path === "/api/omp-web/auth"
         || path === "/api/omp-web/setup"
-        || path.startsWith("/omp-web-plugins/");
-
+        || path.startsWith("/omp-web-plugins/")
+        || path.startsWith("/assets/")
+        || /\.(js|mjs|css|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot|map|json)$/i.test(path);
       if (!isExempt) {
         const hasUserConfig = options.authUsername !== undefined || options.authPasswordHash !== undefined;
         const authUsername = typeof options.authUsername === "function"

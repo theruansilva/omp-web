@@ -162,7 +162,7 @@ bun run dev
 Open the Vite URL, usually:
 
 ```text
-http://localhost:8505
+http://localhost:8504
 ```
 
 For the split development setup:

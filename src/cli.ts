@@ -773,11 +773,7 @@ async function install(args: string[]): Promise<void> {
 
   console.log(`\nPI WEB ${options.mode} services are installed and starting.`);
   console.log(`Config: ${configPath}`);
-  if (options.mode === "dev") {
-    console.log("Open: http://127.0.0.1:8505");
-  } else {
-    console.log(`Open: http://${options.host === "0.0.0.0" ? "127.0.0.1" : options.host}:${options.port}`);
-  }
+  console.log(`Open: http://${options.host === "0.0.0.0" ? "127.0.0.1" : options.host}:${options.port}`);
 
   if (backend.kind === "systemd") {
     const linger = isLingerEnabled();

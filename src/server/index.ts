@@ -1,6 +1,6 @@
 #!/usr/bin/env bun
 import { networkInterfaces } from "node:os";
-import { effectiveOmpWebConfig, maxUploadBytes, ompWebDataDir } from "../config.js";
+import { defaultDevApiPort, effectiveOmpWebConfig, maxUploadBytes, ompWebDataDir } from "../config.js";
 import { buildApp } from "./app.js";
 import { getOrGenerateAuthToken } from "./security.js";
 
@@ -45,14 +45,19 @@ const { config } = effectiveOmpWebConfig();
 const authToken = getOrGenerateAuthToken(ompWebDataDir(process.env));
 const authRequired = config.authRequired !== false && process.env["OMP_WEB_AUTH_REQUIRED"] !== "0" && process.env["OMP_WEB_AUTH_REQUIRED"] !== "false";
 
+const basePort = config.port ?? 8504;
+const isDevApi = process.env["OMP_WEB_DEV_API"] === "1";
+const port = isDevApi
+  ? (process.env["OMP_WEB_DEV_API_PORT"] ? Number(process.env["OMP_WEB_DEV_API_PORT"]) : defaultDevApiPort(basePort))
+  : basePort;
+const host = config.host ?? "127.0.0.1";
+
 const app = await buildApp({
   bodyLimit: maxUploadBytes(process.env, config),
   authRequired,
   authToken,
+  allowedHosts: (isDevApi || config.host === "0.0.0.0") ? (config.allowedHosts ?? true) : undefined,
 });
-
-const port = config.port ?? 8504;
-const host = config.host ?? "127.0.0.1";
 
 Bun.serve({
   port,
@@ -63,7 +68,8 @@ Bun.serve({
 });
 
 const authSuffix = authRequired ? `?token=${authToken}` : "";
-console.info(`PI WEB server listening on http://${host}:${String(port)}${authSuffix}`);
+const serverLabel = isDevApi ? "PI WEB dev API" : "PI WEB server";
+console.info(`${serverLabel} listening on http://${host}:${String(port)}${authSuffix}`);
 if (host === "0.0.0.0") {
   const lan = getLanIp();
   if (lan) {

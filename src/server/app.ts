@@ -51,6 +51,7 @@ export interface AppDependencies {
   authToken?: string;
   authUsername?: string;
   authPasswordHash?: string;
+  allowedHosts?: string[] | true | (() => string[] | true | undefined | Promise<string[] | true | undefined>) | undefined;
 }
 
 export interface BuiltApp {
@@ -153,15 +154,21 @@ export async function buildApp(deps: AppDependencies = {}): Promise<BuiltApp> {
   const configService = deps.config ?? createFileOmpWebConfigService();
   const effectiveConfig = (await configService.read()).effectiveConfig;
 
-  let cachedAllowedHosts = effectiveConfig.allowedHosts;
+  let cachedAllowedHosts = deps.allowedHosts !== undefined
+    ? (typeof deps.allowedHosts === "function" ? undefined : deps.allowedHosts)
+    : (effectiveConfig.host === "0.0.0.0" ? true : effectiveConfig.allowedHosts);
   let lastCheck = 0;
 
   const getAllowedHosts = async (): Promise<string[] | true | undefined> => {
+    if (deps.allowedHosts !== undefined) {
+      return typeof deps.allowedHosts === "function" ? await deps.allowedHosts() : deps.allowedHosts;
+    }
     const now = Date.now();
     if (now - lastCheck < 1000) return cachedAllowedHosts;
     lastCheck = now;
     try {
-      cachedAllowedHosts = (await configService.read()).effectiveConfig.allowedHosts;
+      const config = (await configService.read()).effectiveConfig;
+      cachedAllowedHosts = config.host === "0.0.0.0" ? true : config.allowedHosts;
     } catch {
       // keep cached
     }
@@ -170,12 +177,12 @@ export async function buildApp(deps: AppDependencies = {}): Promise<BuiltApp> {
 
   let currentAuthUsername = deps.authUsername ?? effectiveConfig.authUsername;
   let currentAuthPasswordHash = deps.authPasswordHash ?? effectiveConfig.authPasswordHash;
-  const authRequired = deps.authRequired ?? (effectiveConfig.authRequired ?? (process.env["OMP_WEB_AUTH_REQUIRED"] === "1" || process.env["OMP_WEB_AUTH_REQUIRED"] === "true"));
+  const authRequired = deps.authRequired ?? (effectiveConfig.authRequired ?? (process.env["OMP_WEB_AUTH_REQUIRED"] === "1" || process.env["OMP_WEB_AUTH_REQUIRED"] === "true" || !!effectiveConfig.authPasswordHash));
   const authToken = deps.authToken ?? effectiveConfig.authToken ?? getOrGenerateAuthToken();
 
   app.use("*", createSecurityMiddleware({
     allowedHosts: getAllowedHosts,
-    authRequired,
+    authRequired: () => !!(currentAuthPasswordHash || authRequired),
     authToken,
     authUsername: () => currentAuthUsername,
     authPasswordHash: () => currentAuthPasswordHash,
@@ -236,6 +243,7 @@ export async function buildApp(deps: AppDependencies = {}): Promise<BuiltApp> {
       await configService.write({
         authUsername: username,
         authPasswordHash: passwordHash,
+        authRequired: true,
       });
 
       currentAuthUsername = username;
@@ -243,7 +251,7 @@ export async function buildApp(deps: AppDependencies = {}): Promise<BuiltApp> {
 
       c.header("Set-Cookie", `omp_web_token=${encodeURIComponent(authToken)}; Path=/; HttpOnly; SameSite=Lax`);
       c.header("Set-Cookie", `omp_web_user=${encodeURIComponent(username)}; Path=/; SameSite=Lax`, { append: true });
-      return c.json({ ok: true, username });
+      return c.json({ ok: true, username, token: authToken });
     } catch (error) {
       return c.json({ error: error instanceof Error ? error.message : String(error) }, 400);
     }
@@ -274,7 +282,7 @@ export async function buildApp(deps: AppDependencies = {}): Promise<BuiltApp> {
 
         c.header("Set-Cookie", `omp_web_token=${encodeURIComponent(authToken)}; Path=/; HttpOnly; SameSite=Lax`);
         c.header("Set-Cookie", `omp_web_user=${encodeURIComponent(username)}; Path=/; SameSite=Lax`, { append: true });
-        return c.json({ ok: true, username });
+        return c.json({ ok: true, username, token: authToken });
       }
 
       // 2. Direct Token login
@@ -283,7 +291,7 @@ export async function buildApp(deps: AppDependencies = {}): Promise<BuiltApp> {
         return c.json({ error: "Invalid auth token" }, 401);
       }
       c.header("Set-Cookie", `omp_web_token=${encodeURIComponent(candidate)}; Path=/; HttpOnly; SameSite=Lax`);
-      return c.json({ ok: true });
+      return c.json({ ok: true, token: candidate });
     } catch (error) {
       return c.json({ error: error instanceof Error ? error.message : String(error) }, 400);
     }
@@ -301,13 +309,14 @@ export async function buildApp(deps: AppDependencies = {}): Promise<BuiltApp> {
     const cookieToken = parseCookie(c.req.header("cookie"), "omp_web_token");
     const queryToken = c.req.query("token");
     const token = bearerToken ?? cookieToken ?? queryToken;
-    const authenticated = !authRequired || safeTokenCompare(token, authToken);
-    const setupRequired = authRequired && !currentAuthPasswordHash;
+    const effectiveAuthRequired = !!(currentAuthPasswordHash || authRequired);
+    const authenticated = !effectiveAuthRequired || safeTokenCompare(token, authToken);
+    const setupRequired = effectiveAuthRequired && !currentAuthPasswordHash;
     const cookieUser = parseCookie(c.req.header("cookie"), "omp_web_user");
     const username = authenticated ? (cookieUser || currentAuthUsername || "admin") : undefined;
     return c.json({
       authenticated,
-      authRequired,
+      authRequired: effectiveAuthRequired,
       setupRequired,
       username,
     });

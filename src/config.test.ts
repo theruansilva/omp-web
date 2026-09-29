@@ -2,7 +2,7 @@ import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { afterEach, beforeEach, describe, expect, it } from "bun:test";
-import { DEFAULT_MAX_UPLOAD_BYTES, DEFAULT_UPLOADS_FOLDER, effectiveOmpWebConfig, loadOmpWebConfig, maxUploadBytes, saveOmpWebConfig, spawnSessionsEnabled, subsessionsEnabled } from "./config.js";
+import { DEFAULT_MAX_UPLOAD_BYTES, DEFAULT_UPLOADS_FOLDER, defaultDevApiPort, effectiveOmpWebConfig, loadOmpWebConfig, maxUploadBytes, saveOmpWebConfig, spawnSessionsEnabled, subsessionsEnabled } from "./config.js";
 
 let tempDir: string;
 let configPath: string;
@@ -153,6 +153,20 @@ describe("subsessionsEnabled", () => {
   it("lets the env var override the config in both directions", () => {
     expect(subsessionsEnabled({ OMP_WEB_SUBSESSIONS: "1" }, { subsessions: false })).toBe(true);
     expect(subsessionsEnabled({ OMP_WEB_SUBSESSIONS: "0" }, { subsessions: true })).toBe(false);
+  });
+});
+
+describe("defaultDevApiPort", () => {
+  it("maps 8504 to 8503", () => {
+    expect(defaultDevApiPort(8504)).toBe(8503);
+  });
+
+  it("maps 8404 to 8403", () => {
+    expect(defaultDevApiPort(8404)).toBe(8403);
+  });
+
+  it("decrements custom ports", () => {
+    expect(defaultDevApiPort(9000)).toBe(8999);
   });
 });
 

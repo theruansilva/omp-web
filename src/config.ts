@@ -321,3 +321,7 @@ export function allowPrivateMachinesEnabled(env: NodeJS.ProcessEnv = process.env
  if (fromEnv !== undefined && fromEnv !== "") return fromEnv === "1" || fromEnv.toLowerCase() === "true";
  return config.allowPrivateMachines ?? false;
 }
+
+export function defaultDevApiPort(basePort: number): number {
+ return basePort === 8504 ? 8503 : basePort === 8404 ? 8403 : (basePort > 1 ? basePort - 1 : basePort + 1);
+}
