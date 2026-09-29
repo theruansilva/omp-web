@@ -101,12 +101,12 @@ export class OmpModelsView extends LitElement {
   }
 
   private getAvailableCategories(): Array<{ id: string; label: string; icon: string }> {
-    const set = new Set<string>();
+    const categoriesSet = new Set<string>();
     for (const m of this.models) {
       const info = classifyModelSource(m.provider || "", m.id || "");
-      set.add(info.category);
+      categoriesSet.add(info.category);
     }
-    const categories = Array.from(set).map((cat) => ({
+    const categories = Array.from(categoriesSet).map((cat) => ({
       id: cat.toLowerCase(),
       label: cat,
       icon: "",
@@ -124,13 +124,63 @@ export class OmpModelsView extends LitElement {
       : "Padrão (@default)";
 
     return html`
-      <div class="h-full flex flex-col bg-background-150 overflow-y-auto font-sans select-text p-4 md:p-8 space-y-6 max-w-5xl mx-auto">
+      <style>
+        .omp-models-card {
+          background-color: #ffffff;
+          border: 1px solid rgba(0, 0, 0, 0.1);
+          color: #111827;
+        }
+        .dark .omp-models-card,
+        [data-theme="dark"] .omp-models-card {
+          background-color: #1a1a20 !important;
+          border: 1px solid rgba(255, 255, 255, 0.12) !important;
+          color: #f3f4f6 !important;
+        }
+        .omp-models-card:hover {
+          border-color: rgba(59, 130, 246, 0.4) !important;
+        }
+        .omp-models-card.selected {
+          border-color: rgba(59, 130, 246, 0.8) !important;
+          box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.25);
+        }
+        .omp-models-input {
+          background-color: #ffffff;
+          border: 1px solid rgba(0, 0, 0, 0.12);
+          color: #111827;
+        }
+        .dark .omp-models-input,
+        [data-theme="dark"] .omp-models-input {
+          background-color: #111115 !important;
+          border: 1px solid rgba(255, 255, 255, 0.15) !important;
+          color: #f3f4f6 !important;
+        }
+        .omp-models-btn-subtle {
+          background-color: rgba(0, 0, 0, 0.05);
+          color: #1f2937;
+          border: 1px solid rgba(0, 0, 0, 0.08);
+        }
+        .dark .omp-models-btn-subtle,
+        [data-theme="dark"] .omp-models-btn-subtle {
+          background-color: rgba(255, 255, 255, 0.08) !important;
+          color: #f3f4f6 !important;
+          border: 1px solid rgba(255, 255, 255, 0.12) !important;
+        }
+        .omp-models-btn-subtle:hover {
+          background-color: rgba(0, 0, 0, 0.08);
+        }
+        .dark .omp-models-btn-subtle:hover,
+        [data-theme="dark"] .omp-models-btn-subtle:hover {
+          background-color: rgba(255, 255, 255, 0.14) !important;
+        }
+      </style>
+
+      <div class="h-full flex flex-col overflow-y-auto font-sans select-text p-4 md:p-8 space-y-6 max-w-5xl mx-auto">
         <!-- Top Navigation & Header -->
         <div class="flex items-center justify-between flex-wrap gap-4 pb-2 border-b border-black/10 dark:border-white/10">
           <div class="flex items-center gap-3">
             <button
               type="button"
-              class="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/15 text-sm font-semibold text-foreground-800 transition-colors cursor-pointer"
+              class="flex items-center gap-2 px-3 py-1.5 rounded-xl omp-models-btn-subtle text-sm font-semibold transition-colors cursor-pointer"
               @click=${() => this.dispatchEvent(new CustomEvent("close", { bubbles: true, composed: true }))}
             >
               ${renderArrowLeftIcon("size-4")}
@@ -161,7 +211,7 @@ export class OmpModelsView extends LitElement {
         <!-- TUI Roles & Current Active Model Banner -->
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <!-- 1. Default Role -->
-          <div class="p-4 rounded-2xl bg-white dark:bg-card-dark border border-black/10 dark:border-white/10 shadow-xs flex flex-col justify-between gap-2">
+          <div class="p-4 rounded-2xl omp-models-card shadow-xs flex flex-col justify-between gap-2">
             <div class="flex items-center justify-between">
               <span class="text-xs font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
                 ${renderSparklesIcon("size-3.5")}
@@ -187,7 +237,7 @@ export class OmpModelsView extends LitElement {
           </div>
 
           <!-- 2. Fast / Smol Role -->
-          <div class="p-4 rounded-2xl bg-white dark:bg-card-dark border border-black/10 dark:border-white/10 shadow-xs flex flex-col justify-between gap-2">
+          <div class="p-4 rounded-2xl omp-models-card shadow-xs flex flex-col justify-between gap-2">
             <div class="flex items-center justify-between">
               <span class="text-xs font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400 flex items-center gap-1.5">
                 ${renderBoltIcon("size-3.5")}
@@ -203,7 +253,7 @@ export class OmpModelsView extends LitElement {
           </div>
 
           <!-- 3. Thinking / Slow Role -->
-          <div class="p-4 rounded-2xl bg-white dark:bg-card-dark border border-black/10 dark:border-white/10 shadow-xs flex flex-col justify-between gap-2">
+          <div class="p-4 rounded-2xl omp-models-card shadow-xs flex flex-col justify-between gap-2">
             <div class="flex items-center justify-between">
               <span class="text-xs font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400 flex items-center gap-1.5">
                 ${renderBrainIcon("size-3.5")}
@@ -222,7 +272,7 @@ export class OmpModelsView extends LitElement {
                       type="button"
                       class="px-2 py-0.5 rounded text-[11px] font-semibold transition-colors cursor-pointer ${this.thinkingLevel === lvl
               ? "bg-blue-600 text-white font-bold"
-              : "bg-black/5 dark:bg-white/10 text-foreground-600 hover:text-foreground-900"
+              : "omp-models-btn-subtle text-foreground-600 hover:text-foreground-900"
             }"
                       @click=${() => this.handleSetThinking(lvl)}
                     >
@@ -240,7 +290,7 @@ export class OmpModelsView extends LitElement {
           <div class="relative w-full">
             <input
               type="text"
-              class="w-full px-4 py-2.5 pl-10 rounded-2xl bg-white dark:bg-card-dark border border-black/10 dark:border-white/10 text-sm text-foreground-900 placeholder:text-foreground-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 shadow-xs transition-all"
+              class="w-full px-4 py-2.5 pl-10 rounded-2xl omp-models-input text-sm text-foreground-900 placeholder:text-foreground-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 shadow-xs transition-all"
               placeholder="Pesquisar por modelo ou provedor (ex: claude, gpt-4o, gemini, deepseek, ollama)..."
               .value=${this.searchQuery}
               @input=${(e: Event) => {
@@ -263,7 +313,7 @@ export class OmpModelsView extends LitElement {
                   type="button"
                   class="px-3 py-1 rounded-xl text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer ${this.selectedCategory === cat.id
             ? "bg-foreground-900 text-background-100 dark:bg-foreground-100 dark:text-background-900 shadow-xs font-bold"
-            : "bg-black/5 dark:bg-white/10 text-foreground-700 hover:bg-black/10 dark:hover:bg-white/15"
+            : "omp-models-btn-subtle text-foreground-700"
           }"
                   @click=${() => {
             this.selectedCategory = cat.id;
@@ -296,9 +346,7 @@ export class OmpModelsView extends LitElement {
 
           return html`
                   <div
-                    class="p-4 rounded-2xl bg-white dark:bg-card-dark border transition-all duration-150 flex flex-col justify-between gap-3 shadow-xs ${isSelected
-              ? "border-blue-500/60 dark:border-blue-400/60 ring-2 ring-blue-500/10"
-              : "border-black/10 dark:border-white/10 hover:border-black/20 dark:hover:border-white/20"
+                    class="p-4 rounded-2xl omp-models-card transition-all duration-150 flex flex-col justify-between gap-3 shadow-xs ${isSelected ? "selected" : ""
             }"
                   >
                     <div class="flex items-start justify-between gap-3">
@@ -351,7 +399,7 @@ export class OmpModelsView extends LitElement {
                         type="button"
                         class="px-3 py-1.5 rounded-xl text-xs font-semibold transition-colors cursor-pointer ${isSelected
               ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 cursor-default"
-              : "bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/15 text-foreground-800"
+              : "omp-models-btn-subtle text-foreground-800"
             }"
                         @click=${() => this.handleSelectModel(m, false)}
                       >
