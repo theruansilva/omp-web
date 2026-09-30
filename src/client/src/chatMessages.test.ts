@@ -94,6 +94,35 @@ describe("chat message normalization", () => {
     ]);
   });
 
+  it("normalizes Gemini thought: true parts as thinking type", () => {
+    const raw = {
+      role: "assistant",
+      content: [
+        { text: "Raciocínio interno do Gemini", thought: true },
+        { type: "text", text: "Resposta final" },
+      ],
+    };
+
+    const lines = normalizeMessage(raw);
+    expect(lines[0].parts).toEqual([
+      { type: "thinking", text: "Raciocínio interno do Gemini" },
+      { type: "text", text: "Resposta final" },
+    ]);
+  });
+
+  it("extracts embedded <think> tags from text into separate thinking parts", () => {
+    const raw = {
+      role: "assistant",
+      content: "<think>Raciocínio profundo aqui</think>Aqui está a resposta real.",
+    };
+
+    const lines = normalizeMessage(raw);
+    expect(lines[0].parts).toEqual([
+      { type: "thinking", text: "Raciocínio profundo aqui" },
+      { type: "text", text: "Aqui está a resposta real." },
+    ]);
+  });
+
   it("formats bash execution records as bash chat lines", () => {
     expect(normalizeMessage({
       role: "bashExecution",

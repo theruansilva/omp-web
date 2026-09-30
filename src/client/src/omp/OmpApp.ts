@@ -129,9 +129,25 @@ export function linesToChatMessages(lines: ChatLine[]): ChatMessage[] {
 
       for (const part of line.parts) {
         if (part.type === "text") {
-          currentAssistant.text = currentAssistant.text
-            ? `${currentAssistant.text}\n\n${part.text}`
-            : part.text;
+          const thinkMatch = part.text.match(/<think>([\s\S]*?)(?:<\/think>|$)/i);
+          if (thinkMatch) {
+            const thinkContent = thinkMatch[1].trim();
+            const rest = (part.text.slice(0, thinkMatch.index).trim() + "\n\n" + part.text.slice((thinkMatch.index ?? 0) + thinkMatch[0].length).trim()).trim();
+            if (thinkContent) {
+              currentAssistant.thinking = currentAssistant.thinking
+                ? `${currentAssistant.thinking}\n\n${thinkContent}`
+                : thinkContent;
+            }
+            if (rest) {
+              currentAssistant.text = currentAssistant.text
+                ? `${currentAssistant.text}\n\n${rest}`
+                : rest;
+            }
+          } else {
+            currentAssistant.text = currentAssistant.text
+              ? `${currentAssistant.text}\n\n${part.text}`
+              : part.text;
+          }
         } else if (part.type === "thinking") {
           currentAssistant.thinking = currentAssistant.thinking
             ? `${currentAssistant.thinking}\n\n${part.text}`

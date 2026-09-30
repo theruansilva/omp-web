@@ -195,17 +195,52 @@ function normalizeRole(role: unknown): ChatLine["role"] {
   return "system";
 }
 
+function extractThinkingFromText(text: string): ChatPart[] {
+  const thinkMatch = text.match(/<think>([\s\S]*?)(?:<\/think>|$)/i);
+  if (!thinkMatch) return [{ type: "text", text }];
+
+  const parts: ChatPart[] = [];
+  const before = text.slice(0, thinkMatch.index).trim();
+  if (before) parts.push({ type: "text", text: before });
+
+  const thinking = thinkMatch[1].trim();
+  if (thinking) parts.push({ type: "thinking", text: thinking });
+
+  const after = text.slice((thinkMatch.index ?? 0) + thinkMatch[0].length).trim();
+  if (after) {
+    parts.push(...extractThinkingFromText(after));
+  }
+  return parts;
+}
+
 function normalizeContent(content: unknown, message: unknown): ChatPart[] {
-  if (typeof content === "string") return content !== "" ? [{ type: "text", text: content }] : [];
+  if (typeof content === "string") return content !== "" ? extractThinkingFromText(content) : [];
   if (!Array.isArray(content)) return objectFallback(content);
 
   return content.flatMap((part): ChatPart[] => {
     const type = getString(part, "type");
     const text = getString(part, "text");
-    if (type === "text") return text !== undefined && text !== "" ? [{ type: "text", text }] : [];
-    if (type === "thinking") {
-      const thinking = getString(part, "thinking") ?? text;
+
+    const isThinking =
+      type === "thinking" ||
+      type === "thought" ||
+      type === "reasoning" ||
+      getBoolean(part, "thought") === true;
+
+    if (isThinking) {
+      const thinking =
+        getString(part, "thinking") ??
+        getString(part, "thought") ??
+        getString(part, "reasoning_content") ??
+        text;
       return thinking !== undefined && thinking !== "" ? [{ type: "thinking", text: thinking }] : [];
+    }
+
+    if (type === "text" || type === undefined) {
+      if (text !== undefined && text !== "") {
+        return extractThinkingFromText(text);
+      }
+      return [];
     }
     if (type === "toolCall") {
       const toolName = getString(part, "name") ?? "tool";

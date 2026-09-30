@@ -55,7 +55,8 @@ export class OmpChatView extends LitElement {
   @state() private expandedToolKey: string | null = null;
   @state() private copiedMessageId: string | null = null;
 
-  private openedThinkingMap = new Set<string>();
+  private manuallyOpenedThinkingMap = new Set<string>();
+  private manuallyClosedThinkingMap = new Set<string>();
   private lastScrollTop = 0;
   private lastClientHeight = 0;
   private scrollToBottomFrame?: number;
@@ -151,19 +152,24 @@ export class OmpChatView extends LitElement {
   }
 
   private toggleThinking(messageId: string) {
-    if (this.openedThinkingMap.has(messageId)) {
-      this.openedThinkingMap.delete(messageId);
+    const isCurrentlyOpen = this.isThinkingOpen(messageId, false);
+    if (isCurrentlyOpen) {
+      this.manuallyOpenedThinkingMap.delete(messageId);
+      this.manuallyClosedThinkingMap.add(messageId);
     } else {
-      this.openedThinkingMap.add(messageId);
+      this.manuallyClosedThinkingMap.delete(messageId);
+      this.manuallyOpenedThinkingMap.add(messageId);
     }
     this.requestUpdate();
   }
 
   private isThinkingOpen(messageId: string, isLastAssistant: boolean): boolean {
-    if (this.openedThinkingMap.has(messageId)) return true;
-    // Auto-open during streaming when it's the last assistant and currently streaming thinking
-    if (isLastAssistant && this.isStreaming && !this.messages[this.messages.length - 1]?.text) {
-      this.openedThinkingMap.add(messageId);
+    if (this.manuallyOpenedThinkingMap.has(messageId)) return true;
+    if (this.manuallyClosedThinkingMap.has(messageId)) return false;
+
+    // Auto-open ONLY during streaming when it's the last assistant and text has not arrived yet
+    const lastMsg = this.messages[this.messages.length - 1];
+    if (isLastAssistant && this.isStreaming && (!lastMsg?.text || !lastMsg.text.trim())) {
       return true;
     }
     return false;
