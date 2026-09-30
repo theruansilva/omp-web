@@ -133,6 +133,19 @@ export interface AskOption {
   id: string;
   title: string;
   desc: string;
+  value?: string;
+}
+
+export interface PendingCommandDialog {
+  requestId: string;
+  title: string;
+  options: Array<{
+    value: string;
+    label: string;
+    description?: string;
+    category?: string;
+    icon?: string;
+  }>;
 }
 
 @customElement("omp-composer")
@@ -156,6 +169,7 @@ export class OmpComposer extends LitElement {
     requestId: string;
     questions: AskDialogQuestion[];
   };
+  @property({ attribute: false }) pendingCommand?: PendingCommandDialog;
   private _btwState?: BtwState;
 
   @property({ attribute: false })
@@ -395,8 +409,23 @@ export class OmpComposer extends LitElement {
     if (typeof document !== "undefined") {
       this.updatePortal();
     }
-    if (changedProperties.has("pendingAsk")) {
-      if (this.pendingAsk && this.pendingAsk.questions.length > 0) {
+    if (changedProperties.has("pendingCommand") || changedProperties.has("pendingAsk")) {
+      if (this.pendingCommand && this.pendingCommand.options.length > 0) {
+        this.isAskOpen = true;
+        this.askMode = "options";
+        this.askTitle = this.pendingCommand.title;
+        this.askOptions = this.pendingCommand.options.map((opt, idx) => ({
+          id: String(idx + 1),
+          title: opt.label,
+          desc: opt.description || "",
+          value: opt.value,
+        }));
+        if (typeof requestAnimationFrame !== "undefined") {
+          requestAnimationFrame(() => {
+            this.querySelector("textarea")?.focus();
+          });
+        }
+      } else if (this.pendingAsk && this.pendingAsk.questions.length > 0) {
         const q = this.pendingAsk.questions[0];
         this.isAskOpen = true;
         this.askMode = "options";
@@ -411,7 +440,7 @@ export class OmpComposer extends LitElement {
             this.querySelector("textarea")?.focus();
           });
         }
-      } else if (!this.pendingAsk && this.askMode === "options") {
+      } else if (!this.pendingAsk && !this.pendingCommand && this.askMode === "options") {
         this.isAskOpen = false;
         this.askOptions = [];
       }
@@ -621,6 +650,15 @@ export class OmpComposer extends LitElement {
           }),
         );
       }
+      if (this.pendingCommand) {
+        this.dispatchEvent(
+          new CustomEvent("cancel-command", {
+            detail: { requestId: this.pendingCommand.requestId },
+            bubbles: true,
+            composed: true,
+          }),
+        );
+      }
     } else {
       this.isAskOpen = true;
       this.askMode = "options";
@@ -663,6 +701,23 @@ export class OmpComposer extends LitElement {
       this.isAskOpen = false;
       this.selectedAskOption = null;
       this.requestUpdate();
+
+      if (this.pendingCommand && this.pendingCommand.options.length > 0) {
+        this.dispatchEvent(
+          new CustomEvent("submit-command", {
+            detail: {
+              requestId: this.pendingCommand.requestId,
+              value: opt.value || opt.title,
+            },
+            bubbles: true,
+            composed: true,
+          }),
+        );
+        this.value = "";
+        if (textarea) textarea.value = "";
+        this.adjustTextareaHeight();
+        return;
+      }
 
       if (this.pendingAsk && this.pendingAsk.questions.length > 0) {
         const q = this.pendingAsk.questions[0];
@@ -1422,9 +1477,36 @@ export class OmpComposer extends LitElement {
     const rawText = this.value.trim();
     if (!rawText && this.attachments.length === 0) return;
     const behavior = streamingBehavior ?? (this.isWorking ? "followUp" : undefined);
-    if (this.isWorking && !this.pendingAsk && !behavior) return;
+    if (this.isWorking && !this.pendingAsk && !this.pendingCommand && !behavior) return;
     this.closeMenu();
     this.closeSlashMenu();
+
+    if (this.pendingCommand && this.pendingCommand.options.length > 0) {
+      const matched = this.askOptions.find(
+        (o) =>
+          o.title.toLowerCase() === rawText.toLowerCase() ||
+          `[${o.id}] ${o.title}`.toLowerCase() === rawText.toLowerCase() ||
+          o.id === rawText ||
+          o.value === rawText,
+      );
+      const chosenValue = matched ? (matched.value || matched.title) : rawText;
+
+      this.dispatchEvent(
+        new CustomEvent("submit-command", {
+          detail: { requestId: this.pendingCommand.requestId, value: chosenValue },
+          bubbles: true,
+          composed: true,
+        }),
+      );
+
+      this.value = "";
+      this.isAskOpen = false;
+      const textarea = (this.querySelector?.("textarea") as HTMLTextAreaElement | null);
+      if (textarea) textarea.value = "";
+      this.adjustTextareaHeight();
+      this.requestUpdate();
+      return;
+    }
 
     if (this.pendingAsk && this.pendingAsk.questions.length > 0) {
       const q = this.pendingAsk.questions[0];
@@ -1758,6 +1840,15 @@ export class OmpComposer extends LitElement {
                   this.dispatchEvent(
                     new CustomEvent("cancel-ask", {
                       detail: { requestId: this.pendingAsk.requestId },
+                      bubbles: true,
+                      composed: true,
+                    }),
+                  );
+                }
+                if (this.pendingCommand) {
+                  this.dispatchEvent(
+                    new CustomEvent("cancel-command", {
+                      detail: { requestId: this.pendingCommand.requestId },
                       bubbles: true,
                       composed: true,
                     }),

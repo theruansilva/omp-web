@@ -342,6 +342,36 @@ describe("OmpComposer Ask Tool Integration (pendingAsk)", () => {
   });
 });
 
+describe("OmpComposer commandDialog (pendingCommand) Integration", () => {
+  it("opens ask drawer with command title and options when pendingCommand is set", () => {
+    const composer = new OmpComposer();
+    composer.pendingCommand = {
+      requestId: "cmd-req-1",
+      title: "Selecione o ambiente para executar:",
+      options: [
+        { value: "staging", label: "Staging", description: "Ambiente de homologação" },
+        { value: "production", label: "Production", description: "Ambiente produtivo" },
+      ],
+    };
+
+    composer.updated(new Map([["pendingCommand", undefined]]));
+
+    expect(composer.isAskOpen).toBe(true);
+    expect(composer.askMode).toBe("options");
+    expect(composer.askTitle).toBe("Selecione o ambiente para executar:");
+    expect(composer.askOptions.length).toBe(2);
+    expect(composer.askOptions[0].title).toBe("Staging");
+    expect(composer.askOptions[0].value).toBe("staging");
+    expect(composer.askOptions[1].title).toBe("Production");
+
+    const rendered = composer.render();
+    const text = getAllTemplateText(rendered);
+    expect(text).toContain("Selecione o ambiente para executar:");
+    expect(text).toContain("Staging");
+    expect(text).toContain("Production");
+  });
+});
+
 describe("OmpComposer Attachments Handling & Display", () => {
   it("manages pending attachments and dispatches files-selected", async () => {
     const composer = new OmpComposer();

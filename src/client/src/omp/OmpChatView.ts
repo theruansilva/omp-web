@@ -3,7 +3,7 @@ import { customElement, property, state } from "lit/decorators.js";
 import { renderOmpLogo, renderLoadingDots, renderPaperclipIcon, renderBranchIcon } from "./icons";
 import type { PromptAttachment } from "../../../shared/apiTypes";
 import "./OmpComposer";
-import type { BtwState, ComposerProject } from "./OmpComposer";
+import type { BtwState, ComposerProject, PendingCommandDialog } from "./OmpComposer";
 import "./OmpAgentProcess";
 import "./OmpMarkdown";
 import type { AskDialogQuestion } from "../api";
@@ -46,6 +46,7 @@ export class OmpChatView extends LitElement {
   @property({ type: String }) selectedProvider = "";
   @property({ attribute: false }) btwState?: BtwState;
   @property({ attribute: false }) pendingAsk?: { requestId: string; questions: AskDialogQuestion[] };
+  @property({ attribute: false }) pendingCommand?: PendingCommandDialog;
   @property({ type: String }) progressStyle: "minimal" | "steps" = "steps";
 
   @state() private pinnedToBottom = true;
@@ -63,7 +64,7 @@ export class OmpChatView extends LitElement {
 
   protected override updated(changedProps: Map<string, unknown>) {
     // If pendingAsk just arrived, jump to bottom
-    if (changedProps.has("pendingAsk") && this.pendingAsk !== undefined) {
+    if ((changedProps.has("pendingAsk") && this.pendingAsk !== undefined) || (changedProps.has("pendingCommand") && this.pendingCommand !== undefined)) {
       this.pinnedToBottom = true;
       this.scrollToBottom(true);
       return;
@@ -613,6 +614,9 @@ export class OmpChatView extends LitElement {
               .selectedProvider=${this.selectedProvider}
               .btwState=${this.btwState}
               .pendingAsk=${this.pendingAsk}
+              .pendingCommand=${this.pendingCommand}
+              @submit-command=${(e: CustomEvent) => this.dispatchEvent(new CustomEvent("submit-command", { detail: e.detail, bubbles: true, composed: true }))}
+              @cancel-command=${(e: CustomEvent) => this.dispatchEvent(new CustomEvent("cancel-command", { detail: e.detail, bubbles: true, composed: true }))}
               @open-models=${() => this.dispatchEvent(new CustomEvent("open-models", { bubbles: true, composed: true }))}
               @model-change=${(e: CustomEvent) => this.dispatchEvent(new CustomEvent("model-change", { detail: e.detail, bubbles: true, composed: true }))}
               @model-tier-change=${(e: CustomEvent) => this.dispatchEvent(new CustomEvent("model-tier-change", { detail: e.detail, bubbles: true, composed: true }))}

@@ -13,6 +13,8 @@ import "./OmpProjectDetailView";
 import "./OmpSettingsView";
 import "./OmpModelsView";
 import type { ModelSelectDetail } from "./OmpModelsView";
+import type { PendingCommandDialog } from "./OmpComposer";
+import type { CommandResult } from "../../../shared/apiTypes";
 import { normalizeModelName } from "../modelCategories";
 import type { SessionModel } from "../../../shared/apiTypes";
 import "../components/MachineDialog";
@@ -197,6 +199,7 @@ export class OmpApp extends LitElement {
   @state() private selectedSessionId = "";
   @state() private btwState?: BtwState;
   @state() private pendingAsk?: { requestId: string; questions: AskDialogQuestion[] };
+  @state() private pendingCommand?: PendingCommandDialog;
 
   @state() private realProjects: Project[] = [];
   @state() private workspacesByProject: Record<string, Workspace[]> = {};
@@ -1128,6 +1131,21 @@ export class OmpApp extends LitElement {
       return;
     }
 
+    if (promptTrimmed.startsWith("/")) {
+      this.activeTab = "new-chat";
+      try {
+        const res = await sessionsApi.runCommand(
+          { id: sessionId, cwd: ws.path },
+          promptTrimmed,
+          this.currentMachineId,
+        );
+        this.applyCommandResult(res);
+      } catch (err) {
+        console.error("[OMP] Failed to run slash command:", err);
+      }
+      return;
+    }
+
     const now = Date.now();
     if (this.isStreaming || (now - this.lastPromptTime < 350)) return;
     this.lastPromptTime = now;
@@ -1361,6 +1379,80 @@ export class OmpApp extends LitElement {
       );
     }
     return "Default";
+  }
+
+  private applyCommandResult(res: CommandResult) {
+    if (res.type === "select") {
+      this.pendingCommand = {
+        requestId: res.requestId,
+        title: res.title,
+        options: res.options,
+      };
+      this.requestUpdate();
+      return;
+    }
+    if (res.type === "done") {
+      this.pendingCommand = undefined;
+      if (res.session) {
+        this.selectedSessionId = res.session.id;
+        this.currentConnectedSessionId = res.session.id;
+        this.syncUrl({ replace: true });
+        this.saveSessionToStorage(res.session.id, this.selectedProjectId);
+        void this.loadSessions(this.getActiveWorkspace()?.path || "", false);
+      }
+      if (res.promptDraft) {
+        const chatView = this.querySelector("omp-chat-view") as any;
+        const composer = chatView?.querySelector("omp-composer") as any;
+        composer?.setText?.(res.promptDraft, true);
+      }
+      if (res.message) {
+        const line: ChatLine = {
+          role: "assistant",
+          parts: [{ type: "text", text: res.message }],
+          meta: { timestamp: Date.now() },
+        };
+        this.rawLines = [...this.rawLines, line];
+        this.messages = linesToChatMessages(this.rawLines);
+      }
+      this.requestUpdate();
+      return;
+    }
+    if (res.type === "unsupported") {
+      this.pendingCommand = undefined;
+      if (res.message) {
+        const line: ChatLine = {
+          role: "assistant",
+          parts: [{ type: "text", text: `<callout type="warning">\n${res.message}\n</callout>` }],
+          meta: { timestamp: Date.now() },
+        };
+        this.rawLines = [...this.rawLines, line];
+        this.messages = linesToChatMessages(this.rawLines);
+      }
+      this.requestUpdate();
+    }
+  }
+
+  private async handleSubmitCommand(requestId: string, value: string) {
+    const ws = this.getActiveWorkspace();
+    const sessionId = this.selectedSessionId;
+    this.pendingCommand = undefined;
+    if (!ws || !sessionId) return;
+    try {
+      const res = await sessionsApi.respondToCommand(
+        { id: sessionId, cwd: ws.path },
+        requestId,
+        value,
+        this.currentMachineId,
+      );
+      this.applyCommandResult(res);
+    } catch (err) {
+      console.error("[OMP] Failed to respond to command:", err);
+    }
+  }
+
+  private handleCancelCommand(requestId?: string) {
+    this.pendingCommand = undefined;
+    this.requestUpdate();
   }
 
   private async handleStopGeneration() {
@@ -1650,6 +1742,7 @@ Dica: você pode selecionar uma das opções abaixo para testar a injeção auto
                 .selectedProvider=${this.currentSessionModel?.provider || ""}
                 .btwState=${this.btwState}
                 .pendingAsk=${this.pendingAsk}
+                .pendingCommand=${this.pendingCommand}
                 .progressStyle=${this.chatPrefs.progressStyle ?? "steps"}
                 @progress-style-change=${(e: CustomEvent<{ progressStyle: "minimal" | "steps" }>) => {
               saveChatPreferenceOverrides({ progressStyle: e.detail.progressStyle });
@@ -1664,6 +1757,8 @@ Dica: você pode selecionar uma das opções abaixo para testar a injeção auto
                 @close-btw=${() => { this.btwState = undefined; }}
                 @submit-ask=${(e: CustomEvent<{ requestId: string; result: AskDialogResult }>) => void this.handleSubmitAsk(e.detail.requestId, e.detail.result)}
                 @cancel-ask=${(e: CustomEvent<{ requestId: string }>) => void this.handleCancelAsk(e.detail.requestId)}
+                @submit-command=${(e: CustomEvent<{ requestId: string; value: string }>) => void this.handleSubmitCommand(e.detail.requestId, e.detail.value)}
+                @cancel-command=${(e: CustomEvent<{ requestId: string }>) => this.handleCancelCommand(e.detail.requestId)}
                 @revert-turn=${(e: CustomEvent<{ message: ChatMessage; index: number }>) => void this.handleRevertTurn(e.detail.message, e.detail.index)}
                 @submit-prompt=${(e: CustomEvent<SubmitPromptDetail>) => this.handlePromptSubmit(e.detail)}
                 @stop-generation=${() => void this.handleStopGeneration()}
