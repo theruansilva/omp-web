@@ -4,6 +4,7 @@ import { renderOmpLogo, renderLoadingDots, renderPaperclipIcon, renderBranchIcon
 import type { PromptAttachment } from "../../../shared/apiTypes";
 import "./OmpComposer";
 import type { BtwState, ComposerProject, PendingCommandDialog } from "./OmpComposer";
+import type { ArtifactData } from "./OmpArtifactPanel";
 import "./OmpAgentProcess";
 import "./OmpMarkdown";
 import type { AskDialogQuestion } from "../api";
@@ -47,6 +48,7 @@ export class OmpChatView extends LitElement {
   @property({ attribute: false }) btwState?: BtwState;
   @property({ attribute: false }) pendingAsk?: { requestId: string; questions: AskDialogQuestion[] };
   @property({ attribute: false }) pendingCommand?: PendingCommandDialog;
+  @property({ attribute: false }) artifact?: ArtifactData;
   @property({ type: String }) progressStyle: "minimal" | "steps" = "steps";
 
   @state() private pinnedToBottom = true;
@@ -436,6 +438,23 @@ export class OmpChatView extends LitElement {
     return html`
       <!-- OMP Web Exact Chat Page Structure -->
       <div class="relative flex flex-col h-full w-full overflow-hidden">
+        ${this.artifact
+          ? html`
+              <div class="w-full flex items-center justify-between px-4 py-2 bg-blue-500/10 dark:bg-blue-400/10 border-b border-black/8 dark:border-white/8 shrink-0 text-xs">
+                <div class="flex items-center gap-2 min-w-0">
+                  <span class="size-2 rounded-full ${this.artifact.status === "approved" ? "bg-emerald-500" : "bg-amber-500 animate-pulse"}"></span>
+                  <span class="font-bold text-foreground-900 truncate">Plano: ${this.artifact.title || "Plano de Execução"}</span>
+                </div>
+                <button
+                  type="button"
+                  class="px-2.5 py-1 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-semibold cursor-pointer shrink-0 transition-colors shadow-xs"
+                  @click=${() => this.dispatchEvent(new CustomEvent("open-artifact", { bubbles: true, composed: true }))}
+                >
+                  Ver no Painel Lateral →
+                </button>
+              </div>
+            `
+          : nothing}
         <!-- Scrollable Messages Area matching original @container/chat -->
         <div
           data-scroll-container

@@ -12,6 +12,8 @@ import "./OmpProjectsView";
 import "./OmpProjectDetailView";
 import "./OmpSettingsView";
 import "./OmpModelsView";
+import "./OmpArtifactPanel";
+import type { ArtifactData } from "./OmpArtifactPanel";
 import type { ModelSelectDetail } from "./OmpModelsView";
 import type { PendingCommandDialog } from "./OmpComposer";
 import type { CommandResult } from "../../../shared/apiTypes";
@@ -200,6 +202,9 @@ export class OmpApp extends LitElement {
   @state() private btwState?: BtwState;
   @state() private pendingAsk?: { requestId: string; questions: AskDialogQuestion[] };
   @state() private pendingCommand?: PendingCommandDialog;
+  @state() private artifact?: ArtifactData;
+  @state() private isArtifactOpen = false;
+  @state() private isArtifactSubmitting = false;
 
   @state() private realProjects: Project[] = [];
   @state() private workspacesByProject: Record<string, Workspace[]> = {};
@@ -980,6 +985,28 @@ export class OmpApp extends LitElement {
       this.btwState = undefined;
     }
 
+    if (event.type === "plan.proposed") {
+      this.artifact = {
+        type: "plan",
+        planFilePath: event.plan.planFilePath,
+        title: event.plan.title,
+        planContent: event.plan.planContent,
+        status: "proposed",
+      };
+      this.isArtifactOpen = true;
+      this.requestUpdate();
+      return;
+    }
+
+    if (event.type === "plan.cleared") {
+      if (this.artifact?.type === "plan") {
+        this.artifact = undefined;
+        this.isArtifactOpen = false;
+        this.requestUpdate();
+      }
+      return;
+    }
+
     if (event.type === "ask.requested") {
       this.pendingAsk = { requestId: event.requestId, questions: event.questions };
     } else if (event.type === "ask.cleared") {
@@ -994,6 +1021,20 @@ export class OmpApp extends LitElement {
         }
         if (event.status.thinkingLevel) {
           this.currentThinkingLevel = event.status.thinkingLevel;
+        }
+        const proposed = event.status.planMode?.proposedPlan;
+        if (proposed && !this.artifact) {
+          this.artifact = {
+            type: "plan",
+            planFilePath: proposed.planFilePath,
+            title: proposed.title,
+            planContent: proposed.planContent,
+            status: "proposed",
+          };
+          this.isArtifactOpen = true;
+        } else if (!proposed && this.artifact?.type === "plan" && this.artifact.status === "proposed") {
+          this.artifact = undefined;
+          this.isArtifactOpen = false;
         }
       }
       const ws = this.getActiveWorkspace();
@@ -1455,6 +1496,56 @@ export class OmpApp extends LitElement {
     this.requestUpdate();
   }
 
+  private async handleApprovePlan() {
+    const ws = this.getActiveWorkspace();
+    const sessionId = this.selectedSessionId;
+    if (!ws || !sessionId) return;
+
+    this.isArtifactSubmitting = true;
+    this.requestUpdate();
+    try {
+      await sessionsApi.runCommand(
+        { id: sessionId, cwd: ws.path },
+        "/plan approve",
+        this.currentMachineId,
+      );
+      if (this.artifact) {
+        this.artifact = { ...this.artifact, status: "approved" };
+      }
+    } catch (err) {
+      console.error("[OMP] Failed to approve plan:", err);
+    } finally {
+      this.isArtifactSubmitting = false;
+      this.requestUpdate();
+    }
+  }
+
+  private async handleRejectPlan(feedback?: string) {
+    const ws = this.getActiveWorkspace();
+    const sessionId = this.selectedSessionId;
+    if (!ws || !sessionId) return;
+
+    this.isArtifactSubmitting = true;
+    this.requestUpdate();
+    try {
+      const cmd = feedback && feedback.trim() ? `/plan reject ${feedback.trim()}` : "/plan reject";
+      await sessionsApi.runCommand(
+        { id: sessionId, cwd: ws.path },
+        cmd,
+        this.currentMachineId,
+      );
+      if (this.artifact) {
+        this.artifact = { ...this.artifact, status: "rejected" };
+      }
+      this.isArtifactOpen = false;
+    } catch (err) {
+      console.error("[OMP] Failed to reject plan:", err);
+    } finally {
+      this.isArtifactSubmitting = false;
+      this.requestUpdate();
+    }
+  }
+
   private async handleStopGeneration() {
     const ws = this.getActiveWorkspace();
     const sessionId = this.selectedSessionId;
@@ -1743,7 +1834,9 @@ Dica: você pode selecionar uma das opções abaixo para testar a injeção auto
                 .btwState=${this.btwState}
                 .pendingAsk=${this.pendingAsk}
                 .pendingCommand=${this.pendingCommand}
+                .artifact=${this.artifact}
                 .progressStyle=${this.chatPrefs.progressStyle ?? "steps"}
+                @open-artifact=${() => { this.isArtifactOpen = true; }}
                 @progress-style-change=${(e: CustomEvent<{ progressStyle: "minimal" | "steps" }>) => {
               saveChatPreferenceOverrides({ progressStyle: e.detail.progressStyle });
               this.chatPrefs = { ...this.chatPrefs, progressStyle: e.detail.progressStyle };
@@ -1946,9 +2039,9 @@ Dica: você pode selecionar uma das opções abaixo para testar a injeção auto
               @sign-in=${() => (this.isLoginModalOpen = true)}
             ></omp-header>
 
-            <!-- Current Active Stage View -->
+            <!-- Current Active Stage View + Artifact Split View -->
             <div
-              class="relative flex-1 size-full overflow-hidden"
+              class="relative flex-1 size-full overflow-hidden flex flex-row"
               @project-select=${(e: CustomEvent<{ projectId: string }>) => {
         this.selectedProjectId = e.detail.projectId;
         this.activeTab = "project-detail";
@@ -1958,7 +2051,22 @@ Dica: você pode selecionar uma das opções abaixo para testar a injeção auto
         void this.handleStartNewSession(e.detail?.projectId);
       }}
             >
-              ${this.renderActiveView()}
+              <div class="flex-1 size-full min-w-0 overflow-hidden">
+                ${this.renderActiveView()}
+              </div>
+
+              <!-- Artifact Side Panel (Split View) -->
+              ${this.isArtifactOpen && this.artifact
+                ? html`
+                    <omp-artifact-panel
+                      .artifact=${this.artifact}
+                      .isSubmitting=${this.isArtifactSubmitting}
+                      @approve=${() => void this.handleApprovePlan()}
+                      @reject=${(e: CustomEvent<{ feedback?: string }>) => void this.handleRejectPlan(e.detail?.feedback)}
+                      @close=${() => { this.isArtifactOpen = false; }}
+                    ></omp-artifact-panel>
+                  `
+                : nothing}
             </div>
           </div>
         </main>
