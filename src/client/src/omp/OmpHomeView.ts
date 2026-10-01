@@ -2,6 +2,7 @@ import { LitElement, html } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import "./OmpComposer";
 import type { ComposerProject } from "./OmpComposer";
+import type { PlanModeStatus } from "../../../shared/apiTypes";
 
 @customElement("omp-home-view")
 export class OmpHomeView extends LitElement {
@@ -12,6 +13,8 @@ export class OmpHomeView extends LitElement {
   @property({ type: String }) selectedProjectId = "proj-1";
   @property({ type: String }) selectedModel = "Default";
   @property({ type: String }) selectedProvider = "";
+  @property({ attribute: false }) planMode?: PlanModeStatus;
+  @property({ attribute: false }) extensionStatuses?: Record<string, string>;
 
   protected override createRenderRoot() {
     return this;
@@ -44,6 +47,8 @@ export class OmpHomeView extends LitElement {
               .selectedProjectId=${this.selectedProjectId}
               .selectedModel=${this.selectedModel}
               .selectedProvider=${this.selectedProvider}
+              .planMode=${this.planMode}
+              .extensionStatuses=${this.extensionStatuses}
               @open-models=${() => this.dispatchEvent(new CustomEvent("open-models", { bubbles: true, composed: true }))}
               @model-change=${(e: CustomEvent) => this.dispatchEvent(new CustomEvent("model-change", { detail: e.detail, bubbles: true, composed: true }))}
               @model-tier-change=${(e: CustomEvent) => this.dispatchEvent(new CustomEvent("model-tier-change", { detail: e.detail, bubbles: true, composed: true }))}
@@ -66,6 +71,7 @@ export class OmpHomeView extends LitElement {
           }),
         );
       }}
+              @open-plan-review=${() => this.dispatchEvent(new CustomEvent("open-plan-review", { bubbles: true, composed: true }))}
               @stop-generation=${() => {
         this.dispatchEvent(new CustomEvent("stop-generation", { bubbles: true, composed: true }));
       }}

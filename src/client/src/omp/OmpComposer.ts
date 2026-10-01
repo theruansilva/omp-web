@@ -26,13 +26,14 @@ import {
   renderBrainIcon,
   renderFeatherIcon,
   renderModelsIcon,
+  renderTasksIcon,
   renderModelProviderIcon,
 } from "./icons";
 import {
   capturePromptAttachments,
   type CapturedAttachment,
 } from "../promptAttachmentCapture";
-import type { PromptAttachment } from "../../../shared/apiTypes";
+import type { PromptAttachment, PlanModeStatus } from "../../../shared/apiTypes";
 import {
   createMobilePromptEnterMedia,
   readPromptEnterPreference,
@@ -165,6 +166,8 @@ export class OmpComposer extends LitElement {
   @property({ type: String }) selectedProjectId = "proj-1";
   @property({ type: String }) askMode: "options" | "projects" = "projects";
   @property({ attribute: false }) customPills: unknown[] = [];
+  @property({ attribute: false }) planMode?: PlanModeStatus;
+  @property({ attribute: false }) extensionStatuses?: Record<string, string>;
   @property({ attribute: false }) pendingAsk?: {
     requestId: string;
     questions: AskDialogQuestion[];
@@ -2253,6 +2256,24 @@ export class OmpComposer extends LitElement {
                       </button>
                     </div>
 
+                    <!-- Status badges: plan-mode & extension statuses matching toolbar pill style -->
+                    ${this.planMode?.enabled ? html`
+                      <button
+                        type="button"
+                        class="extension-status-chip plan-mode-chip inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border border-blue-500/25 bg-blue-500/10 text-blue-600 dark:text-blue-400 select-none cursor-pointer transition-colors hover:bg-blue-500/20 active:scale-95 ${this.planMode.proposedPlan ? "!bg-blue-500/20 !border-blue-500/40 animate-pulse font-semibold" : ""}"
+                        title=${this.planMode.proposedPlan ? "Plan proposed – click to review" : "Plan mode active"}
+                        @click=${() => this.dispatchEvent(new CustomEvent("open-plan-review", { bubbles: true, composed: true }))}
+                      >
+                        <span>📋</span>
+                        <span>${this.planMode.proposedPlan ? "Review Plan" : "Plan Mode"}</span>
+                      </button>
+                    ` : nothing}
+                    ${Object.entries(this.extensionStatuses ?? {}).map(([key, text]) => html`
+                      <span
+                        class="extension-status-chip inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium border border-black/10 dark:border-white/10 bg-black/[0.04] dark:bg-white/[0.06] text-foreground-700 select-none"
+                        title=${key + ": " + text}
+                      >${text}</span>
+                    `)}
                     <!-- Extensible Custom Pills Slot -->
                     ${this.customPills}
                   </div>

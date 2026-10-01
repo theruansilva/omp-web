@@ -283,3 +283,47 @@ describe("OmpComposer Stop & Queue Buttons", () => {
     expect(detail.streamingBehavior).toBe("followUp");
   });
 });
+
+describe("OmpComposer Status Badges", () => {
+  it("renders planMode and extensionStatuses badges when enabled", () => {
+    const composer = new OmpComposer();
+    composer.planMode = { enabled: true, planFilePath: "/repo/plan.md" };
+    composer.extensionStatuses = { ponytail: "● 🐴 ponytail: ⚡ FULL" };
+
+    const rendered = composer.render();
+    const template = JSON.stringify(rendered);
+
+    expect(template).toContain("plan-mode-chip");
+    expect(template).toContain("Plan Mode");
+    expect(template).toContain("ponytail: ⚡ FULL");
+  });
+
+  it("renders Review Plan when planMode has proposedPlan", () => {
+    const composer = new OmpComposer();
+    composer.planMode = {
+      enabled: true,
+      proposedPlan: {
+        planFilePath: "/repo/plan.md",
+        title: "Test Plan",
+        planContent: "Do things",
+      },
+    };
+
+    const rendered = composer.render();
+    const template = JSON.stringify(rendered);
+
+    expect(template).toContain("Review Plan");
+  });
+
+  it("does not render planMode badge when planMode is undefined or not enabled", () => {
+    const composer = new OmpComposer();
+    composer.planMode = undefined;
+    composer.extensionStatuses = undefined;
+
+    const rendered = composer.render();
+    const template = JSON.stringify(rendered);
+
+    expect(template).not.toContain("plan-mode-chip");
+    expect(template).not.toContain("Plan Mode");
+  });
+});
