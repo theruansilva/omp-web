@@ -1,7 +1,7 @@
 import { LitElement, html, nothing } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { renderOmpLogo, renderLoadingDots, renderPaperclipIcon, renderBranchIcon } from "./icons";
-import type { PromptAttachment } from "../../../shared/apiTypes";
+import type { PromptAttachment, PlanModeStatus } from "../../../shared/apiTypes";
 import "./OmpComposer";
 import type { BtwState, ComposerProject, PendingCommandDialog } from "./OmpComposer";
 import type { ArtifactData } from "./OmpArtifactPanel";
@@ -48,15 +48,17 @@ export class OmpChatView extends LitElement {
   @property({ attribute: false }) btwState?: BtwState;
   @property({ attribute: false }) pendingAsk?: { requestId: string; questions: AskDialogQuestion[] };
   @property({ attribute: false }) pendingCommand?: PendingCommandDialog;
+  @property({ attribute: false }) planMode?: PlanModeStatus;
+  @property({ attribute: false }) extensionStatuses?: Record<string, string>;
   @property({ attribute: false }) artifact?: ArtifactData;
   @property({ type: String }) progressStyle: "minimal" | "steps" = "steps";
+  @property({ type: Boolean }) showThinking = true;
 
   @state() private pinnedToBottom = true;
   @state() private expandedToolKey: string | null = null;
   @state() private copiedMessageId: string | null = null;
 
   private manuallyOpenedThinkingMap = new Set<string>();
-  private manuallyClosedThinkingMap = new Set<string>();
   private lastScrollTop = 0;
   private lastClientHeight = 0;
   private scrollToBottomFrame?: number;
@@ -152,27 +154,16 @@ export class OmpChatView extends LitElement {
   }
 
   private toggleThinking(messageId: string) {
-    const isCurrentlyOpen = this.isThinkingOpen(messageId, false);
-    if (isCurrentlyOpen) {
+    if (this.manuallyOpenedThinkingMap.has(messageId)) {
       this.manuallyOpenedThinkingMap.delete(messageId);
-      this.manuallyClosedThinkingMap.add(messageId);
     } else {
-      this.manuallyClosedThinkingMap.delete(messageId);
       this.manuallyOpenedThinkingMap.add(messageId);
     }
     this.requestUpdate();
   }
 
-  private isThinkingOpen(messageId: string, isLastAssistant: boolean): boolean {
-    if (this.manuallyOpenedThinkingMap.has(messageId)) return true;
-    if (this.manuallyClosedThinkingMap.has(messageId)) return false;
-
-    // Auto-open ONLY during streaming when it's the last assistant and text has not arrived yet
-    const lastMsg = this.messages[this.messages.length - 1];
-    if (isLastAssistant && this.isStreaming && (!lastMsg?.text || !lastMsg.text.trim())) {
-      return true;
-    }
-    return false;
+  private isThinkingOpen(messageId: string): boolean {
+    return this.manuallyOpenedThinkingMap.has(messageId);
   }
 
   private toggleToolExpand(key: string) {
@@ -183,7 +174,7 @@ export class OmpChatView extends LitElement {
   private renderThinkingBlock(thinking: string, messageId: string, isLastAssistant: boolean) {
     const firstLine = thinking.trim().split("\n")[0]?.replace(/^[*#\s>-]+|[*#\s]+$/g, "").trim() || "";
     const summary = firstLine.length > 60 ? firstLine.slice(0, 58) + "…" : firstLine;
-    const isOpen = this.isThinkingOpen(messageId, isLastAssistant);
+    const isOpen = this.isThinkingOpen(messageId);
     const isStreamingThinking = isLastAssistant && this.isStreaming && !this.messages[this.messages.length - 1]?.text;
 
     return html`
@@ -582,7 +573,7 @@ export class OmpChatView extends LitElement {
 
                           <!-- Content taking 100% full width of thread -->
                           <div class="w-full flex flex-col min-w-0 select-text space-y-1.5">
-                            ${msg.thinking ? this.renderThinkingBlock(msg.thinking, msg.id, isLastAssistant) : nothing}
+                            ${this.showThinking && msg.thinking ? this.renderThinkingBlock(msg.thinking, msg.id, isLastAssistant) : nothing}
                             ${msg.tools && msg.tools.length > 0 ? this.renderToolsBlock(msg.tools, msg.id) : nothing}
                             ${msg.text ? html`
                               <div class="text-[15px] leading-relaxed text-foreground-900 font-sans break-words w-full pt-0.5">
@@ -640,6 +631,8 @@ export class OmpChatView extends LitElement {
               .btwState=${this.btwState}
               .pendingAsk=${this.pendingAsk}
               .pendingCommand=${this.pendingCommand}
+              .planMode=${this.planMode}
+              .extensionStatuses=${this.extensionStatuses}
               @submit-command=${(e: CustomEvent) => this.dispatchEvent(new CustomEvent("submit-command", { detail: e.detail, bubbles: true, composed: true }))}
               @cancel-command=${(e: CustomEvent) => this.dispatchEvent(new CustomEvent("cancel-command", { detail: e.detail, bubbles: true, composed: true }))}
               @open-models=${() => this.dispatchEvent(new CustomEvent("open-models", { bubbles: true, composed: true }))}
@@ -676,6 +669,7 @@ export class OmpChatView extends LitElement {
               @stop-generation=${() => {
                 this.dispatchEvent(new CustomEvent("stop-generation", { bubbles: true, composed: true }));
               }}
+              @open-plan-review=${() => this.dispatchEvent(new CustomEvent("open-plan-review", { bubbles: true, composed: true }))}
             ></omp-composer>
           </div>
         </div>

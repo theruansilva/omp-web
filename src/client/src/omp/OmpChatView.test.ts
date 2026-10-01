@@ -122,6 +122,50 @@ describe("OmpChatView rendering", () => {
     expect(text).toContain("Funciona perfeitamente.");
   });
 
+  it("hides thinking block when showThinking is false", () => {
+    const chatView = new OmpChatView();
+    chatView.showThinking = false;
+    chatView.messages = [
+      {
+        id: "msg-1",
+        role: "assistant",
+        thinking: "Raciocínio interno confidencial",
+        text: "Resposta final direta.",
+      },
+    ];
+
+    const rendered = chatView.render();
+    const text = getAllTemplateText(rendered);
+    expect(text).not.toContain("Raciocínio");
+    expect(text).not.toContain("Raciocínio interno confidencial");
+    expect(text).toContain("Resposta final direta.");
+  });
+
+  it("extracts <thinking>, <thought>, <reasoning> and codeblock tags in linesToChatMessages", () => {
+    const rawLines: ChatLine[] = [
+      {
+        role: "assistant",
+        parts: [
+          { type: "text", text: "<thinking>Pensando na resposta...</thinking>Aqui está a resposta real." },
+        ],
+      },
+      {
+        role: "assistant",
+        parts: [
+          { type: "text", text: "\n\n```thought\nSegundo pensamento\n```\nContinuação." },
+        ],
+      },
+    ];
+
+    const messages = linesToChatMessages(rawLines);
+    expect(messages.length).toBe(1);
+    expect(messages[0].thinking).toContain("Pensando na resposta...");
+    expect(messages[0].thinking).toContain("Segundo pensamento");
+    expect(messages[0].text).toContain("Aqui está a resposta real.");
+    expect(messages[0].text).toContain("Continuação.");
+    expect(messages[0].text).not.toContain("<thinking>");
+  });
+
   it("renders tools in steps timeline mode by default and minimal mode when configured", () => {
     const chatView = new OmpChatView();
     chatView.messages = [

@@ -195,22 +195,44 @@ function normalizeRole(role: unknown): ChatLine["role"] {
   return "system";
 }
 
-function extractThinkingFromText(text: string): ChatPart[] {
-  const thinkMatch = text.match(/<think>([\s\S]*?)(?:<\/think>|$)/i);
-  if (!thinkMatch) return [{ type: "text", text }];
+export function extractThinkingFromText(text: string): ChatPart[] {
+  if (!text) return [];
 
-  const parts: ChatPart[] = [];
-  const before = text.slice(0, thinkMatch.index).trim();
-  if (before) parts.push({ type: "text", text: before });
+  // 1. In-band XML-like tags: <think>, <thinking>, <thought>, <reasoning>
+  const tagMatch = text.match(/<(think|thinking|thought|reasoning)>([\s\S]*?)(?:<\/\1>|$)/i);
+  if (tagMatch) {
+    const parts: ChatPart[] = [];
+    const before = text.slice(0, tagMatch.index).trim();
+    if (before) parts.push({ type: "text", text: before });
 
-  const thinking = thinkMatch[1].trim();
-  if (thinking) parts.push({ type: "thinking", text: thinking });
+    const thinking = tagMatch[2].trim();
+    if (thinking) parts.push({ type: "thinking", text: thinking });
 
-  const after = text.slice((thinkMatch.index ?? 0) + thinkMatch[0].length).trim();
-  if (after) {
-    parts.push(...extractThinkingFromText(after));
+    const after = text.slice((tagMatch.index ?? 0) + tagMatch[0].length).trim();
+    if (after) {
+      parts.push(...extractThinkingFromText(after));
+    }
+    return parts;
   }
-  return parts;
+
+  // 2. Markdown block style: ```thinking|thought|reasoning ... ```
+  const mdMatch = text.match(/```(?:thinking|thought|reasoning)\s*\n([\s\S]*?)(?:```|$)/i);
+  if (mdMatch) {
+    const parts: ChatPart[] = [];
+    const before = text.slice(0, mdMatch.index).trim();
+    if (before) parts.push({ type: "text", text: before });
+
+    const thinking = mdMatch[1].trim();
+    if (thinking) parts.push({ type: "thinking", text: thinking });
+
+    const after = text.slice((mdMatch.index ?? 0) + mdMatch[0].length).trim();
+    if (after) {
+      parts.push(...extractThinkingFromText(after));
+    }
+    return parts;
+  }
+
+  return [{ type: "text", text }];
 }
 
 function normalizeContent(content: unknown, message: unknown): ChatPart[] {

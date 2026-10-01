@@ -18,7 +18,7 @@ import type { ModelSelectDetail } from "./OmpModelsView";
 import type { PendingCommandDialog } from "./OmpComposer";
 import type { CommandResult } from "../../../shared/apiTypes";
 import { normalizeModelName } from "../modelCategories";
-import type { SessionModel } from "../../../shared/apiTypes";
+import type { SessionModel, PlanModeStatus } from "../../../shared/apiTypes";
 import "../components/MachineDialog";
 import type { MachineDialogSubmit } from "../components/MachineDialog";
 import "../components/AuthDialog";
@@ -44,7 +44,7 @@ import {
   type AskDialogResult,
 } from "../api";
 import { SessionSocket, RealtimeSocket, type RealtimeEvent } from "../sessionSocket";
-import { normalizeMessages, textMessage } from "../chatMessages";
+import { extractThinkingFromText, normalizeMessages, textMessage } from "../chatMessages";
 import { applyTranscriptEvent, applyTranscriptEvents } from "../chatTranscript";
 import { pathFromArgs, toolTarget, diffFromDetails, countDiffLines } from "../components/ToolExecutionView";
 import {
@@ -129,24 +129,17 @@ export function linesToChatMessages(lines: ChatLine[]): ChatMessage[] {
 
       for (const part of line.parts) {
         if (part.type === "text") {
-          const thinkMatch = part.text.match(/<think>([\s\S]*?)(?:<\/think>|$)/i);
-          if (thinkMatch) {
-            const thinkContent = thinkMatch[1].trim();
-            const rest = (part.text.slice(0, thinkMatch.index).trim() + "\n\n" + part.text.slice((thinkMatch.index ?? 0) + thinkMatch[0].length).trim()).trim();
-            if (thinkContent) {
+          const extractedParts = extractThinkingFromText(part.text);
+          for (const item of extractedParts) {
+            if (item.type === "thinking") {
               currentAssistant.thinking = currentAssistant.thinking
-                ? `${currentAssistant.thinking}\n\n${thinkContent}`
-                : thinkContent;
-            }
-            if (rest) {
+                ? `${currentAssistant.thinking}\n\n${item.text}`
+                : item.text;
+            } else if (item.type === "text") {
               currentAssistant.text = currentAssistant.text
-                ? `${currentAssistant.text}\n\n${rest}`
-                : rest;
+                ? `${currentAssistant.text}\n\n${item.text}`
+                : item.text;
             }
-          } else {
-            currentAssistant.text = currentAssistant.text
-              ? `${currentAssistant.text}\n\n${part.text}`
-              : part.text;
           }
         } else if (part.type === "thinking") {
           currentAssistant.thinking = currentAssistant.thinking
@@ -218,6 +211,8 @@ export class OmpApp extends LitElement {
   @state() private btwState?: BtwState;
   @state() private pendingAsk?: { requestId: string; questions: AskDialogQuestion[] };
   @state() private pendingCommand?: PendingCommandDialog;
+  @state() private currentPlanMode?: PlanModeStatus;
+  @state() private currentExtensionStatuses?: Record<string, string>;
   @state() private artifact?: ArtifactData;
   @state() private isArtifactOpen = false;
   @state() private isArtifactSubmitting = false;
@@ -636,6 +631,12 @@ export class OmpApp extends LitElement {
         if (status.thinkingLevel) {
           this.currentThinkingLevel = status.thinkingLevel;
         }
+        if (status.planMode !== undefined) {
+          this.currentPlanMode = status.planMode;
+        }
+        if (status.extensionStatuses !== undefined) {
+          this.currentExtensionStatuses = status.extensionStatuses;
+        }
       }
       const isWorking = status.isStreaming || status.isBashRunning || status.isCompacting || (status.pendingMessageCount ?? 0) > 0;
       const wasWorking = this.workingSessionIds.has(status.sessionId);
@@ -961,6 +962,14 @@ export class OmpApp extends LitElement {
       this.rawLines = normalizeMessages(rawList);
       this.messages = linesToChatMessages(this.rawLines);
       this.pendingAsk = status?.pendingAsk;
+      this.currentPlanMode = status?.planMode;
+      this.currentExtensionStatuses = status?.extensionStatuses;
+      if (status?.model) {
+        this.currentSessionModel = status.model;
+      }
+      if (status?.thinkingLevel) {
+        this.currentThinkingLevel = status.thinkingLevel;
+      }
       void this.loadSessionModels(effectiveCwd, sessionId);
     } catch (err) {
       console.warn(`[OMP] Could not load messages for session ${sessionId}:`, err);
@@ -979,7 +988,7 @@ export class OmpApp extends LitElement {
   }
 
   private handleSessionEvent(event: SessionUiEvent) {
-    if (event.type === "agent.start" || event.type === "assistant.delta") {
+    if (event.type === "agent.start" || event.type === "assistant.delta" || event.type === "assistant.thinking.delta") {
       this.isStreaming = true;
       if (this.selectedSessionId) this.workingSessionIds.add(this.selectedSessionId);
     } else if (event.type === "agent.end" || event.type === "message.end") {
@@ -1032,6 +1041,8 @@ export class OmpApp extends LitElement {
     } else if (event.type === "status.update") {
       if (event.status.sessionId === this.selectedSessionId) {
         this.pendingAsk = event.status.pendingAsk;
+        this.currentPlanMode = event.status.planMode;
+        this.currentExtensionStatuses = event.status.extensionStatuses;
         if (event.status.model) {
           this.currentSessionModel = event.status.model;
         }
@@ -1107,6 +1118,8 @@ export class OmpApp extends LitElement {
     }
     if (tab === "new-chat") {
       this.selectedSessionId = "";
+      this.currentPlanMode = undefined;
+      this.currentExtensionStatuses = undefined;
       this.messages = [];
       this.rawLines = [];
       this.sessionSocket.close();
@@ -1325,6 +1338,12 @@ export class OmpApp extends LitElement {
       }
       if (statusRes?.thinkingLevel) {
         this.currentThinkingLevel = statusRes.thinkingLevel;
+      }
+      if (statusRes?.planMode !== undefined) {
+        this.currentPlanMode = statusRes.planMode;
+      }
+      if (statusRes?.extensionStatuses !== undefined) {
+        this.currentExtensionStatuses = statusRes.extensionStatuses;
       }
     } catch (err) {
       console.warn("[OMP] Could not load available models:", err);
@@ -1830,6 +1849,9 @@ Dica: você pode selecionar uma das opções abaixo para testar a injeção auto
                 .selectedModel=${this.getActiveModelDisplayName()}
                 .selectedProvider=${this.currentSessionModel?.provider || ""}
                 .username=${this.currentUser}
+                .planMode=${this.currentPlanMode}
+                .extensionStatuses=${this.currentExtensionStatuses}
+                @open-plan-review=${() => { if (this.currentPlanMode?.proposedPlan) { this.artifact = { type: "plan", ...this.currentPlanMode.proposedPlan } as any; this.isArtifactOpen = true; } }}
                 @project-select=${(e: CustomEvent<{ projectId: string }>) => void this.handleProjectSelect(e.detail.projectId)}
                 @open-models=${() => { this.activeTab = "models"; this.syncUrl(); }}
                 @model-change=${(e: CustomEvent<{ model: string; role?: string }>) => void this.handleModelChange(e.detail)}
@@ -1850,8 +1872,11 @@ Dica: você pode selecionar uma das opções abaixo para testar a injeção auto
                 .btwState=${this.btwState}
                 .pendingAsk=${this.pendingAsk}
                 .pendingCommand=${this.pendingCommand}
+                .planMode=${this.currentPlanMode}
+                .extensionStatuses=${this.currentExtensionStatuses}
                 .artifact=${this.artifact}
                 .progressStyle=${this.chatPrefs.progressStyle ?? "steps"}
+                .showThinking=${this.chatPrefs.showThinking ?? true}
                 @open-artifact=${() => { this.isArtifactOpen = true; }}
                 @progress-style-change=${(e: CustomEvent<{ progressStyle: "minimal" | "steps" }>) => {
               saveChatPreferenceOverrides({ progressStyle: e.detail.progressStyle });
@@ -1871,6 +1896,7 @@ Dica: você pode selecionar uma das opções abaixo para testar a injeção auto
                 @revert-turn=${(e: CustomEvent<{ message: ChatMessage; index: number }>) => void this.handleRevertTurn(e.detail.message, e.detail.index)}
                 @submit-prompt=${(e: CustomEvent<SubmitPromptDetail>) => this.handlePromptSubmit(e.detail)}
                 @stop-generation=${() => void this.handleStopGeneration()}
+                @open-plan-review=${() => { if (this.currentPlanMode?.proposedPlan) { this.artifact = { type: "plan", ...this.currentPlanMode.proposedPlan } as any; this.isArtifactOpen = true; } }}
               ></omp-chat-view>
             `;
 

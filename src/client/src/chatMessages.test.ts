@@ -123,6 +123,44 @@ describe("chat message normalization", () => {
     ]);
   });
 
+  it("extracts embedded <thinking>, <thought>, <reasoning> and codeblock thinking from text", () => {
+    const rawThinking = {
+      role: "assistant",
+      content: "<thinking>Raciocínio Claude</thinking>Resposta 1",
+    };
+    expect(normalizeMessage(rawThinking)[0].parts).toEqual([
+      { type: "thinking", text: "Raciocínio Claude" },
+      { type: "text", text: "Resposta 1" },
+    ]);
+
+    const rawThought = {
+      role: "assistant",
+      content: "<thought>Raciocínio Gemini</thought>Resposta 2",
+    };
+    expect(normalizeMessage(rawThought)[0].parts).toEqual([
+      { type: "thinking", text: "Raciocínio Gemini" },
+      { type: "text", text: "Resposta 2" },
+    ]);
+
+    const rawReasoning = {
+      role: "assistant",
+      content: "<reasoning>Raciocínio Ollama</reasoning>Resposta 3",
+    };
+    expect(normalizeMessage(rawReasoning)[0].parts).toEqual([
+      { type: "thinking", text: "Raciocínio Ollama" },
+      { type: "text", text: "Resposta 3" },
+    ]);
+
+    const rawCodeblock = {
+      role: "assistant",
+      content: "```thinking\nPlanejando ações\n```\nResposta 4",
+    };
+    expect(normalizeMessage(rawCodeblock)[0].parts).toEqual([
+      { type: "thinking", text: "Planejando ações" },
+      { type: "text", text: "Resposta 4" },
+    ]);
+  });
+
   it("formats bash execution records as bash chat lines", () => {
     expect(normalizeMessage({
       role: "bashExecution",
