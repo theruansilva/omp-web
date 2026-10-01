@@ -102,10 +102,25 @@ renderer.code = ({ text, lang }: { text: string; lang?: string }): string => {
   }
 
   const isAsciiDiagram = language === "ascii" || language === "diagram" || BOX_CHARS_REGEX.test(text);
+  const displayLang = isAsciiDiagram ? "DIAGRAM" : (language ? language.toUpperCase() : "CODE");
   const preClass = isAsciiDiagram ? ' class="ascii-diagram"' : "";
   const codeClass = language ? ` class="language-${escapeHtml(language)}"` : "";
   const content = isAsciiDiagram ? escapeHtml(text) : highlightCodeBlock(text, language);
-  return `<pre${preClass}><code${codeClass}>${content}</code></pre>`;
+
+  return `<div class="code-block code-block-wrapper formatted-code-block-internal-container">` +
+    `<div class="code-block-decoration header-formatted code-block-header gds-emphasized-body-m">` +
+      `<span class="code-block-lang">${displayLang}</span>` +
+      `<div class="buttons">` +
+        `<button type="button" class="download-button gem-button gem-icon-button code-download-button" title="Baixar código" aria-label="Baixar código">` +
+          `<svg class="code-download-icon size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="8 12 12 16 16 12"/><line x1="12" y1="8" x2="12" y2="16"/></svg>` +
+        `</button>` +
+        `<button type="button" class="copy-button gem-button gem-icon-button code-copy-button" title="Copiar o código" aria-label="Copiar o código" data-test-id="gem-copy-button">` +
+          `<svg class="code-copy-icon size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>` +
+        `</button>` +
+      `</div>` +
+    `</div>` +
+    `<pre${preClass}><code${codeClass}>${content}</code></pre>` +
+  `</div>`;
 };
 
 renderer.image = ({ href, title, text }: { href: string; title?: string | null; text: string }): string => {

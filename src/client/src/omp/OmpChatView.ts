@@ -532,7 +532,7 @@ export class OmpChatView extends LitElement {
                                     `
                                   : nothing}
                                 ${msg.text
-                                  ? html`<div class="font-ligatures-none relative min-w-fit h-fit max-w-user-text-message whitespace-pre-wrap break-words px-4 py-2.5 squircle-16 bg-accent-250/60 dark:bg-accent-200 text-base self-end text-foreground-900 shadow-xs select-text font-sans" data-content="user-message">${msg.text}</div>`
+                                  ? html`<div class="font-ligatures-none relative min-w-fit h-fit max-w-user-text-message whitespace-pre-wrap break-words px-4 py-2.5 rounded-2xl squircle-16 bg-accent-250/60 dark:bg-accent-200 text-base self-end text-foreground-900 shadow-xs select-text font-sans" data-content="user-message">${msg.text}</div>`
                                   : nothing}
                               </div>
                             </div>

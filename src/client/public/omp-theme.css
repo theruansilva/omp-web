@@ -812,42 +812,62 @@ html[data-theme="dark"] .composer-dropdown-popover .composer-dropdown-icon {
    ========================================================= */
 
 .omp-markdown .code-block-wrapper,
-.omp-markdown .code-block {
+.omp-markdown .code-block,
+.code-block-wrapper,
+.code-block,
+.formatted-code-block-internal-container {
   position: relative;
-  border-radius: 16px;
-  overflow: hidden;
+  border-radius: 18px !important;
+  overflow: hidden !important;
   margin: 16px 0;
-  border: 1px solid var(--omp-border-subtle);
+  border: 1px solid var(--omp-border-subtle, oklch(0% 0 0 / 0.10)) !important;
   background: oklch(97.5% 0.005 56);
   box-shadow: 0 4px 14px -2px oklch(0% 0 0 / 0.03);
 }
 
 .dark .omp-markdown .code-block-wrapper,
 .dark .omp-markdown .code-block,
+.dark .code-block-wrapper,
+.dark .code-block,
+.dark .formatted-code-block-internal-container,
 [data-theme="dark"] .omp-markdown .code-block-wrapper,
-[data-theme="dark"] .omp-markdown .code-block {
-  background: oklch(14% 0.015 260);
-  border-color: oklch(100% 0 0 / 0.08);
+[data-theme="dark"] .omp-markdown .code-block,
+[data-theme="dark"] .code-block-wrapper,
+[data-theme="dark"] .code-block,
+[data-theme="dark"] .formatted-code-block-internal-container {
+  background: oklch(14% 0.015 260) !important;
+  border: 1px solid oklch(100% 0 0 / 0.12) !important;
+  border-radius: 18px !important;
   box-shadow: 0 4px 20px -2px oklch(0% 0 0 / 0.4);
 }
 
 .omp-markdown .code-block-header,
-.omp-markdown .code-block-decoration.header-formatted {
+.omp-markdown .code-block-decoration.header-formatted,
+.code-block-header,
+.code-block-decoration.header-formatted {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 6px 14px;
+  padding: 8px 16px;
   background: oklch(94.5% 0.006 56);
   border-bottom: 1px solid oklch(0% 0 0 / 0.06);
   user-select: none;
+  border-top-left-radius: 18px;
+  border-top-right-radius: 18px;
 }
 
 .dark .omp-markdown .code-block-header,
 .dark .omp-markdown .code-block-decoration.header-formatted,
+.dark .code-block-header,
+.dark .code-block-decoration.header-formatted,
 [data-theme="dark"] .omp-markdown .code-block-header,
-[data-theme="dark"] .omp-markdown .code-block-decoration.header-formatted {
-  background: oklch(16.5% 0.016 260);
-  border-bottom: 1px solid oklch(100% 0 0 / 0.08);
+[data-theme="dark"] .omp-markdown .code-block-decoration.header-formatted,
+[data-theme="dark"] .code-block-header,
+[data-theme="dark"] .code-block-decoration.header-formatted {
+  background: oklch(16.5% 0.016 260) !important;
+  border-bottom: 1px solid oklch(100% 0 0 / 0.08) !important;
+  border-top-left-radius: 18px;
+  border-top-right-radius: 18px;
 }
 
 .omp-markdown .code-block-lang {
