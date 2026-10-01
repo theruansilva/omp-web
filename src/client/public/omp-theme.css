@@ -808,84 +808,120 @@ html[data-theme="dark"] .composer-dropdown-popover .composer-dropdown-icon {
 }
 
 /* =========================================================
-   CODE BLOCKS (Header bar, language badge, crisp copy button)
+   CODE BLOCKS (Gemini style: Header bar, language badge, download & copy buttons)
    ========================================================= */
 
-.omp-markdown .code-block-wrapper {
+.omp-markdown .code-block-wrapper,
+.omp-markdown .code-block {
   position: relative;
   border-radius: 16px;
   overflow: hidden;
   margin: 16px 0;
   border: 1px solid var(--omp-border-subtle);
-  background: oklch(97% 0.005 56);
+  background: oklch(97.5% 0.005 56);
   box-shadow: 0 4px 14px -2px oklch(0% 0 0 / 0.03);
 }
 
 .dark .omp-markdown .code-block-wrapper,
-[data-theme="dark"] .omp-markdown .code-block-wrapper {
-  background: oklch(12% 0.015 260);
+.dark .omp-markdown .code-block,
+[data-theme="dark"] .omp-markdown .code-block-wrapper,
+[data-theme="dark"] .omp-markdown .code-block {
+  background: oklch(14% 0.015 260);
+  border-color: oklch(100% 0 0 / 0.08);
   box-shadow: 0 4px 20px -2px oklch(0% 0 0 / 0.4);
 }
 
-.omp-markdown .code-block-header {
+.omp-markdown .code-block-header,
+.omp-markdown .code-block-decoration.header-formatted {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 7px 14px;
-  background: oklch(95% 0.006 56);
+  padding: 6px 14px;
+  background: oklch(94.5% 0.006 56);
   border-bottom: 1px solid oklch(0% 0 0 / 0.06);
+  user-select: none;
 }
 
 .dark .omp-markdown .code-block-header,
-[data-theme="dark"] .omp-markdown .code-block-header {
-  background: oklch(15% 0.016 260);
+.dark .omp-markdown .code-block-decoration.header-formatted,
+[data-theme="dark"] .omp-markdown .code-block-header,
+[data-theme="dark"] .omp-markdown .code-block-decoration.header-formatted {
+  background: oklch(16.5% 0.016 260);
   border-bottom: 1px solid oklch(100% 0 0 / 0.08);
 }
 
 .omp-markdown .code-block-lang {
   font-family: ui-monospace, SFMono-Regular, "Cascadia Code", Menlo, monospace;
-  font-size: 11px;
+  font-size: 11.5px;
   font-weight: 600;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.05em;
   color: var(--omp-text-muted);
   text-transform: uppercase;
 }
 
-.omp-markdown .code-copy-button {
+.omp-markdown .buttons {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.omp-markdown .gem-button,
+.omp-markdown .gem-icon-button,
+.omp-markdown .code-copy-button,
+.omp-markdown .code-download-button,
+.omp-markdown .download-button,
+.omp-markdown .copy-button {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  padding: 3.5px 8.5px;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
   border-radius: 8px;
-  font-size: 11.5px;
-  font-weight: 500;
-  font-family: inherit;
-  background: oklch(100% 0 0 / 0.6);
-  border: 1px solid oklch(0% 0 0 / 0.08);
-  color: var(--omp-text-secondary);
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--omp-text-muted);
   cursor: pointer;
   transition: all 0.15s ease;
   user-select: none;
+  padding: 0;
 }
 
-.dark .omp-markdown .code-copy-button,
-[data-theme="dark"] .omp-markdown .code-copy-button {
-  background: oklch(100% 0 0 / 0.06);
-  border-color: oklch(100% 0 0 / 0.10);
-  color: var(--omp-text-secondary);
-}
-
-.omp-markdown .code-copy-button:hover {
-  background: var(--omp-surface-elevated);
+.omp-markdown .gem-button:hover,
+.omp-markdown .code-copy-button:hover,
+.omp-markdown .code-download-button:hover,
+.omp-markdown .download-button:hover,
+.omp-markdown .copy-button:hover {
+  background: oklch(0% 0 0 / 0.06);
   color: var(--omp-text-primary);
-  border-color: var(--omp-border-strong);
-  transform: translateY(-0.5px);
 }
 
-.omp-markdown .code-copy-button.is-copied {
+.dark .omp-markdown .gem-button:hover,
+.dark .omp-markdown .code-copy-button:hover,
+.dark .omp-markdown .code-download-button:hover,
+.dark .omp-markdown .download-button:hover,
+.dark .omp-markdown .copy-button:hover,
+[data-theme="dark"] .omp-markdown .gem-button:hover,
+[data-theme="dark"] .omp-markdown .code-copy-button:hover,
+[data-theme="dark"] .omp-markdown .code-download-button:hover,
+[data-theme="dark"] .omp-markdown .download-button:hover,
+[data-theme="dark"] .omp-markdown .copy-button:hover {
+  background: oklch(100% 0 0 / 0.10);
+  color: var(--omp-text-primary);
+}
+
+.omp-markdown .gem-button:active,
+.omp-markdown .code-copy-button:active,
+.omp-markdown .code-download-button:active,
+.omp-markdown .download-button:active,
+.omp-markdown .copy-button:active {
+  transform: scale(0.92);
+}
+
+.omp-markdown .code-copy-button.is-copied,
+.omp-markdown .copy-button.is-copied,
+.omp-markdown .code-download-button.is-downloaded,
+.omp-markdown .download-button.is-downloaded {
   color: oklch(62% 0.17 145);
-  border-color: oklch(62% 0.17 145 / 0.35);
-  background: oklch(62% 0.17 145 / 0.1);
 }
 
 .omp-markdown pre {

@@ -64,7 +64,8 @@ export class OmpMarkdown extends LitElement {
     this.querySelectorAll("pre").forEach((pre) => {
       if (
         !(pre instanceof HTMLPreElement) ||
-        pre.parentElement?.classList.contains("code-block-wrapper")
+        pre.parentElement?.classList.contains("code-block-wrapper") ||
+        pre.parentElement?.classList.contains("code-block")
       ) {
         return;
       }
@@ -72,9 +73,9 @@ export class OmpMarkdown extends LitElement {
       if (!(code instanceof HTMLElement)) return;
 
       const wrapper = document.createElement("div");
-      wrapper.className = "code-block-wrapper";
+      wrapper.className = "code-block code-block-wrapper formatted-code-block-internal-container";
 
-      // Detect language from class (e.g. language-typescript -> TS / TYPESCRIPT)
+      // Detect language from class (e.g. language-sql -> SQL, language-typescript -> TYPESCRIPT)
       let langName = "";
       for (const cls of code.classList) {
         if (cls.startsWith("language-")) {
@@ -87,27 +88,46 @@ export class OmpMarkdown extends LitElement {
       }
 
       const header = document.createElement("div");
-      header.className = "code-block-header";
+      header.className = "code-block-decoration header-formatted code-block-header gds-emphasized-body-m";
 
       const langSpan = document.createElement("span");
       langSpan.className = "code-block-lang";
       langSpan.textContent = langName || "CODE";
 
-      const button = document.createElement("button");
-      button.type = "button";
-      button.className = "code-copy-button";
-      button.title = "Copy code block";
-      button.setAttribute("aria-label", "Copy code block");
+      const buttons = document.createElement("div");
+      buttons.className = "buttons flex items-center gap-1";
 
-      button.innerHTML = `
-        <svg class="code-copy-icon size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      const downloadButton = document.createElement("button");
+      downloadButton.type = "button";
+      downloadButton.className = "download-button gem-button gem-icon-button code-download-button";
+      downloadButton.title = "Baixar código";
+      downloadButton.setAttribute("aria-label", "Baixar código");
+      downloadButton.innerHTML = `
+        <svg class="code-download-icon size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="10"/>
+          <polyline points="8 12 12 16 16 12"/>
+          <line x1="12" y1="8" x2="12" y2="16"/>
+        </svg>
+      `;
+
+      const copyButton = document.createElement("button");
+      copyButton.type = "button";
+      copyButton.className = "copy-button gem-button gem-icon-button code-copy-button";
+      copyButton.title = "Copiar o código";
+      copyButton.setAttribute("aria-label", "Copiar o código");
+      copyButton.setAttribute("data-test-id", "gem-copy-button");
+      copyButton.innerHTML = `
+        <svg class="code-copy-icon size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <rect width="14" height="14" x="8" y="8" rx="2" ry="2"/>
           <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>
         </svg>
-        <span class="code-copy-text text-xs">Copy</span>
       `;
 
-      header.append(langSpan, button);
+      buttons.append(downloadButton, copyButton);
+      header.append(langSpan, buttons);
+
+      code.classList.add("code-container", "formatted");
+      pre.classList.add("formatted");
 
       pre.before(wrapper);
       wrapper.append(header, pre);
@@ -350,10 +370,30 @@ export class OmpMarkdown extends LitElement {
       return;
     }
 
-    // 5. Code copy button click
-    const button = event.target.closest(".code-copy-button");
+    // 5. Code download button click (Gemini-style)
+    const downloadBtn = event.target.closest(".download-button, .code-download-button");
+    if (downloadBtn instanceof HTMLButtonElement && this.contains(downloadBtn)) {
+      const wrapper = downloadBtn.closest(".code-block-wrapper, .code-block");
+      if (wrapper instanceof HTMLElement) {
+        let codeText = "";
+        let langName = wrapper.querySelector(".code-block-lang")?.textContent?.trim().toLowerCase() || "";
+        if (wrapper.classList.contains("mermaid-diagram-wrapper")) {
+          const sourcePre = wrapper.querySelector<HTMLElement>("pre.mermaid-source");
+          codeText = sourcePre?.querySelector("code")?.textContent ?? "";
+          langName = "mermaid";
+        } else {
+          const code = wrapper.querySelector("pre code");
+          if (code instanceof HTMLElement) codeText = code.textContent ?? "";
+        }
+        this.downloadCode(codeText, langName, downloadBtn);
+      }
+      return;
+    }
+
+    // 6. Code copy button click (Gemini-style)
+    const button = event.target.closest(".code-copy-button, .copy-button");
     if (button instanceof HTMLButtonElement && this.contains(button)) {
-      const wrapper = button.closest(".code-block-wrapper");
+      const wrapper = button.closest(".code-block-wrapper, .code-block");
       if (wrapper instanceof HTMLElement) {
         let codeText = "";
         if (wrapper.classList.contains("mermaid-diagram-wrapper")) {
@@ -369,6 +409,91 @@ export class OmpMarkdown extends LitElement {
       return;
     }
   };
+
+  private downloadCode(
+    text: string,
+    language: string,
+    button: HTMLButtonElement
+  ): void {
+    const extensionMap: Record<string, string> = {
+      javascript: "js",
+      js: "js",
+      typescript: "ts",
+      ts: "ts",
+      jsx: "jsx",
+      tsx: "tsx",
+      html: "html",
+      htm: "html",
+      css: "css",
+      scss: "scss",
+      json: "json",
+      python: "py",
+      py: "py",
+      sql: "sql",
+      mysql: "sql",
+      pgsql: "sql",
+      postgres: "sql",
+      postgresql: "sql",
+      sqlite: "sql",
+      rust: "rs",
+      rs: "rs",
+      go: "go",
+      golang: "go",
+      markdown: "md",
+      md: "md",
+      bash: "sh",
+      sh: "sh",
+      shell: "sh",
+      zsh: "sh",
+      yaml: "yaml",
+      yml: "yml",
+      c: "c",
+      cpp: "cpp",
+      java: "java",
+      kotlin: "kt",
+      swift: "swift",
+      php: "php",
+      ruby: "rb",
+      rb: "rb",
+      mermaid: "mmd",
+      diagram: "txt",
+    };
+    const langKey = language.toLowerCase().trim();
+    const ext = extensionMap[langKey] || "txt";
+    const filename = `code.${ext}`;
+
+    try {
+      if (typeof document !== "undefined" && typeof URL !== "undefined" && typeof Blob !== "undefined") {
+        const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }
+    } catch (err) {
+      console.error("[OMP] Failed to download code snippet:", err);
+    }
+
+    const icon = button.querySelector<SVGElement>(".code-download-icon");
+    if (icon) {
+      button.classList.add("is-downloaded");
+      icon.innerHTML = `<polyline points="20 6 9 17 4 12"/>`;
+      icon.classList.add("text-emerald-500");
+      window.setTimeout(() => {
+        button.classList.remove("is-downloaded");
+        icon.innerHTML = `
+          <circle cx="12" cy="12" r="10"/>
+          <polyline points="8 12 12 16 16 12"/>
+          <line x1="12" y1="8" x2="12" y2="16"/>
+        `;
+        icon.classList.remove("text-emerald-500");
+      }, 1500);
+    }
+  }
 
   private async copyCode(
     text: string,
@@ -389,7 +514,7 @@ export class OmpMarkdown extends LitElement {
     this.setCopyButtonState(button, ok ? "copied" : "failed");
     window.setTimeout(() => {
       this.setCopyButtonState(button, "idle");
-    }, 1400);
+    }, 1500);
   }
 
   private setCopyButtonState(
@@ -400,24 +525,22 @@ export class OmpMarkdown extends LitElement {
     button.setAttribute(
       "aria-label",
       state === "copied"
-        ? "Copied"
+        ? "Copiado!"
         : state === "failed"
-          ? "Copy failed"
-          : "Copy code block"
+          ? "Falha ao copiar"
+          : "Copiar o código"
     );
-    const textSpan = button.querySelector<HTMLElement>(".code-copy-text");
+    button.title = state === "copied" ? "Copiado!" : "Copiar o código";
     const icon = button.querySelector<SVGElement>(".code-copy-icon");
 
     if (state === "copied") {
       button.classList.add("is-copied");
-      if (textSpan) textSpan.textContent = "Copiado!";
       if (icon) {
         icon.innerHTML = `<polyline points="20 6 9 17 4 12"/>`;
         icon.classList.add("text-emerald-500");
       }
     } else {
       button.classList.remove("is-copied");
-      if (textSpan) textSpan.textContent = "Copiar";
       if (icon) {
         icon.innerHTML = `
           <rect width="14" height="14" x="8" y="8" rx="2" ry="2"/>

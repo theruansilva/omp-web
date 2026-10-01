@@ -2026,6 +2026,78 @@ export class OmpComposer extends LitElement {
     `;
   }
 
+  private renderActionButton() {
+    const hasContent = Boolean(this.value.trim() || this.attachments.length > 0);
+
+    if (this.isWorking && hasContent) {
+      return html`
+        <button
+          id="queue-button"
+          data-testid="queue-button"
+          type="button"
+          title="Queue message (agent is working)"
+          aria-label="Queue message"
+          class="relative flex items-center justify-center size-9 rounded-2xl bg-black text-white dark:bg-white dark:text-black hover:opacity-90 active:scale-95 transition-all shadow-sm cursor-pointer select-none"
+          @click=${() => this.submit("followUp")}
+        >
+          ${renderQueueIcon("size-4")}
+        </button>
+      `;
+    }
+
+    if (this.isWorking && !hasContent) {
+      return html`
+        <button
+          id="stop-button"
+          data-testid="stop-button"
+          type="button"
+          title="Stop generating"
+          aria-label="Stop generating"
+          class="relative flex items-center justify-center size-9 rounded-2xl bg-black text-white dark:bg-white dark:text-black hover:opacity-90 active:scale-95 transition-all shadow-sm cursor-pointer select-none"
+          @click=${() =>
+            this.dispatchEvent(
+              new CustomEvent("stop-generation", {
+                bubbles: true,
+                composed: true,
+              }),
+            )}
+        >
+          ${renderStopIcon("size-4")}
+        </button>
+      `;
+    }
+
+    if (!this.isWorking && !hasContent) {
+      return html`
+        <button
+          id="submit-button"
+          data-testid="submit-button"
+          type="button"
+          disabled
+          title="Type a message to send"
+          aria-label="Send message (empty input)"
+          class="relative flex items-center justify-center size-9 rounded-2xl bg-black text-white dark:bg-white dark:text-black opacity-35 cursor-not-allowed select-none transition-all shadow-none"
+        >
+          ${renderSendIcon("size-5")}
+        </button>
+      `;
+    }
+
+    return html`
+      <button
+        id="submit-button"
+        data-testid="submit-button"
+        type="button"
+        title="Submit"
+        aria-label="Submit"
+        class="relative flex items-center justify-center size-9 rounded-2xl bg-black text-white dark:bg-white dark:text-black hover:opacity-90 active:scale-95 transition-all shadow-sm cursor-pointer select-none"
+        @click=${() => this.submit()}
+      >
+        ${renderSendIcon("size-5")}
+      </button>
+    `;
+  }
+
   override render() {
     return html`
       <!-- Hidden file input for native attachment handling -->
@@ -2278,71 +2350,9 @@ export class OmpComposer extends LitElement {
                     ${this.customPills}
                   </div>
 
-                  <!-- Right Action Button: Submit (Up Arrow), Stop, Queue, or Audio Call / Voice -->
+                  <!-- Right Action Button: Submit (Up Arrow), Stop, or Queue (matching legacy PromptEditor behavior) -->
                   <div class="flex items-center gap-1.5">
-                    ${
-                      this.isWorking
-                        ? html`
-                          <button
-                            id="stop-button"
-                            data-testid="stop-button"
-                            type="button"
-                            title="Stop generating"
-                            aria-label="Stop generating"
-                            class="relative flex items-center justify-center size-9 rounded-2xl bg-black text-white dark:bg-white dark:text-black hover:opacity-90 active:scale-95 transition-all shadow-sm cursor-pointer select-none"
-                            @click=${() =>
-                              this.dispatchEvent(
-                                new CustomEvent("stop-generation", {
-                                  bubbles: true,
-                                  composed: true,
-                                }),
-                              )}
-                          >
-                            ${renderStopIcon("size-4")}
-                          </button>
-                          ${(this.value.trim() || this.attachments.length > 0)
-                            ? html`
-                              <button
-                                id="queue-button"
-                                data-testid="queue-button"
-                                type="button"
-                                title="Queue message (agent is working)"
-                                aria-label="Queue message"
-                                class="relative flex items-center justify-center size-9 rounded-2xl bg-black text-white dark:bg-white dark:text-black hover:opacity-90 active:scale-95 transition-all shadow-sm cursor-pointer select-none"
-                                @click=${() => this.submit("followUp")}
-                              >
-                                ${renderQueueIcon("size-4")}
-                              </button>
-                            `
-                            : nothing}
-                        `
-                        : (this.value.trim() || this.attachments.length > 0)
-                          ? html`
-                            <button
-                              id="submit-button"
-                              data-testid="submit-button"
-                              type="button"
-                              title="Submit"
-                              aria-label="Submit"
-                              class="relative flex items-center justify-center size-9 rounded-2xl bg-black text-white dark:bg-white dark:text-black hover:opacity-90 active:scale-95 transition-all shadow-sm cursor-pointer select-none"
-                              @click=${() => this.submit()}
-                            >
-                              ${renderSendIcon("size-5")}
-                            </button>
-                          `
-                          : html`
-                            <button
-                              id="audio-call-button"
-                              data-testid="audio-call-button"
-                              type="button"
-                              title="Talk to OMP"
-                              aria-label="Talk to OMP"
-                              class="relative flex items-center justify-center text-foreground-800 fill-foreground-800 active:text-foreground-600 active:fill-foreground-600 dark:active:text-foreground-650 dark:active:fill-foreground-650 bg-transparent safe-hover:bg-black/5 active:bg-black/3 dark:safe-hover:bg-white/8 dark:active:bg-white/5 text-sm min-h-9 min-w-9 rounded-2xl p-1.5 transition-colors cursor-pointer select-none"
-                            >
-                              ${renderWaveformIcon("size-6")}
-                            </button>
-                          `
-                    }
+                    ${this.renderActionButton()}
                   </div>
                 </div>
               </div>

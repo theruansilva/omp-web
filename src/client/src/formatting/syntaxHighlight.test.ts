@@ -18,6 +18,20 @@ describe("syntaxHighlight", () => {
     expect(getLanguageParser("html")).not.toBeNull();
     expect(getLanguageParser("css")).not.toBeNull();
     expect(getLanguageParser("md")).not.toBeNull();
+    expect(getLanguageParser("sql")).not.toBeNull();
+    expect(getLanguageParser("mysql")).not.toBeNull();
+    expect(getLanguageParser("pgsql")).not.toBeNull();
+  });
+
+  it("highlights sql code", () => {
+    const code = "SELECT * FROM mensagens WHERE id < 'msg_98432' ORDER BY id DESC;";
+    const result = highlightCodeBlock(code, "sql");
+
+    expect(result).toContain('class="tok-keyword"');
+    expect(result).toContain("SELECT");
+    expect(result).toContain("FROM");
+    expect(result).toContain('class="tok-string"');
+    expect(result).toContain("'msg_98432'");
   });
 
   it("returns null for unknown languages", () => {

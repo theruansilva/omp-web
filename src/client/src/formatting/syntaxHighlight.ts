@@ -8,6 +8,8 @@ import { html as htmlLang } from "@codemirror/lang-html";
 import { python } from "@codemirror/lang-python";
 import { rust } from "@codemirror/lang-rust";
 import { go } from "@codemirror/lang-go";
+import { StreamLanguage } from "@codemirror/language";
+import { standardSQL } from "@codemirror/legacy-modes/mode/sql";
 
 const jsParser = javascript().language.parser;
 const tsParser = javascript({ typescript: true }).language.parser;
@@ -20,6 +22,7 @@ const pythonParser = python().language.parser;
 const rustParser = rust().language.parser;
 const goParser = go().language.parser;
 const mdParser = markdown().language.parser;
+const sqlParser = StreamLanguage.define(standardSQL).parser;
 
 export function getLanguageParser(language: string): Parser | null {
   const normalized = language.trim().toLowerCase();
@@ -62,6 +65,13 @@ export function getLanguageParser(language: string): Parser | null {
     case "md":
     case "markdown":
       return mdParser;
+    case "sql":
+    case "mysql":
+    case "pgsql":
+    case "postgres":
+    case "postgresql":
+    case "sqlite":
+      return sqlParser;
     default:
       return null;
   }

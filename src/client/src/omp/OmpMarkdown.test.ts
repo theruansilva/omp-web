@@ -125,4 +125,15 @@ describe("OmpMarkdown", () => {
     expect(html).toContain("Opção A");
     expect(html).toContain("Descrição da opção A");
   });
+
+  it("transforms sql code fence into safe highlighted HTML with language-sql class", () => {
+    const markdown = "```sql\nSELECT * FROM mensagens WHERE id < 'msg_98432' ORDER BY id DESC;\n```";
+    const html = toSafeMarkdownHtml(markdown);
+
+    expect(html).toContain('class="language-sql"');
+    expect(html).toContain("tok-keyword");
+    expect(html).toContain("SELECT");
+    expect(html).toContain("FROM");
+    expect(html).toContain("mensagens");
+  });
 });

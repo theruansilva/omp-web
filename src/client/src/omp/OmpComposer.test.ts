@@ -235,7 +235,7 @@ describe("OmpComposer Stop & Queue Buttons", () => {
     expect(template).not.toContain("submit-button");
   });
 
-  it("when isWorking is true and has text: renders both stop-button and queue-button", () => {
+  it("when isWorking is true and has text: renders only queue-button (matching legacy PromptEditor)", () => {
     const composer = new OmpComposer();
     composer.isWorking = true;
     composer.value = "Follow up question";
@@ -243,9 +243,36 @@ describe("OmpComposer Stop & Queue Buttons", () => {
     const rendered = composer.render();
     const template = JSON.stringify(rendered);
 
-    expect(template).toContain("stop-button");
+    expect(template).not.toContain("stop-button");
     expect(template).toContain("queue-button");
     expect(template).not.toContain("submit-button");
+  });
+
+  it("when isWorking is false and empty input: renders disabled submit-button", () => {
+    const composer = new OmpComposer();
+    composer.isWorking = false;
+    composer.value = "";
+
+    const rendered = composer.render();
+    const template = JSON.stringify(rendered);
+
+    expect(template).toContain("submit-button");
+    expect(template).toContain("disabled");
+    expect(template).not.toContain("stop-button");
+    expect(template).not.toContain("queue-button");
+  });
+
+  it("when isWorking is false and has text: renders active submit-button", () => {
+    const composer = new OmpComposer();
+    composer.isWorking = false;
+    composer.value = "Hello world";
+
+    const rendered = composer.render();
+    const template = JSON.stringify(rendered);
+
+    expect(template).toContain("submit-button");
+    expect(template).not.toContain("stop-button");
+    expect(template).not.toContain("queue-button");
   });
 
   it("submitting when isWorking is true dispatches submit-prompt with streamingBehavior: 'followUp'", () => {
