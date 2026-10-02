@@ -1,5 +1,14 @@
 # Changelog
 
+## v3.0.0
+
+- 🚀 **Major UI Overhaul (Cockpit Architecture)**: Promoted the modern OMP Web Cockpit to the default root route (`/`), retaining seamless access to the classic interface via `/classic` and in-app settings switcher.
+- ⚡ **Composer Command Hub**: Unified prompt input with leading `/` for native & dynamic slash commands, `!` for direct workspace shell execution with real-time feedback, and `@` for workspace file autocomplete.
+- 🖥️ **Integrated Engineering Views**: Added dedicated native tabs for **Terminal** (PTY via xterm.js), **Files Explorer** (directory tree, viewer, and raw download), and **Usage & Metrics** (real-time LLM rate limits and token quotas).
+- 🎨 **Dynamic UI Colors System**: Introduced customizable OKLCH color palettes (hue & chroma sliders, presets) paired with superellipse squircle cards and dark/light modes.
+- 📋 **Artifacts & Planning Split-View**: Dedicated artifact panel for reviewing, editing, approving, and rejecting generated execution plans.
+- 💬 **Side Questions (`/btw`)**: Ephemeral turns for side questions using session context without transcript pollution, with session branching support.
+
 ## v2.4.0
 
 - 🐛 Fix attachment delivery failing with TypeError when saving files to workspace.
