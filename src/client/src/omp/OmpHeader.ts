@@ -23,7 +23,8 @@ export class OmpHeader extends LitElement {
                 <button
                   type="button"
                   aria-label="Open sidebar"
-                  class="flex items-center justify-center size-9 rounded-xl text-foreground-800 bg-sidebar-light dark:bg-sidebar-dark hover:bg-black/5 dark:hover:bg-white/8 border border-black/10 dark:border-white/10 transition-colors shadow-sm cursor-pointer"
+                  aria-expanded="false"
+                  class="flex items-center justify-center min-w-11 min-h-11 sm:size-9 rounded-xl text-foreground-800 bg-sidebar-light dark:bg-sidebar-dark hover:bg-black/5 dark:hover:bg-white/8 border border-black/10 dark:border-white/10 transition-colors shadow-sm cursor-pointer"
                   @click=${() => this.dispatchEvent(new CustomEvent("toggle-sidebar", { bubbles: true, composed: true }))}
                 >
                   ${renderToggleSidebarIcon()}

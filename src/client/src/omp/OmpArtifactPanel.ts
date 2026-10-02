@@ -133,7 +133,8 @@ export class OmpArtifactPanel extends LitElement {
           <div class="flex items-center gap-1 shrink-0">
             <button
               type="button"
-              class="size-8 rounded-xl hover:bg-black/5 dark:hover:bg-white/10 text-foreground-600 hover:text-foreground-900 flex items-center justify-center transition-colors cursor-pointer"
+              aria-label="Copiar conteúdo"
+              class="min-w-10 min-h-10 sm:size-8 rounded-xl hover:bg-black/5 dark:hover:bg-white/10 text-foreground-600 hover:text-foreground-900 flex items-center justify-center transition-colors cursor-pointer"
               title="Copiar conteúdo"
               @click=${() => this.handleCopy()}
             >
@@ -143,7 +144,8 @@ export class OmpArtifactPanel extends LitElement {
             </button>
             <button
               type="button"
-              class="size-8 rounded-xl hover:bg-black/5 dark:hover:bg-white/10 text-foreground-600 hover:text-foreground-900 flex items-center justify-center transition-colors cursor-pointer"
+              aria-label="Fechar painel de artefato"
+              class="min-w-10 min-h-10 sm:size-8 rounded-xl hover:bg-black/5 dark:hover:bg-white/10 text-foreground-600 hover:text-foreground-900 flex items-center justify-center transition-colors cursor-pointer"
               title="Fechar painel"
               @click=${() => this.handleClose()}
             >

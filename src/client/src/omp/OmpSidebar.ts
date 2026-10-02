@@ -333,7 +333,8 @@ export class OmpSidebar extends LitElement {
             <button
               type="button"
               aria-label="Close sidebar"
-              class="flex items-center justify-center size-8 rounded-xl text-foreground-800 hover:bg-black/5 dark:hover:bg-white/8 transition-colors cursor-pointer pointer-events-auto"
+              aria-expanded="true"
+              class="flex items-center justify-center min-w-11 min-h-11 sm:size-8 rounded-xl text-foreground-800 hover:bg-black/5 dark:hover:bg-white/8 transition-colors cursor-pointer pointer-events-auto"
               @click=${() => this.dispatchEvent(new CustomEvent("toggle-sidebar", { bubbles: true, composed: true }))}
             >
               ${renderToggleSidebarIcon()}

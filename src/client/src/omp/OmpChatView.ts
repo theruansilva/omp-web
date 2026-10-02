@@ -489,7 +489,7 @@ export class OmpChatView extends LitElement {
                                 <button
                                   aria-label="Revert turn"
                                   type="button"
-                                  class="size-8 rounded-xl bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/15 flex items-center justify-center text-foreground-800 transition-colors cursor-pointer"
+                                  class="min-w-10 min-h-10 sm:size-8 rounded-xl bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/15 flex items-center justify-center text-foreground-800 transition-colors cursor-pointer"
                                   @click=${() => this.handleRevertTurn(msg, index)}
                                   title="Editar e reverter para este turno"
                                 >
@@ -498,7 +498,7 @@ export class OmpChatView extends LitElement {
                                 <button
                                   aria-label="Copy message"
                                   type="button"
-                                  class="size-8 rounded-xl bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/15 flex items-center justify-center text-foreground-800 transition-colors cursor-pointer"
+                                  class="min-w-10 min-h-10 sm:size-8 rounded-xl bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/15 flex items-center justify-center text-foreground-800 transition-colors cursor-pointer"
                                   @click=${() => this.handleCopyText(msg.text, msg.id)}
                                   title="Copiar mensagem"
                                 >
