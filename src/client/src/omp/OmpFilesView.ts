@@ -127,6 +127,55 @@ export class OmpFilesView extends LitElement {
     }
   }
 
+  private getFileColor(filename: string): string {
+    const ext = filename.split(".").pop()?.toLowerCase() || "";
+    switch (ext) {
+      case "ts":
+      case "tsx":
+      case "js":
+      case "jsx":
+      case "mjs":
+      case "cjs":
+        return "text-sky-500 dark:text-sky-400";
+      case "css":
+      case "scss":
+      case "sass":
+      case "less":
+        return "text-purple-500 dark:text-purple-400";
+      case "json":
+      case "yaml":
+      case "yml":
+      case "toml":
+      case "xml":
+        return "text-amber-500 dark:text-amber-400";
+      case "md":
+      case "markdown":
+      case "txt":
+      case "doc":
+        return "text-emerald-500 dark:text-emerald-400";
+      case "py":
+      case "sh":
+      case "bash":
+      case "zsh":
+      case "fish":
+        return "text-teal-500 dark:text-teal-400";
+      case "png":
+      case "jpg":
+      case "jpeg":
+      case "gif":
+      case "svg":
+      case "webp":
+        return "text-rose-500 dark:text-rose-400";
+      case "html":
+      case "htm":
+        return "text-orange-500 dark:text-orange-400";
+      case "lock":
+        return "text-stone-400 dark:text-stone-500";
+      default:
+        return "text-[var(--omp-text-muted)]";
+    }
+  }
+
   private formatBytes(bytes?: number): string {
     if (!bytes || bytes <= 0) return "0 B";
     if (bytes < 1024) return `${bytes} B`;
@@ -232,7 +281,7 @@ export class OmpFilesView extends LitElement {
                           @click=${() => void this.handleSelectEntry(entry)}
                         >
                           <div class="flex items-center gap-2 min-w-0">
-                            <span class="shrink-0 ${isDir ? "text-amber-500" : "text-[var(--omp-text-muted)]"}">
+                            <span class="shrink-0 ${isDir ? "text-amber-500 dark:text-amber-400" : this.getFileColor(entry.name)}">
                               ${isDir ? renderFolderIcon("size-4") : renderDocumentIcon("size-4")}
                             </span>
                             <span class="truncate font-mono text-[12px]">${entry.name}</span>
@@ -262,6 +311,9 @@ export class OmpFilesView extends LitElement {
                   <!-- File Action Bar -->
                   <div class="h-12 px-4 border-b border-black/8 dark:border-white/8 flex items-center justify-between shrink-0">
                     <div class="flex items-center gap-2 min-w-0">
+                      <span class="${this.getFileColor(this.selectedFile.path)} shrink-0">
+                        ${renderDocumentIcon("size-4")}
+                      </span>
                       <span class="font-mono text-xs font-bold text-[var(--omp-text-primary)] truncate">${this.selectedFile.path}</span>
                       <span class="text-[10px] font-mono text-[var(--omp-text-muted)] px-1.5 py-0.5 rounded-md bg-black/5 dark:bg-white/8">
                         ${this.formatBytes(this.selectedFile.size)}

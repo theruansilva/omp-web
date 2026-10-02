@@ -104,20 +104,20 @@ export class OmpUsageView extends LitElement {
 
         <!-- Top KPI Grid -->
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
-          <div class="p-4 rounded-3xl omp-settings-card flex flex-col shadow-xs" style="clip-path: var(--clip-path-squircle-28, none);">
-            <span class="text-xs font-medium text-[var(--omp-text-muted)]">Provedores</span>
+          <div class="p-4 rounded-3xl omp-settings-card border-l-2 border-l-sky-500/60 dark:border-l-sky-400/60 flex flex-col shadow-xs" style="clip-path: var(--clip-path-squircle-28, none);">
+            <span class="text-xs font-medium text-sky-600 dark:text-sky-400">Provedores</span>
             <span class="text-2xl font-extrabold text-[var(--omp-text-primary)] mt-1">${reports.length}</span>
             <span class="text-[11px] text-[var(--omp-text-muted)] mt-0.5 opacity-80">Conectados</span>
           </div>
 
-          <div class="p-4 rounded-3xl omp-settings-card flex flex-col shadow-xs" style="clip-path: var(--clip-path-squircle-28, none);">
-            <span class="text-xs font-medium text-[var(--omp-text-muted)]">Cotas</span>
+          <div class="p-4 rounded-3xl omp-settings-card border-l-2 border-l-indigo-500/60 dark:border-l-indigo-400/60 flex flex-col shadow-xs" style="clip-path: var(--clip-path-squircle-28, none);">
+            <span class="text-xs font-medium text-indigo-600 dark:text-indigo-400">Cotas</span>
             <span class="text-2xl font-extrabold text-[var(--omp-text-primary)] mt-1">${totalLimits}</span>
             <span class="text-[11px] text-[var(--omp-text-muted)] mt-0.5 opacity-80">Monitoradas</span>
           </div>
 
-          <div class="p-4 rounded-3xl omp-settings-card flex flex-col shadow-xs" style="clip-path: var(--clip-path-squircle-28, none);">
-            <span class="text-xs font-medium text-[var(--omp-text-muted)]">Status</span>
+          <div class="p-4 rounded-3xl omp-settings-card border-l-2 ${hasWarnings ? "border-l-amber-500/60 dark:border-l-amber-400/60 bg-amber-500/5" : "border-l-emerald-500/60 dark:border-l-emerald-400/60 bg-emerald-500/5"} flex flex-col shadow-xs" style="clip-path: var(--clip-path-squircle-28, none);">
+            <span class="text-xs font-medium ${hasWarnings ? "text-amber-600 dark:text-amber-400" : "text-emerald-600 dark:text-emerald-400"}">Status</span>
             <span class="text-2xl font-extrabold mt-1 ${hasWarnings ? "text-amber-500" : "text-emerald-500"}">
               ${hasWarnings ? "Atenção" : "Normal"}
             </span>
@@ -126,8 +126,8 @@ export class OmpUsageView extends LitElement {
             </span>
           </div>
 
-          <div class="p-4 rounded-3xl omp-settings-card flex flex-col shadow-xs" style="clip-path: var(--clip-path-squircle-28, none);">
-            <span class="text-xs font-medium text-[var(--omp-text-muted)]">Próximo Reset</span>
+          <div class="p-4 rounded-3xl omp-settings-card border-l-2 border-l-purple-500/60 dark:border-l-purple-400/60 flex flex-col shadow-xs" style="clip-path: var(--clip-path-squircle-28, none);">
+            <span class="text-xs font-medium text-purple-600 dark:text-purple-400">Próximo Reset</span>
             <span class="text-2xl font-extrabold text-[var(--omp-text-primary)] font-mono mt-1">
               ${this.formatResetTime(nextReset)}
             </span>
@@ -175,7 +175,7 @@ export class OmpUsageView extends LitElement {
         <!-- Card Header -->
         <div class="flex items-center justify-between pb-3 border-b border-black/8 dark:border-white/8">
           <div class="flex items-center gap-3">
-            <div class="size-9 rounded-2xl bg-black/5 dark:bg-white/8 flex items-center justify-center shrink-0">
+            <div class="size-9 rounded-2xl bg-[var(--omp-primary)]/10 text-[var(--omp-primary)] flex items-center justify-center shrink-0">
               ${renderModelProviderIcon(report.provider, "size-5")}
             </div>
             <div class="flex flex-col">
@@ -214,7 +214,7 @@ export class OmpUsageView extends LitElement {
               ? html`<span class="text-[10px] font-mono text-[var(--omp-text-muted)]">(${limit.window.label})</span>`
               : nothing}
                   </div>
-                  <span class="text-[11px] font-mono font-bold text-[var(--omp-text-primary)]">
+                  <span class="text-[11px] font-mono font-bold ${usedFraction > 0.85 ? "text-rose-500 dark:text-rose-400" : usedFraction > 0.65 ? "text-amber-500 dark:text-amber-400" : "text-emerald-500 dark:text-emerald-400"}">
                     ${remaining}% livre
                   </span>
                 </div>

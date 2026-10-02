@@ -249,21 +249,21 @@ export class OmpSidebar extends LitElement {
   private renderNavIcon(id: string) {
     switch (id) {
       case "new-chat":
-        return renderNewChatIcon();
+        return renderNewChatIcon("size-5 shrink-0 text-[var(--omp-primary)] transition-colors");
       case "files":
-        return renderFolderIcon("size-5 shrink-0");
+        return renderFolderIcon("size-5 shrink-0 text-amber-500 dark:text-amber-400 group-hover:text-amber-600 dark:group-hover:text-amber-300 transition-colors");
       case "terminal":
-        return renderTerminalIcon("size-5 shrink-0");
+        return renderTerminalIcon("size-5 shrink-0 text-sky-500 dark:text-sky-400 group-hover:text-sky-600 dark:group-hover:text-sky-300 transition-colors");
       case "usage":
-        return renderUsageIcon("size-5 shrink-0");
+        return renderUsageIcon("size-5 shrink-0 text-emerald-500 dark:text-emerald-400 group-hover:text-emerald-600 dark:group-hover:text-emerald-300 transition-colors");
       case "library":
-        return renderLibraryIcon();
+        return renderLibraryIcon("size-5 shrink-0 text-rose-500 dark:text-rose-400 group-hover:text-rose-600 dark:group-hover:text-rose-300 transition-colors");
       case "projects":
-        return renderProjectsIcon("size-5 shrink-0");
+        return renderProjectsIcon("size-5 shrink-0 text-[var(--omp-primary)] group-hover:opacity-100 transition-opacity");
       case "models":
-        return renderModelsIcon("size-5 shrink-0");
+        return renderModelsIcon("size-5 shrink-0 text-purple-500 dark:text-purple-400 group-hover:text-purple-600 dark:group-hover:text-purple-300 transition-colors");
       case "settings":
-        return renderSettingsIcon("size-5 shrink-0");
+        return renderSettingsIcon("size-5 shrink-0 text-slate-500 dark:text-slate-400 group-hover:text-slate-700 dark:group-hover:text-slate-200 transition-colors");
       default:
         return html``;
     }
@@ -350,9 +350,9 @@ export class OmpSidebar extends LitElement {
                   <button
                     type="button"
                     role="menuitem"
-                    class="group relative flex w-full items-center justify-between px-3 py-2 rounded-xl text-sm font-bold font-sans transition-colors cursor-pointer pointer-events-auto ${
+                    class="group relative flex w-full items-center justify-between px-3 py-2 rounded-xl text-sm font-bold font-sans transition-all cursor-pointer pointer-events-auto ${
                       this.activeTab === item.id
-                        ? "bg-black/8 dark:bg-white/10 text-foreground-900 font-extrabold"
+                        ? "bg-[var(--omp-primary)]/10 text-foreground-900 font-extrabold shadow-2xs ring-1 ring-[var(--omp-primary)]/25 before:absolute before:left-0 before:top-2 before:bottom-2 before:w-1 before:rounded-full before:bg-[var(--omp-primary)]"
                         : "text-foreground-700 hover:bg-black/5 dark:hover:bg-white/8 hover:text-foreground-900"
                     }"
                     @click=${() => this.handleSelect(item.id)}

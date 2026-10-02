@@ -204,7 +204,7 @@ export class OmpModelsView extends LitElement {
                 ${renderSparklesIcon("size-3.5")}
                 Modelo Ativo
               </span>
-              <span class="text-[10px] px-2 py-0.5 rounded-lg bg-black/5 dark:bg-white/10 font-mono font-bold text-foreground-700 border border-black/5 dark:border-white/10">
+              <span class="text-[10px] px-2 py-0.5 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-mono font-bold border border-emerald-500/20">
                 @default
               </span>
             </div>
@@ -233,7 +233,7 @@ export class OmpModelsView extends LitElement {
                 ${renderBoltIcon("size-3.5")}
                 Fast / Smol
               </span>
-              <span class="text-[10px] px-2 py-0.5 rounded-lg bg-black/5 dark:bg-white/10 font-mono font-bold text-foreground-700 border border-black/5 dark:border-white/10">
+              <span class="text-[10px] px-2 py-0.5 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 font-mono font-bold border border-amber-500/20">
                 @smol
               </span>
             </div>
@@ -252,7 +252,7 @@ export class OmpModelsView extends LitElement {
                 ${renderBrainIcon("size-3.5")}
                 Thinking / Slow
               </span>
-              <span class="text-[10px] px-2 py-0.5 rounded-lg bg-black/5 dark:bg-white/10 font-mono font-bold text-foreground-700 border border-black/5 dark:border-white/10">
+              <span class="text-[10px] px-2 py-0.5 rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400 font-mono font-bold border border-blue-500/20">
                 @slow
               </span>
             </div>
@@ -264,7 +264,7 @@ export class OmpModelsView extends LitElement {
                     <button
                       type="button"
                       class="px-2 py-0.5 rounded-lg text-[10px] font-bold transition-all cursor-pointer ${this.thinkingLevel === lvl
-              ? "bg-blue-600 text-white shadow-xs"
+              ? "bg-[var(--omp-primary)] text-white shadow-xs"
               : "text-foreground-600 hover:text-foreground-900"
             }"
                       @click=${() => this.handleSetThinking(lvl)}
@@ -325,7 +325,7 @@ export class OmpModelsView extends LitElement {
                 <button
                   type="button"
                   class="px-3.5 py-1.5 rounded-2xl text-xs font-semibold whitespace-nowrap transition-all cursor-pointer border shadow-xs ${this.selectedCategory === cat.id
-            ? "bg-foreground-900 text-background-100 dark:bg-foreground-100 dark:text-background-900 border-transparent font-bold"
+            ? "bg-[var(--omp-primary)] text-white border-transparent font-bold shadow-xs"
             : "omp-settings-card text-foreground-700 hover:text-foreground-900"
           }"
                   @click=${() => {
