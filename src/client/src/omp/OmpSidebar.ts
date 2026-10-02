@@ -499,9 +499,7 @@ export class OmpSidebar extends LitElement {
                                     ${
                                       session.isUnread
                                         ? html`<span class="size-2 rounded-full bg-[var(--omp-primary)] ring-2 ring-[var(--omp-primary)]/30 shrink-0 ml-1.5" title="Aguardando visualização"></span>`
-                                        : session.updatedAt
-                                          ? html`<span class="text-[10px] text-foreground-450 dark:text-foreground-500 font-mono shrink-0 ml-1.5">${session.updatedAt}</span>`
-                                          : nothing
+                                        : nothing
                                     }
                                   </button>
 

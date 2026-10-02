@@ -90,8 +90,8 @@ describe("OmpSidebar", () => {
       { id: "p2", name: "empty-proj", path: "~/code/empty-proj" },
     ];
     sidebar.sessions = [
-      { id: "s1", title: "Active Working", projectId: "p1", isWorking: true },
-      { id: "s2", title: "Unread Session", projectId: "p1", isUnread: true },
+      { id: "s1", title: "Active Working", projectId: "p1", isWorking: true, updatedAt: "10m atrás" },
+      { id: "s2", title: "Unread Session", projectId: "p1", isUnread: true, updatedAt: "1h atrás" },
     ];
     sidebar.selectedProjectId = "p1";
     sidebar.selectedSessionId = "s1";
@@ -120,6 +120,8 @@ describe("OmpSidebar", () => {
     expect(str).toContain("dark:border-white/8");
     expect(str).not.toContain("Sem sessões recentes");
     expect(str).not.toContain("~/code/omp-web");
+    expect(str).not.toContain("10m atrás");
+    expect(str).not.toContain("1h atrás");
   });
 
   it("renders machines switcher in bottom footer and dispatches machine events", () => {
