@@ -23,5 +23,9 @@ describe("OMP_WEB_GENERATIVE_UI_PROMPT", () => {
     // Verify completed/non-interactive checklist instructions
     expect(OMP_WEB_GENERATIVE_UI_PROMPT).toContain('interactive="false"');
     expect(OMP_WEB_GENERATIVE_UI_PROMPT).toContain('checked="true"');
+
+    // Verify execution safeguards against loops and deadlocks
+    expect(OMP_WEB_GENERATIVE_UI_PROMPT).toContain("Execution & Subagent Safeguards");
+    expect(OMP_WEB_GENERATIVE_UI_PROMPT).toContain("`wait` tool");
   });
 });

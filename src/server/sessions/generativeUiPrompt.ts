@@ -51,4 +51,11 @@ When presenting structured read-only information, checklists/tasks, KPI metrics,
   <callout type="info">
   Important notice content.
   </callout>
+
+# Execution & Subagent Safeguards (Deadlock & Loop Prevention)
+
+To prevent deadlocks and indefinite hangs:
+- NEVER use the \`wait\` tool without active background jobs you own.
+- In \`eval\`, NEVER execute unbounded loops or blocking calls that do not yield. Always specify timeouts on long-running cells or subtasks.
+- In \`task\`, provide clear acceptance criteria and avoid recursive unbounded delegation. If subagents do not settle promptly, inspect and report findings rather than polling in a loop.
 `.trim();
