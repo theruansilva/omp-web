@@ -405,7 +405,7 @@ export class OmpSidebar extends LitElement {
             </div>
 
             <!-- Project Cards List -->
-            <div class="flex flex-col gap-2 shrink-0">
+            <div class="flex flex-col gap-1.5 shrink-0">
               ${projectsList.map((project) => {
                 const pSessions = allSessions.filter(
                   (s) =>
@@ -423,14 +423,14 @@ export class OmpSidebar extends LitElement {
 
                 return html`
                   <div
-                    class="group/proj-card flex flex-col p-2.5 rounded-2xl border border-black/8 dark:border-white/8 transition-all duration-200 select-none ${
+                    class="group/proj-card flex flex-col p-1.5 rounded-xl border border-black/8 dark:border-white/8 transition-all duration-200 select-none ${
                       isSelectedProj
                         ? "bg-black/[0.04] dark:bg-white/[0.05]"
                         : "bg-black/[0.02] dark:bg-white/[0.025] hover:bg-black/[0.04] dark:hover:bg-white/[0.04]"
                     }"
                   >
                     <!-- Card Header: Title + Action Button -->
-                    <div class="flex items-center justify-between gap-1.5 ${displaySessions.length > 0 ? "mb-1.5" : ""}">
+                    <div class="flex items-center justify-between gap-1 px-1 py-0.5 ${displaySessions.length > 0 ? "mb-1" : ""}">
                       <button
                         type="button"
                         class="group/proj flex items-center gap-2 min-w-0 flex-1 text-left cursor-pointer pointer-events-auto"
@@ -438,7 +438,7 @@ export class OmpSidebar extends LitElement {
                         title="Abrir projeto ${project.name}"
                       >
                         <span class="shrink-0 text-[var(--omp-primary)] opacity-90 group-hover/proj:opacity-100 transition-opacity">
-                          ${renderFolderIcon("size-4")}
+                          ${renderFolderIcon("size-3.5")}
                         </span>
                         <span class="truncate font-sans text-xs font-extrabold tracking-tight text-foreground-900 group-hover/proj:text-[var(--omp-primary)] transition-colors">
                           ${project.name}
@@ -447,7 +447,7 @@ export class OmpSidebar extends LitElement {
 
                       <button
                         type="button"
-                        class="flex items-center justify-center size-6 rounded-lg text-foreground-450 hover:text-foreground-900 hover:bg-black/8 dark:hover:bg-white/10 transition-colors cursor-pointer pointer-events-auto shrink-0"
+                        class="flex items-center justify-center size-5 rounded-md text-foreground-450 hover:text-foreground-900 hover:bg-black/8 dark:hover:bg-white/10 transition-colors cursor-pointer pointer-events-auto shrink-0"
                         title="Nova sessão em ${project.name}"
                         aria-label="Nova sessão em ${project.name}"
                         @click=${(e: Event) => {
@@ -455,7 +455,7 @@ export class OmpSidebar extends LitElement {
                           this.handleNewSession(project.id);
                         }}
                       >
-                        ${renderPlusIcon("size-3.5")}
+                        ${renderPlusIcon("size-3")}
                       </button>
                     </div>
 
@@ -470,7 +470,7 @@ export class OmpSidebar extends LitElement {
                                   <button
                                     type="button"
                                     role="menuitem"
-                                    class="relative flex w-full items-center justify-between px-2 py-1.5 rounded-lg text-xs font-medium font-sans transition-colors cursor-pointer pointer-events-auto select-none ${
+                                    class="relative flex w-full items-center justify-between px-2 py-1 rounded-lg text-xs font-medium font-sans transition-colors cursor-pointer pointer-events-auto select-none ${
                                       this.selectedSessionId === session.id
                                         ? "bg-black/10 dark:bg-white/12 text-foreground-900 font-bold shadow-2xs"
                                         : session.archived
