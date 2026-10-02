@@ -142,7 +142,6 @@ export class OmpSidebar extends LitElement {
   }
 
   private readonly primaryNav: NavItem[] = [
-    { id: "new-chat", label: "New chat" },
     { id: "files", label: "Arquivos" },
     { id: "terminal", label: "Terminal" },
     { id: "usage", label: "Uso & Métricas" },
@@ -151,6 +150,34 @@ export class OmpSidebar extends LitElement {
     { id: "library", label: "Library" },
     { id: "settings", label: "Configurações" },
   ];
+
+  private isDevMode(): boolean {
+    try {
+      if (typeof window !== "undefined") {
+        if (window.location.search.includes("dev=true")) return true;
+        if (window.location.port === "5173") return true;
+      }
+      return Boolean((import.meta as any).env?.DEV);
+    } catch {
+      return false;
+    }
+  }
+
+  private get visibleNavItems(): NavItem[] {
+    const isDev = this.isDevMode();
+    return this.primaryNav.filter((item) => item.id !== "library" || isDev);
+  }
+
+  private handleProjectClick(projectId: string) {
+    this.selectedProjectId = projectId;
+    this.dispatchEvent(
+      new CustomEvent("project-select", {
+        detail: { projectId },
+        bubbles: true,
+        composed: true,
+      }),
+    );
+  }
 
   private readonly defaultProjects: SidebarProject[] = [
     { id: "proj-1", name: "omp-web", path: "~/code/omp-web" },
@@ -317,7 +344,7 @@ export class OmpSidebar extends LitElement {
           <div class="flex-1 overflow-y-auto min-h-0 flex flex-col gap-1 pr-0.5 font-sans">
             <!-- 1. Primary Nav: New Chat, Library, Projetos (links diretos e limpos) -->
             <div class="flex flex-col gap-0.5 shrink-0" role="menu">
-              ${this.primaryNav.map(
+              ${this.visibleNavItems.map(
                 (item) => html`
                   <button
                     type="button"
@@ -359,12 +386,23 @@ export class OmpSidebar extends LitElement {
               const displaySessions = sorted.slice(0, 5);
 
               return html`
-                <div class="h-px bg-black/10 dark:bg-white/10 my-2 shrink-0"></div>
-                <div class="flex items-center justify-between px-3 py-1 text-[11px] font-bold text-foreground-500 uppercase tracking-wider select-none">
-                  <span class="truncate">${project.name}</span>
+                <div class="flex items-center justify-between px-1 py-1 mt-1.5 mb-0.5 select-none">
                   <button
                     type="button"
-                    class="flex items-center justify-center size-5 rounded-md text-foreground-500 hover:text-foreground-900 hover:bg-black/8 dark:hover:bg-white/10 transition-colors cursor-pointer pointer-events-auto"
+                    class="group/proj flex items-center gap-2 min-w-0 flex-1 px-2 py-1 rounded-xl hover:bg-black/5 dark:hover:bg-white/8 transition-colors cursor-pointer text-left pointer-events-auto"
+                    @click=${() => this.handleProjectClick(project.id)}
+                    title="Abrir projeto ${project.name}"
+                  >
+                    <span class="shrink-0 text-[var(--omp-primary)] opacity-85 group-hover/proj:opacity-100 transition-opacity">
+                      ${renderFolderIcon("size-4")}
+                    </span>
+                    <span class="truncate font-sans text-xs font-bold text-foreground-900 dark:text-foreground-100 tracking-tight">
+                      ${project.name}
+                    </span>
+                  </button>
+                  <button
+                    type="button"
+                    class="flex items-center justify-center size-6 rounded-lg text-foreground-450 hover:text-foreground-900 hover:bg-black/8 dark:hover:bg-white/10 transition-colors cursor-pointer pointer-events-auto shrink-0 mr-1"
                     title="Nova sessão em ${project.name}"
                     aria-label="Nova sessão em ${project.name}"
                     @click=${(e: Event) => {
@@ -404,17 +442,11 @@ export class OmpSidebar extends LitElement {
                             @touchcancel=${() => this.cancelHold()}
                           >
                             <div class="flex items-center gap-2 min-w-0 flex-1 pr-1">
-                              ${
-                                session.isWorking
-                                  ? html`<span class="size-2 rounded-full bg-emerald-500 animate-pulse shrink-0" title="Trabalhando"></span>`
-                                  : session.isUnread
-                                    ? html`<span class="size-2 rounded-full bg-blue-500 ring-2 ring-blue-500/20 shrink-0" title="Trabalho concluído (não lido)"></span>`
-                                    : nothing
-                              }
+                              ${session.isWorking ? html`<span class="size-2 rounded-full bg-emerald-500 animate-pulse shrink-0" title="Trabalhando"></span>` : nothing}
                               <span class="truncate text-left flex-1 ${session.archived ? "opacity-75" : ""}">${session.title}</span>
                             </div>
 
-                            ${session.updatedAt ? html`<span class="text-[10px] text-foreground-400 font-mono shrink-0 ml-2">${session.updatedAt}</span>` : nothing}
+                            ${session.isUnread ? html`<span class="size-2 rounded-full bg-[var(--omp-primary)] ring-2 ring-[var(--omp-primary)]/30 shrink-0 ml-2" title="Trabalho concluído (não lido)"></span>` : session.updatedAt ? html`<span class="text-[10px] text-foreground-400 font-mono shrink-0 ml-2">${session.updatedAt}</span>` : nothing}
                           </button>
 
                           ${
