@@ -83,7 +83,7 @@ describe("OmpSidebar", () => {
     expect(eventFired).toBe(true);
   });
 
-  it("renders projects as cards with inner contrasting box, header, sessions and footer", () => {
+  it("renders projects as adaptive height cards without white border or redundant metadata", () => {
     const sidebar = new OmpSidebar();
     sidebar.projects = [
       { id: "p1", name: "omp-web", path: "~/code/omp-web" },
@@ -99,29 +99,27 @@ describe("OmpSidebar", () => {
     const rendered = sidebar.render();
     const str = JSON.stringify(rendered);
 
-    // Header & divider
+    // Header & divider (no project count badge)
     expect(str).toContain("Projetos");
     expect(str).toContain("group/proj-card");
 
     // Project card header
     expect(str).toContain("omp-web");
+    expect(str).toContain("empty-proj");
     expect(str).toContain("Nova sessão em ");
-    expect(str).toContain("omp-web");
 
-    // Inner contrasting box & sessions
-    expect(str).toContain("role=\\\"menu\\\"");
+    // Sessions render when present
+    expect(str).toContain("role=");
     expect(str).toContain("Active Working");
     expect(str).toContain("Trabalhando");
     expect(str).toContain("Unread Session");
     expect(str).toContain("Aguardando visualização");
 
-    // Empty state for project without sessions
-    expect(str).toContain("Sem sessões recentes");
-
-    // Card footer
-    expect(str).toContain("~/code/omp-web");
-    expect(str).toContain("sessões");
-    expect(str).toContain("~/code/omp-web");
+    // Outer border preserved, no empty state message, no path description
+    expect(str).toContain("border-black/8");
+    expect(str).toContain("dark:border-white/8");
+    expect(str).not.toContain("Sem sessões recentes");
+    expect(str).not.toContain("~/code/omp-web");
   });
 
   it("renders machines switcher in bottom footer and dispatches machine events", () => {

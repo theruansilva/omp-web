@@ -14,7 +14,6 @@ import {
   renderServerIcon,
   renderModelsIcon,
   renderChevronUpIcon,
-  renderChatBubbleIcon,
 } from "./icons";
 import type { Machine, MachineHealth } from "../api";
 
@@ -408,13 +407,8 @@ export class OmpSidebar extends LitElement {
             <!-- Divider & Header separating Pages from Projects -->
             <div class="h-px bg-black/8 dark:bg-white/8 my-2 mx-1 shrink-0"></div>
 
-            <div class="flex items-center justify-between px-2 pt-0.5 pb-1.5 text-[11px] font-bold uppercase tracking-wider text-foreground-450 dark:text-foreground-500 select-none shrink-0">
-              <div class="flex items-center gap-1.5">
-                <span>Projetos</span>
-                <span class="text-[10px] font-mono font-semibold px-1.5 py-0.5 rounded bg-black/5 dark:bg-white/10 text-foreground-600 dark:text-foreground-400 leading-none">
-                  ${projectsList.length}
-                </span>
-              </div>
+            <div class="px-2 pt-0.5 pb-1 text-[11px] font-bold uppercase tracking-wider text-foreground-450 dark:text-foreground-500 select-none shrink-0">
+              <span>Projetos</span>
             </div>
 
             <!-- Project Cards List -->
@@ -436,14 +430,14 @@ export class OmpSidebar extends LitElement {
 
                 return html`
                   <div
-                    class="group/proj-card flex flex-col p-2.5 rounded-2xl border transition-all duration-200 select-none ${
+                    class="group/proj-card flex flex-col p-2.5 rounded-2xl border transition-all duration-200 select-none bg-black/[0.02] dark:bg-white/[0.025] ${
                       isSelectedProj
-                        ? "bg-black/[0.03] dark:bg-white/[0.04] border-[var(--omp-primary)]/40 shadow-xs"
-                        : "bg-black/[0.015] dark:bg-white/[0.02] border-black/8 dark:border-white/8 hover:border-black/15 dark:hover:border-white/15"
+                        ? "border-[var(--omp-primary)]/45 shadow-xs"
+                        : "border-black/8 dark:border-white/8 hover:border-black/15 dark:hover:border-white/12 hover:bg-black/[0.04] dark:hover:bg-white/[0.045]"
                     }"
                   >
-                    <!-- Card Header: Title + Action Button (Fiel à imagem de referência) -->
-                    <div class="flex items-center justify-between gap-1.5 mb-2">
+                    <!-- Card Header: Title + Action Button -->
+                    <div class="flex items-center justify-between gap-1.5 ${displaySessions.length > 0 ? "mb-1.5" : ""}">
                       <button
                         type="button"
                         class="group/proj flex items-center gap-2 min-w-0 flex-1 text-left cursor-pointer pointer-events-auto"
@@ -472,14 +466,12 @@ export class OmpSidebar extends LitElement {
                       </button>
                     </div>
 
-                    <!-- Inner Box: Contrasting background containing sessions (Fiel ao box cinza na imagem) -->
-                    <div
-                      class="flex flex-col gap-0.5 p-1 rounded-xl bg-black/[0.04] dark:bg-white/[0.05] border border-black/6 dark:border-white/6"
-                      role="menu"
-                    >
-                      ${
-                        displaySessions.length > 0
-                          ? displaySessions.map(
+                    <!-- Sessions list (sem inner box, sem ícones, adapta altura se vazio) -->
+                    ${
+                      displaySessions.length > 0
+                        ? html`
+                          <div class="flex flex-col gap-0.5 shrink-0" role="menu">
+                            ${displaySessions.map(
                               (session) => html`
                                 <div class="relative group/session w-full">
                                   <button
@@ -506,7 +498,7 @@ export class OmpSidebar extends LitElement {
                                       ${
                                         session.isWorking
                                           ? html`<span class="size-2 rounded-full bg-emerald-500 animate-pulse shrink-0" title="Trabalhando"></span>`
-                                          : html`<span class="opacity-60 group-hover/session:opacity-100 transition-opacity">${renderChatBubbleIcon("size-3 shrink-0")}</span>`
+                                          : nothing
                                       }
                                       <span class="truncate text-left flex-1 ${session.archived ? "opacity-75" : ""}">${session.title}</span>
                                     </div>
@@ -541,28 +533,15 @@ export class OmpSidebar extends LitElement {
                                   }
                                 </div>
                               `,
-                            )
-                          : html`
-                            <div class="py-2 px-2 text-center text-[11px] text-foreground-450 dark:text-foreground-500 italic">
-                              Sem sessões recentes
-                            </div>
-                          `
-                      }
-                    </div>
-
-                    <!-- Card Footer: Metadados (Path + Contagem, como na imagem) -->
-                    <div class="flex items-center justify-between mt-2 pt-0.5 px-0.5 text-[10px] text-foreground-450 dark:text-foreground-500 font-mono">
-                      <span class="truncate max-w-[130px]" title="${project.path || project.name}">
-                        ${project.path || project.name}
-                      </span>
-                      <span class="shrink-0 font-sans text-[10px] font-semibold text-foreground-500">
-                        ${pSessions.length} ${pSessions.length === 1 ? "sessão" : "sessões"}
-                      </span>
-                    </div>
+                            )}
+                          </div>
+                        `
+                        : nothing
+                    }
                   </div>
                 `;
               })}
-            })}
+            </div>
           </div>
 
           <!-- Bottom Footer: Machines Selector (New UI) -->
