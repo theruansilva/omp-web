@@ -8,8 +8,7 @@ import { html as htmlLang } from "@codemirror/lang-html";
 import { python } from "@codemirror/lang-python";
 import { rust } from "@codemirror/lang-rust";
 import { go } from "@codemirror/lang-go";
-import { StreamLanguage } from "@codemirror/language";
-import { standardSQL } from "@codemirror/legacy-modes/mode/sql";
+import { sql, MySQL, PostgreSQL, SQLite } from "@codemirror/lang-sql";
 
 const jsParser = javascript().language.parser;
 const tsParser = javascript({ typescript: true }).language.parser;
@@ -22,7 +21,10 @@ const pythonParser = python().language.parser;
 const rustParser = rust().language.parser;
 const goParser = go().language.parser;
 const mdParser = markdown().language.parser;
-const sqlParser = StreamLanguage.define(standardSQL).parser;
+const sqlParser = sql().language.parser;
+const mysqlParser = sql({ dialect: MySQL }).language.parser;
+const pgsqlParser = sql({ dialect: PostgreSQL }).language.parser;
+const sqliteParser = sql({ dialect: SQLite }).language.parser;
 
 export function getLanguageParser(language: string): Parser | null {
   const normalized = language.trim().toLowerCase();
@@ -66,12 +68,15 @@ export function getLanguageParser(language: string): Parser | null {
     case "markdown":
       return mdParser;
     case "sql":
+      return sqlParser;
     case "mysql":
+      return mysqlParser;
     case "pgsql":
     case "postgres":
     case "postgresql":
+      return pgsqlParser;
     case "sqlite":
-      return sqlParser;
+      return sqliteParser;
     default:
       return null;
   }
