@@ -89,7 +89,8 @@
     "globals": "^17.6.0",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.59.2",
-    "vite": "7.3.6"
+    "vite": "7.3.6",
+    "@oh-my-pi/pi-tui": "^18.4.3"
   },
   "publishConfig": {
     "access": "public"

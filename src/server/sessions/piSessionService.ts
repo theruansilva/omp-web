@@ -5,6 +5,9 @@ import {
  getAgentDir,
  SessionManager,
 } from "@oh-my-pi/pi-coding-agent";
+import { ensureThemeSync } from "@oh-my-pi/pi-tui/theme";
+
+ensureThemeSync();
 import type { AskDialogResult } from "../../shared/apiTypes.js";
 import type { ClientArchiveSessionsResponse, ClientCommand, ClientCommandResult, ClientMessagePage, ClientSession, ClientSessionCleanupExecuteResponse, ClientSessionCleanupPreviewResponse, ClientSessionModel, ClientSessionRef, ClientSessionStatus, ClientThinkingLevel } from "../types.js";
 import { pageMessagesAtSafeBoundary } from "./messagePaging.js";

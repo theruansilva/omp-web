@@ -1,24 +1,27 @@
 import { randomUUID } from "node:crypto";
+import { ensureThemeSync, theme as tuiTheme } from "@oh-my-pi/pi-tui/theme";
+
+ensureThemeSync();
 import type { ImageContent } from "@oh-my-pi/pi-ai";
 import type { StreamFn } from "@oh-my-pi/pi-agent-core";
 import {
-  type AgentSession,
-  ModelRegistry,
+ type AgentSession,
+ ModelRegistry,
 } from "@oh-my-pi/pi-coding-agent";
 import { readPlanFile } from "@oh-my-pi/pi-coding-agent/plan-mode/plan-files";
 import type {
-  ExtensionAskDialogQuestion,
-  ExtensionAskDialogResult,
-  ExtensionUIDialogOptions,
-  ExtensionUIContext,
+ ExtensionAskDialogQuestion,
+ ExtensionAskDialogResult,
+ ExtensionUIDialogOptions,
+ ExtensionUIContext,
 } from "@oh-my-pi/pi-coding-agent/extensibility/extensions/types";
 import type {
-  AskDialogQuestion,
-  AskDialogResult,
+ AskDialogQuestion,
+ AskDialogResult,
 } from "../../shared/apiTypes.js";
 import type {
-  ClientSessionStatus,
-  ClientThinkingLevel,
+ ClientSessionStatus,
+ ClientThinkingLevel,
 } from "../types.js";
 import { isKnownThinkingLevel } from "../../shared/thinkingLevels.js";
 import { isRecord } from "../utils.js";
@@ -378,9 +381,11 @@ export class DefaultPiAgentSession implements PiAgentSession {
   const ANSI_ESCAPE = /\x1b\[[0-9;]*m/g;
   const cleanStatusText = (text: string): string => text.replace(ANSI_ESCAPE, "").trim();
 
-  const theme = {
+  ensureThemeSync();
+  const theme = tuiTheme ?? {
    fg: (_color: string, text: string) => text,
    bg: (_color: string, text: string) => text,
+   status: { success: "✔", warning: "⚠", error: "✖", info: "ℹ", running: "●", enabled: "✔", disabled: "✖" },
   };
 
   /* eslint-disable @typescript-eslint/require-await, @typescript-eslint/no-empty-function, @typescript-eslint/consistent-type-assertions */
@@ -394,8 +399,8 @@ export class DefaultPiAgentSession implements PiAgentSession {
     }
     this.onExtensionStatusChange?.();
    },
-   notify: (_message: string, _type?: "info" | "warning" | "error"): void => {},
-   onTerminalInput: () => () => {},
+   notify: (_message: string, _type?: "info" | "warning" | "error"): void => { },
+   onTerminalInput: () => () => { },
    select: async (prompt, options, dialogOptions) => {
     const res = await this.askDialog(
      [{ id: "select", question: prompt, options: options.map((opt) => ({ label: typeof opt === "string" ? opt : opt.label })) }],
@@ -426,23 +431,23 @@ export class DefaultPiAgentSession implements PiAgentSession {
    askDialog: async (questions, dialogOptions) => {
     return this.askDialog(questions, dialogOptions);
    },
-   setWorkingMessage: (): void => {},
-   setWidget: (): void => {},
-   setFooter: (): void => {},
-   setHeader: (): void => {},
-   setTitle: (): void => {},
+   setWorkingMessage: (): void => { },
+   setWidget: (): void => { },
+   setFooter: (): void => { },
+   setHeader: (): void => { },
+   setTitle: (): void => { },
    custom: async () => undefined as never,
-   setEditorComponent: (): void => {},
-   setEditorText: (): void => {},
-   pasteToEditor: (): void => {},
+   setEditorComponent: (): void => { },
+   setEditorText: (): void => { },
+   pasteToEditor: (): void => { },
    getEditorText: (): string => "",
    editor: async () => "",
-   addAutocompleteProvider: () => () => {},
+   addAutocompleteProvider: () => () => { },
    getAllThemes: async () => [],
    getTheme: async () => undefined,
    setTheme: async () => ({ success: false }),
    getToolsExpanded: () => false,
-   setToolsExpanded: (): void => {},
+   setToolsExpanded: (): void => { },
   };
   /* eslint-enable @typescript-eslint/require-await, @typescript-eslint/no-empty-function, @typescript-eslint/consistent-type-assertions */
  }
@@ -531,7 +536,7 @@ export class DefaultPiAgentSession implements PiAgentSession {
      branch: async () => ({ cancelled: false }),
      navigateTree: async () => ({ cancelled: false }),
      switchSession: async () => ({ cancelled: false }),
-     reload: async () => {},
+     reload: async () => { },
      compact: async (opts) => { await this.ompSession.compact(typeof opts === "string" ? opts : undefined); },
     },
     this.uiContext,

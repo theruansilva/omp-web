@@ -8,7 +8,7 @@ import { describe, expect, it, vi } from "bun:test";
 import { Database } from "bun:sqlite";
 import { AuthStorage, ModelRegistry, SqliteAuthCredentialStore } from "@oh-my-pi/pi-coding-agent";
 
-import type { GlobalSessionEvent, SessionUiEvent } from "../../shared/apiTypes.js";
+import type { AskDialogQuestion, AskDialogResult, GlobalSessionEvent, SessionUiEvent } from "../../shared/apiTypes.js";
 import { SessionEventHub } from "../realtime/sessionEventHub.js";
 import { PiSessionService, type PiAgentSession, type PiSessionManager, type PiSessionRuntime, type PiSessionServiceDependencies } from "./piSessionService.js";
 import type { SpawnTargetDecision } from "./spawnTargetResolver.js";
@@ -1160,6 +1160,54 @@ describe("PiSessionService", () => {
     await service.prompt(sessionRef("dedupe-session"), "already queued", "followUp");
 
     expect(fake.calls.prompt).toEqual([]);
+    await service.dispose();
+  });
+
+  it("publishes ask.requested event and delegates respondToAsk to session runtime", async () => {
+    const hub = new CapturingSessionEventHub();
+    let resolvedAsk: { requestId: string; result: AskDialogResult | undefined } | null = null;
+    let pendingAsk: { requestId: string; questions: AskDialogQuestion[] } | undefined = {
+      requestId: "req-ask-1",
+      questions: [{ id: "q1", question: "Choose database?", options: [{ label: "SQLite" }, { label: "PostgreSQL" }] }],
+    };
+    const fake = fakeRuntime("ask-session", {
+      getPendingAsk: () => pendingAsk,
+      resolvePendingAsk: (requestId, result) => {
+        resolvedAsk = { requestId, result };
+        pendingAsk = undefined;
+        return true;
+      },
+    });
+    const service = new PiSessionService(hub, {
+      createAgentRuntime: runtimeCreator(fake.runtime),
+      sessionManager: sessionGateway([sessionRecord("ask-session")]),
+      heartbeatIntervalMs: 60_000,
+    });
+
+    // Verify status includes pendingAsk
+    const status = await service.status(sessionRef("ask-session"));
+    expect(status.pendingAsk).toEqual({
+      requestId: "req-ask-1",
+      questions: [{ id: "q1", question: "Choose database?", options: [{ label: "SQLite" }, { label: "PostgreSQL" }] }],
+    });
+
+    // Simulate session emitting onAskRequested
+    fake.session.onAskRequested?.({
+      requestId: "req-ask-1",
+      questions: [{ id: "q1", question: "Choose database?", options: [{ label: "SQLite" }, { label: "PostgreSQL" }] }],
+    });
+
+    expect(hub.sessionEvents.some(({ event }) => event.type === "ask.requested" && (event as any).requestId === "req-ask-1")).toBe(true);
+
+    // Respond to ask
+    const submitResult: AskDialogResult = {
+      kind: "submit",
+      results: [{ id: "q1", question: "Choose database?", options: ["SQLite", "PostgreSQL"], multi: false, selectedOptions: ["SQLite"] }],
+    };
+    const response = await service.respondToAsk(sessionRef("ask-session"), "req-ask-1", submitResult);
+    expect(response).toEqual({ success: true });
+    expect(resolvedAsk).toEqual({ requestId: "req-ask-1", result: submitResult });
+
     await service.dispose();
   });
 
