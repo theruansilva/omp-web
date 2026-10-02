@@ -147,6 +147,7 @@ export interface AskOption {
   title: string;
   desc: string;
   value?: string;
+  recommended?: boolean;
 }
 
 export interface PendingCommandDialog {
@@ -629,6 +630,7 @@ export class OmpComposer extends LitElement {
           id: String(idx + 1),
           title: opt.label,
           desc: opt.description || "",
+          recommended: q.recommended === idx,
         }));
         if (typeof requestAnimationFrame !== "undefined") {
           requestAnimationFrame(() => {
@@ -927,7 +929,7 @@ export class OmpComposer extends LitElement {
               id: q.id,
               question: q.question,
               options: q.options.map((o) => o.label),
-              multi: false,
+              multi: Boolean(q.multi),
               selectedOptions: [opt.title],
             },
           ],
@@ -1817,14 +1819,37 @@ export class OmpComposer extends LitElement {
 
     if (this.pendingAsk && this.pendingAsk.questions.length > 0) {
       const q = this.pendingAsk.questions[0];
-      const matched = this.askOptions.find(
-        (o) =>
-          o.title.toLowerCase() === rawText.toLowerCase() ||
-          `[${o.id}] ${o.title}`.toLowerCase() === rawText.toLowerCase() ||
-          o.id === rawText,
-      );
-      const selectedOptions = matched ? [matched.title] : [];
-      const customInput = matched ? undefined : rawText;
+      let selectedOptions: string[] = [];
+      let customInput: string | undefined;
+
+      if (q.multi) {
+        const parts = rawText
+          .split(/[,;\s]+/)
+          .map((s) => s.trim().toLowerCase())
+          .filter(Boolean);
+        const matched = this.askOptions.filter(
+          (o) =>
+            parts.includes(o.id.toLowerCase()) ||
+            parts.includes(o.title.toLowerCase()),
+        );
+        if (matched.length > 0) {
+          selectedOptions = matched.map((o) => o.title);
+        } else {
+          customInput = rawText;
+        }
+      } else {
+        const matched = this.askOptions.find(
+          (o) =>
+            o.title.toLowerCase() === rawText.toLowerCase() ||
+            `[${o.id}] ${o.title}`.toLowerCase() === rawText.toLowerCase() ||
+            o.id === rawText,
+        );
+        if (matched) {
+          selectedOptions = [matched.title];
+        } else {
+          customInput = rawText;
+        }
+      }
 
       const result: AskDialogResult = {
         kind: "submit",
@@ -1833,7 +1858,7 @@ export class OmpComposer extends LitElement {
             id: q.id,
             question: q.question,
             options: q.options.map((o) => o.label),
-            multi: false,
+            multi: Boolean(q.multi),
             selectedOptions,
             ...(customInput ? { customInput } : {}),
           },
@@ -2139,6 +2164,11 @@ export class OmpComposer extends LitElement {
               <span>
                 ${this.askMode === "projects" ? "Selecione o projeto para esta sessão" : this.askTitle}
               </span>
+              ${
+                this.pendingAsk?.questions[0]?.header && this.askMode === "options"
+                  ? html`<span class="text-[11px] px-2 py-0.5 rounded-full font-medium bg-black/5 dark:bg-white/10 text-foreground-700 font-mono">${this.pendingAsk.questions[0].header}</span>`
+                  : nothing
+              }
             </div>
 
             <button
@@ -2251,12 +2281,17 @@ export class OmpComposer extends LitElement {
                         ${opt.id}
                       </span>
                       <div class="min-w-0 flex flex-col">
-                        <span class="text-sm font-medium leading-tight truncate">
-                          ${opt.title}
-                        </span>
-                        <span class="text-xs opacity-65 leading-tight mt-0.5 font-normal">
-                          ${opt.desc}
-                        </span>
+                        <div class="flex items-center gap-2 min-w-0">
+                          <span class="text-sm font-medium leading-tight truncate">
+                            ${opt.title}
+                          </span>
+                          ${
+                            opt.recommended
+                              ? html`<span class="text-[10px] px-1.5 py-0.5 rounded-full font-semibold bg-blue-500/15 text-blue-600 dark:text-blue-400 border border-blue-500/25 shrink-0">Recomendado</span>`
+                              : nothing
+                          }
+                        </div>
+                        ${opt.desc ? html`<span class="text-xs opacity-65 leading-tight mt-0.5 font-normal truncate">${opt.desc}</span>` : nothing}
                       </div>
                     </div>
                     <div class="flex items-center gap-2 shrink-0 ps-2">

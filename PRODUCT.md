@@ -24,7 +24,7 @@ Diferente de interfaces de chat genéricas ou terminais CLI áridos, o OMP Web c
 ## Operating Context
 - Navegadores modernos em desktop e dispositivos móveis (drawer lateral retrátil e layout adaptativo touch-friendly).
 - Comunicação bidirecional contínua em tempo real via WebSockets para streaming de tokens, status de ferramentas e interações do agente.
-- Componentes nativos de Generative UI (`<options>`, `<checklist>`, `<kpi-grid>`, `<card>`) para decisões interativas diretamente no feed de chat.
+- Ferramenta nativa `ask` integrada ao OmpComposer como padrão para opções, perguntas e escolhas interativas do usuário, acompanhada de componentes de Generative UI (`<checklist>`, `<kpi-grid>`, `<card>`, `<callout>`) para exibição estruturada no feed.
 
 ## Capabilities and Constraints
 - **Navegação Focada**:

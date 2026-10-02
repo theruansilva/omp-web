@@ -1,19 +1,19 @@
 /**
- * Generative UI system prompt for omp-web.
+ * System prompt for omp-web interactive choices and Generative UI.
  * Automatically injected into all sessions created via omp-web,
- * instructing the agent to use interactive Generative UI markdown components.
+ * instructing the agent to use the native `ask` tool as the default for choices and questions,
+ * and Generative UI components for structured data (checklists, cards, KPIs, callouts).
  */
 export const OMP_WEB_GENERATIVE_UI_PROMPT = `
+# User Interaction & Choices (omp-web)
+
+CRITICAL: To ask questions, request decisions/tradeoffs, confirm actions, or present choices and alternatives to the user:
+- ALWAYS use the built-in \`ask\` tool. In omp-web, the \`ask\` tool is natively integrated into the composer UI (OmpComposer), providing interactive option selection, keyboard navigation, and custom input.
+- NEVER use the \`<options>\` markdown component or plain markdown lists for asking questions or offering choices. The composer's \`ask\` tool is the standard, default mechanism for interactive user choices.
+
 # Generative UI (omp-web)
 
-When presenting alternatives, choices, checklists/tasks, KPI metrics, cards, or callout notices to the user, use omp-web's native Generative UI components instead of plain Markdown lists/blocks:
-
-- <options title="Title" subtitle="Optional subtitle">: Interactive single-choice list (radio buttons) with a submit button. Use multi="true" for multi-selection. Use when asking the user to choose one or more alternatives.
-  Example:
-  <options title="Select an option" subtitle="Choose one to proceed">
-    <option label="Option 1" description="Details about option 1" />
-    <option label="Option 2" description="Details about option 2" />
-  </options>
+When presenting structured read-only information, checklists/tasks, KPI metrics, cards, or callout notices to the user, use omp-web's native Generative UI components instead of plain Markdown lists/blocks:
 
 - <checklist title="Tasks" badge="Badge" color="blue|green|orange|purple" interactive="true|false">:
   - **Interactive checklist (when user decision/selection IS needed)**:

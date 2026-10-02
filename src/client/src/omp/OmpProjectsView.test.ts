@@ -340,6 +340,122 @@ describe("OmpComposer Ask Tool Integration (pendingAsk)", () => {
 
     expect(submittedDetail).toBeNull(); // Has 160ms delay
   });
+
+  it("renders recommended option badge and header chip", () => {
+    const composer = new OmpComposer();
+    composer.pendingAsk = {
+      requestId: "req-rec",
+      questions: [
+        {
+          id: "storage",
+          question: "Qual banco de dados utilizar?",
+          header: "Storage",
+          options: [
+            { label: "SQLite", description: "Zero-config" },
+            { label: "PostgreSQL", description: "Robusto" },
+          ],
+          recommended: 0,
+        },
+      ],
+    };
+    composer.updated(new Map([["pendingAsk", undefined]]));
+
+    expect(composer.askOptions[0].recommended).toBe(true);
+    expect(composer.askOptions[1].recommended).toBe(false);
+
+    const rendered = composer.render();
+    const text = getAllTemplateText(rendered);
+    expect(text).toContain("Qual banco de dados utilizar?");
+    expect(text).toContain("Storage");
+    expect(text).toContain("Recomendado");
+  });
+
+  it("submits ask answer when typing option number or label in textarea", () => {
+    const composer = new OmpComposer();
+    composer.pendingAsk = {
+      requestId: "req-type",
+      questions: [
+        {
+          id: "choice",
+          question: "Qual opção prefere?",
+          options: [{ label: "Opção Alpha" }, { label: "Opção Beta" }],
+        },
+      ],
+    };
+    composer.updated(new Map([["pendingAsk", undefined]]));
+
+    let submittedDetail: any = null;
+    composer.addEventListener("submit-ask", (e: any) => {
+      submittedDetail = e.detail;
+    });
+
+    composer.value = "1";
+    (composer as any).submit();
+
+    expect(submittedDetail).not.toBeNull();
+    expect(submittedDetail.requestId).toBe("req-type");
+    expect(submittedDetail.result.results[0].selectedOptions).toEqual(["Opção Alpha"]);
+    expect(submittedDetail.result.results[0].customInput).toBeUndefined();
+  });
+
+  it("submits custom input when user types freeform text in textarea", () => {
+    const composer = new OmpComposer();
+    composer.pendingAsk = {
+      requestId: "req-custom",
+      questions: [
+        {
+          id: "choice",
+          question: "Qual opção prefere?",
+          options: [{ label: "Opção Alpha" }, { label: "Opção Beta" }],
+        },
+      ],
+    };
+    composer.updated(new Map([["pendingAsk", undefined]]));
+
+    let submittedDetail: any = null;
+    composer.addEventListener("submit-ask", (e: any) => {
+      submittedDetail = e.detail;
+    });
+
+    composer.value = "Prefiro usar Redis diretamente";
+    (composer as any).submit();
+
+    expect(submittedDetail).not.toBeNull();
+    expect(submittedDetail.result.results[0].selectedOptions).toEqual([]);
+    expect(submittedDetail.result.results[0].customInput).toBe("Prefiro usar Redis diretamente");
+  });
+
+  it("submits multiple selected options when q.multi is true", () => {
+    const composer = new OmpComposer();
+    composer.pendingAsk = {
+      requestId: "req-multi",
+      questions: [
+        {
+          id: "features",
+          question: "Quais features incluir?",
+          options: [
+            { label: "Auth" },
+            { label: "Cache" },
+            { label: "Logging" },
+          ],
+          multi: true,
+        },
+      ],
+    };
+    composer.updated(new Map([["pendingAsk", undefined]]));
+
+    let submittedDetail: any = null;
+    composer.addEventListener("submit-ask", (e: any) => {
+      submittedDetail = e.detail;
+    });
+
+    composer.value = "1, 3";
+    (composer as any).submit();
+
+    expect(submittedDetail).not.toBeNull();
+    expect(submittedDetail.result.results[0].multi).toBe(true);
+    expect(submittedDetail.result.results[0].selectedOptions).toEqual(["Auth", "Logging"]);
+  });
 });
 
 describe("OmpComposer commandDialog (pendingCommand) Integration", () => {
