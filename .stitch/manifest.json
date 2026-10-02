@@ -1,0 +1,57 @@
+{
+  "version": "1.0",
+  "stitch": {
+    "projectId": "1780658867855249103",
+    "referenceScreen": {
+      "id": "17909951190204841718",
+      "route": "/settings",
+      "title": "6. Settings & System Preferences",
+      "deviceType": "DESKTOP",
+      "extractedAt": "2026-10-02T00:12:31.579Z"
+    },
+    "referenceScreens": [
+      {
+        "id": "15556253497225793138",
+        "route": "/chat",
+        "title": "1. New Chat & Composer",
+        "deviceType": "DESKTOP",
+        "extractedAt": "2026-10-02T00:11:52.595Z"
+      },
+      {
+        "id": "2721794053546828133",
+        "route": "/chat/active",
+        "title": "2. Active Chat & Tool Execution",
+        "deviceType": "DESKTOP",
+        "extractedAt": "2026-10-02T00:11:59.454Z"
+      },
+      {
+        "id": "5361449095800856489",
+        "route": "/library",
+        "title": "3. Library & Session History",
+        "deviceType": "DESKTOP",
+        "extractedAt": "2026-10-02T00:12:08.162Z"
+      },
+      {
+        "id": "7952131017826696799",
+        "route": "/projects",
+        "title": "4. Projects & Workspaces",
+        "deviceType": "DESKTOP",
+        "extractedAt": "2026-10-02T00:12:17.824Z"
+      },
+      {
+        "id": "9536417914885419804",
+        "route": "/models",
+        "title": "5. Models & Providers",
+        "deviceType": "DESKTOP",
+        "extractedAt": "2026-10-02T00:12:24.321Z"
+      },
+      {
+        "id": "17909951190204841718",
+        "route": "/settings",
+        "title": "6. Settings & System Preferences",
+        "deviceType": "DESKTOP",
+        "extractedAt": "2026-10-02T00:12:31.579Z"
+      }
+    ]
+  }
+}

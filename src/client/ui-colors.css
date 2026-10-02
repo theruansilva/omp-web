@@ -1,0 +1,204 @@
+/* =========================================================
+   UI Colors Dynamic OKLCH Palette System
+   Based on whosajid/UI-Colors & templates/UI Colors.html
+   ========================================================= */
+
+:root {
+  --hue: 264;
+  --hue-secondary: calc(var(--hue) + 180);
+  --chroma: 0.05;
+  --chroma-bg: calc(var(--chroma) * 0.5);
+  --chroma-text: min(var(--chroma), 0.1);
+  --chroma-action: max(var(--chroma), 0.1);
+  --chroma-alert: max(var(--chroma), 0.05);
+
+  /* Light palette */
+  --bg-dark: oklch(0.92 var(--chroma-bg) var(--hue));
+  --bg: oklch(0.96 var(--chroma-bg) var(--hue));
+  --bg-light: oklch(1 var(--chroma-bg) var(--hue));
+  --gradient: linear-gradient(0deg, var(--bg) 97%, var(--bg-light));
+  --gradient-hover: linear-gradient(0deg, var(--bg), var(--bg-light));
+  --text: oklch(0.15 var(--chroma) var(--hue));
+  --text-muted: oklch(0.4 var(--chroma) var(--hue));
+  --highlight: oklch(1 var(--chroma) var(--hue));
+  --border: oklch(0.6 var(--chroma) var(--hue));
+  --border-muted: oklch(0.7 var(--chroma) var(--hue));
+  --border-card: solid 1px var(--bg);
+  --primary: oklch(0.4 var(--chroma-action) var(--hue));
+  --secondary: oklch(0.4 var(--chroma-action) var(--hue-secondary));
+  --danger: oklch(0.5 var(--chroma-alert) 30);
+  --warning: oklch(0.5 var(--chroma-alert) 100);
+  --success: oklch(0.5 var(--chroma-alert) 160);
+  --info: oklch(0.5 var(--chroma-alert) 260);
+  --shadow: 0px 2px 2px oklch(0 0 0 / 0.1), 0px 4px 4px oklch(0 0 0 / 0.05);
+}
+
+.dark, [data-theme="dark"] {
+  /* Dark palette */
+  --bg-dark: oklch(0.1 var(--chroma-bg) var(--hue));
+  --bg: oklch(0.15 var(--chroma-bg) var(--hue));
+  --bg-light: oklch(0.2 var(--chroma-bg) var(--hue));
+  --gradient: linear-gradient(0deg, var(--bg) 97%, var(--bg-light));
+  --gradient-hover: linear-gradient(0deg, var(--bg), var(--bg-light));
+  --text: oklch(0.96 var(--chroma-text) var(--hue));
+  --text-muted: oklch(0.76 var(--chroma-text) var(--hue));
+  --highlight: oklch(0.5 var(--chroma) var(--hue));
+  --border: oklch(0.4 var(--chroma) var(--hue));
+  --border-muted: oklch(0.3 var(--chroma) var(--hue));
+  --border-card: solid 1px var(--border-muted);
+  --primary: oklch(0.76 var(--chroma-action) var(--hue));
+  --secondary: oklch(0.76 var(--chroma-action) var(--hue-secondary));
+  --danger: oklch(0.7 var(--chroma-alert) 30);
+  --warning: oklch(0.7 var(--chroma-alert) 100);
+  --success: oklch(0.7 var(--chroma-alert) 160);
+  --info: oklch(0.7 var(--chroma-alert) 260);
+  --shadow: 0px 2px 2px oklch(0 0 0 / 0.2), 0px 4px 4px oklch(0 0 0 / 0.1);
+}
+
+/* =========================================================
+   OMP App Integration Overrides
+   ========================================================= */
+[data-ui-colors="true"] {
+  --omp-bg: var(--bg-light);
+  --omp-surface-canvas: var(--bg-light);
+  --omp-card-bg: oklch(1 var(--chroma-bg) var(--hue) / 0.72);
+  --omp-surface-card: var(--omp-card-bg);
+  --omp-surface-elevated: oklch(1 var(--chroma-bg) var(--hue) / 0.92);
+  --omp-surface-popover: oklch(1 var(--chroma-bg) var(--hue) / 0.96);
+  --omp-surface-subtle: var(--bg);
+  --omp-card-border: var(--border-muted);
+  --omp-border-subtle: var(--border-muted);
+  --omp-card-hover-border: var(--border);
+  --omp-border-strong: var(--border);
+  --omp-text-primary: var(--text);
+  --omp-text-secondary: var(--text-muted);
+  --omp-text-muted: var(--text-muted);
+  --omp-primary: var(--primary);
+  --omp-primary-hover: oklch(0.35 var(--chroma-action) var(--hue));
+  --omp-secondary: var(--secondary);
+  --omp-accent: var(--primary);
+  --omp-composer-bg: oklch(1 var(--chroma-bg) var(--hue) / 0.92);
+}
+
+.dark[data-ui-colors="true"], [data-theme="dark"][data-ui-colors="true"] {
+  --omp-bg: var(--bg-dark);
+  --omp-surface-canvas: var(--bg-dark);
+  --omp-card-bg: oklch(0.18 var(--chroma-bg) var(--hue) / 0.65);
+  --omp-surface-card: var(--omp-card-bg);
+  --omp-surface-elevated: oklch(0.18 var(--chroma-bg) var(--hue) / 0.85);
+  --omp-surface-popover: oklch(0.16 var(--chroma-bg) var(--hue) / 0.96);
+  --omp-surface-subtle: var(--bg);
+  --omp-card-border: var(--border-muted);
+  --omp-border-subtle: var(--border-muted);
+  --omp-card-hover-border: var(--border);
+  --omp-border-strong: var(--border);
+  --omp-text-primary: var(--text);
+  --omp-text-secondary: var(--text-muted);
+  --omp-text-muted: var(--text-muted);
+  --omp-primary: var(--primary);
+  --omp-primary-hover: oklch(0.82 var(--chroma-action) var(--hue));
+  --omp-secondary: var(--secondary);
+  --omp-accent: var(--primary);
+  --omp-composer-bg: oklch(0.18 var(--chroma-bg) var(--hue) / 0.75);
+}
+
+/* =========================================================
+   UI Colors Sliders & Controls Styling
+   ========================================================= */
+.ui-color-slider-hue {
+  -webkit-appearance: none;
+  appearance: none;
+  background: linear-gradient(
+    90deg,
+    oklch(0.6 var(--chroma, 0.05) 20),
+    oklch(0.6 var(--chroma, 0.05) 60),
+    oklch(0.6 var(--chroma, 0.05) 100),
+    oklch(0.6 var(--chroma, 0.05) 140),
+    oklch(0.6 var(--chroma, 0.05) 180),
+    oklch(0.6 var(--chroma, 0.05) 220),
+    oklch(0.6 var(--chroma, 0.05) 260),
+    oklch(0.6 var(--chroma, 0.05) 300),
+    oklch(0.6 var(--chroma, 0.05) 340)
+  );
+  border-radius: 9999px;
+  height: 0.9rem;
+  outline: none;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+
+.ui-color-slider-chroma {
+  -webkit-appearance: none;
+  appearance: none;
+  background: linear-gradient(
+    90deg,
+    oklch(0.4 0 var(--hue, 264)),
+    oklch(0.6 0.2 var(--hue, 264))
+  );
+  border-radius: 9999px;
+  height: 0.9rem;
+  outline: none;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+
+.ui-color-slider-hue::-webkit-slider-thumb,
+.ui-color-slider-chroma::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  background: #ffffff;
+  border: 2px solid var(--primary, #3b82f6);
+  height: 1.35rem;
+  width: 0.65rem;
+  border-radius: 0.25rem;
+  cursor: ew-resize;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.4);
+}
+
+.ui-color-slider-hue::-moz-range-thumb,
+.ui-color-slider-chroma::-moz-range-thumb {
+  background: #ffffff;
+  border: 2px solid var(--primary, #3b82f6);
+  height: 1.35rem;
+  width: 0.65rem;
+  border-radius: 0.25rem;
+  cursor: ew-resize;
+  border: none;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.4);
+}
+
+.ui-color-number-input {
+  width: 4.25rem;
+  padding: 0.25rem 0.5rem;
+  text-align: center;
+  font-size: 0.825rem;
+  font-weight: 700;
+  border-radius: 0.6rem;
+  border: 1px solid var(--border-muted, rgba(128, 128, 128, 0.25));
+  background: var(--bg, rgba(128, 128, 128, 0.08));
+  color: var(--text, inherit);
+  transition: border-color 0.15s, background-color 0.15s;
+}
+
+.ui-color-number-input:focus {
+  outline: none;
+  border-color: var(--primary, #3b82f6);
+}
+
+.ui-color-number-input::-webkit-outer-spin-button,
+.ui-color-number-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.ui-color-number-input[type="number"] {
+  -moz-appearance: textfield;
+}
+
+/* UI Colors Preview Card */
+.ui-colors-preview-card {
+  background: var(--gradient, linear-gradient(0deg, var(--bg, #1a1e2b) 97%, var(--bg-light, #232838)));
+  border: var(--border-card, 1px solid rgba(255, 255, 255, 0.1));
+  border-top: 1px solid var(--highlight, rgba(255, 255, 255, 0.2));
+  border-radius: 1rem;
+  box-shadow: var(--shadow, 0 4px 12px rgba(0, 0, 0, 0.1));
+}

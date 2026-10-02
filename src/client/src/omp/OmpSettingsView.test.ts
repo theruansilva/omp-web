@@ -39,6 +39,26 @@ describe("OmpSettingsView", () => {
     expect(str).toContain("Entrar");
   });
 
+  
+  it("renders UI Colors configuration card with sliders, presets, and swatches", () => {
+    const view = new OmpSettingsView();
+    view.activeSection = "general";
+    const str = JSON.stringify(view.render());
+    expect(str).toContain("Aparência & Tema");
+    expect(str).toContain("UI Colors");
+    expect(str).toContain("Saturação (Chroma)");
+    expect(str).toContain("Matiz da Cor (Hue)");
+    expect(str).toContain("Paletas Prontas (Presets)");
+    expect(str).toContain("Paleta de Cores Calculada (OKLCH)");
+    expect(str).toContain("Amostras de Componentes");
+    expect(str).toContain("Contrast");
+    expect(str).toContain("Gradients");
+    expect(str).toContain("Highlight");
+    expect(str).toContain("Shadows");
+    expect(str).toContain("Ver Código CSS (OKLCH)");
+    expect(str).toContain("Amostras de Alertas");
+  });
+
   it("renders general section by default with chat preferences and gateway fields", () => {
     const view = new OmpSettingsView();
     view.activeSection = "general";

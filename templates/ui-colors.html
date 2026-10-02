@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en" style="--hue: 264; --chroma: .05;"><head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UI Colors</title>
+    <meta name="description" content="The only color palette you need to build any UI.">
+    <link rel="stylesheet" href="ui-colors_files/style_neHt.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com/">
+    <link rel="preconnect" href="https://fonts.gstatic.com/" crossorigin="">
+    <link href="ui-colors_files/css2_neHt.css" rel="stylesheet">
+  </head>
+  <body class="light">
+    <div class="wrapper">
+      <div class="container">
+        <div class="left-column">
+          <section>
+            <header>
+              <div class="colors-logo">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="url(#logo-gradient)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="colors-icon" data-darkreader-inline-invert="">
+                  <defs>
+                    <linearGradient id="logo-gradient" x1="0" y1="0" x2="24" y2="24" gradientUnits="userSpaceOnUse">
+                      <stop offset="0%" stop-color="var(--primary)"></stop>
+                      <stop offset="100%" stop-color="var(--secondary)"></stop>
+                    </linearGradient>
+                  </defs>
+                  <path d="M12 22a1 1 0 0 1 0-20 10 9 0 0 1 10 9 5 5 0 0 1-5 5h-2.25a1.75 1.75 0 0 0-1.4 2.8l.3.4a1.75 1.75 0 0 1-1.4 2.8z"></path>
+                  <circle cx="13.5" cy="6.5" r=".5" fill="currentColor"></circle>
+                  <circle cx="17.5" cy="10.5" r=".5" fill="currentColor"></circle>
+                  <circle cx="6.5" cy="12.5" r=".5" fill="currentColor"></circle>
+                  <circle cx="8.5" cy="7.5" r=".5" fill="currentColor"></circle>
+                </svg>
+                <h1>UI Colors</h1>
+                <button class="version">v1.1.0</button>
+              </div>
+              <button class="toggle-btn">
+                <svg class="toggle-icon">
+                  <use href="/svgs/icons.svg#power-icon"></use>
+                </svg>
+              </button>
+            </header>
+            <p>The only color palette you need to build any UI.</p>
+            <div class="sliders">
+              <label class="slider-label">
+                <span>Neutral</span>
+                <input type="range" id="chroma-slider" min="0" max=".2" step="0.01" value=".05" class="slider">
+                <span>Vivid</span>
+                <input type="number" id="chroma-input" min="0" max="0.2" step="0.01" value=".05" class="slider-number">
+              </label>
+              <label class="slider-label">
+                <span>Warmer</span>
+                <input type="range" id="hue-slider" min="20" max="340" value="264" class="slider">
+                <span>Cooler</span>
+                <input type="number" id="hue-input" min="20" max="340" value="264" class="slider-number">
+              </label>
+            </div>
+          </section>
+          <section class="cards">
+            <div class="card">
+              <h3>Contrast</h3>
+              <p>Mix sharper headings with muted text</p>
+            </div>
+            <div class="card">
+              <h3>Gradients</h3>
+              <p>Play with gradient background</p>
+            </div>
+            <div class="card">
+              <h3>Highlight</h3>
+              <p>Use a lighter border to simulate light</p>
+            </div>
+            <div class="card">
+              <h3>Shadows</h3>
+              <p>Shadows to add depth</p>
+            </div>
+          </section>
+          <section class="buttons">
+            <button class="show-code">Show Code</button>
+            <button class="show-alerts">Show Alerts</button>
+          </section>
+        </div>
+
+        <section class="palette">
+          <h4>Background</h4>
+          <div>
+            <div class="palette-item">
+              <span class="bg-dark"></span>
+              <small>bg-dark</small>
+            </div>
+            <div class="palette-item">
+              <span class="bg"></span>
+              <small>bg</small>
+            </div>
+            <div class="palette-item">
+              <span class="bg-light"></span>
+              <small>bg-light</small>
+            </div>
+          </div>
+          <h4>Text</h4>
+          <div>
+            <div class="palette-item">
+              <span class="text"></span>
+              <small>text</small>
+            </div>
+            <div class="palette-item">
+              <span class="text-muted"></span>
+              <small>text-muted</small>
+            </div>
+          </div>
+          <h4>Border</h4>
+          <div>
+            <div class="palette-item">
+              <span class="highlight"></span>
+              <small>highlight</small>
+            </div>
+            <div class="palette-item">
+              <span class="border"></span>
+              <small>border</small>
+            </div>
+            <div class="palette-item">
+              <span class="border-muted"></span>
+              <small>border-muted</small>
+            </div>
+          </div>
+          <h4>Action</h4>
+          <div>
+            <div class="palette-item">
+              <span class="primary"></span>
+              <small>primary</small>
+            </div>
+            <div class="palette-item">
+              <span class="secondary"></span>
+              <small>secondary</small>
+            </div>
+          </div>
+          <h4>Alert</h4>
+          <div>
+            <div class="palette-item">
+              <span class="danger"></span>
+              <small>danger</small>
+            </div>
+            <div class="palette-item">
+              <span class="warning"></span>
+              <small>warning</small>
+            </div>
+            <div class="palette-item">
+              <span class="success"></span>
+              <small>success</small>
+            </div>
+            <div class="palette-item">
+              <span class="info"></span>
+              <small>info</small>
+            </div>
+          </div>
+        </section>
+      </div>
+      <dialog class="code-modal">
+        <button class="close-modal">X</button>
+        <section class="code">
+          <div class="code-header">
+            <select id="color-format">
+              <option value="oklch" selected="selected">OKLCH</option>
+              <option value="hsl">HSL</option>
+              <option value="theme">Theme</option>
+            </select>
+            <button class="copy-code">Copy</button>
+          </div>
+          <pre id="css-vars">--bg-dark: oklch(0.92 0.025 264);
+--bg: oklch(0.96 0.025 264);
+--bg-light: oklch(1 0.025 264);
+--text: oklch(0.15 0.05 264);
+--text-muted: oklch(0.4 0.05 264);
+--highlight: oklch(1 0.05 264);
+--border: oklch(0.6 0.05 264);
+--border-muted: oklch(0.7 0.05 264);
+--primary: oklch(0.4 0.1 264);
+--secondary: oklch(0.4 0.1 84);
+--danger: oklch(0.5 0.05 30);
+--warning: oklch(0.5 0.05 100);
+--success: oklch(0.5 0.05 160);
+--info: oklch(0.5 0.05 260);</pre>
+        </section>
+      </dialog>
+      <dialog class="states-modal">
+        <button class="close-modal">X</button>
+        <section class="states">
+          <div class="alert danger-alert">
+            <div class="alert-heading">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="danger-icon" style="--darkreader-inline-stroke: currentColor;" data-darkreader-inline-stroke="">
+                <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"></path>
+                <path d="M12 9v4"></path>
+                <path d="M12 17h.01"></path>
+              </svg>
+              <h4>Payment failed</h4>
+            </div>
+            <p>Your account will be terminated within 48 hours.</p>
+          </div>
+          <div class="alert warning-alert">
+            <div class="alert-heading">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="warning-icon" style="--darkreader-inline-stroke: currentColor;" data-darkreader-inline-stroke="">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" x2="12" y1="8" y2="12"></line>
+                <line x1="12" x2="12.01" y1="16" y2="16"></line>
+              </svg>
+              <h4>Plan expiring soon</h4>
+            </div>
+            <p>Your plan will expire in 3 days.</p>
+          </div>
+          <div class="alert success-alert">
+            <div class="alert-heading">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="success-icon" style="--darkreader-inline-stroke: currentColor;" data-darkreader-inline-stroke="">
+                <path d="m17 15-5.5 5.5L9 18"></path>
+                <path d="M5 17.743A7 7 0 1 1 15.71 10h1.79a4.5 4.5 0 0 1 1.5 8.742"></path>
+              </svg>
+              <h4>Backup complete</h4>
+            </div>
+            <p>Your photos were saved successfully!</p>
+          </div>
+          <div class="alert info-alert">
+            <div class="alert-heading">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="info-icon" style="--darkreader-inline-stroke: currentColor;" data-darkreader-inline-stroke="">
+                <path d="M6 3h12l4 6-10 13L2 9Z"></path>
+                <path d="M11 3 8 9l4 13 4-13-3-6"></path>
+                <path d="M2 9h20"></path>
+              </svg>
+              <h4>Upgrade to Pro</h4>
+            </div>
+            <p>Hey Sajid, upgrade now and get 20% off.</p>
+          </div>
+        </section>
+      </dialog>
+      <dialog class="version-modal">
+        <button class="close-modal">X</button>
+        <section class="version-info">
+          <h3>Release Notes</h3>
+          <div>
+            <div class="flex">
+              <h4>v1.1.0</h4>
+              <small>Jul 09, 2025</small>
+            </div>
+            <p>Added input box for chroma &amp; hue</p>
+          </div>
+          <div>
+            <div class="flex">
+              <h4>v1.0.0</h4>
+              <small>Jun 20, 2025</small>
+            </div>
+            <p>Initial release</p>
+          </div>
+        </section>
+      </dialog>
+      <footer>
+        <p class="small">
+          Built for fun by <a href="https://www.iamsajid.com/">Sajid</a> <br>Code at
+          <a href="https://github.com/whosajid/UI-Colors">GitHub</a> &amp;
+          <a href="https://codepen.io/whosajid/pen/QwbZOzG">CodePen</a>
+        </p>
+      </footer>
+    </div>
+    <script src="ui-colors_files/script_neHt.js" type="text/javascript"></script>
+    <script type="module">
+      window.culori = await import("https://cdn.jsdelivr.net/npm/culori/+esm");
+    </script>
+  <script type="module" src="ui-colors_files/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495_neHt" integrity="sha512-iIg7k2xntmwu6/uSb5tpc/hySgZc4eoL31yB29W6tJFo2akwjPWcEqnCEdJvGexCL0KEQwVYv5BlowfhVz26hg==" data-cf-beacon="{&quot;version&quot;:&quot;2024.11.0&quot;,&quot;token&quot;:&quot;2300898f298c49c4bd33628529f6d814&quot;,&quot;r&quot;:1,&quot;spa&quot;:2}" crossorigin="anonymous"></script>
+
+
+</body><div></div></html>

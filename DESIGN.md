@@ -1,23 +1,37 @@
 ---
 name: OMP Web
-description: Minimalist squircle cockpit with color-muted-450 palette, 2-tier framing, and superellipse geometry
+description: Minimalist squircle cockpit with dynamic OKLCH UI Colors palette, Muted scale, 2-tier framing, and superellipse geometry
 colors:
-  primary: "rgb(var(--color-muted-450, 135 103 78))"
-  primary-dark: "rgb(var(--color-muted-450, 82 92 123))"
-  canvas-light: "rgb(var(--color-muted-100, 255 251 248))"
-  canvas-dark: "rgb(var(--color-muted-100, 15 17 25))"
-  surface-card-light: "rgb(var(--color-muted-100, 255 251 248) / 0.98)"
-  surface-card-dark: "rgb(var(--color-muted-150, 22 26 36) / 0.95)"
-  stroke-resting-light: "rgb(var(--color-muted-450, 135 103 78) / 0.20)"
-  stroke-resting-dark: "rgb(var(--color-muted-450, 82 92 123) / 0.25)"
-  stroke-focus-light: "rgb(var(--color-muted-450, 135 103 78) / 0.70)"
-  stroke-focus-dark: "rgb(var(--color-muted-450, 82 92 123) / 0.75)"
-  input-bg-light: "rgb(var(--color-muted-200, 246 232 221) / 0.30)"
-  input-bg-dark: "rgb(var(--color-muted-200, 31 36 49) / 0.50)"
-  text-primary-light: "rgb(var(--color-foreground-900, 17 24 39))"
-  text-primary-dark: "rgb(var(--color-muted-900, 251 252 254))"
-  text-muted-light: "rgb(var(--color-muted-450, 135 103 78))"
-  text-muted-dark: "rgb(var(--color-muted-450, 82 92 123))"
+  # Dynamic UI Colors (OKLCH - User Customizable via Hue & Chroma)
+  hue: "var(--hue, 264)"
+  chroma: "var(--chroma, 0.05)"
+  
+  # Semantic Surface Roles
+  bg-dark: "var(--bg-dark)"
+  bg-canvas: "var(--bg)"
+  bg-light: "var(--bg-light)"
+  surface-card: "var(--omp-card-bg, var(--bg))"
+  
+  # Primary & Action (Tonal & Dynamic)
+  primary: "var(--primary, rgb(var(--color-muted-450, 135 103 78)))"
+  primary-dark: "var(--primary, rgb(var(--color-muted-450, 82 92 123)))"
+  secondary: "var(--secondary)"
+  
+  # Borders & Highlight
+  highlight: "var(--highlight)"
+  border: "var(--border)"
+  border-muted: "var(--border-muted)"
+  
+  # Typography & Contrast
+  text-primary: "var(--text, text-foreground-900)"
+  text-muted: "var(--text-muted, text-foreground-600)"
+  
+  # Alerts
+  danger: "var(--danger)"
+  warning: "var(--warning)"
+  success: "var(--success)"
+  info: "var(--info)"
+
 typography:
   display:
     fontFamily: "Ginto, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
@@ -51,6 +65,7 @@ typography:
     letterSpacing: "0.01em"
 rounded:
   squircle-container: "36px"
+  squircle-card: "28px"
   squircle-inner: "24px"
   squircle-control: "16px"
   squircle-compact: "12px"
@@ -62,14 +77,27 @@ spacing:
   xl: "20px"
   2xl: "32px"
 components:
+  card:
+    className: "omp-settings-card"
+    rounded: "{rounded.squircle-card}"
+    clipPath: "var(--clip-path-squircle-28, none)"
+    padding: "20px md:24px"
+  card-acrylic:
+    className: "ui-colors-preview-card"
+    background: "var(--gradient)"
+    border: "var(--border-card)"
+    borderTop: "1px solid var(--highlight)"
+    shadow: "var(--shadow)"
   button-primary:
-    backgroundColor: "{colors.primary}"
-    textColor: "{colors.text-primary-dark}"
+    backgroundColor: "var(--primary)"
+    textColor: "#ffffff"
     rounded: "{rounded.squircle-control}"
     padding: "0 18px"
     height: "44px"
   input-field:
-    backgroundColor: "{colors.input-bg-light}"
+    backgroundColor: "var(--bg)"
+    textColor: "var(--text)"
+    borderColor: "var(--border-muted)"
     rounded: "{rounded.squircle-control}"
     padding: "0 12px"
     height: "44px"
@@ -77,116 +105,93 @@ components:
 
 # Design System: OMP Web
 
-## Overview
+## 1. Overview & North Star
 
-**Creative North Star: "The Minimalist Squircle Cockpit (Muted Warmth)"**
+**Creative North Star: "The Minimalist Squircle Cockpit (Adaptive Warmth)"**
 
-O OMP Web expressa uma estética minimalista, orgânica e sóbria que rejeita brancos estéreis ou contrastes agressivos em favor do sistema tonal autêntico do projeto: o espectro `--color-muted-*` (escala *Cocoa* no tema claro e escala *Slate* no tema escuro). Combinando a suavidade matemática das superelipses (`@progmruansilva/squircles`) com a elegância de baixa emissão de luz, a interface é tátil, acolhedora e direta ao ponto, eliminando subtítulos e ornamentos secundários.
+O OMP Web expressa uma estética minimalista, orgânica e sóbria que rejeita brancos estéreis ou contrastes agressivos (#000/#fff) em favor de um sistema tonal dinâmico e perceptual baseado no modelo **OKLCH (UI Colors)**. A interface combina a suavidade matemática das superelipses (`@progmruansilva/squircles`) com a elegância de baixa emissão de luz, proporcionando profundidade tátil, acolhimento e clareza direta, sem ornamentos supérfluos.
 
-**Key Characteristics:**
-- **Sistema Tonal Muted Autêntico**: Substituição de brancos crus e cinzas frios pelos tokens `--color-muted-450` e variantes (`--color-muted-100` a `900`), garantindo calor no Light Mode (*Cocoa*) e calma mineral no Dark Mode (*Slate*).
-- **Sem Subtítulos**: Títulos concisos e diretos; eliminação de legendas genéricas ou explicações redundantes sob cabeçalhos.
-- **Geometria Squircle Nativa**: Curvatura superelíptica orgânica via `clip-path: var(--clip-path-squircle-*)` e traço perimetral contínuo de 1px com `clip-path: var(--clip-path-squircle-stroke-*)`.
-- **Estrutura 2-Tier**: Moldura externa de acolhimento (bezel de 6px com desfoque) envolvendo o cartão de conteúdo interno.
-- **Altura Unificada de Controles**: Entradas de texto e botões de ação primária compartilham altura padrão de 44px para ritmo visual coeso.
+### Características Principais:
+1. **Paleta Dinâmica UI Colors (OKLCH)**: O usuário tem a liberdade de personalizar sua paleta nas configurações (Aparência & Tema -> UI Colors), ajustando **Matiz (Hue)** e **Saturação (Chroma)** com feedback em tempo real. A base padrão é o tom Slate/Muted no tema escuro e Cocoa/Warm Stone no tema claro.
+2. **Proibição Estrita de Preto e Branco Crus (Anti-Black / Anti-White)**: Nenhuma superfície, card ou container usa `#000000` (`bg-black`) ou `#ffffff` (`bg-white`). Superfícies utilizam tokens do tema (`var(--bg)`, `var(--omp-card-bg)`, `.omp-settings-card`).
+3. **Geometria Squircle Nativa**: Curvatura superelíptica orgânica via `clip-path: var(--clip-path-squircle-*)` (28px para cards, 16px para botões/inputs, 36px/60px para cabeçalhos e modais) combinada com `filter: drop-shadow(...)`.
+4. **Light DOM em Lit Components**: Todo componente visual desativa o Shadow DOM para permitir a estilização completa via classes utilitárias do Tailwind e tokens globais.
+5. **Altura Unificada de Controles**: Entradas de texto e botões de ação primária compartilham altura padrão de **44px** para ritmo visual coeso e toque ergonômico.
 
-## Colors
+---
 
-A paleta ancora-se no sistema semântico `--color-muted-*` nativo da arquitetura do projeto original:
+## 2. Cores & Tokens Semânticos
 
-### Primary
-- **Muted Slate / Muted Cocoa Action** (`rgb(var(--color-muted-450, 135 103 78))` no Light / `rgb(var(--color-muted-450, 82 92 123))` no Dark): Botões primários, ícones ativos e elementos de foco estrutural. Proporciona contraste confortável sem clarão ofuscante.
-- **Muted Hover / Active State** (`rgb(var(--color-muted-550, 115 85 62))` no Light / `rgb(var(--color-muted-550, 102 113 148))` no Dark): Realce suave ao passar o cursor ou pressionar.
+A paleta é orientada por papéis semânticos no espaço de cor OKLCH:
 
-### Neutral
-- **Muted Card Surface** (`rgb(var(--color-muted-100, 255 251 248) / 0.98)` Light / `rgb(var(--color-muted-150, 22 26 36) / 0.95)` Dark): Superfície principal acolhedora.
-- **Input Fill** (`rgb(var(--color-muted-200, 246 232 221) / 0.30)` Light / `rgb(var(--color-muted-200, 31 36 49) / 0.50)` Dark): Fundo harmonioso e estável para campos de entrada.
-- **Muted Stroke Overlay** (`rgb(var(--color-muted-450) / 0.20)` Light / `rgb(var(--color-muted-450) / 0.25)` Dark): Borda perimetral que define a silhueta da superelipse.
-- **Focus Stroke Accent** (`rgb(var(--color-muted-450) / 0.70)` Light / `rgb(var(--color-muted-450) / 0.75)` Dark): Realce de foco sóbrio derivado da própria escala tonal do projeto.
+### 2.1 Superfícies & Fundos
+- **Canvas / Background Geral**: `var(--omp-bg)` ou `bg-background-light dark:bg-background-dark`
+  - Modo Claro: `oklch(98.5% var(--chroma-bg) var(--hue))` (Base suave de pedra aquecida)
+  - Modo Escuro: `oklch(14.5% var(--chroma-bg) var(--hue))` (Base profunda Slate sem ser preto cru)
+- **Cards e Painéis**: `.omp-settings-card` ou `var(--omp-card-bg)` ou `.ui-colors-preview-card`
+  - Relevo suave com borda sutil e fundo adaptativo.
+- **Fundo Elevado / Popovers / Menus**: `var(--omp-surface-popover)` com `backdrop-filter: blur(24px) saturate(180%)`.
 
-### Named Rules
-**The Authentic Muted Rule.** Botões, bordas e superfícies devem priorizar as variáveis `--color-muted-*` do projeto em vez de brancos duros (`#ffffff`) ou pretos crus (`#000000`). O tom deve respirar a escala Cocoa no light e Slate no dark.
+### 2.2 Tipografia e Contraste
+- **Texto Primário**: `text-foreground-900` ou `var(--text)`
+  - Modo Claro: `oklch(0.15 var(--chroma) var(--hue))`
+  - Modo Escuro: `oklch(0.96 var(--chroma-text) var(--hue))`
+- **Texto Secundário / Muted**: `text-foreground-600` ou `var(--text-muted)`
+  - Modo Claro: `oklch(0.4 var(--chroma) var(--hue))`
+  - Modo Escuro: `oklch(0.76 var(--chroma-text) var(--hue))`
 
-**The No-Accent-Clutter Rule.** Cores saturadas (como ciano neon ou azul elétrico) são estritamente evitadas em caixas de ícones e anéis de foco cotidianos; o tom `color-muted-450` resolve toda a cadência estrutural.
+### 2.3 Ações & Estados
+- **Ação Primária**: `var(--primary)` com texto branco (`#ffffff`)
+  - Adapta-se ao Hue do usuário com luminosidade e saturação calibradas para WCAG AA.
+- **Ação Secundária**: `var(--secondary)` com texto em alto contraste.
+- **Bordas Sutis**: `border-black/10 dark:border-white/10` ou `var(--border-muted)`.
+- **Bordas de Destaque / Luz**: `var(--highlight)` no topo dos cards para simular iluminação física.
 
-## Typography
+### 2.4 Alertas & Semântica
+- **Danger**: `var(--danger)` (`oklch(... 30)`)
+- **Warning**: `var(--warning)` (`oklch(... 100)`)
+- **Success**: `var(--success)` (`oklch(... 160)`)
+- **Info**: `var(--info)` (`oklch(... 260)`)
 
-**Display / Header Font:** Ginto (com fallback `-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif`)
-**Body / UI Font:** System Sans (`-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif`)
-**Mono Font:** Cascadia Code
+---
 
-### Hierarchy
-- **Title / Modal Header** (SemiBold 600, 17px, line-height 1.25, tracking -0.01em): Título único e direto.
-- **Field Label** (SemiBold 600, 11.5px, line-height 1.2, tracking 0.01em): Rótulo superior do campo na cor `color-muted-450`.
-- **Input Text** (Regular 400, 13.5px, line-height 1.4): Texto digitado e valores de entrada.
-- **Button Text** (SemiBold 600, 13.5px, line-height 1.2): Texto da ação principal ("Entrar") em branco puro sobre o fundo `color-muted-450`.
+## 3. Tipografia
 
-### Named Rules
-**The No-Subheading Doctrine.** Somos minimalistas e diretos ao assunto. Títulos de telas, modais e cartões devem ser autossuficientes. Subtítulos descritivos e slogans genéricos são eliminados.
+- **Header / Títulos**: Ginto (fallback `-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif`)
+- **Corpo / UI**: System Sans (`-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif`)
+- **Código / Monospaçado**: Cascadia Code, ui-monospace, Menlo, monospace
 
-## Layout
+### Hierarquia:
+- **Title / Modal Header**: SemiBold 600, 17px, line-height 1.25, tracking -0.01em. Título único e direto.
+- **Field Label**: SemiBold 600, 11.5px, line-height 1.2, tracking 0.01em.
+- **Input Text**: Regular 400, 13.5px, line-height 1.4.
+- **Button Text**: SemiBold 600, 13.5px, line-height 1.2.
 
-- **Estrutura 2-Tier do Composer**:
-  - Container Externo: Moldura translúcida com 6px de padding e `clip-path: var(--clip-path-squircle-36)`.
-  - Cartão Interno: Cartão de conteúdo concêntrico com `clip-path: var(--clip-path-squircle-24)`.
-- **Ritmo Vertical Compacto**:
-  - Espaçamento de 12px entre campos de formulário.
-  - Espaçamento de 18px entre o último campo e o botão de ação primária.
-  - Padding interno equilibrado de 22px a 24px no cartão.
-- **Altura Unificada**:
-  - Inputs e botões primários medem rigorosamente **44px** de altura, garantindo harmonia visual e área de toque perfeita em desktop e touch.
+---
 
-## Elevation & Depth
+## 4. Geometria Squircle & Elevação
 
-Superfícies recortadas com superelipses utilizam:
-1. `filter: drop-shadow(0 20px 36px rgba(0, 0, 0, 0.22))` no wrapper pai, preservando o contorno exato da superelipse.
-2. Backdrop acrílico com `backdrop-filter: blur(16px)` escurecendo a tela de fundo.
-3. Máscara de stroke perimetral de 1px com `clip-path: var(--clip-path-squircle-stroke-*)`.
+Todo elemento com superelipse usa:
+1. `clip-path: var(--clip-path-squircle-28, none)` para cards (ou 16px para botões/inputs).
+2. `filter: drop-shadow(0 4px 16px rgba(0, 0, 0, 0.12))` no wrapper pai (nunca `box-shadow` direto no elemento com `clip-path`).
+3. Bordas de contraste sutil para definir o perímetro contra o canvas.
 
-### Named Rules
-**The Squircle Shadow Rule.** Todo elemento que utiliza `clip-path: var(--clip-path-squircle-*)` deve projetar sombra a partir do wrapper container com `filter: drop-shadow(...)`, nunca por `box-shadow` direto.
+---
 
-## Shapes
+## 5. Do's and Don'ts
 
-- **Superelipse Squircle**:
-  - Modais e Cartões: `clip-path: var(--clip-path-squircle-36);`
-  - Campos de Entrada e Botões: `clip-path: var(--clip-path-squircle-16);`
-  - Botão Fechar e Ícones: `clip-path: var(--clip-path-squircle-16);` ou circular para controles auxiliares.
-- **Overlay de Borda**:
-  - Camada absoluta com `clip-path: var(--clip-path-squircle-stroke-36);` e `clip-path: var(--clip-path-squircle-stroke-16);` fornecendo traços perfeitamente contínuos e matemáticos sem anti-aliasing borrado.
-
-### Named Rules
-**The Pure Squircle Rule.** Componentes principais de interação e cartões usam as superelipses nativas da biblioteca `@progmruansilva/squircles`, evitando o clássico formato de cantos cilíndricos padrão.
-
-## Components
-
-### Squircle Modal
-- **Estrutura**: Wrapper com `filter: drop-shadow(...)` contendo o card `squircle-36` e a camada de traço `squircle-stroke-36`.
-- **Cabeçalho**: Título único à esquerda, botão fechar à direita. Sem subtítulo.
-- **Fundo**: Superfície `color-muted-100` no Light, `color-muted-150` no Dark.
-
-### Squircle Input
-- **Shape**: `clip-path: var(--clip-path-squircle-16);` com altura de 44px.
-- **Traço**: Camada absoluta com `clip-path: var(--clip-path-squircle-stroke-16);` colorida por `color-muted-450`.
-- **Foco**: Realce suave de traço com opacidade de 70% em `color-muted-450`.
-
-### Squircle Button
-- **Shape**: `clip-path: var(--clip-path-squircle-16);` com altura de 44px idêntica aos inputs.
-- **Cor**: Preenchimento `color-muted-450` com texto em alto contraste e hover para `color-muted-550`.
-- **Interação**: Micro-escala (`scale: 0.99`) e transição tonal suave.
-
-## Do's and Don'ts
-
-### Do:
-- **Do** usar os tokens `--color-muted-450` e variantes para botões, bordas e fundos no lugar de brancos estéreis.
-- **Do** utilizar as classes e variáveis de superelipse (`squircle-36`, `squircle-16`, `squircle-stroke-*`).
-- **Do** manter a altura uniforme de 44px em campos de entrada e botões principais.
-- **Do** manter títulos diretos e eliminar subtítulos supérfluos.
+### Do (O que SEMPRE fazer):
+- **Do** declarar `protected override createRenderRoot() { return this; }` (Light DOM) em todo componente Lit de tela ou apresentação.
+- **Do** usar os tokens semânticos (`var(--bg)`, `var(--omp-card-bg)`, `var(--text)`, `var(--text-muted)`, `var(--border-muted)`, `var(--primary)`) ou a classe `.omp-settings-card` / `.ui-colors-preview-card` para qualquer cartão.
+- **Do** utilizar as classes e variáveis de superelipse (`squircle-28`, `squircle-16`, `squircle-container`).
+- **Do** manter altura de **44px** em inputs e botões primários.
+- **Do** manter títulos diretos e objetivos, eliminando subtítulos prolixos.
 - **Do** usar `filter: drop-shadow(...)` no elemento pai de um squircle para preservar sombras fiéis à curvatura.
 
-### Don't:
-- **Don't** aplicar branco puro não atenuado em botões principais de tema escuro.
-- **Don't** adicionar subtítulos explicativos, frases de boas-vindas genéricas ou slogans abaixo de cabeçalhos simples.
-- **Don't** aplicar cores de acento neon/ciano em anéis de foco, fundos de ícones ou bordas rotineiras.
-- **Don't** usar `box-shadow` diretamente em nós com `clip-path` (ele será cortado).
-- **Don't** criar inputs com alturas díspares da altura dos botões de ação do mesmo formulário.
+### Don't (O que NUNCA fazer):
+- **Don't** NUNCA usar `bg-black`, `#000000`, `bg-white` ou `#ffffff` hardcoded em cards e superfícies. No escuro, `bg-black` cria um buraco negro sem relevo; no claro, `bg-white` quebra a paleta Cocoa.
+- **Don't** NUNCA usar `text-black` ou `text-white` diretamente em cartões de conteúdo.
+- **Don't** criar componentes Lit visuais sem `createRenderRoot() { return this; }` (o Shadow DOM bloqueará o Tailwind e causará estilos quebrados).
+- **Don't** aplicar cores de destaque duras (`bg-blue-600`, `#2563eb`) em botões primários; use `bg-[var(--primary)]` para respeitar a paleta do usuário.
+- **Don't** usar `box-shadow` diretamente em nós com `clip-path` (ele é cortado pela máscara; use `filter: drop-shadow` no wrapper pai).
+- **Don't** adicionar subtítulos redundantes ou slogans genéricos abaixo de cabeçalhos simples.
