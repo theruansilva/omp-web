@@ -723,6 +723,13 @@ export class OmpComposer extends LitElement {
       return;
     }
 
+    if (e.key === "Escape" && this.isWorking && this.value.trim() === "") {
+      e.preventDefault();
+      e.stopPropagation();
+      this.stopGeneration();
+      return;
+    }
+
     const portal = document.getElementById("popoverPortal") || document.body;
     const items = Array.from(
       portal.querySelectorAll<HTMLElement>(
@@ -1736,6 +1743,12 @@ export class OmpComposer extends LitElement {
       return;
     }
 
+    if (this.isWorking && e.key === "Escape" && this.value.trim() === "") {
+      e.preventDefault();
+      this.stopGeneration();
+      return;
+    }
+
     if (e.key === "Enter") {
       if (e.defaultPrevented || e.isComposing) return;
       const shiftKey = shouldUsePromptEnterShiftShortcut(
@@ -2326,10 +2339,22 @@ export class OmpComposer extends LitElement {
     `;
   }
 
-  private renderActionButton() {
-    const hasContent = Boolean(this.value.trim() || this.attachments.length > 0);
+  public stopGeneration() {
+    this.isWorking = false;
+    this.dispatchEvent(
+      new CustomEvent("stop-generation", {
+        bubbles: true,
+        composed: true,
+      }),
+    );
+    this.requestUpdate();
+  }
 
-    if (this.isWorking && hasContent) {
+  private renderActionButton() {
+    const hasText = Boolean(this.value.trim());
+    const hasContent = Boolean(hasText || this.attachments.length > 0);
+
+    if (this.isWorking && hasText) {
       return html`
         <button
           id="queue-button"
@@ -2345,7 +2370,7 @@ export class OmpComposer extends LitElement {
       `;
     }
 
-    if (this.isWorking && !hasContent) {
+    if (this.isWorking && !hasText) {
       return html`
         <button
           id="stop-button"
@@ -2354,15 +2379,7 @@ export class OmpComposer extends LitElement {
           title="Stop generating"
           aria-label="Stop generating"
           class="relative flex items-center justify-center size-9 rounded-2xl bg-black text-white dark:bg-white dark:text-black hover:opacity-90 active:scale-95 transition-all shadow-sm cursor-pointer select-none"
-          @click=${() => {
-            this.isWorking = false;
-            this.dispatchEvent(
-              new CustomEvent("stop-generation", {
-                bubbles: true,
-                composed: true,
-              }),
-            );
-          }}
+          @click=${() => this.stopGeneration()}
         >
           ${renderStopIcon("size-4")}
         </button>

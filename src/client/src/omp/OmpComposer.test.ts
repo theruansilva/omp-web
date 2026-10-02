@@ -359,6 +359,39 @@ describe("OmpComposer Stop & Queue Buttons", () => {
     expect(stopped).toBe(true);
     expect(composer.isWorking).toBe(false);
   });
+
+  it("when isWorking is true and input has no text even with attachments, always renders stop-button", () => {
+    const composer = new OmpComposer();
+    composer.isWorking = true;
+    composer.value = "";
+    (composer as any).attachments = [{ id: "1", file: new File([], "img.png"), previewUrl: "blob:url" }];
+
+    const rendered = composer.render();
+    const template = JSON.stringify(rendered);
+    expect(template).toContain("stop-button");
+    expect(template).not.toContain("queue-button");
+  });
+
+  it("pressing Escape when isWorking is true and input is empty calls stopGeneration and dispatches stop-generation", () => {
+    const composer = new OmpComposer();
+    composer.isWorking = true;
+    composer.value = "   ";
+
+    let stopped = false;
+    composer.addEventListener("stop-generation", () => {
+      stopped = true;
+    });
+
+    let prevented = false;
+    (composer as any).handleKeyDown({
+      key: "Escape",
+      preventDefault() { prevented = true; },
+    });
+
+    expect(stopped).toBe(true);
+    expect(prevented).toBe(true);
+    expect(composer.isWorking).toBe(false);
+  });
 });
 
 describe("OmpComposer Status Badges", () => {
