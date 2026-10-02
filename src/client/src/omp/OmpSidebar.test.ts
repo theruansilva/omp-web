@@ -55,7 +55,7 @@ describe("OmpSidebar", () => {
     expect(rendered).toBeDefined();
     const str = JSON.stringify(rendered);
     expect(str).toContain("Session 6 Unread");
-    expect(str).toContain("Trabalho concluído (não lido)");
+    expect(str).toContain("Aguardando visualização");
     expect(str).toContain("Nova sessão");
   });
 
@@ -81,6 +81,47 @@ describe("OmpSidebar", () => {
     }) as EventListener);
     (sidebar as any).handleArchiveSession("s1", "p1");
     expect(eventFired).toBe(true);
+  });
+
+  it("renders projects as cards with inner contrasting box, header, sessions and footer", () => {
+    const sidebar = new OmpSidebar();
+    sidebar.projects = [
+      { id: "p1", name: "omp-web", path: "~/code/omp-web" },
+      { id: "p2", name: "empty-proj", path: "~/code/empty-proj" },
+    ];
+    sidebar.sessions = [
+      { id: "s1", title: "Active Working", projectId: "p1", isWorking: true },
+      { id: "s2", title: "Unread Session", projectId: "p1", isUnread: true },
+    ];
+    sidebar.selectedProjectId = "p1";
+    sidebar.selectedSessionId = "s1";
+
+    const rendered = sidebar.render();
+    const str = JSON.stringify(rendered);
+
+    // Header & divider
+    expect(str).toContain("Projetos");
+    expect(str).toContain("group/proj-card");
+
+    // Project card header
+    expect(str).toContain("omp-web");
+    expect(str).toContain("Nova sessão em ");
+    expect(str).toContain("omp-web");
+
+    // Inner contrasting box & sessions
+    expect(str).toContain("role=\\\"menu\\\"");
+    expect(str).toContain("Active Working");
+    expect(str).toContain("Trabalhando");
+    expect(str).toContain("Unread Session");
+    expect(str).toContain("Aguardando visualização");
+
+    // Empty state for project without sessions
+    expect(str).toContain("Sem sessões recentes");
+
+    // Card footer
+    expect(str).toContain("~/code/omp-web");
+    expect(str).toContain("sessões");
+    expect(str).toContain("~/code/omp-web");
   });
 
   it("renders machines switcher in bottom footer and dispatches machine events", () => {

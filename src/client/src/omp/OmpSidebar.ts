@@ -14,7 +14,7 @@ import {
   renderServerIcon,
   renderModelsIcon,
   renderChevronUpIcon,
-  renderPlusIcon as renderPlusIconBase,
+  renderChatBubbleIcon,
 } from "./icons";
 import type { Machine, MachineHealth } from "../api";
 
@@ -51,7 +51,10 @@ export class OmpSidebar extends LitElement {
   @property({ type: String }) selectedSessionId = "sess-1";
   @property({ attribute: false }) machines: Machine[] = [];
   @property({ attribute: false }) selectedMachine?: Machine;
-  @property({ attribute: false }) machineStatuses: Record<string, MachineHealth> = {};
+  @property({ attribute: false }) machineStatuses: Record<
+    string,
+    MachineHealth
+  > = {};
   @state() private isMachineMenuOpen = false;
   @state() private activeMenuSessionId: string | null = null;
 
@@ -91,7 +94,11 @@ export class OmpSidebar extends LitElement {
       if (!this.touchMoved) {
         this.isLongPress = true;
         this.activeMenuSessionId = sessionId;
-        try { navigator.vibrate?.(40); } catch { /* ignore */ }
+        try {
+          navigator.vibrate?.(40);
+        } catch {
+          /* ignore */
+        }
         this.requestUpdate();
       }
     }, 450);
@@ -119,7 +126,11 @@ export class OmpSidebar extends LitElement {
     this.requestUpdate();
   }
 
-  private handleSessionClick(sessionId: string, projectId?: string, e?: MouseEvent) {
+  private handleSessionClick(
+    sessionId: string,
+    projectId?: string,
+    e?: MouseEvent,
+  ) {
     if (this.isLongPress) {
       this.isLongPress = false;
       e?.preventDefault();
@@ -129,7 +140,11 @@ export class OmpSidebar extends LitElement {
     this.handleSelectSession(sessionId, projectId);
   }
 
-  private handleArchiveSession(sessionId: string, projectId?: string, e?: Event) {
+  private handleArchiveSession(
+    sessionId: string,
+    projectId?: string,
+    e?: Event,
+  ) {
     e?.stopPropagation();
     this.activeMenuSessionId = null;
     this.dispatchEvent(
@@ -249,21 +264,37 @@ export class OmpSidebar extends LitElement {
   private renderNavIcon(id: string) {
     switch (id) {
       case "new-chat":
-        return renderNewChatIcon("size-5 shrink-0 text-[var(--omp-primary)] transition-colors");
+        return renderNewChatIcon(
+          "size-5 shrink-0 text-[var(--omp-primary)] transition-colors",
+        );
       case "files":
-        return renderFolderIcon("size-5 shrink-0 text-amber-500 dark:text-amber-400 group-hover:text-amber-600 dark:group-hover:text-amber-300 transition-colors");
+        return renderFolderIcon(
+          "size-5 shrink-0 text-amber-500 dark:text-amber-400 group-hover:text-amber-600 dark:group-hover:text-amber-300 transition-colors",
+        );
       case "terminal":
-        return renderTerminalIcon("size-5 shrink-0 text-sky-500 dark:text-sky-400 group-hover:text-sky-600 dark:group-hover:text-sky-300 transition-colors");
+        return renderTerminalIcon(
+          "size-5 shrink-0 text-sky-500 dark:text-sky-400 group-hover:text-sky-600 dark:group-hover:text-sky-300 transition-colors",
+        );
       case "usage":
-        return renderUsageIcon("size-5 shrink-0 text-emerald-500 dark:text-emerald-400 group-hover:text-emerald-600 dark:group-hover:text-emerald-300 transition-colors");
+        return renderUsageIcon(
+          "size-5 shrink-0 text-emerald-500 dark:text-emerald-400 group-hover:text-emerald-600 dark:group-hover:text-emerald-300 transition-colors",
+        );
       case "library":
-        return renderLibraryIcon("size-5 shrink-0 text-rose-500 dark:text-rose-400 group-hover:text-rose-600 dark:group-hover:text-rose-300 transition-colors");
+        return renderLibraryIcon(
+          "size-5 shrink-0 text-rose-500 dark:text-rose-400 group-hover:text-rose-600 dark:group-hover:text-rose-300 transition-colors",
+        );
       case "projects":
-        return renderProjectsIcon("size-5 shrink-0 text-[var(--omp-primary)] group-hover:opacity-100 transition-opacity");
+        return renderProjectsIcon(
+          "size-5 shrink-0 text-[var(--omp-primary)] group-hover:opacity-100 transition-opacity",
+        );
       case "models":
-        return renderModelsIcon("size-5 shrink-0 text-purple-500 dark:text-purple-400 group-hover:text-purple-600 dark:group-hover:text-purple-300 transition-colors");
+        return renderModelsIcon(
+          "size-5 shrink-0 text-purple-500 dark:text-purple-400 group-hover:text-purple-600 dark:group-hover:text-purple-300 transition-colors",
+        );
       case "settings":
-        return renderSettingsIcon("size-5 shrink-0 text-slate-500 dark:text-slate-400 group-hover:text-slate-700 dark:group-hover:text-slate-200 transition-colors");
+        return renderSettingsIcon(
+          "size-5 shrink-0 text-slate-500 dark:text-slate-400 group-hover:text-slate-700 dark:group-hover:text-slate-200 transition-colors",
+        );
       default:
         return html``;
     }
@@ -344,7 +375,7 @@ export class OmpSidebar extends LitElement {
           <!-- Scrollable Body with Top Nav (New chat, Library, Projetos) + 1 Divider + Sessions -->
           <div class="flex-1 overflow-y-auto min-h-0 flex flex-col gap-1 pr-0.5 font-sans">
             <!-- 1. Primary Nav: New Chat, Library, Projetos (links diretos e limpos) -->
-            <div class="flex flex-col gap-0.5 shrink-0 ml-3.5 pl-2 border-l border-black/8 dark:border-white/8" role="menu">
+            <div class="flex flex-col gap-0.5 shrink-0" role="menu">
               ${this.visibleNavItems.map(
                 (item) => html`
                   <button
@@ -374,123 +405,185 @@ export class OmpSidebar extends LitElement {
               )}
             </div>
 
-            <!-- Divider separating Pages from Projects/Sessions -->
+            <!-- Divider & Header separating Pages from Projects -->
             <div class="h-px bg-black/8 dark:bg-white/8 my-2 mx-1 shrink-0"></div>
 
-            ${projectsList.map((project) => {
-              const pSessions = allSessions.filter(
-                (s) => (!s.projectId || s.projectId === project.id) && !s.archived,
-              );
-              const sorted = [...pSessions].sort((a, b) => {
-                if (a.isUnread && !b.isUnread) return -1;
-                if (!a.isUnread && b.isUnread) return 1;
-                if (a.isWorking && !b.isWorking) return -1;
-                if (!a.isWorking && b.isWorking) return 1;
-                return 0;
-              });
-              const displaySessions = sorted.slice(0, 5);
+            <div class="flex items-center justify-between px-2 pt-0.5 pb-1.5 text-[11px] font-bold uppercase tracking-wider text-foreground-450 dark:text-foreground-500 select-none shrink-0">
+              <div class="flex items-center gap-1.5">
+                <span>Projetos</span>
+                <span class="text-[10px] font-mono font-semibold px-1.5 py-0.5 rounded bg-black/5 dark:bg-white/10 text-foreground-600 dark:text-foreground-400 leading-none">
+                  ${projectsList.length}
+                </span>
+              </div>
+            </div>
 
-              return html`
-                <div class="flex items-center justify-between px-1 py-1 mt-1.5 mb-0.5 select-none">
-                  <button
-                    type="button"
-                    class="group/proj flex items-center gap-2 min-w-0 flex-1 px-2 py-1 rounded-xl hover:bg-black/5 dark:hover:bg-white/8 transition-colors cursor-pointer text-left pointer-events-auto"
-                    @click=${() => this.handleProjectClick(project.id)}
-                    title="Abrir projeto ${project.name}"
+            <!-- Project Cards List -->
+            <div class="flex flex-col gap-2 shrink-0">
+              ${projectsList.map((project) => {
+                const pSessions = allSessions.filter(
+                  (s) =>
+                    (!s.projectId || s.projectId === project.id) && !s.archived,
+                );
+                const sorted = [...pSessions].sort((a, b) => {
+                  if (a.isUnread && !b.isUnread) return -1;
+                  if (!a.isUnread && b.isUnread) return 1;
+                  if (a.isWorking && !b.isWorking) return -1;
+                  if (!a.isWorking && b.isWorking) return 1;
+                  return 0;
+                });
+                const displaySessions = sorted.slice(0, 5);
+                const isSelectedProj = this.selectedProjectId === project.id;
+
+                return html`
+                  <div
+                    class="group/proj-card flex flex-col p-2.5 rounded-2xl border transition-all duration-200 select-none ${
+                      isSelectedProj
+                        ? "bg-black/[0.03] dark:bg-white/[0.04] border-[var(--omp-primary)]/40 shadow-xs"
+                        : "bg-black/[0.015] dark:bg-white/[0.02] border-black/8 dark:border-white/8 hover:border-black/15 dark:hover:border-white/15"
+                    }"
                   >
-                    <span class="shrink-0 text-[var(--omp-primary)] opacity-85 group-hover/proj:opacity-100 transition-opacity">
-                      ${renderFolderIcon("size-4")}
-                    </span>
-                    <span class="truncate font-sans text-xs font-extrabold tracking-tight text-[var(--omp-text-secondary)] group-hover/proj:text-[var(--omp-text-primary)]">
-                      ${project.name}
-                    </span>
-                  </button>
-                  <button
-                    type="button"
-                    class="flex items-center justify-center size-6 rounded-lg text-foreground-450 hover:text-foreground-900 hover:bg-black/8 dark:hover:bg-white/10 transition-colors cursor-pointer pointer-events-auto shrink-0 mr-1"
-                    title="Nova sessão em ${project.name}"
-                    aria-label="Nova sessão em ${project.name}"
-                    @click=${(e: Event) => {
-                      e.stopPropagation();
-                      this.handleNewSession(project.id);
-                    }}
-                  >
-                    ${renderPlusIcon("size-3.5")}
-                  </button>
-                </div>
+                    <!-- Card Header: Title + Action Button (Fiel à imagem de referência) -->
+                    <div class="flex items-center justify-between gap-1.5 mb-2">
+                      <button
+                        type="button"
+                        class="group/proj flex items-center gap-2 min-w-0 flex-1 text-left cursor-pointer pointer-events-auto"
+                        @click=${() => this.handleProjectClick(project.id)}
+                        title="Abrir projeto ${project.name}"
+                      >
+                        <span class="shrink-0 text-[var(--omp-primary)] opacity-90 group-hover/proj:opacity-100 transition-opacity">
+                          ${renderFolderIcon("size-4")}
+                        </span>
+                        <span class="truncate font-sans text-xs font-extrabold tracking-tight text-foreground-900 group-hover/proj:text-[var(--omp-primary)] transition-colors">
+                          ${project.name}
+                        </span>
+                      </button>
 
-                ${
-                  displaySessions.length > 0
-                    ? html`
-                  <div class="flex flex-col gap-0.5 shrink-0" role="menu">
-                    ${displaySessions.map(
-                      (session) => html`
-                        <div class="relative group/session w-full">
-                          <button
-                            type="button"
-                            role="menuitem"
-                            class="relative flex w-full items-center justify-between px-2.5 py-1.5 rounded-xl text-xs font-medium font-sans transition-colors cursor-pointer pointer-events-auto select-none ${
-                              this.selectedSessionId === session.id
-                                ? "bg-black/8 dark:bg-white/10 text-foreground-900 font-bold"
-                                : session.archived
-                                  ? "text-foreground-400 dark:text-foreground-500 opacity-60 hover:opacity-100 hover:bg-black/5 dark:hover:bg-white/8 hover:text-foreground-700 dark:hover:text-foreground-300"
-                                  : "text-foreground-700 hover:bg-black/5 dark:hover:bg-white/8 hover:text-foreground-900"
-                            }"
-                            @click=${(e: MouseEvent) => this.handleSessionClick(session.id, project.id, e)}
-                            @contextmenu=${(e: MouseEvent) => this.handleContextMenu(session.id, e)}
-                            @mousedown=${() => this.startHold(session.id)}
-                            @mouseup=${() => this.endHold()}
-                            @mouseleave=${() => this.cancelHold()}
-                            @touchstart=${() => this.startHold(session.id)}
-                            @touchmove=${() => this.cancelHold()}
-                            @touchend=${() => this.endHold()}
-                            @touchcancel=${() => this.cancelHold()}
-                          >
-                            <div class="flex items-center gap-2 min-w-0 flex-1 pr-1">
-                              ${session.isWorking ? html`<span class="size-2 rounded-full bg-emerald-500 animate-pulse shrink-0" title="Trabalhando"></span>` : nothing}
-                              <span class="truncate text-left flex-1 ${session.archived ? "opacity-75" : ""}">${session.title}</span>
-                            </div>
+                      <button
+                        type="button"
+                        class="flex items-center justify-center size-6 rounded-lg text-foreground-450 hover:text-foreground-900 hover:bg-black/8 dark:hover:bg-white/10 transition-colors cursor-pointer pointer-events-auto shrink-0"
+                        title="Nova sessão em ${project.name}"
+                        aria-label="Nova sessão em ${project.name}"
+                        @click=${(e: Event) => {
+                          e.stopPropagation();
+                          this.handleNewSession(project.id);
+                        }}
+                      >
+                        ${renderPlusIcon("size-3.5")}
+                      </button>
+                    </div>
 
-                            ${session.isUnread ? html`<span class="size-2 rounded-full bg-[var(--omp-primary)] ring-2 ring-[var(--omp-primary)]/30 shrink-0 ml-2" title="Trabalho concluído (não lido)"></span>` : session.updatedAt ? html`<span class="text-xs text-foreground-500 font-mono shrink-0 ml-2">${session.updatedAt}</span>` : nothing}
-                          </button>
-
-                          ${
-                            this.activeMenuSessionId === session.id
-                              ? html`
-                                <div
-                                  class="absolute right-2 top-full mt-1 z-30 min-w-[130px] rounded-xl border border-black/10 dark:border-white/10 bg-surface-150/95 dark:bg-background-800/95 backdrop-blur-md p-1 shadow-xl flex flex-col font-sans select-none pointer-events-auto"
-                                  @click=${(e: Event) => e.stopPropagation()}
-                                >
+                    <!-- Inner Box: Contrasting background containing sessions (Fiel ao box cinza na imagem) -->
+                    <div
+                      class="flex flex-col gap-0.5 p-1 rounded-xl bg-black/[0.04] dark:bg-white/[0.05] border border-black/6 dark:border-white/6"
+                      role="menu"
+                    >
+                      ${
+                        displaySessions.length > 0
+                          ? displaySessions.map(
+                              (session) => html`
+                                <div class="relative group/session w-full">
                                   <button
                                     type="button"
-                                    class="flex items-center gap-2 w-full px-2.5 py-1.5 rounded-lg text-xs font-medium text-foreground-700 hover:text-foreground-900 hover:bg-black/5 dark:hover:bg-white/10 transition-colors cursor-pointer text-left"
-                                    @click=${(e: Event) => this.handleArchiveSession(session.id, project.id, e)}
+                                    role="menuitem"
+                                    class="relative flex w-full items-center justify-between px-2 py-1.5 rounded-lg text-xs font-medium font-sans transition-colors cursor-pointer pointer-events-auto select-none ${
+                                      this.selectedSessionId === session.id
+                                        ? "bg-black/10 dark:bg-white/12 text-foreground-900 font-bold shadow-2xs"
+                                        : session.archived
+                                          ? "text-foreground-400 dark:text-foreground-500 opacity-60 hover:opacity-100 hover:bg-black/5 dark:hover:bg-white/8 hover:text-foreground-700 dark:hover:text-foreground-300"
+                                          : "text-foreground-700 hover:bg-black/5 dark:hover:bg-white/8 hover:text-foreground-900"
+                                    }"
+                                    @click=${(e: MouseEvent) => this.handleSessionClick(session.id, project.id, e)}
+                                    @contextmenu=${(e: MouseEvent) => this.handleContextMenu(session.id, e)}
+                                    @mousedown=${() => this.startHold(session.id)}
+                                    @mouseup=${() => this.endHold()}
+                                    @mouseleave=${() => this.cancelHold()}
+                                    @touchstart=${() => this.startHold(session.id)}
+                                    @touchmove=${() => this.cancelHold()}
+                                    @touchend=${() => this.endHold()}
+                                    @touchcancel=${() => this.cancelHold()}
                                   >
-                                    <span class="text-sm leading-none opacity-70">📦</span>
-                                    <span>Arquivar</span>
+                                    <div class="flex items-center gap-1.5 min-w-0 flex-1 pr-1">
+                                      ${
+                                        session.isWorking
+                                          ? html`<span class="size-2 rounded-full bg-emerald-500 animate-pulse shrink-0" title="Trabalhando"></span>`
+                                          : html`<span class="opacity-60 group-hover/session:opacity-100 transition-opacity">${renderChatBubbleIcon("size-3 shrink-0")}</span>`
+                                      }
+                                      <span class="truncate text-left flex-1 ${session.archived ? "opacity-75" : ""}">${session.title}</span>
+                                    </div>
+
+                                    ${
+                                      session.isUnread
+                                        ? html`<span class="size-2 rounded-full bg-[var(--omp-primary)] ring-2 ring-[var(--omp-primary)]/30 shrink-0 ml-1.5" title="Aguardando visualização"></span>`
+                                        : session.updatedAt
+                                          ? html`<span class="text-[10px] text-foreground-450 dark:text-foreground-500 font-mono shrink-0 ml-1.5">${session.updatedAt}</span>`
+                                          : nothing
+                                    }
                                   </button>
+
+                                  ${
+                                    this.activeMenuSessionId === session.id
+                                      ? html`
+                                        <div
+                                          class="absolute right-2 top-full mt-1 z-30 min-w-[130px] rounded-xl border border-black/10 dark:border-white/10 bg-surface-150/95 dark:bg-background-800/95 backdrop-blur-md p-1 shadow-xl flex flex-col font-sans select-none pointer-events-auto"
+                                          @click=${(e: Event) => e.stopPropagation()}
+                                        >
+                                          <button
+                                            type="button"
+                                            class="flex items-center gap-2 w-full px-2.5 py-1.5 rounded-lg text-xs font-medium text-foreground-700 hover:text-foreground-900 hover:bg-black/5 dark:hover:bg-white/10 transition-colors cursor-pointer text-left"
+                                            @click=${(e: Event) => this.handleArchiveSession(session.id, project.id, e)}
+                                          >
+                                            <span class="text-sm leading-none opacity-70">📦</span>
+                                            <span>Arquivar</span>
+                                          </button>
+                                        </div>
+                                      `
+                                      : nothing
+                                  }
                                 </div>
-                              `
-                              : nothing
-                          }
-                        </div>
-                      `,
-                    )}
+                              `,
+                            )
+                          : html`
+                            <div class="py-2 px-2 text-center text-[11px] text-foreground-450 dark:text-foreground-500 italic">
+                              Sem sessões recentes
+                            </div>
+                          `
+                      }
+                    </div>
+
+                    <!-- Card Footer: Metadados (Path + Contagem, como na imagem) -->
+                    <div class="flex items-center justify-between mt-2 pt-0.5 px-0.5 text-[10px] text-foreground-450 dark:text-foreground-500 font-mono">
+                      <span class="truncate max-w-[130px]" title="${project.path || project.name}">
+                        ${project.path || project.name}
+                      </span>
+                      <span class="shrink-0 font-sans text-[10px] font-semibold text-foreground-500">
+                        ${pSessions.length} ${pSessions.length === 1 ? "sessão" : "sessões"}
+                      </span>
+                    </div>
                   </div>
-                `
-                    : nothing
-                }
-              `;
+                `;
+              })}
             })}
           </div>
 
           <!-- Bottom Footer: Machines Selector (New UI) -->
           <div class="pt-2 mt-auto shrink-0 border-t border-black/10 dark:border-white/10 relative">
             ${(() => {
-              const currentMachine = this.selectedMachine || this.machines.find(m => m.id === "local") || this.machines[0] || { id: "local", name: "Local", kind: "local" as const };
+              const currentMachine = this.selectedMachine ||
+                this.machines.find((m) => m.id === "local") ||
+                this.machines[0] || {
+                  id: "local",
+                  name: "Local",
+                  kind: "local" as const,
+                };
               const currentHealth = this.machineStatuses[currentMachine.id];
-              const isOnline = currentMachine.kind === "local" ? true : (currentHealth?.status === "online" || (currentHealth?.ok ?? true));
-              const isError = currentHealth?.status === "error" || currentHealth?.status === "offline";
+              const isOnline =
+                currentMachine.kind === "local"
+                  ? true
+                  : currentHealth?.status === "online" ||
+                    (currentHealth?.ok ?? true);
+              const isError =
+                currentHealth?.status === "error" ||
+                currentHealth?.status === "offline";
 
               return html`
                 <div class="relative w-full">
@@ -518,7 +611,9 @@ export class OmpSidebar extends LitElement {
                   </button>
 
                   <!-- Popover Dropup Menu -->
-                  ${this.isMachineMenuOpen ? html`
+                  ${
+                    this.isMachineMenuOpen
+                      ? html`
                     <div
                       class="absolute bottom-full left-0 mb-1.5 w-full z-40 p-1.5 rounded-2xl border border-black/10 dark:border-white/10 bg-surface-150/95 dark:bg-background-800/95 backdrop-blur-xl shadow-2xl flex flex-col gap-1 font-sans select-none pointer-events-auto"
                       @click=${(e: Event) => e.stopPropagation()}
@@ -529,11 +624,21 @@ export class OmpSidebar extends LitElement {
                       </div>
 
                       <div class="flex flex-col gap-0.5 max-h-48 overflow-y-auto">
-                        ${(this.machines.length > 0 ? this.machines : [currentMachine]).map((m) => {
+                        ${(
+                          this.machines.length > 0
+                            ? this.machines
+                            : [currentMachine]
+                        ).map((m) => {
                           const isSelected = m.id === currentMachine.id;
                           const health = this.machineStatuses[m.id];
-                          const mOnline = m.kind === "local" ? true : (health?.status === "online" || (health?.ok ?? true));
-                          const mError = health?.status === "error" || health?.status === "offline";
+                          const mOnline =
+                            m.kind === "local"
+                              ? true
+                              : health?.status === "online" ||
+                                (health?.ok ?? true);
+                          const mError =
+                            health?.status === "error" ||
+                            health?.status === "offline";
                           const canRemove = m.kind === "remote";
 
                           return html`
@@ -544,10 +649,12 @@ export class OmpSidebar extends LitElement {
                                 <span class="size-2 rounded-full shrink-0 ${mError ? "bg-red-500" : mOnline ? "bg-emerald-500" : "bg-zinc-400"}"></span>
                                 <div class="flex flex-col min-w-0 flex-1">
                                   <span class="text-xs truncate">${m.name}</span>
-                                  <span class="text-xs opacity-70 font-mono truncate leading-none">${m.kind === "local" ? "Local OMP Web" : (m.baseUrl || "Remote OMP Web")}</span>
+                                  <span class="text-xs opacity-70 font-mono truncate leading-none">${m.kind === "local" ? "Local OMP Web" : m.baseUrl || "Remote OMP Web"}</span>
                                 </div>
                               </div>
-                              ${canRemove ? html`
+                              ${
+                                canRemove
+                                  ? html`
                                 <button
                                   type="button"
                                   class="opacity-0 group-hover/item:opacity-100 p-1 rounded-md hover:bg-red-500/10 text-foreground-450 hover:text-red-500 transition-opacity"
@@ -556,7 +663,9 @@ export class OmpSidebar extends LitElement {
                                 >
                                   ×
                                 </button>
-                              ` : nothing}
+                              `
+                                  : nothing
+                              }
                             </div>
                           `;
                         })}
@@ -572,7 +681,9 @@ export class OmpSidebar extends LitElement {
                         <span>Adicionar Máquina</span>
                       </button>
                     </div>
-                  ` : nothing}
+                  `
+                      : nothing
+                  }
                 </div>
               `;
             })()}
