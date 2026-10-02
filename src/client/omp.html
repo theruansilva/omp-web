@@ -7,11 +7,35 @@
       content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content"
     />
     <title>OMP Web</title>
+    <meta name="theme-color" content="#0d1117" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/x-icon" href="/favicon.ico" sizes="any" />
+    <link rel="icon" type="image/png" sizes="256x256" href="/favicon.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/favicon-180x180.png" />
+    <link rel="manifest" href="/manifest.webmanifest" />
     <link rel="stylesheet" href="/squircles.css" />
+    <script>
+      (function() {
+        try {
+          var raw = localStorage.getItem("omp-web:ui-colors");
+          if (raw) {
+            var cfg = JSON.parse(raw);
+            if (cfg && cfg.enabled !== false && typeof cfg.hue === "number" && typeof cfg.chroma === "number") {
+              var root = document.documentElement;
+              root.setAttribute("data-ui-colors", "true");
+              root.style.setProperty("--hue", cfg.hue);
+              root.style.setProperty("--chroma", cfg.chroma);
+            }
+          }
+        } catch (e) {}
+      })();
+    </script>
     <style>
       @import "/omp.css";
       @import "/omp-theme.css";
+      @import "/ui-colors.css";
 
       :root {
         color-scheme: light dark;

@@ -76,6 +76,38 @@ async function serveDevDocs(request: IncomingMessage, response: ServerResponse, 
   response.end("Not found");
 }
 
+function devUiRouterPlugin(): Plugin {
+  return {
+    name: "omp-web-dev-ui-router",
+    configureServer(server) {
+      server.middlewares.use((req, res, next) => {
+        const rawUrl = req.url;
+        if (!rawUrl) return next();
+        const url = new URL(rawUrl, "http://localhost");
+        if (url.pathname === "/classic") {
+          req.url = "/index.html" + url.search;
+          return next();
+        }
+        if (url.pathname === "/omp") {
+          req.url = "/omp.html" + url.search;
+          return next();
+        }
+        if (url.pathname === "/" || url.pathname === "") {
+          const cookieHeader = req.headers.cookie || "";
+          const isClassicCookie = cookieHeader.includes("omp_web_ui=classic");
+          const uiQuery = url.searchParams.get("ui");
+          if (uiQuery === "classic" || (isClassicCookie && uiQuery !== "new")) {
+            req.url = "/index.html" + url.search;
+          } else {
+            req.url = "/omp.html" + url.search;
+          }
+        }
+        next();
+      });
+    },
+  };
+}
+
 function devDocsPlugin(): Plugin {
   return {
     name: "omp-web-dev-docs",
@@ -88,7 +120,7 @@ function devDocsPlugin(): Plugin {
 }
 
 export default defineConfig({
-  plugins: [devDocsPlugin()],
+  plugins: [devUiRouterPlugin(), devDocsPlugin()],
   root: "src/client",
   resolve: {
     alias: {

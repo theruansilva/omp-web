@@ -19,6 +19,17 @@ import {
   type ChatPreferences,
 } from "../chatPreferences";
 import {
+  loadUiColors,
+  saveUiColors,
+  resetUiColors,
+  resolveUiColorVars,
+  formatCssVarsText,
+  UI_COLOR_PRESETS,
+  UI_COLORS_CHANGED_EVENT,
+  type UiColorsConfig,
+  type UiColorPreset,
+} from "../uiColors";
+import {
   readSettingsSection,
   writeSettingsSection,
   type SettingsSection,
@@ -37,6 +48,8 @@ import {
   renderPlusIcon,
   renderTrashIcon,
   renderLockIcon,
+  renderCopyIcon,
+  renderPaletteIcon,
 } from "./icons";
 
 @customElement("omp-settings-view")
@@ -49,6 +62,11 @@ export class OmpSettingsView extends LitElement {
   @state() private pluginsResponse?: OmpWebPluginsResponse;
   @state() private packagesResponse?: PiPackagesResponse;
   @state() private chatPrefs: ChatPreferences = loadChatPreferences();
+  @state() private uiColors: UiColorsConfig = loadUiColors();
+  @state() private showCodeModal = false;
+  @state() private showAlertsPreview = false;
+  @state() private copiedCssCode = false;
+  @state() private uiVersion: "new" | "classic" = "new";
 
   @state() private loading = true;
   @state() private saving = false;
@@ -76,6 +94,61 @@ export class OmpSettingsView extends LitElement {
 
   private notificationTimer?: ReturnType<typeof setTimeout> | undefined;
 
+  
+  private readonly handleUiColorsChange = (event: Event): void => {
+    if (event instanceof CustomEvent && event.detail) {
+      this.uiColors = event.detail as UiColorsConfig;
+      this.requestUpdate();
+    }
+  };
+
+  private handleHueInput(val: number): void {
+    const next = { ...this.uiColors, hue: Math.min(360, Math.max(0, Math.round(val))) };
+    this.uiColors = next;
+    saveUiColors(next, this.theme === "light");
+  }
+
+  private handleChromaInput(val: number): void {
+    const next = { ...this.uiColors, chroma: Math.min(0.2, Math.max(0, +val.toFixed(2))) };
+    this.uiColors = next;
+    saveUiColors(next, this.theme === "light");
+  }
+
+  private handleUiColorsToggle(): void {
+    const next = { ...this.uiColors, enabled: !this.uiColors.enabled };
+    this.uiColors = next;
+    saveUiColors(next, this.theme === "light");
+    this.showNotification("success", next.enabled ? "Paleta UI Colors ativada na interface!" : "Paleta UI Colors desativada (cores padrão)");
+  }
+
+  private handlePresetClick(preset: UiColorPreset): void {
+    const next = { ...this.uiColors, hue: preset.hue, chroma: preset.chroma, enabled: true };
+    this.uiColors = next;
+    saveUiColors(next, this.theme === "light");
+    this.showNotification("success", `Paleta "${preset.name}" aplicada!`);
+  }
+
+  private handleResetColors(): void {
+    this.uiColors = resetUiColors(this.theme === "light");
+    this.showNotification("success", "Cores restauradas para o padrão do UI Colors");
+  }
+
+  private async handleCopyCode(): Promise<void> {
+    const vars = resolveUiColorVars(this.uiColors.hue, this.uiColors.chroma, this.theme === "light");
+    const code = formatCssVarsText(vars);
+    try {
+      await navigator.clipboard.writeText(code);
+      this.copiedCssCode = true;
+      this.showNotification("success", "Variáveis CSS (OKLCH) copiadas com sucesso!");
+      setTimeout(() => {
+        this.copiedCssCode = false;
+        this.requestUpdate();
+      }, 2000);
+    } catch {
+      this.showNotification("error", "Erro ao copiar para a área de transferência");
+    }
+  }
+
   private readonly handleChatPrefsChange = (event: Event): void => {
     if (event instanceof CustomEvent && event.detail) {
       this.chatPrefs = event.detail as ChatPreferences;
@@ -99,6 +172,10 @@ export class OmpSettingsView extends LitElement {
       }
     }
 
+    this.uiColors = loadUiColors();
+    if (typeof window !== "undefined") {
+      window.addEventListener(UI_COLORS_CHANGED_EVENT, this.handleUiColorsChange);
+    }
     void this.loadAll();
   }
 
@@ -107,6 +184,9 @@ export class OmpSettingsView extends LitElement {
       CHAT_PREFERENCES_CHANGED_EVENT,
       this.handleChatPrefsChange,
     );
+    if (typeof window !== "undefined") {
+      window.removeEventListener(UI_COLORS_CHANGED_EVENT, this.handleUiColorsChange);
+    }
     clearTimeout(this.notificationTimer);
     super.disconnectedCallback();
   }
@@ -178,6 +258,20 @@ export class OmpSettingsView extends LitElement {
       this.packagesResponse = await piPackagesApi.packages();
     } catch {
       // Ignored: packages endpoint may fail if not supported
+    }
+  }
+
+  private handleSetUiVersion(version: "new" | "classic") {
+    this.uiVersion = version;
+    try {
+      localStorage.setItem("omp-web:ui-version", version);
+      document.cookie = `omp_web_ui=${version}; path=/; max-age=31536000; SameSite=Lax`;
+    } catch {}
+    this.requestUpdate();
+    if (version === "classic") {
+      window.location.href = "/classic";
+    } else {
+      window.location.href = "/";
     }
   }
 
@@ -465,25 +559,428 @@ export class OmpSettingsView extends LitElement {
           </div>
         </section>
 
-        <!-- Card 1: Tema e Aparência -->
+        <!-- Card: Versão da Interface (Cutover & Preferência) -->
         <section
-          class="p-5 md:p-6 rounded-3xl omp-settings-card flex flex-col gap-4"
+          class="p-5 md:p-6 rounded-3xl omp-settings-card flex flex-col gap-4 shadow-xs"
           style="clip-path: var(--clip-path-squircle-28, none);"
         >
           <div class="flex items-center justify-between">
             <div class="flex flex-col gap-0.5">
-              <h3 class="text-base font-bold text-foreground-900">Aparência & Tema</h3>
-              <p class="text-xs text-foreground-600">Escolha o tema de interface do OMP Web</p>
+              <h3 class="text-base font-bold text-foreground-900">Versão da Interface</h3>
+              <p class="text-xs text-foreground-600">Escolha entre a nova interface moderna (Cockpit) e a interface clássica legada</p>
+            </div>
+            <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 font-mono">
+              ${this.uiVersion === "classic" ? "Clássica" : "Nova UI (Padrão)"}
+            </span>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-black/5 dark:border-white/5">
+            <!-- Option 1: Nova UI -->
+            <button
+              type="button"
+              class="flex flex-col text-left p-4 rounded-2xl border transition-all cursor-pointer ${
+                this.uiVersion !== "classic"
+                  ? "border-[var(--primary)] bg-[var(--primary)]/10 ring-1 ring-[var(--primary)]"
+                  : "border-black/10 dark:border-white/10 hover:bg-black/5 dark:hover:bg-white/5"
+              }"
+              @click=${() => this.handleSetUiVersion("new")}
+            >
+              <div class="flex items-center justify-between w-full">
+                <span class="text-sm font-bold text-foreground-900">Nova Interface (Cockpit)</span>
+                ${this.uiVersion !== "classic" ? html`<span class="text-emerald-500 font-bold">✓ Ativo</span>` : nothing}
+              </div>
+              <p class="text-xs text-foreground-600 mt-1">
+                Visual moderno, abas nativas de Terminal, Arquivos e Uso, e Composer Hub integrado (/ e !).
+              </p>
+            </button>
+
+            <!-- Option 2: UI Clássica -->
+            <button
+              type="button"
+              class="flex flex-col text-left p-4 rounded-2xl border transition-all cursor-pointer ${
+                this.uiVersion === "classic"
+                  ? "border-[var(--primary)] bg-[var(--primary)]/10 ring-1 ring-[var(--primary)]"
+                  : "border-black/10 dark:border-white/10 hover:bg-black/5 dark:hover:bg-white/5"
+              }"
+              @click=${() => this.handleSetUiVersion("classic")}
+            >
+              <div class="flex items-center justify-between w-full">
+                <span class="text-sm font-bold text-foreground-900">Interface Clássica</span>
+                ${this.uiVersion === "classic" ? html`<span class="text-emerald-500 font-bold">✓ Ativo</span>` : nothing}
+              </div>
+              <p class="text-xs text-foreground-600 mt-1">
+                Layout clássico anterior em 3 colunas com painéis laterais de Git, Tarefas e Terminal legado.
+              </p>
+            </button>
+          </div>
+        </section>
+
+        <!-- Card 1: Tema e Aparência -->
+        <section
+          class="p-5 md:p-6 rounded-3xl omp-settings-card flex flex-col gap-6"
+          style="clip-path: var(--clip-path-squircle-28, none);"
+        >
+          <!-- Header with Theme Toggle -->
+          <div class="flex items-center justify-between flex-wrap gap-3">
+            <div class="flex items-center gap-3">
+              <div class="size-10 rounded-2xl bg-black/5 dark:bg-white/10 flex items-center justify-center text-[var(--primary)] shrink-0">
+                ${renderPaletteIcon("size-5")}
+              </div>
+              <div class="flex flex-col gap-0.5">
+                <div class="flex items-center gap-2">
+                  <h3 class="text-base font-bold text-foreground-900">Aparência & Tema</h3>
+                  <span class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-[var(--primary)]/15 text-[var(--primary)] border border-[var(--primary)]/20">
+                    UI Colors
+                  </span>
+                </div>
+                <p class="text-xs text-foreground-600">Personalize o tema e as cores da interface baseadas no template "UI Colors" (OKLCH)</p>
+              </div>
+            </div>
+            <div class="flex items-center gap-2">
+              <button
+                type="button"
+                class="omp-settings-btn-subtle"
+                @click=${() => this.dispatchEvent(new CustomEvent("toggle-theme", { bubbles: true, composed: true }))}
+              >
+                ${this.theme === "dark" ? renderSunIcon("size-4") : renderMoonIcon("size-4")}
+                <span>Modo ${this.theme === "dark" ? "Escuro (Dark)" : "Claro (Light)"}</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Enable Switch & Reset Bar -->
+          <div class="flex items-center justify-between p-3.5 rounded-2xl bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/5 flex-wrap gap-2">
+            <div class="flex items-center gap-3">
+              ${this.renderToggleSwitch(this.uiColors.enabled, () => { this.handleUiColorsToggle(); })}
+              <div class="flex flex-col">
+                <span class="text-xs font-bold text-foreground-900">Ativar paleta dinâmica UI Colors</span>
+                <span class="text-[11px] text-foreground-500">Aplica tons harmônicos de fundo, texto, bordas e botões em todo o OMP Web</span>
+              </div>
             </div>
             <button
               type="button"
-              class="omp-settings-btn-subtle"
-              @click=${() => this.dispatchEvent(new CustomEvent("toggle-theme", { bubbles: true, composed: true }))}
+              class="px-2.5 py-1.5 rounded-xl text-xs font-semibold text-foreground-600 hover:text-foreground-900 bg-black/5 hover:bg-black/10 dark:bg-white/5 dark:hover:bg-white/10 flex items-center gap-1.5 transition-colors cursor-pointer"
+              @click=${() => { this.handleResetColors(); }}
+              title="Restaurar valores padrão do UI Colors"
             >
-              ${this.theme === "dark" ? renderSunIcon("size-4") : renderMoonIcon("size-4")}
-              <span>Modo ${this.theme === "dark" ? "Escuro (Dark)" : "Claro (Light)"}</span>
+              ${renderRefreshIcon("size-3.5")}
+              <span>Restaurar Padrão</span>
             </button>
           </div>
+
+          <!-- Sliders Section -->
+          <div class="flex flex-col gap-4 pt-1">
+            <!-- Chroma Slider Row -->
+            <div class="flex flex-col gap-1.5">
+              <div class="flex items-center justify-between text-xs font-semibold text-foreground-800">
+                <span>Saturação (Chroma)</span>
+                <span class="text-foreground-500 font-mono text-[11px]">Valor: ${this.uiColors.chroma.toFixed(2)}</span>
+              </div>
+              <div class="grid grid-cols-[auto_1fr_auto_auto] items-center gap-3">
+                <span class="text-[11px] font-medium text-foreground-500 w-14">Neutral</span>
+                <input
+                  type="range"
+                  class="ui-color-slider-chroma w-full"
+                  min="0"
+                  max="0.2"
+                  step="0.01"
+                  .value="${String(this.uiColors.chroma)}"
+                  @input=${(e: Event) => {
+                    const val = parseFloat((e.target as HTMLInputElement).value);
+                    if (!isNaN(val)) this.handleChromaInput(val);
+                  }}
+                />
+                <span class="text-[11px] font-medium text-foreground-500 w-10 text-right">Vivid</span>
+                <input
+                  type="number"
+                  class="ui-color-number-input"
+                  min="0"
+                  max="0.2"
+                  step="0.01"
+                  .value="${String(this.uiColors.chroma)}"
+                  @input=${(e: Event) => {
+                    const val = parseFloat((e.target as HTMLInputElement).value);
+                    if (!isNaN(val)) this.handleChromaInput(val);
+                  }}
+                />
+              </div>
+            </div>
+
+            <!-- Hue Slider Row -->
+            <div class="flex flex-col gap-1.5">
+              <div class="flex items-center justify-between text-xs font-semibold text-foreground-800">
+                <span>Matiz da Cor (Hue)</span>
+                <span class="text-foreground-500 font-mono text-[11px]">Ângulo: ${this.uiColors.hue}°</span>
+              </div>
+              <div class="grid grid-cols-[auto_1fr_auto_auto] items-center gap-3">
+                <span class="text-[11px] font-medium text-foreground-500 w-14">Quente</span>
+                <input
+                  type="range"
+                  class="ui-color-slider-hue w-full"
+                  min="0"
+                  max="360"
+                  step="1"
+                  .value="${String(this.uiColors.hue)}"
+                  @input=${(e: Event) => {
+                    const val = parseFloat((e.target as HTMLInputElement).value);
+                    if (!isNaN(val)) this.handleHueInput(val);
+                  }}
+                />
+                <span class="text-[11px] font-medium text-foreground-500 w-10 text-right">Frio</span>
+                <input
+                  type="number"
+                  class="ui-color-number-input"
+                  min="0"
+                  max="360"
+                  step="1"
+                  .value="${String(this.uiColors.hue)}"
+                  @input=${(e: Event) => {
+                    const val = parseFloat((e.target as HTMLInputElement).value);
+                    if (!isNaN(val)) this.handleHueInput(val);
+                  }}
+                />
+              </div>
+            </div>
+          </div>
+
+          <!-- Preset Chips -->
+          <div class="flex flex-col gap-2 pt-1 border-t border-black/5 dark:border-white/5">
+            <span class="text-xs font-bold text-foreground-700">Paletas Prontas (Presets):</span>
+            <div class="flex flex-wrap gap-2">
+              ${UI_COLOR_PRESETS.map((p) => {
+                const isActive = Math.abs(this.uiColors.hue - p.hue) <= 2 && Math.abs(this.uiColors.chroma - p.chroma) <= 0.01;
+                return html`
+                  <button
+                    type="button"
+                    class="px-2.5 py-1.5 rounded-xl text-xs font-medium flex items-center gap-2 border transition-all cursor-pointer ${
+                      isActive
+                        ? "bg-black/10 dark:bg-white/15 border-foreground-400 font-bold shadow-xs scale-102"
+                        : "bg-black/5 dark:bg-white/5 border-transparent hover:border-black/15 dark:hover:border-white/15 text-foreground-700"
+                    }"
+                    @click=${() => this.handlePresetClick(p)}
+                    title="${p.description} (Hue: ${p.hue}, Chroma: ${p.chroma})"
+                  >
+                    <span
+                      class="size-3 rounded-full shrink-0 shadow-xs"
+                      style="background-color: oklch(0.65 ${p.chroma || 0.04} ${p.hue});"
+                    ></span>
+                    <span>${p.name}</span>
+                  </button>
+                `;
+              })}
+            </div>
+          </div>
+
+          <!-- Color Palette Swatches (matching UI Colors.html) -->
+          <div class="flex flex-col gap-3 pt-2 border-t border-black/5 dark:border-white/5">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-bold text-foreground-700">Paleta de Cores Calculada (OKLCH)</span>
+              <span class="text-[11px] text-foreground-500 font-mono">Modo ${this.theme === "dark" ? "Dark" : "Light"}</span>
+            </div>
+
+            <div class="grid grid-cols-2 sm:grid-cols-5 gap-3">
+              <!-- Backgrounds -->
+              <div class="flex flex-col gap-1.5 p-2.5 rounded-2xl bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/5">
+                <span class="text-[10px] font-bold text-foreground-500 uppercase tracking-wider">Fundo</span>
+                <div class="flex flex-col gap-1.5">
+                  <div class="flex items-center gap-2">
+                    <span class="w-8 h-6 rounded-lg shadow-xs border border-black/10 dark:border-white/15 shrink-0" style="background-color: var(--bg-dark);"></span>
+                    <span class="text-[11px] font-mono text-foreground-700 truncate">bg-dark</span>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <span class="w-8 h-6 rounded-lg shadow-xs border border-black/10 dark:border-white/15 shrink-0" style="background-color: var(--bg);"></span>
+                    <span class="text-[11px] font-mono text-foreground-700 truncate">bg</span>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <span class="w-8 h-6 rounded-lg shadow-xs border border-black/10 dark:border-white/15 shrink-0" style="background-color: var(--bg-light);"></span>
+                    <span class="text-[11px] font-mono text-foreground-700 truncate">bg-light</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Text -->
+              <div class="flex flex-col gap-1.5 p-2.5 rounded-2xl bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/5">
+                <span class="text-[10px] font-bold text-foreground-500 uppercase tracking-wider">Texto</span>
+                <div class="flex flex-col gap-1.5">
+                  <div class="flex items-center gap-2">
+                    <span class="w-8 h-6 rounded-lg shadow-xs border border-black/10 dark:border-white/15 shrink-0" style="background-color: var(--text);"></span>
+                    <span class="text-[11px] font-mono text-foreground-700 truncate">text</span>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <span class="w-8 h-6 rounded-lg shadow-xs border border-black/10 dark:border-white/15 shrink-0" style="background-color: var(--text-muted);"></span>
+                    <span class="text-[11px] font-mono text-foreground-700 truncate">text-muted</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Border -->
+              <div class="flex flex-col gap-1.5 p-2.5 rounded-2xl bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/5">
+                <span class="text-[10px] font-bold text-foreground-500 uppercase tracking-wider">Bordas</span>
+                <div class="flex flex-col gap-1.5">
+                  <div class="flex items-center gap-2">
+                    <span class="w-8 h-6 rounded-lg shadow-xs border border-black/10 dark:border-white/15 shrink-0" style="background-color: var(--highlight);"></span>
+                    <span class="text-[11px] font-mono text-foreground-700 truncate">highlight</span>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <span class="w-8 h-6 rounded-lg shadow-xs border border-black/10 dark:border-white/15 shrink-0" style="background-color: var(--border);"></span>
+                    <span class="text-[11px] font-mono text-foreground-700 truncate">border</span>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <span class="w-8 h-6 rounded-lg shadow-xs border border-black/10 dark:border-white/15 shrink-0" style="background-color: var(--border-muted);"></span>
+                    <span class="text-[11px] font-mono text-foreground-700 truncate">border-muted</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Action -->
+              <div class="flex flex-col gap-1.5 p-2.5 rounded-2xl bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/5">
+                <span class="text-[10px] font-bold text-foreground-500 uppercase tracking-wider">Ações</span>
+                <div class="flex flex-col gap-1.5">
+                  <div class="flex items-center gap-2">
+                    <span class="w-8 h-6 rounded-lg shadow-xs border border-black/10 dark:border-white/15 shrink-0" style="background-color: var(--primary);"></span>
+                    <span class="text-[11px] font-mono text-foreground-700 truncate">primary</span>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <span class="w-8 h-6 rounded-lg shadow-xs border border-black/10 dark:border-white/15 shrink-0" style="background-color: var(--secondary);"></span>
+                    <span class="text-[11px] font-mono text-foreground-700 truncate">secondary</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Alert -->
+              <div class="flex flex-col gap-1.5 p-2.5 rounded-2xl bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/5">
+                <span class="text-[10px] font-bold text-foreground-500 uppercase tracking-wider">Alertas</span>
+                <div class="flex flex-col gap-1.5">
+                  <div class="flex items-center gap-2">
+                    <span class="w-8 h-6 rounded-lg shadow-xs border border-black/10 dark:border-white/15 shrink-0" style="background-color: var(--danger);"></span>
+                    <span class="text-[11px] font-mono text-foreground-700 truncate">danger</span>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <span class="w-8 h-6 rounded-lg shadow-xs border border-black/10 dark:border-white/15 shrink-0" style="background-color: var(--warning);"></span>
+                    <span class="text-[11px] font-mono text-foreground-700 truncate">warning</span>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <span class="w-8 h-6 rounded-lg shadow-xs border border-black/10 dark:border-white/15 shrink-0" style="background-color: var(--success);"></span>
+                    <span class="text-[11px] font-mono text-foreground-700 truncate">success</span>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <span class="w-8 h-6 rounded-lg shadow-xs border border-black/10 dark:border-white/15 shrink-0" style="background-color: var(--info);"></span>
+                    <span class="text-[11px] font-mono text-foreground-700 truncate">info</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Preview Cards from UI Colors.html -->
+          <div class="flex flex-col gap-3 pt-2 border-t border-black/5 dark:border-white/5">
+            <span class="text-xs font-bold text-foreground-700">Amostras de Componentes (Cards & Sombras)</span>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              <div class="ui-colors-preview-card p-4 flex flex-col gap-1">
+                <h4 class="text-sm font-bold text-[var(--text)]">Contrast</h4>
+                <p class="text-xs text-[var(--text-muted)]">Mix sharper headings with muted text</p>
+              </div>
+              <div class="ui-colors-preview-card p-4 flex flex-col gap-1">
+                <h4 class="text-sm font-bold text-[var(--text)]">Gradients</h4>
+                <p class="text-xs text-[var(--text-muted)]">Play with gradient background</p>
+              </div>
+              <div class="ui-colors-preview-card p-4 flex flex-col gap-1">
+                <h4 class="text-sm font-bold text-[var(--text)]">Highlight</h4>
+                <p class="text-xs text-[var(--text-muted)]">Use a lighter border to simulate light</p>
+              </div>
+              <div class="ui-colors-preview-card p-4 flex flex-col gap-1">
+                <h4 class="text-sm font-bold text-[var(--text)]">Shadows</h4>
+                <p class="text-xs text-[var(--text-muted)]">Shadows to add depth and elevation</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Bottom Action Buttons: Show Code & Show Alerts -->
+          <div class="flex items-center justify-between flex-wrap gap-2 pt-2 border-t border-black/5 dark:border-white/5">
+            <div class="flex items-center gap-2">
+              <button
+                type="button"
+                class="px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
+                  this.showCodeModal ? "bg-[var(--text)] text-[var(--bg-dark)] shadow-sm" : "bg-black/5 dark:bg-white/10 text-foreground-800 hover:bg-black/10 dark:hover:bg-white/15"
+                }"
+                @click=${() => { this.showCodeModal = !this.showCodeModal; }}
+              >
+                ${renderCopyIcon("size-3.5")}
+                <span>${this.showCodeModal ? "Ocultar Código CSS" : "Ver Código CSS (OKLCH)"}</span>
+              </button>
+
+              <button
+                type="button"
+                class="px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
+                  this.showAlertsPreview ? "bg-[var(--primary)] text-white shadow-sm" : "bg-black/5 dark:bg-white/10 text-foreground-800 hover:bg-black/10 dark:hover:bg-white/15"
+                }"
+                @click=${() => { this.showAlertsPreview = !this.showAlertsPreview; }}
+              >
+                <span>${this.showAlertsPreview ? "Ocultar Alertas" : "Amostras de Alertas"}</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Code Modal Drawer -->
+          ${this.showCodeModal
+            ? html`
+                <div class="flex flex-col gap-2 p-4 rounded-2xl bg-black/5 dark:bg-black/30 border border-black/10 dark:border-white/10 animate-in fade-in duration-200">
+                  <div class="flex items-center justify-between">
+                    <span class="text-xs font-bold font-mono text-foreground-800">Variáveis CSS (OKLCH - ${this.theme === "dark" ? "Dark" : "Light"})</span>
+                    <button
+                      type="button"
+                      class="px-2.5 py-1 rounded-lg text-xs font-semibold bg-[var(--primary)] text-white hover:opacity-90 flex items-center gap-1 transition-opacity cursor-pointer shadow-xs"
+                      @click=${() => { void this.handleCopyCode(); }}
+                    >
+                      ${this.copiedCssCode ? renderCheckIcon("size-3") : renderCopyIcon("size-3")}
+                      <span>${this.copiedCssCode ? "Copiado!" : "Copiar"}</span>
+                    </button>
+                  </div>
+                  <pre class="p-3 rounded-xl bg-black/10 dark:bg-black/40 text-[11px] font-mono text-foreground-800 overflow-x-auto select-all leading-relaxed">${formatCssVarsText(
+                    resolveUiColorVars(this.uiColors.hue, this.uiColors.chroma, this.theme === "light")
+                  )}</pre>
+                </div>
+              `
+            : nothing}
+
+          <!-- Alerts Preview Drawer -->
+          ${this.showAlertsPreview
+            ? html`
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 p-4 rounded-2xl bg-black/5 dark:bg-black/30 border border-black/10 dark:border-white/10 animate-in fade-in duration-200">
+                  <div class="p-3.5 rounded-xl border border-[var(--danger)]/30 bg-[var(--danger)]/10 flex flex-col gap-1">
+                    <div class="flex items-center gap-2 text-[var(--danger)] font-bold text-xs">
+                      <span class="size-2 rounded-full bg-[var(--danger)]"></span>
+                      <h4>Falha no pagamento (Danger)</h4>
+                    </div>
+                    <p class="text-[11px] text-foreground-700">Sua conta será suspensa em 48 horas se não houver regularização.</p>
+                  </div>
+
+                  <div class="p-3.5 rounded-xl border border-[var(--warning)]/30 bg-[var(--warning)]/10 flex flex-col gap-1">
+                    <div class="flex items-center gap-2 text-[var(--warning)] font-bold text-xs">
+                      <span class="size-2 rounded-full bg-[var(--warning)]"></span>
+                      <h4>Plano expirando em breve (Warning)</h4>
+                    </div>
+                    <p class="text-[11px] text-foreground-700">Seu plano expira em 3 dias. Renove para não perder benefícios.</p>
+                  </div>
+
+                  <div class="p-3.5 rounded-xl border border-[var(--success)]/30 bg-[var(--success)]/10 flex flex-col gap-1">
+                    <div class="flex items-center gap-2 text-[var(--success)] font-bold text-xs">
+                      <span class="size-2 rounded-full bg-[var(--success)]"></span>
+                      <h4>Backup concluído (Success)</h4>
+                    </div>
+                    <p class="text-[11px] text-foreground-700">Todas as configurações e sessões foram salvas com sucesso!</p>
+                  </div>
+
+                  <div class="p-3.5 rounded-xl border border-[var(--info)]/30 bg-[var(--info)]/10 flex flex-col gap-1">
+                    <div class="flex items-center gap-2 text-[var(--info)] font-bold text-xs">
+                      <span class="size-2 rounded-full bg-[var(--info)]"></span>
+                      <h4>Novo recurso disponível (Info)</h4>
+                    </div>
+                    <p class="text-[11px] text-foreground-700">Experimente os novos modelos de raciocínio profundo no chat.</p>
+                  </div>
+                </div>
+              `
+            : nothing}
         </section>
 
         <!-- Card: Provedores de IA (Model Providers) -->

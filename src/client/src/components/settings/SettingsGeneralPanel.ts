@@ -88,11 +88,38 @@ export class SettingsGeneralPanel extends LitElement {
         .onAction=${() => { this.reloadAll(); }}
       >
         <div class="settings-sections">
+          ${this.renderUiVersionSettings()}
           ${this.renderChatDisplaySettings()}
           ${this.renderGatewayServerSettings()}
           ${this.renderSelectedMachineAccessSettings()}
         </div>
       </settings-panel-frame>
+    `;
+  }
+
+  private renderUiVersionSettings(): TemplateResult {
+    const isClassic = typeof document !== "undefined" && document.cookie.includes("omp_web_ui=classic");
+    return html`
+      <section class="settings-card" aria-label="UI Version">
+        <div class="card-heading">
+          <h3>Interface & Experiência</h3>
+          <p>Escolha a versão da interface do OMP Web. A Nova Interface traz o Composer Hub unificado e as novas abas integradas.</p>
+        </div>
+        <div style="display: flex; gap: 10px; margin-top: 12px;">
+          <button
+            type="button"
+            class="primary"
+            style="padding: 9px 18px; border-radius: 8px; font-weight: 600; cursor: pointer; border: 1px solid var(--pi-accent); background: var(--pi-accent); color: #fff;"
+            @click=${() => {
+              localStorage.setItem("omp-web:ui-version", "new");
+              document.cookie = "omp_web_ui=new; path=/; max-age=31536000; SameSite=Lax";
+              window.location.href = "/";
+            }}
+          >
+            Mudar para a Nova Interface (Cockpit)
+          </button>
+        </div>
+      </section>
     `;
   }
 

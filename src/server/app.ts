@@ -367,21 +367,37 @@ export async function buildApp(deps: AppDependencies = {}): Promise<BuiltApp> {
   const localDistClient = join(process.cwd(), "dist", "client");
   const clientDist = deps.clientDist ?? (existsSync(join(packagedClientDist, "assets")) ? packagedClientDist : existsSync(localDistClient) ? localDistClient : packagedClientDist);
   if (clientDist !== false && existsSync(clientDist)) {
+    const ompHtmlPath = join(clientDist, "omp.html");
+    const indexHtmlPath = join(clientDist, "index.html");
+
+    const serveUi = (c: import("hono").Context, preferNew = true) => {
+      const url = new URL(c.req.url);
+      const uiParam = url.searchParams.get("ui");
+      const cookieHeader = c.req.header("cookie") || "";
+      const isClassicCookie = cookieHeader.includes("omp_web_ui=classic");
+      const useClassic = uiParam === "classic" || (isClassicCookie && uiParam !== "new") || !preferNew;
+
+      if (!useClassic && existsSync(ompHtmlPath)) {
+        return c.html(readFileSync(ompHtmlPath, "utf8"));
+      }
+      if (existsSync(indexHtmlPath)) {
+        return c.html(readFileSync(indexHtmlPath, "utf8"));
+      }
+      return c.text("UI not found", 404);
+    };
+
+    app.get("/", (c) => serveUi(c, true));
     app.get("/omp", (c) => {
-      const ompHtmlPath = join(clientDist, "omp.html");
       if (existsSync(ompHtmlPath)) {
         return c.html(readFileSync(ompHtmlPath, "utf8"));
       }
       return c.text("OMP Web UI not found", 404);
     });
+    app.get("/classic", (c) => serveUi(c, false));
+
     app.use("/*", serveStatic({ root: clientDist }));
-    app.notFound((c) => {
-      const indexHtmlPath = join(clientDist, "index.html");
-      if (existsSync(indexHtmlPath)) {
-        return c.html(readFileSync(indexHtmlPath, "utf8"));
-      }
-      return c.text("Not found", 404);
-    });
+
+    app.notFound((c) => serveUi(c, true));
   }
 
   return {
