@@ -466,7 +466,7 @@ export class OmpModelsView extends LitElement {
                         </button>
                         <button
                           type="button"
-                          class="px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white transition-all cursor-pointer shadow-xs font-bold"
+                          class="px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-[var(--primary)] hover:opacity-90 active:scale-95 text-white transition-all cursor-pointer shadow-xs font-bold"
                           @click=${() => this.handleSelectModel(m, true, "default")}
                           title="Definir como modelo padrão global (@default)"
                         >

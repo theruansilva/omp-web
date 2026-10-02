@@ -279,7 +279,7 @@ export class SessionCommandService<TSession extends CommandSession = CommandSess
       const message = error instanceof Error ? error.message : String(error);
       return { type: "unsupported", message: `Reload failed: ${message}` };
     }
-    return { type: "done", message: "Session runtime resources reloaded. Extensions, skills, prompt templates, themes, and context/system prompt files are refreshed for this session. Reload the browser page separately for PI WEB browser plugin changes." };
+    return { type: "done", message: "Session runtime resources reloaded. Extensions, skills, prompt templates, themes, and context/system prompt files are refreshed for this session. Reload the browser page separately for OMP WEB browser plugin changes." };
   }
 
   private async archive(session: TSession): Promise<ClientCommandResult> {

@@ -262,7 +262,7 @@ export class OmpProjectsView extends LitElement {
                         <button
                           type="button"
                           class="relative flex items-center text-xs justify-center px-4 py-2 rounded-xl font-bold cursor-pointer transition-all ${isSelected
-            ? "bg-blue-600 text-white shadow-sm hover:bg-blue-700"
+            ? "bg-[var(--primary)] text-white shadow-sm hover:opacity-90 active:scale-95"
             : "bg-black/5 dark:bg-white/10 text-foreground-900 hover:bg-black/10 dark:hover:bg-white/15"
           }"
                           @click=${(e: Event) => {
@@ -301,7 +301,7 @@ export class OmpProjectsView extends LitElement {
                 style="clip-path: var(--clip-path-squircle-60);"
                 @click=${() => this.dispatchEvent(new CustomEvent("project-add", { bubbles: true, composed: true }))}
               >
-                <div class="size-12 rounded-2xl bg-black/5 dark:bg-white/10 flex items-center justify-center text-foreground-700 group-hover:bg-blue-600 group-hover:text-white transition-colors mb-3">
+                <div class="size-12 rounded-2xl bg-black/5 dark:bg-white/10 flex items-center justify-center text-foreground-700 group-hover:bg-[var(--primary)] group-hover:text-white transition-all mb-3">
                   ${renderPlusIcon("size-6")}
                 </div>
                 <span class="text-base font-bold text-foreground-900">Registrar Repositório</span>

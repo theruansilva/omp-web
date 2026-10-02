@@ -41,10 +41,10 @@ export function printPathSetupAdvice(shellName?: string): void {
     console.log("  Do not rely only on ~/.bashrc or prompt hooks for tools needed by services or agents.");
   } else if (shellName === "zsh") {
     console.log("  Detected zsh. Put PATH setup for node/version managers/tools in ~/.zprofile, not only ~/.zshrc.");
-    console.log("  Avoid relying on prompt hooks; PI WEB services run non-interactive login shells.");
+    console.log("  Avoid relying on prompt hooks; OMP WEB services run non-interactive login shells.");
   } else {
     console.log("  Detected fish. Prefer universal PATH setup such as `fish_add_path -U ...` for tools needed by services or agents.");
-    console.log("  Avoid relying on prompt hooks; PI WEB services run non-interactive login shells.");
+    console.log("  Avoid relying on prompt hooks; OMP WEB services run non-interactive login shells.");
   }
 }
 
@@ -82,7 +82,7 @@ export function printOptionalDoctorChecks(deps: DoctorDeps): void {
   }
   if (missingOptionalTool) {
     console.log("  Install ripgrep, or make rg visible to the service shell, for faster all-file @ suggestions.");
-    console.log("  PI WEB falls back to a bounded filesystem scan when rg is unavailable.");
+    console.log("  OMP WEB falls back to a bounded filesystem scan when rg is unavailable.");
   }
 }
 
@@ -119,7 +119,7 @@ export async function runDoctor(deps: DoctorDeps): Promise<void> {
 
   if (!ok) {
     console.log("\nIf a command works in your terminal but fails here, make sure your service shell login files set PATH the same way.");
-    if (backend?.kind === "systemd") console.log("If a bundled entrypoint is not accessible, reinstall or update the PI WEB package.");
+    if (backend?.kind === "systemd") console.log("If a bundled entrypoint is not accessible, reinstall or update the OMP WEB package.");
     printPathSetupAdvice(deps.detectServiceShell().name);
   }
 

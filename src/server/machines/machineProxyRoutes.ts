@@ -178,5 +178,5 @@ function isRawProxyBody(body: unknown): boolean {
 }
 
 function isSelectedMachineConfigRequestError(error: unknown): boolean {
-  return error instanceof Error && error.message.startsWith("PI WEB selected-machine config");
+  return error instanceof Error && error.message.startsWith("OMP WEB selected-machine config");
 }

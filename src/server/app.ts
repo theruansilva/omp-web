@@ -195,7 +195,7 @@ export async function buildApp(deps: AppDependencies = {}): Promise<BuiltApp> {
   const piPackages = deps.piPackages ?? createDefaultPiPackageService();
   const sessionDaemon = deps.sessionDaemon ?? new SessionDaemonClient();
   const ompWebStatusCache = createOmpWebStatusCache(() => getOmpWebStatus(sessionDaemon), {
-    onError: (error) => { console.warn("failed to refresh PI WEB status cache", error); },
+    onError: (error) => { console.warn("failed to refresh OMP WEB status cache", error); },
   });
   const machines = deps.machines ?? new MachineService(undefined, {
     localRuntime: () => getOmpWebRuntime(sessionDaemon),

@@ -89,9 +89,9 @@ export function registerLocalMachineConfigRoutes(app: Hono, service: OmpWebConfi
 }
 
 export function parseSelectedMachineConfigRequest(value: unknown): OmpWebConfigValues {
-  if (!isRecord(value)) throw new Error("PI WEB selected-machine config update must include a config object");
+  if (!isRecord(value)) throw new Error("OMP WEB selected-machine config update must include a config object");
   for (const key of Object.keys(value)) {
-    if (!SELECTED_MACHINE_CONFIG_KEY_SET.has(key)) throw new Error(`PI WEB selected-machine config key is not allowed: ${key}`);
+    if (!SELECTED_MACHINE_CONFIG_KEY_SET.has(key)) throw new Error(`OMP WEB selected-machine config key is not allowed: ${key}`);
   }
   try {
     return pickSelectedMachineConfig(parseConfigRequest(value));
@@ -112,7 +112,7 @@ export function selectedMachineConfigResponse(response: OmpWebConfigResponse): O
   };
 }
 
-export function parseOmpWebConfigResponseBody(value: unknown, source = "PI WEB config response"): OmpWebConfigResponse {
+export function parseOmpWebConfigResponseBody(value: unknown, source = "OMP WEB config response"): OmpWebConfigResponse {
   const record = requireResponseRecord(value, source);
   return {
     path: requireResponseString(record, "path", source),
@@ -124,7 +124,7 @@ export function parseOmpWebConfigResponseBody(value: unknown, source = "PI WEB c
 }
 
 function parseConfigRequest(value: unknown): OmpWebConfigValues {
-  if (!isRecord(value)) throw new Error("PI WEB config update must include a config object");
+  if (!isRecord(value)) throw new Error("OMP WEB config update must include a config object");
   const config: OmpWebConfigValues = {};
   const host = value["host"];
   const port = value["port"];
@@ -138,17 +138,17 @@ function parseConfigRequest(value: unknown): OmpWebConfigValues {
   const spawnSessions = value["spawnSessions"];
   const subsessions = value["subsessions"];
   if (host !== undefined) {
-    if (typeof host !== "string") throw new Error("PI WEB config host must be a string");
+    if (typeof host !== "string") throw new Error("OMP WEB config host must be a string");
     config.host = host;
   }
   if (port !== undefined) {
-    if (typeof port !== "number") throw new Error("PI WEB config port must be a number");
+    if (typeof port !== "number") throw new Error("OMP WEB config port must be a number");
     config.port = port;
   }
   if (allowedHosts !== undefined) config.allowedHosts = parseAllowedHostsRequest(allowedHosts);
   if (shortcuts !== undefined) config.shortcuts = parseShortcutsRequest(shortcuts);
   if (vimMode !== undefined) {
-    if (typeof vimMode !== "boolean") throw new Error("PI WEB config vimMode must be a boolean");
+    if (typeof vimMode !== "boolean") throw new Error("OMP WEB config vimMode must be a boolean");
     config.vimMode = vimMode;
   }
   if (plugins !== undefined) config.plugins = parsePluginsRequest(plugins);
@@ -156,11 +156,11 @@ function parseConfigRequest(value: unknown): OmpWebConfigValues {
   if (uploads !== undefined) config.uploads = parseUploadsConfig(uploads, "request");
   if (maxUploadBytes !== undefined) config.maxUploadBytes = parseMaxUploadBytesRequest(maxUploadBytes);
   if (spawnSessions !== undefined) {
-    if (typeof spawnSessions !== "boolean") throw new Error("PI WEB config spawnSessions must be a boolean");
+    if (typeof spawnSessions !== "boolean") throw new Error("OMP WEB config spawnSessions must be a boolean");
     config.spawnSessions = spawnSessions;
   }
   if (subsessions !== undefined) {
-    if (typeof subsessions !== "boolean") throw new Error("PI WEB config subsessions must be a boolean");
+    if (typeof subsessions !== "boolean") throw new Error("OMP WEB config subsessions must be a boolean");
     config.subsessions = subsessions;
   }
   if (value["allowPrivateMachines"] !== undefined) config.allowPrivateMachines = Boolean(value["allowPrivateMachines"]);
@@ -184,28 +184,28 @@ function pickSelectedMachineConfig(config: OmpWebConfigValues): OmpWebConfigValu
 
 function selectedMachineConfigErrorMessage(error: unknown): string {
   const message = errorMessage(error);
-  if (message.startsWith("PI WEB config ")) return `PI WEB selected-machine config ${message.slice("PI WEB config ".length)}`;
-  return `PI WEB selected-machine config ${message}`;
+  if (message.startsWith("OMP WEB config ")) return `OMP WEB selected-machine config ${message.slice("OMP WEB config ".length)}`;
+  return `OMP WEB selected-machine config ${message}`;
 }
 
 function parseAllowedHostsRequest(value: unknown): string[] | true {
   if (value === true) return true;
   if (!Array.isArray(value) || !value.every((item) => typeof item === "string")) {
-    throw new Error("PI WEB config allowedHosts must be true or an array of strings");
+    throw new Error("OMP WEB config allowedHosts must be true or an array of strings");
   }
   return value;
 }
 
 function parseShortcutsRequest(value: unknown): Record<string, string | null> {
-  if (!isRecord(value)) throw new Error("PI WEB config shortcuts must be an object");
+  if (!isRecord(value)) throw new Error("OMP WEB config shortcuts must be an object");
   return Object.fromEntries(Object.entries(value).map(([actionId, shortcut]) => {
-    if (shortcut !== null && (typeof shortcut !== "string" || shortcut === "")) throw new Error("PI WEB config shortcut values must be non-empty strings or null");
+    if (shortcut !== null && (typeof shortcut !== "string" || shortcut === "")) throw new Error("OMP WEB config shortcut values must be non-empty strings or null");
     return [actionId, shortcut];
   }));
 }
 
 function parsePathAccessRequest(value: unknown): NonNullable<OmpWebConfigValues["pathAccess"]> {
-  if (!isRecord(value)) throw new Error("PI WEB config pathAccess must be an object");
+  if (!isRecord(value)) throw new Error("OMP WEB config pathAccess must be an object");
   const allowedPaths = value["allowedPaths"];
   return {
     ...(allowedPaths === undefined ? {} : { allowedPaths: parseAllowedPathsRequest(allowedPaths) }),
@@ -214,7 +214,7 @@ function parsePathAccessRequest(value: unknown): NonNullable<OmpWebConfigValues[
 
 function parseAllowedPathsRequest(value: unknown): string[] {
   if (!isNonEmptyStringArray(value)) {
-    throw new Error("PI WEB config pathAccess.allowedPaths must be an array of non-empty strings");
+    throw new Error("OMP WEB config pathAccess.allowedPaths must be an array of non-empty strings");
   }
   return value;
 }
@@ -224,19 +224,19 @@ function isNonEmptyStringArray(value: unknown): value is string[] {
 }
 
 function parseMaxUploadBytesRequest(value: unknown): number {
-  if (typeof value !== "number" || !Number.isInteger(value) || value < 1) throw new Error("PI WEB config maxUploadBytes must be a positive integer");
+  if (typeof value !== "number" || !Number.isInteger(value) || value < 1) throw new Error("OMP WEB config maxUploadBytes must be a positive integer");
   return value;
 }
 
 function parsePluginsRequest(value: unknown): NonNullable<OmpWebConfigValues["plugins"]> {
-  if (!isRecord(value) || Array.isArray(value)) throw new Error("PI WEB config plugins must be an object");
+  if (!isRecord(value) || Array.isArray(value)) throw new Error("OMP WEB config plugins must be an object");
   return Object.fromEntries(Object.entries(value).map(([pluginId, config]) => {
-    if (!isOmpWebPluginId(pluginId)) throw new Error("PI WEB config plugin ids are invalid");
-    if (!isRecord(config) || Array.isArray(config)) throw new Error("PI WEB config plugin entries must be objects");
+    if (!isOmpWebPluginId(pluginId)) throw new Error("OMP WEB config plugin ids are invalid");
+    if (!isRecord(config) || Array.isArray(config)) throw new Error("OMP WEB config plugin entries must be objects");
     const enabled = config["enabled"];
-    if (enabled !== undefined && typeof enabled !== "boolean") throw new Error("PI WEB config plugin enabled values must be booleans");
+    if (enabled !== undefined && typeof enabled !== "boolean") throw new Error("OMP WEB config plugin enabled values must be booleans");
     const settings = config["settings"];
-    if (settings !== undefined && (!isRecord(settings) || Array.isArray(settings))) throw new Error("PI WEB config plugin settings must be objects");
+    if (settings !== undefined && (!isRecord(settings) || Array.isArray(settings))) throw new Error("OMP WEB config plugin settings must be objects");
     return [pluginId, config];
   }));
 }
@@ -284,6 +284,6 @@ function isEnvSet(value: string | undefined): boolean {
 }
 
 function isConfigValidationError(error: unknown): boolean {
-  return error instanceof Error && (error.message.startsWith("PI WEB config") || error.message.startsWith("PI WEB selected-machine config"));
+  return error instanceof Error && (error.message.startsWith("OMP WEB config") || error.message.startsWith("OMP WEB selected-machine config"));
 }
 

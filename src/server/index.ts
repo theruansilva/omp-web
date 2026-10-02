@@ -68,7 +68,7 @@ Bun.serve({
 });
 
 const authSuffix = authRequired ? `?token=${authToken}` : "";
-const serverLabel = isDevApi ? "PI WEB dev API" : "PI WEB server";
+const serverLabel = isDevApi ? "OMP WEB dev API" : "OMP WEB server";
 console.info(`${serverLabel} listening on http://${host}:${String(port)}${authSuffix}`);
 if (host === "0.0.0.0") {
   const lan = getLanIp();

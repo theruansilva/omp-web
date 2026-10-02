@@ -116,30 +116,30 @@ const ompWebLightTokens = {
 
 export const themePackPlugin: OmpWebPlugin = {
   apiVersion: 1,
-  name: "PI WEB Themes",
+  name: "OMP WEB Themes",
   activate: () => ({
     contributions: {
       themes: [
         {
           id: "omp-web-dark",
-          name: "PI WEB Dark",
-          description: "Dark PI WEB palette.",
+          name: "OMP WEB Dark",
+          description: "Dark OMP WEB palette.",
           order: 10,
           colorScheme: "dark",
           tokens: ompWebDarkTokens,
         },
         {
           id: "omp-web-light",
-          name: "PI WEB Light",
-          description: "Light PI WEB palette.",
+          name: "OMP WEB Light",
+          description: "Light OMP WEB palette.",
           order: 20,
           colorScheme: "light",
           tokens: ompWebLightTokens,
         },
         {
           id: "classic",
-          name: "PI WEB Classic",
-          description: "The original PI WEB dark palette.",
+          name: "OMP WEB Classic",
+          description: "The original OMP WEB dark palette.",
           order: 30,
           colorScheme: "dark",
           tokens: classicTokens,
@@ -148,8 +148,8 @@ export const themePackPlugin: OmpWebPlugin = {
       themePairs: [
         {
           id: "omp-web",
-          name: "PI WEB",
-          description: "Follow the system light/dark preference with PI WEB themes.",
+          name: "OMP WEB",
+          description: "Follow the system light/dark preference with OMP WEB themes.",
           order: 10,
           light: "omp-web-light",
           dark: "omp-web-dark",

@@ -70,7 +70,7 @@ interface OmpWebPluginEntry {
 type ArraylessPluginRecord = Omit<PluginRecord, "source" | "scope">;
 
 export class DefaultPiPackageProvider implements PiPackageProvider {
-  constructor(private readonly cwd?: string, private readonly agentDir?: string) {}
+  constructor(private readonly cwd?: string, private readonly agentDir?: string) { }
 
   listPackages(): ConfiguredPiPackage[] {
     if (this.agentDir === undefined || this.agentDir === "") return [];
@@ -265,10 +265,10 @@ async function discoverPackageRoot(root: string, configuredPackage: ConfiguredPi
 async function discoverPluginEntries(root: string, config: OmpWebPackageConfig): Promise<ArraylessPluginRecord[]> {
   const plugins: ArraylessPluginRecord[] = [];
   for (const entry of config.plugins) {
-    if (!isSafeRelativePath(entry.module)) throw new Error(`Unsafe PI WEB plugin module path for ${entry.id}: ${entry.module}`);
+    if (!isSafeRelativePath(entry.module)) throw new Error(`Unsafe OMP WEB plugin module path for ${entry.id}: ${entry.module}`);
     const entryPath = join(root, entry.module);
     const entryStat = await stat(entryPath).catch(() => undefined);
-    if (entryStat?.isFile() !== true) throw new Error(`PI WEB plugin module not found for ${entry.id}: ${entry.module}`);
+    if (entryStat?.isFile() !== true) throw new Error(`OMP WEB plugin module not found for ${entry.id}: ${entry.module}`);
     plugins.push({ id: entry.id, root, entryFile: entry.module, version: String(Math.floor(entryStat.mtimeMs)), machineSpecific: entry.machineSpecific });
   }
   return plugins;
@@ -289,24 +289,24 @@ async function readOmpWebPackageConfig(root: string): Promise<OmpWebPackageConfi
 }
 
 function parsePluginEntries(ompWeb: Record<string, unknown>, packagePath: string): OmpWebPluginEntry[] {
-  if (ompWeb["plugin"] !== undefined) throw new Error(`Unsupported PI WEB plugin metadata in ${packagePath}: use ompWeb.plugins with { id, module, machineSpecific? } entries`);
+  if (ompWeb["plugin"] !== undefined) throw new Error(`Unsupported OMP WEB plugin metadata in ${packagePath}: use ompWeb.plugins with { id, module, machineSpecific? } entries`);
   const plugins = ompWeb["plugins"];
   if (plugins === undefined) return [];
-  if (!Array.isArray(plugins)) throw new Error(`PI WEB plugins must be an array in ${packagePath}`);
+  if (!Array.isArray(plugins)) throw new Error(`OMP WEB plugins must be an array in ${packagePath}`);
 
   return plugins.map((entry, index): OmpWebPluginEntry => {
-    if (!isRecord(entry)) throw new Error(`PI WEB plugin entry ${String(index + 1)} must be an object in ${packagePath}`);
+    if (!isRecord(entry)) throw new Error(`OMP WEB plugin entry ${String(index + 1)} must be an object in ${packagePath}`);
     const id = entry["id"];
     const module = entry["module"];
-    if (typeof id !== "string" || !isOmpWebPluginId(id)) throw new Error(`Invalid PI WEB plugin id in ${packagePath}: ${String(id)}`);
-    if (typeof module !== "string" || module === "") throw new Error(`Invalid PI WEB plugin module for ${id} in ${packagePath}`);
+    if (typeof id !== "string" || !isOmpWebPluginId(id)) throw new Error(`Invalid OMP WEB plugin id in ${packagePath}: ${String(id)}`);
+    if (typeof module !== "string" || module === "") throw new Error(`Invalid OMP WEB plugin module for ${id} in ${packagePath}`);
     return { id, module, machineSpecific: parseMachineSpecific(entry["machineSpecific"], packagePath, id) };
   });
 }
 
 function parseMachineSpecific(value: unknown, packagePath: string, pluginId: string): boolean {
   if (value === undefined) return false;
-  if (typeof value !== "boolean") throw new Error(`Invalid PI WEB plugin machineSpecific value for ${pluginId} in ${packagePath}: ${formatUnknownValue(value)}`);
+  if (typeof value !== "boolean") throw new Error(`Invalid OMP WEB plugin machineSpecific value for ${pluginId} in ${packagePath}: ${formatUnknownValue(value)}`);
   return value;
 }
 
@@ -322,7 +322,7 @@ function formatUnknownValue(value: unknown): string {
 
 function addUnique(records: Map<string, PluginRecord>, plugin: PluginRecord): void {
   if (records.has(plugin.id)) {
-    warnInvalidPlugin(plugin.source, `Duplicate PI WEB plugin id: ${plugin.id}`);
+    warnInvalidPlugin(plugin.source, `Duplicate OMP WEB plugin id: ${plugin.id}`);
     return;
   }
   records.set(plugin.id, plugin);
@@ -330,7 +330,7 @@ function addUnique(records: Map<string, PluginRecord>, plugin: PluginRecord): vo
 
 function warnInvalidPlugin(source: string, error: unknown): void {
   const message = error instanceof Error ? error.message : String(error);
-  console.warn(`Skipping PI WEB plugin from ${source}: ${message}`);
+  console.warn(`Skipping OMP WEB plugin from ${source}: ${message}`);
 }
 
 function isSafeRelativePath(path: string): boolean {

@@ -564,10 +564,10 @@ function buildMessages(components: OmpWebStatusResponse["components"], release: 
     messages.push({
       id: "update-available",
       severity: "info",
-      title: "PI WEB update available",
+      title: "OMP WEB update available",
       body: commands.update === undefined
-        ? `PI WEB ${release.latestVersion} is available${installedVersion === undefined ? "" : `; installed version is ${installedVersion}`}. Update PI WEB, then restart the services or processes for this installation.`
-        : `PI WEB ${release.latestVersion} is available${installedVersion === undefined ? "" : `; installed version is ${installedVersion}`}. Run the update command to update PI WEB and restart its services.`,
+        ? `OMP WEB ${release.latestVersion} is available${installedVersion === undefined ? "" : `; installed version is ${installedVersion}`}. Update OMP WEB, then restart the services or processes for this installation.`
+        : `OMP WEB ${release.latestVersion} is available${installedVersion === undefined ? "" : `; installed version is ${installedVersion}`}. Run the update command to update OMP WEB and restart its services.`,
       ...optionalMessageCommand(commands.update),
     });
   }
@@ -591,8 +591,8 @@ function buildMessages(components: OmpWebStatusResponse["components"], release: 
       severity: "warning",
       title: "Session daemon version unavailable",
       body: commands.status === undefined
-        ? `PI WEB could not check the session daemon version${components.sessiond.error === undefined ? "." : `: ${components.sessiond.error}`}. Check the session daemon service or process that runs this installation.`
-        : `PI WEB could not check the session daemon version${components.sessiond.error === undefined ? "." : `: ${components.sessiond.error}`}`,
+        ? `OMP WEB could not check the session daemon version${components.sessiond.error === undefined ? "." : `: ${components.sessiond.error}`}. Check the session daemon service or process that runs this installation.`
+        : `OMP WEB could not check the session daemon version${components.sessiond.error === undefined ? "." : `: ${components.sessiond.error}`}`,
       ...optionalMessageCommand(commands.status),
     });
   } else if (components.sessiond.stale) {

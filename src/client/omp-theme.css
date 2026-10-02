@@ -1799,16 +1799,16 @@ html[data-theme="dark"] .composer-dropdown-popover .composer-dropdown-icon {
 }
 
 .omp-settings-nav-btn.active {
-  background-color: #ffffff;
+  background-color: var(--omp-surface-card, rgba(0, 0, 0, 0.08));
   color: var(--omp-text-primary);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
 }
 
 .dark .omp-settings-nav-btn.active,
 [data-theme="dark"] .omp-settings-nav-btn.active {
   background-color: rgba(255, 255, 255, 0.12);
   color: var(--omp-text-primary);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
 }
 
 .omp-settings-divide > :not([hidden]) ~ :not([hidden]) {
@@ -1835,12 +1835,12 @@ html[data-theme="dark"] .composer-dropdown-popover .composer-dropdown-icon {
 }
 
 .omp-toggle-switch.checked {
-  background-color: #2563eb !important;
+  background-color: var(--primary) !important;
 }
 
 .dark .omp-toggle-switch.checked,
 [data-theme="dark"] .omp-toggle-switch.checked {
-  background-color: #3b82f6 !important;
+  background-color: var(--primary) !important;
 }
 
 .omp-toggle-switch:disabled {
@@ -1866,9 +1866,10 @@ html[data-theme="dark"] .composer-dropdown-popover .composer-dropdown-icon {
 
 .omp-settings-input {
   width: 100%;
+  min-height: 2.75rem;
   padding: 0.5rem 0.875rem;
   border-radius: 0.75rem;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   background-color: rgba(0, 0, 0, 0.04);
   border: 1px solid var(--omp-border-subtle);
   color: var(--omp-text-primary);
@@ -1898,12 +1899,13 @@ html[data-theme="dark"] .composer-dropdown-popover .composer-dropdown-icon {
   align-items: center;
   justify-content: center;
   gap: 0.375rem;
-  padding: 0.625rem 1.25rem;
+  min-height: 2.75rem;
+  padding: 0 1.125rem;
   border-radius: 0.75rem;
-  background-color: #2563eb !important;
+  background-color: var(--primary) !important;
   color: #ffffff !important;
-  font-size: 0.75rem;
-  font-weight: 700;
+  font-size: 0.8125rem;
+  font-weight: 600;
   transition: all 0.15s ease;
   cursor: pointer;
   border: none;
@@ -1911,7 +1913,7 @@ html[data-theme="dark"] .composer-dropdown-popover .composer-dropdown-icon {
 }
 
 .omp-settings-btn-primary:hover:not(:disabled) {
-  background-color: #1d4ed8 !important;
+  filter: brightness(0.92);
 }
 
 .omp-settings-btn-primary:active:not(:disabled) {

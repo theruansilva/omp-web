@@ -2045,7 +2045,7 @@ export class OmpComposer extends LitElement {
               ? html`
               <button
                 type="button"
-                class="px-2.5 py-1 rounded-xl text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white transition-colors shadow-xs flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                class="px-2.5 py-1 rounded-xl text-xs font-semibold bg-[var(--primary)] hover:opacity-90 active:scale-95 text-white transition-all shadow-xs flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
                 ?disabled=${this.btwBranching}
                 @click=${() => this.handleBranchBtw()}
               >
@@ -2274,8 +2274,8 @@ export class OmpComposer extends LitElement {
                   >
                     <div class="flex items-center gap-3 min-w-0">
                       <span
-                        class="grid size-6 shrink-0 place-items-center rounded-xl bg-black/8 dark:bg-white/10 font-mono text-xs font-bold text-foreground-800 transition-colors group-hover:bg-blue-600 group-hover:text-white ${
-                          isSelected ? "!bg-blue-600 !text-white" : ""
+                        class="grid size-6 shrink-0 place-items-center rounded-xl bg-black/8 dark:bg-white/10 font-mono text-xs font-bold text-foreground-800 transition-colors group-hover:bg-[var(--primary)] group-hover:text-white ${
+                          isSelected ? "!bg-[var(--primary)] !text-white" : ""
                         }"
                       >
                         ${opt.id}

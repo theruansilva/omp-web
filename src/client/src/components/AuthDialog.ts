@@ -54,13 +54,13 @@ export class AuthDialog extends LitElement {
       case "method": return html`
         <div class="options">
           <button @click=${() => { this.onChooseMethod?.("oauth"); }}><span>Use a subscription</span><small>ChatGPT Plus/Pro, Claude Pro/Max, or GitHub Copilot</small></button>
-          <button @click=${() => { this.onChooseMethod?.("api_key"); }}><span>Use an API key</span><small>Store an API key in pi auth.json</small></button>
+          <button @click=${() => { this.onChooseMethod?.("api_key"); }}><span>Use an API key</span><small>Store an API key in omp auth.json</small></button>
         </div>
       `;
       case "providers": return html`<div class="options">${state.providers.length === 0 ? html`<div class="empty">No providers available.</div>` : state.providers.map((provider) => this.renderProviderButton(provider))}</div>`;
       case "apiKey": return html`
         <div class="form">
-          <p>Enter the API key for <strong>${state.provider.name}</strong>. It will be stored by pi in <code>auth.json</code>.</p>
+          <p>Enter the API key for <strong>${state.provider.name}</strong>. It will be stored by omp in <code>auth.json</code>.</p>
           <input type="password" autocomplete="off" placeholder="API key" .value=${state.value} @input=${(event: Event) => { if (event.target instanceof HTMLInputElement) this.onApiKeyInput?.(event.target.value); }}>
           ${state.error !== undefined && state.error !== "" ? html`<div class="error-text">${state.error}</div>` : null}
           <div class="actions"><button @click=${() => { this.cancel(); }}>Cancel</button><button class="primary" ?disabled=${state.saving === true} @click=${() => { this.onSaveApiKey?.(); }}>${state.saving === true ? "Saving…" : "Save API key"}</button></div>
@@ -158,8 +158,8 @@ export class AuthDialog extends LitElement {
     :host-context([data-theme="light"]) .actions button, :host-context([data-theme="light"]) .inline-options button { background: #f3f4f6; color: #1f2937; border-color: rgba(0, 0, 0, 0.12); }
     .actions button:hover, .inline-options button:hover { background: rgba(255, 255, 255, 0.14); }
     :host-context([data-theme="light"]) .actions button:hover, :host-context([data-theme="light"]) .inline-options button:hover { background: #e5e7eb; }
-    .actions button.primary { border-color: #2563eb; background: #2563eb; color: #ffffff; }
-    .actions button.primary:hover { background: #1d4ed8; }
+    .actions button.primary { border-color: var(--primary, var(--omp-primary, #2563eb)); background: var(--primary, var(--omp-primary, #2563eb)); color: #ffffff; }
+    .actions button.primary:hover { filter: brightness(0.92); }
     .actions button:disabled { opacity: .6; cursor: wait; }
     .warning { color: var(--pi-warning, #f59e0b); }
     .error-text { color: var(--pi-danger, #ef4444); font-size: 13px; }

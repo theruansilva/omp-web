@@ -26,6 +26,7 @@ import { effectiveOmpWebConfig, maxUploadBytes, spawnSessionsEnabled, subsession
 import { PushNotificationService } from "./push/PushNotificationService.js";
 import { registerPushRoutes } from "./push/pushRoutes.js";
 import { registerSchedulePromptRoutes } from "./sessions/schedulePrompt/schedulePromptRoutes.js";
+import { reapOrphanProcesses } from "./sessions/processReaper.js";
 
 const { config } = effectiveOmpWebConfig();
 const { upgradeWebSocket, websocket } = createBunWebSocket();
@@ -117,6 +118,7 @@ async function shutdown(signal: NodeJS.Signals): Promise<void> {
   terminals.dispose();
   auth.dispose();
   await sessions.dispose();
+  await reapOrphanProcesses().catch(() => undefined);
   server?.stop();
 }
 
@@ -150,7 +152,7 @@ if (port !== undefined) {
     try {
       chmodSync(dirname(path), 0o700);
       chmodSync(path, 0o600);
-    } catch {}
+    } catch { }
   }
   process.on("exit", () => void rm(path, { force: true }));
 }

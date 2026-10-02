@@ -596,7 +596,7 @@ export class OmpSettingsView extends LitElement {
 
         <!-- Card: Versão da Interface (Cutover & Preferência) -->
         <section
-          class="p-5 md:p-6 rounded-3xl omp-settings-card flex flex-col gap-4 shadow-xs"
+          class="p-5 md:p-6 rounded-3xl omp-settings-card flex flex-col gap-4"
           style="clip-path: var(--clip-path-squircle-28, none);"
         >
           <div class="flex items-center justify-between">
@@ -711,11 +711,11 @@ export class OmpSettingsView extends LitElement {
                 <span>Saturação (Chroma)</span>
                 <span class="text-foreground-500 font-mono text-[11px]">Valor: ${this.uiColors.chroma.toFixed(2)}</span>
               </div>
-              <div class="grid grid-cols-[auto_1fr_auto_auto] items-center gap-3">
-                <span class="text-[11px] font-medium text-foreground-500 w-14">Neutral</span>
+              <div class="grid grid-cols-[auto_1fr_auto_auto] items-center gap-2 sm:gap-3">
+                <span class="text-[11px] font-medium text-foreground-500 w-12 sm:w-14">Neutral</span>
                 <input
                   type="range"
-                  class="ui-color-slider-chroma w-full"
+                  class="ui-color-slider-chroma min-w-0 w-full"
                   min="0"
                   max="0.2"
                   step="0.01"
@@ -725,10 +725,10 @@ export class OmpSettingsView extends LitElement {
                     if (!isNaN(val)) this.handleChromaInput(val);
                   }}
                 />
-                <span class="text-[11px] font-medium text-foreground-500 w-10 text-right">Vivid</span>
+                <span class="text-[11px] font-medium text-foreground-500 w-8 sm:w-10 text-right">Vivid</span>
                 <input
                   type="number"
-                  class="ui-color-number-input"
+                  class="ui-color-number-input shrink-0"
                   min="0"
                   max="0.2"
                   step="0.01"
@@ -747,11 +747,11 @@ export class OmpSettingsView extends LitElement {
                 <span>Matiz da Cor (Hue)</span>
                 <span class="text-foreground-500 font-mono text-[11px]">Ângulo: ${this.uiColors.hue}°</span>
               </div>
-              <div class="grid grid-cols-[auto_1fr_auto_auto] items-center gap-3">
-                <span class="text-[11px] font-medium text-foreground-500 w-14">Quente</span>
+              <div class="grid grid-cols-[auto_1fr_auto_auto] items-center gap-2 sm:gap-3">
+                <span class="text-[11px] font-medium text-foreground-500 w-12 sm:w-14">Quente</span>
                 <input
                   type="range"
-                  class="ui-color-slider-hue w-full"
+                  class="ui-color-slider-hue min-w-0 w-full"
                   min="0"
                   max="360"
                   step="1"
@@ -761,10 +761,10 @@ export class OmpSettingsView extends LitElement {
                     if (!isNaN(val)) this.handleHueInput(val);
                   }}
                 />
-                <span class="text-[11px] font-medium text-foreground-500 w-10 text-right">Frio</span>
+                <span class="text-[11px] font-medium text-foreground-500 w-8 sm:w-10 text-right">Frio</span>
                 <input
                   type="number"
-                  class="ui-color-number-input"
+                  class="ui-color-number-input shrink-0"
                   min="0"
                   max="360"
                   step="1"
@@ -813,9 +813,9 @@ export class OmpSettingsView extends LitElement {
               <span class="text-[11px] text-foreground-500 font-mono">Modo ${this.theme === "dark" ? "Dark" : "Light"}</span>
             </div>
 
-            <div class="grid grid-cols-2 sm:grid-cols-5 gap-3">
+            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
               <!-- Backgrounds -->
-              <div class="flex flex-col gap-1.5 p-2.5 rounded-2xl bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/5">
+              <div class="flex flex-col justify-between gap-1.5 p-2.5 rounded-2xl bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/5 h-full">
                 <span class="text-[10px] font-bold text-foreground-500 uppercase tracking-wider">Fundo</span>
                 <div class="flex flex-col gap-1.5">
                   <div class="flex items-center gap-2">
@@ -834,7 +834,7 @@ export class OmpSettingsView extends LitElement {
               </div>
 
               <!-- Text -->
-              <div class="flex flex-col gap-1.5 p-2.5 rounded-2xl bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/5">
+              <div class="flex flex-col justify-between gap-1.5 p-2.5 rounded-2xl bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/5 h-full">
                 <span class="text-[10px] font-bold text-foreground-500 uppercase tracking-wider">Texto</span>
                 <div class="flex flex-col gap-1.5">
                   <div class="flex items-center gap-2">
@@ -849,7 +849,7 @@ export class OmpSettingsView extends LitElement {
               </div>
 
               <!-- Border -->
-              <div class="flex flex-col gap-1.5 p-2.5 rounded-2xl bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/5">
+              <div class="flex flex-col justify-between gap-1.5 p-2.5 rounded-2xl bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/5 h-full">
                 <span class="text-[10px] font-bold text-foreground-500 uppercase tracking-wider">Bordas</span>
                 <div class="flex flex-col gap-1.5">
                   <div class="flex items-center gap-2">
@@ -868,7 +868,7 @@ export class OmpSettingsView extends LitElement {
               </div>
 
               <!-- Action -->
-              <div class="flex flex-col gap-1.5 p-2.5 rounded-2xl bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/5">
+              <div class="flex flex-col justify-between gap-1.5 p-2.5 rounded-2xl bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/5 h-full">
                 <span class="text-[10px] font-bold text-foreground-500 uppercase tracking-wider">Ações</span>
                 <div class="flex flex-col gap-1.5">
                   <div class="flex items-center gap-2">
@@ -883,7 +883,7 @@ export class OmpSettingsView extends LitElement {
               </div>
 
               <!-- Alert -->
-              <div class="flex flex-col gap-1.5 p-2.5 rounded-2xl bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/5">
+              <div class="flex flex-col justify-between gap-1.5 p-2.5 rounded-2xl bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/5 h-full">
                 <span class="text-[10px] font-bold text-foreground-500 uppercase tracking-wider">Alertas</span>
                 <div class="flex flex-col gap-1.5">
                   <div class="flex items-center gap-2">
@@ -959,7 +959,7 @@ export class OmpSettingsView extends LitElement {
           <!-- Code Modal Drawer -->
           ${this.showCodeModal
             ? html`
-                <div class="flex flex-col gap-2 p-4 rounded-2xl bg-black/5 dark:bg-black/30 border border-black/10 dark:border-white/10 animate-in fade-in duration-200">
+                <div class="flex flex-col gap-2 p-4 rounded-2xl bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 animate-in fade-in duration-200">
                   <div class="flex items-center justify-between">
                     <span class="text-xs font-bold font-mono text-foreground-800">Variáveis CSS (OKLCH - ${this.theme === "dark" ? "Dark" : "Light"})</span>
                     <button
@@ -971,7 +971,7 @@ export class OmpSettingsView extends LitElement {
                       <span>${this.copiedCssCode ? "Copiado!" : "Copiar"}</span>
                     </button>
                   </div>
-                  <pre class="p-3 rounded-xl bg-black/10 dark:bg-black/40 text-[11px] font-mono text-foreground-800 overflow-x-auto select-all leading-relaxed">${formatCssVarsText(
+                  <pre class="p-3 rounded-xl bg-black/10 dark:bg-white/10 text-[11px] font-mono text-foreground-800 overflow-x-auto select-all leading-relaxed">${formatCssVarsText(
                     resolveUiColorVars(this.uiColors.hue, this.uiColors.chroma, this.theme === "light")
                   )}</pre>
                 </div>
@@ -981,7 +981,7 @@ export class OmpSettingsView extends LitElement {
           <!-- Alerts Preview Drawer -->
           ${this.showAlertsPreview
             ? html`
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 p-4 rounded-2xl bg-black/5 dark:bg-black/30 border border-black/10 dark:border-white/10 animate-in fade-in duration-200">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 p-4 rounded-2xl bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 animate-in fade-in duration-200">
                   <div class="p-3.5 rounded-xl border border-[var(--danger)]/30 bg-[var(--danger)]/10 flex flex-col gap-1">
                     <div class="flex items-center gap-2 text-[var(--danger)] font-bold text-xs">
                       <span class="size-2 rounded-full bg-[var(--danger)]"></span>
@@ -1555,7 +1555,7 @@ export class OmpSettingsView extends LitElement {
         <div class="relative size-full overflow-y-auto px-4 py-6 md:px-8 pb-32 font-sans">
           <div class="w-full max-w-4xl mx-auto flex flex-col gap-6">
             <!-- Header title -->
-            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
               <div class="flex flex-col gap-1">
                 <h1 class="text-2xl sm:text-3xl font-bold font-sans text-foreground-900 tracking-tight">
                   Configurações

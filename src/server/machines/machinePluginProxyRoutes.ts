@@ -56,7 +56,7 @@ export async function proxyMachinePluginAsset(machines: MachinePluginProxyMachin
 
   const requestPath = remotePluginAssetRequestPath(remotePlugin, assetPath, requestUrl);
   if (requestPath === undefined) {
-    return Response.json({ error: "Invalid remote PI WEB plugin asset path" }, { status: 400 });
+    return Response.json({ error: "Invalid remote OMP WEB plugin asset path" }, { status: 400 });
   }
 
   try {
@@ -137,11 +137,11 @@ function hasControlCharacter(value: string): boolean {
 }
 
 function parseRemoteManifest(value: unknown): RemotePluginManifest {
-  if (!isRecord(value) || !Array.isArray(value["plugins"])) throw new Error("Invalid remote PI WEB plugin manifest");
+  if (!isRecord(value) || !Array.isArray(value["plugins"])) throw new Error("Invalid remote OMP WEB plugin manifest");
   return {
     plugins: value["plugins"].map((entry) => {
       if (!isRecord(entry) || typeof entry["id"] !== "string" || !isOmpWebPluginId(entry["id"]) || typeof entry["module"] !== "string" || entry["module"] === "") {
-        throw new Error("Invalid remote PI WEB plugin manifest entry");
+        throw new Error("Invalid remote OMP WEB plugin manifest entry");
       }
       return {
         id: entry["id"],
@@ -156,6 +156,6 @@ function parseRemoteManifest(value: unknown): RemotePluginManifest {
 
 function parseRemoteMachineSpecific(value: unknown): { machineSpecific?: boolean } {
   if (value === undefined) return {};
-  if (typeof value !== "boolean") throw new Error("Invalid remote PI WEB plugin manifest entry");
+  if (typeof value !== "boolean") throw new Error("Invalid remote OMP WEB plugin manifest entry");
   return { machineSpecific: value };
 }

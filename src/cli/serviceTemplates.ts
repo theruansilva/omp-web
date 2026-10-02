@@ -22,9 +22,10 @@ export function systemdUnit(
 ): string {
   const workingDirectory = service.workingDirectory === undefined ? "" : `WorkingDirectory=${systemdQuotedValue(service.workingDirectory)}\n`;
   const restart = service.restart === "on-failure" ? "Restart=on-failure\nRestartSec=2\n" : "Restart=no\n";
+  const rateLimit = service.restart === "on-failure" ? "StartLimitIntervalSec=60\nStartLimitBurst=5\n" : "";
   return `[Unit]
 Description=${service.description}
-${dependencyLine("After", service.after, serviceRefs)}${dependencyLine("Wants", service.wants, serviceRefs)}
+${rateLimit}${dependencyLine("After", service.after, serviceRefs)}${dependencyLine("Wants", service.wants, serviceRefs)}
 [Service]
 Type=simple
 ${workingDirectory}${environmentLines(service.environment, systemdEscape)}ExecStart=${serviceShellExecPrefix()} ${systemdServiceShellQuote(service.shellCommand)}

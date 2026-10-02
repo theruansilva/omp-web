@@ -16,7 +16,7 @@ afterEach(async () => {
   await rm(tempDir, { recursive: true, force: true });
 });
 
-describe("PI WEB config persistence", () => {
+describe("OMP WEB config persistence", () => {
   it("persists and reads authRequired and authToken", () => {
     saveOmpWebConfig({ authRequired: true, authToken: "my-token-123", authUsername: "admin", authPasswordHash: "$argon2id$test" }, testOptions());
     const loaded = loadOmpWebConfig(testOptions());
@@ -43,7 +43,7 @@ describe("PI WEB config persistence", () => {
     expect(effective.config.authPasswordHash).toBe("$argon2id$envhash");
   });
 
-  it("writes and reads the configured PI WEB config path", () => {
+  it("writes and reads the configured OMP WEB config path", () => {
     const requestedConfig = {
       host: "0.0.0.0",
       port: 9000,
@@ -76,13 +76,13 @@ describe("PI WEB config persistence", () => {
   it("rejects invalid plugin config", async () => {
     await writeFile(configPath, `${JSON.stringify({ plugins: { info: { enabled: "no" } } }, null, 2)}\n`, "utf8");
 
-    expect(() => loadOmpWebConfig(testOptions())).toThrow("PI WEB config plugin enabled values must be booleans");
+    expect(() => loadOmpWebConfig(testOptions())).toThrow("OMP WEB config plugin enabled values must be booleans");
   });
 
   it("rejects invalid path access config", async () => {
     await writeFile(configPath, `${JSON.stringify({ pathAccess: { allowedPaths: [""] } }, null, 2)}\n`, "utf8");
 
-    expect(() => loadOmpWebConfig(testOptions())).toThrow("PI WEB config pathAccess.allowedPaths must be an array of non-empty strings");
+    expect(() => loadOmpWebConfig(testOptions())).toThrow("OMP WEB config pathAccess.allowedPaths must be an array of non-empty strings");
   });
 
   it("persists and reads maxUploadBytes", () => {
@@ -102,13 +102,13 @@ describe("PI WEB config persistence", () => {
 
   it("rejects a non-boolean Vim mode default", async () => {
     await writeFile(configPath, `${JSON.stringify({ vimMode: "yes" }, null, 2)}\n`, "utf8");
-    expect(() => loadOmpWebConfig(testOptions())).toThrow("PI WEB config vimMode must be a boolean");
+    expect(() => loadOmpWebConfig(testOptions())).toThrow("OMP WEB config vimMode must be a boolean");
   });
 
   it("rejects upload defaults that are not workspace-relative", async () => {
     await writeFile(configPath, `${JSON.stringify({ uploads: { defaultFolder: "../outside" } }, null, 2)}\n`, "utf8");
 
-    expect(() => loadOmpWebConfig(testOptions())).toThrow("PI WEB config uploads.defaultFolder must not contain path traversal");
+    expect(() => loadOmpWebConfig(testOptions())).toThrow("OMP WEB config uploads.defaultFolder must not contain path traversal");
   });
 });
 

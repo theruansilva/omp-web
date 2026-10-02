@@ -408,7 +408,7 @@ export class OmpWebApp extends LitElement {
       if (selectedMachineId(this.state) === machineId) this.setState({ ompWebStatus });
     } catch (error) {
       if (selectedMachineId(this.state) === machineId) this.setState({ ompWebStatus: undefined });
-      console.warn(`Failed to refresh PI WEB status for ${machineId}`, error);
+      console.warn(`Failed to refresh OMP WEB status for ${machineId}`, error);
     }
   }
 
@@ -433,7 +433,7 @@ export class OmpWebApp extends LitElement {
     try {
       this.applyClientConfig((await configApi.config()).effectiveConfig);
     } catch (error) {
-      console.warn("Failed to load PI WEB config", error);
+      console.warn("Failed to load OMP WEB config", error);
     }
   }
 
@@ -1372,7 +1372,7 @@ export class OmpWebApp extends LitElement {
     if (this.state.isLoadingProjects) {
       return {
         title: "Loading projects…",
-        body: "Looking for projects you have added to PI WEB.",
+        body: "Looking for projects you have added to OMP WEB.",
       };
     }
     if (project === undefined) {
@@ -1626,7 +1626,7 @@ export class OmpWebApp extends LitElement {
   }
 
   private async loadExternalPlugins(): Promise<void> {
-    await this.registerExternalPlugins("PI WEB plugins", () => loadExternalPlugins());
+    await this.registerExternalPlugins("OMP WEB plugins", () => loadExternalPlugins());
   }
 
   private async loadPluginsForSelectedMachine(): Promise<void> {
@@ -1641,7 +1641,7 @@ export class OmpWebApp extends LitElement {
     const existing = this.machinePluginLoadPromises.get(machine.id);
     if (existing !== undefined) return existing;
 
-    const load = this.registerExternalPlugins(`PI WEB plugins from ${machine.name}`, () => loadExternalPlugins(`/api/machines/${encodeURIComponent(machine.id)}/omp-web-plugins/manifest.json`, {
+    const load = this.registerExternalPlugins(`OMP WEB plugins from ${machine.name}`, () => loadExternalPlugins(`/api/machines/${encodeURIComponent(machine.id)}/omp-web-plugins/manifest.json`, {
       machineId: machine.id,
       shouldLoadPlugin: (entry) => this.plugins.shouldLoadRemotePlugin(entry.id, entry.machineSpecific),
     }))
@@ -1658,7 +1658,7 @@ export class OmpWebApp extends LitElement {
         try {
           this.plugins.register(registration);
         } catch (error) {
-          console.warn(`Failed to register PI WEB plugin ${registration.id}`, error);
+          console.warn(`Failed to register OMP WEB plugin ${registration.id}`, error);
         }
       }
       this.applyPreferredTheme(false);
@@ -1845,7 +1845,7 @@ export class OmpWebApp extends LitElement {
 
   private async removeMachine(machine: Machine | undefined = this.state.selectedMachine): Promise<void> {
     if (machine === undefined || machine.kind === "local") return;
-    if (!window.confirm(`Remove ${machine.name}?\n\nThis only removes it from this PI WEB gateway.`)) return;
+    if (!window.confirm(`Remove ${machine.name}?\n\nThis only removes it from this OMP WEB gateway.`)) return;
     const wasSelected = this.state.selectedMachine?.id === machine.id;
     if (wasSelected) this.rememberCurrentMachineNavigation();
     const fallback = await this.machines.deleteMachine(machine, { selectFallback: !wasSelected });

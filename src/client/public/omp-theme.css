@@ -1911,7 +1911,7 @@ html[data-theme="dark"] .composer-dropdown-popover .composer-dropdown-icon {
 }
 
 .omp-settings-btn-primary:hover:not(:disabled) {
-  background-color: #1d4ed8 !important;
+  filter: brightness(0.92);
 }
 
 .omp-settings-btn-primary:active:not(:disabled) {

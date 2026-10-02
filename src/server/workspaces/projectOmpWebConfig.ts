@@ -22,7 +22,7 @@ export async function loadProjectOmpWebConfig(projectPath: string): Promise<Load
   const path = join(projectPath, PROJECT_OMP_WEB_CONFIG_PATH);
   try {
     const parsed: unknown = JSON.parse(await readFile(path, "utf8"));
-    if (!isRecord(parsed)) throw new Error(`PI WEB project config must be a JSON object: ${path}`);
+    if (!isRecord(parsed)) throw new Error(`OMP WEB project config must be a JSON object: ${path}`);
     return { path, exists: true, config: parseProjectOmpWebConfig(parsed, path) };
   } catch (error) {
     if (isNodeErrorWithCode(error, "ENOENT")) return { path, exists: false, config: {} };
@@ -55,7 +55,7 @@ function parseProjectOmpWebConfig(value: Record<string, unknown>, path: string):
 }
 
 function parseProjectConfigVersion(value: unknown, path: string): 1 {
-  if (value !== 1) throw new Error(`PI WEB project config version must be 1: ${path}`);
+  if (value !== 1) throw new Error(`OMP WEB project config version must be 1: ${path}`);
   return 1;
 }
 

@@ -48,8 +48,8 @@ beforeEach(async () => {
         packageName: "@theruansilva/omp-web",
         generatedAt: "2026-05-25T00:00:00.000Z",
         components: {
-          web: { component: "web", label: "PI WEB", available: true, capabilities: [OMP_WEB_CAPABILITIES.sessionsDeleteArchived] },
-          sessiond: { component: "sessiond", label: "PI WEB Session Daemon", available: true, capabilities: [OMP_WEB_CAPABILITIES.sessionsDeleteArchived] },
+          web: { component: "web", label: "OMP WEB", available: true, capabilities: [OMP_WEB_CAPABILITIES.sessionsDeleteArchived] },
+          sessiond: { component: "sessiond", label: "OMP WEB Session Daemon", available: true, capabilities: [OMP_WEB_CAPABILITIES.sessionsDeleteArchived] },
         },
         capabilities: [OMP_WEB_CAPABILITIES.sessionsDeleteArchived],
       }),
@@ -231,7 +231,7 @@ describe("buildApp", () => {
     });
 
     expect(response.statusCode).toBe(400);
-    expect(response.json<{ error: string }>().error).toContain("PI WEB selected-machine config key is not allowed: host");
+    expect(response.json<{ error: string }>().error).toContain("OMP WEB selected-machine config key is not allowed: host");
     expect(requestJson).not.toHaveBeenCalled();
   });
 
@@ -763,7 +763,7 @@ describe("buildApp", () => {
     ]);
   });
 
-  it("serves the PI WEB plugin manifest and plugin assets", async () => {
+  it("serves the OMP WEB plugin manifest and plugin assets", async () => {
     const manifestResponse = await app.inject({ method: "GET", url: "/omp-web-plugins/manifest.json" });
     expect(manifestResponse.statusCode).toBe(200);
     expect(manifestResponse.json()).toEqual({ plugins: [{ id: "fake", module: "/omp-web-plugins/fake/plugin.js?v=1", source: "test", scope: "local", machineSpecific: false }] });
@@ -869,7 +869,7 @@ describe("buildApp", () => {
     const response = await app.inject({ method: "GET", url: `/omp-web-plugins/${scopedPluginId}/..%2F..%2Fapi%2Fconfig` });
 
     expect(response.statusCode).toBe(400);
-    expect(response.json()).toEqual({ error: "Invalid remote PI WEB plugin asset path" });
+    expect(response.json()).toEqual({ error: "Invalid remote OMP WEB plugin asset path" });
     expect(request).not.toHaveBeenCalled();
   });
 

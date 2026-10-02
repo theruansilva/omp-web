@@ -447,7 +447,7 @@ export class OmpChatView extends LitElement {
                 </div>
                 <button
                   type="button"
-                  class="px-2.5 py-1 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-semibold cursor-pointer shrink-0 transition-colors shadow-xs"
+                  class="px-2.5 py-1 rounded-lg bg-[var(--primary)] hover:opacity-90 active:scale-95 text-white font-semibold cursor-pointer shrink-0 transition-all shadow-xs"
                   @click=${() => this.dispatchEvent(new CustomEvent("open-artifact", { bubbles: true, composed: true }))}
                 >
                   Ver no Painel Lateral →

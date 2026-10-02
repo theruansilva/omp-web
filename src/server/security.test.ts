@@ -201,7 +201,7 @@ describe("security utils", () => {
       const res2 = await middleware(makeContext("/"), next) as unknown as { status: number; data: string };
       expect(nextCalled).toBe(false);
       expect(res2.status).toBe(401);
-      expect(res2.data).toContain("PI WEB — Authentication");
+      expect(res2.data).toContain("OMP WEB — Authentication");
 
       // 3. Valid Bearer token allows request
       nextCalled = false;

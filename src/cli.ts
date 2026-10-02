@@ -150,7 +150,7 @@ function supportsSystemdUserServices(): boolean {
 
 function manualRunAdvice(): string {
   return [
-    "Run PI WEB manually from a checkout:",
+    "Run OMP WEB manually from a checkout:",
     "  bun run start:sessiond",
     "  OMP_WEB_PORT=8504 bun run start",
     "",
@@ -229,7 +229,7 @@ function parseInstallOptions(args: string[]): InstallOptions {
     } else if (arg === "--dev") {
       options.mode = "dev";
     } else if (arg === "--user-systemd") {
-      // Accepted for backwards-compatible readability; PI WEB chooses the native user service backend automatically.
+      // Accepted for backwards-compatible readability; OMP WEB chooses the native user service backend automatically.
     } else {
       throw new Error(`Unknown install option: ${arg}`);
     }
@@ -361,7 +361,7 @@ function describeServiceShell(): string {
   if (shell.fallback) {
     return shell.detected === undefined
       ? "could not detect a supported login shell; using bash"
-      : `detected ${shell.detected}; using bash because PI WEB currently supports bash, zsh, and fish`;
+      : `detected ${shell.detected}; using bash because OMP WEB currently supports bash, zsh, and fish`;
   }
   return shell.detected === undefined ? shell.name : `${shell.name} (${shell.detected})`;
 }
@@ -407,14 +407,14 @@ function productionServiceDefinitions(options: InstallOptions, configPath: strin
   return [
     {
       ...serviceRefs.sessiond,
-      description: "PI WEB session daemon",
+      description: "OMP WEB session daemon",
       shellCommand: `exec ${executables.sessiond.command}`,
       restart: "on-failure",
       environment,
     },
     {
       ...serviceRefs.web,
-      description: "PI WEB server",
+      description: "OMP WEB server",
       shellCommand: `exec ${executables.web.command}`,
       restart: "on-failure",
       environment,
@@ -431,7 +431,7 @@ function devRootPath(): string {
 function validateDevCheckout(root: string): void {
   const packageJsonPath = join(root, "package.json");
   if (!existsSync(packageJsonPath)) {
-    throw new Error(`Development mode must be installed from a PI WEB checkout. Missing package.json: ${packageJsonPath}`);
+    throw new Error(`Development mode must be installed from a OMP WEB checkout. Missing package.json: ${packageJsonPath}`);
   }
 
   const parsed: unknown = JSON.parse(readFileSync(packageJsonPath, "utf8"));
@@ -451,7 +451,7 @@ function devServiceDefinitions(options: InstallOptions, configPath: string, root
   return [
     {
       ...serviceRefs.sessiond,
-      description: "PI WEB session daemon (dev)",
+      description: "OMP WEB session daemon (dev)",
       shellCommand: "exec bun run start:sessiond",
       restart: "never",
       environment,
@@ -459,7 +459,7 @@ function devServiceDefinitions(options: InstallOptions, configPath: string, root
     },
     {
       ...serviceRefs.uiDev,
-      description: "PI WEB UI dev server",
+      description: "OMP WEB UI dev server",
       shellCommand: `exec /usr/bin/env bash -c ${serviceShellQuote('trap "kill 0" EXIT; bun run dev:web & bun run dev:client & wait')}`,
       restart: "never",
       environment,
@@ -519,6 +519,13 @@ async function installSystemdServices(services: ServiceDefinition[]): Promise<vo
   for (const ref of obsolete) {
     runQuiet("systemctl", ["--user", "disable", "--now", ref.systemdName]);
     await rm(systemdServicePath(ref), { force: true });
+  }
+
+  // Clean up any legacy pi-web systemd units that might be looping or obsolete
+  const legacyUnits = ["pi-web.service", "pi-web-sessiond.service", "pi-web-ui.service"];
+  for (const legacyName of legacyUnits) {
+    runQuiet("systemctl", ["--user", "disable", "--now", legacyName]);
+    await rm(join(systemdServiceDir, legacyName), { force: true });
   }
 
   await mkdir(systemdServiceDir, { recursive: true });
@@ -700,9 +707,9 @@ function printServiceStatus(status: ServiceRuntimeStatus): void {
 
 function printServiceStatusReport(backend: ServiceBackend): boolean {
   const refs = statusServiceRefs(backend);
-  console.log(`PI WEB services: ${serviceInstallMode(backend)} (${backend.label})`);
+  console.log(`OMP WEB services: ${serviceInstallMode(backend)} (${backend.label})`);
   if (refs.length === 0) {
-    console.log("✗ no PI WEB service files found");
+    console.log("✗ no OMP WEB service files found");
     console.log("  Run `omp-web install` or `omp-web install --dev`.");
     return false;
   }
@@ -756,7 +763,7 @@ async function install(args: string[]): Promise<void> {
   if (devRoot !== undefined) validateDevCheckout(devRoot);
 
   const executables = options.mode === "production" ? resolveServiceExecutables(backend) : undefined;
-  console.log(`Running PI WEB ${options.mode} install preflight checks...`);
+  console.log(`Running OMP WEB ${options.mode} install preflight checks...`);
   console.log(`Service backend: ${backend.label}`);
   console.log(`Service shell: ${describeServiceShell()}`);
   if (!runChecks(installPreflightChecks(backend, options.mode, executables, devRoot))) {
@@ -771,7 +778,7 @@ async function install(args: string[]): Promise<void> {
 
   await installNativeServices(backend, services);
 
-  console.log(`\nPI WEB ${options.mode} services are installed and starting.`);
+  console.log(`\nOMP WEB ${options.mode} services are installed and starting.`);
   console.log(`Config: ${configPath}`);
   console.log(`Open: http://${options.host === "0.0.0.0" ? "127.0.0.1" : options.host}:${options.port}`);
 
@@ -795,18 +802,18 @@ async function install(args: string[]): Promise<void> {
 async function uninstall(): Promise<void> {
   const backend = requireServiceBackend("omp-web uninstall");
   await uninstallNativeServices(backend);
-  console.log(`PI WEB ${backend.label} removed. Production and development service files were removed; config and data were left in place.`);
+  console.log(`OMP WEB ${backend.label} removed. Production and development service files were removed; config and data were left in place.`);
 }
 
 function update(): void {
   const backend = requireServiceBackend("omp-web update");
   const mode = serviceInstallMode(backend);
-  if (mode === "not installed") throw new Error("PI WEB is not installed. Run `omp-web install` first.");
+  if (mode === "not installed") throw new Error("OMP WEB is not installed. Run `omp-web install` first.");
   if (mode === "development" || mode === "mixed") {
     throw new Error("A development install is updated from its checkout (git pull, then `omp-web install --dev`). `omp-web update` only refreshes a production install.");
   }
 
-  console.log("Updating PI WEB package...");
+  console.log("Updating OMP WEB package...");
   run("bun", ["add", "-g", `${OMP_WEB_PACKAGE_NAME}@latest`], { check: true });
 
   console.log("Refreshing installed services...");
@@ -1111,7 +1118,7 @@ export async function remoteCommand(args: string[] = []): Promise<void> {
       host: "0.0.0.0",
       allowedHosts: config.allowedHosts ?? true,
     });
-    console.log("Remote access enabled: PI WEB will listen on all interfaces (0.0.0.0).");
+    console.log("Remote access enabled: OMP WEB will listen on all interfaces (0.0.0.0).");
     if (lanIp) {
       console.log(`Network URL:   http://${lanIp}:${port}`);
     }
@@ -1125,7 +1132,7 @@ export async function remoteCommand(args: string[] = []): Promise<void> {
       host: "127.0.0.1",
       ...(config.allowedHosts === true ? { allowedHosts: [] } : {}),
     });
-    console.log("Remote access disabled: PI WEB will only listen on localhost (127.0.0.1).");
+    console.log("Remote access disabled: OMP WEB will only listen on localhost (127.0.0.1).");
     console.log('Run "omp-web restart" to apply changes.');
   } else {
     const isRemote = config.host === "0.0.0.0";
@@ -1146,7 +1153,7 @@ export async function remoteCommand(args: string[] = []): Promise<void> {
 }
 
 function help(): void {
-  console.log(`PI WEB
+  console.log(`OMP WEB
 
 Usage:
   omp-web install [--remote] [--dev] [--host 127.0.0.1] [--port 8504] [--config ~/.config/omp-web/config.json]

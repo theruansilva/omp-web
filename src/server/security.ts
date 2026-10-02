@@ -202,7 +202,7 @@ export function renderLoginPage(options: RenderLoginOptions = {}): string {
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>PI WEB — Authentication</title>
+  <title>OMP WEB — Authentication</title>
   <style>
     * { box-sizing: border-box; }
     body {
@@ -314,7 +314,7 @@ export function renderLoginPage(options: RenderLoginOptions = {}): string {
 <body>
   <div class="card">
     <div class="badge">${isSetup ? "Primeiro Acesso" : "Segurança"}</div>
-    <h1>PI WEB</h1>
+    <h1>OMP WEB</h1>
     <p>${isSetup
       ? "Crie suas credenciais de administrador para proteger este painel."
       : "Autenticação necessária para acessar esta instância."

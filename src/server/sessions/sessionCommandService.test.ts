@@ -140,7 +140,7 @@ describe("SessionCommandService", () => {
 
     await expect(service.run("s1", "/reload")).resolves.toEqual({
       type: "done",
-      message: "Session runtime resources reloaded. Extensions, skills, prompt templates, themes, and context/system prompt files are refreshed for this session. Reload the browser page separately for PI WEB browser plugin changes.",
+      message: "Session runtime resources reloaded. Extensions, skills, prompt templates, themes, and context/system prompt files are refreshed for this session. Reload the browser page separately for OMP WEB browser plugin changes.",
     });
     expect(reloadSession).toHaveBeenCalledWith(active.runtime.session);
   });

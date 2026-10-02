@@ -389,7 +389,7 @@ export class OmpProjectDetailView extends LitElement {
                       <div class="flex items-center gap-3 min-w-0 pr-2">
                         <div
                           class="size-8 rounded-xl ${isActive
-            ? "bg-blue-600 text-white"
+            ? "bg-[var(--primary)] text-white"
             : "bg-black/5 dark:bg-white/10 text-foreground-700"
           } flex items-center justify-center shrink-0 transition-colors"
                         >
@@ -417,9 +417,9 @@ export class OmpProjectDetailView extends LitElement {
                       <button
                         type="button"
                         class="px-2.5 py-1 rounded-lg text-xs font-bold ${isActive
-            ? "bg-blue-600 text-white"
-            : "bg-black/5 dark:bg-white/10 text-foreground-700 group-hover:bg-blue-600 group-hover:text-white"
-          } transition-colors shrink-0"
+            ? "bg-[var(--primary)] text-white"
+            : "bg-black/5 dark:bg-white/10 text-foreground-700 group-hover:bg-[var(--primary)] group-hover:text-white"
+          } transition-all shrink-0"
                         @click=${(e: Event) => {
             e.stopPropagation();
             this.handleSelectBranch(branch.name);
@@ -484,7 +484,7 @@ export class OmpProjectDetailView extends LitElement {
 
                             <button
                               type="button"
-                              class="px-3 py-1.5 rounded-xl text-xs font-bold bg-black/5 dark:bg-white/10 text-foreground-800 group-hover:bg-blue-600 group-hover:text-white transition-colors shrink-0"
+                              class="px-3 py-1.5 rounded-xl text-xs font-bold bg-black/5 dark:bg-white/10 text-foreground-800 group-hover:bg-[var(--primary)] group-hover:text-white transition-all shrink-0"
                               @click=${(e: Event) => {
               e.stopPropagation();
               this.handleSelectSession(session.id);
@@ -505,7 +505,7 @@ export class OmpProjectDetailView extends LitElement {
                       </p>
                       <button
                         type="button"
-                        class="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-blue-600 text-white hover:bg-blue-700 transition-colors cursor-pointer"
+                        class="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-[var(--primary)] text-white hover:opacity-90 active:scale-95 transition-all cursor-pointer"
                         @click=${() => this.dispatchEvent(new CustomEvent("start-new-session", { detail: { projectId: this.projectId }, bubbles: true, composed: true }))}
                       >
                         <span class="text-sm font-light leading-none">+</span>

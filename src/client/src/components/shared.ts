@@ -1346,7 +1346,7 @@ export const promptEditorStyles = css`
   .plan-review-inline-btn { border: 0; background: transparent; color: inherit; font: inherit; text-decoration: underline; cursor: pointer; padding: 0; }
   .plan-toggle-button { border: 1px solid var(--pi-border); border-radius: 6px; background: transparent; color: var(--pi-text-muted); font-size: 12px; padding: 3px 8px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; }
   .plan-toggle-button.active { border-color: var(--pi-accent, #3b82f6); color: var(--pi-accent, #3b82f6); background: var(--pi-accent-subtle, rgba(59, 130, 246, 0.1)); font-weight: 500; }
-  .plan-review-badge-button { border: 1px solid var(--pi-accent, #3b82f6); border-radius: 6px; background: var(--pi-accent, #2563eb); color: white; font-size: 12px; font-weight: 500; padding: 3px 8px; cursor: pointer; }
+  .plan-review-badge-button { border: 1px solid var(--primary, var(--omp-primary, #3b82f6)); border-radius: 6px; background: var(--primary, var(--omp-primary, #2563eb)); color: white; font-size: 12px; font-weight: 500; padding: 3px 8px; cursor: pointer; }
   .attachments { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 0 12px 6px; }
   .attachment-chip { position: relative; width: 56px; height: 56px; border: 1px solid var(--pi-border); border-radius: 8px; overflow: hidden; background: var(--pi-bg); }
   .attachment-chip img { width: 100%; height: 100%; object-fit: cover; display: block; }
