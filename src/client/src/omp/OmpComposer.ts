@@ -2362,7 +2362,7 @@ export class OmpComposer extends LitElement {
           type="button"
           title="Queue message (agent is working)"
           aria-label="Queue message"
-          class="relative flex items-center justify-center size-9 rounded-2xl bg-black text-white dark:bg-white dark:text-black hover:opacity-90 active:scale-95 transition-all shadow-sm cursor-pointer select-none"
+          class="relative flex items-center justify-center size-9 rounded-2xl bg-[var(--primary)] text-[var(--omp-on-primary,#fff)] hover:opacity-90 active:scale-95 transition-all shadow-sm cursor-pointer select-none"
           @click=${() => this.submit("followUp")}
         >
           ${renderQueueIcon("size-4")}
@@ -2378,7 +2378,7 @@ export class OmpComposer extends LitElement {
           type="button"
           title="Stop generating"
           aria-label="Stop generating"
-          class="relative flex items-center justify-center size-9 rounded-2xl bg-black text-white dark:bg-white dark:text-black hover:opacity-90 active:scale-95 transition-all shadow-sm cursor-pointer select-none"
+          class="relative flex items-center justify-center size-9 rounded-2xl bg-[var(--primary)] text-[var(--omp-on-primary,#fff)] hover:opacity-90 active:scale-95 transition-all shadow-sm cursor-pointer select-none"
           @click=${() => this.stopGeneration()}
         >
           ${renderStopIcon("size-4")}
@@ -2395,7 +2395,7 @@ export class OmpComposer extends LitElement {
           disabled
           title="Type a message to send"
           aria-label="Send message (empty input)"
-          class="relative flex items-center justify-center size-9 rounded-2xl bg-black text-white dark:bg-white dark:text-black opacity-35 cursor-not-allowed select-none transition-all shadow-none"
+          class="relative flex items-center justify-center size-9 rounded-2xl bg-[var(--primary)] text-[var(--omp-on-primary,#fff)] opacity-35 cursor-not-allowed select-none transition-all shadow-none"
         >
           ${renderSendIcon("size-5")}
         </button>
@@ -2409,7 +2409,7 @@ export class OmpComposer extends LitElement {
         type="button"
         title="Submit"
         aria-label="Submit"
-        class="relative flex items-center justify-center size-9 rounded-2xl bg-black text-white dark:bg-white dark:text-black hover:opacity-90 active:scale-95 transition-all shadow-sm cursor-pointer select-none"
+        class="relative flex items-center justify-center size-9 rounded-2xl bg-[var(--primary)] text-[var(--omp-on-primary,#fff)] hover:opacity-90 active:scale-95 transition-all shadow-sm cursor-pointer select-none"
         @click=${() => this.submit()}
       >
         ${renderSendIcon("size-5")}

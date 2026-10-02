@@ -26,7 +26,7 @@
   /* 3. Typography & Text Hierarchy */
   --omp-text-primary: oklch(20% 0.006 56); /* #1C1B1A */
   --omp-text-secondary: oklch(48% 0.008 56); /* #666666 */
-  --omp-text-muted: oklch(62% 0.008 56); /* #888888 */
+  --omp-text-muted: oklch(42% 0.008 56); /* #888888 calibrated for WCAG AA >=4.5:1 */
 
   /* 4. Action & Brand Semantics */
   --omp-primary: rgb(var(--color-muted-450, 135 103 78));
@@ -704,7 +704,6 @@ html[data-theme="dark"] .composer-dropdown-popover .composer-dropdown-icon {
   border-radius: 14px;
   background: oklch(0% 0 0 / 0.025);
   border: 1px solid var(--omp-border-subtle);
-  border-left: 3px solid var(--omp-primary);
   color: var(--omp-text-secondary);
   font-size: 14px;
   line-height: 1.55;
@@ -1739,14 +1738,14 @@ html[data-theme="dark"] .composer-dropdown-popover .composer-dropdown-icon {
   border: 1px solid var(--omp-border-subtle) !important;
   backdrop-filter: blur(24px) saturate(180%);
   -webkit-backdrop-filter: blur(24px) saturate(180%);
-  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
+  /* Squircle elevation is handled via filter: drop-shadow on parent wrapper per DESIGN.md */
 }
 
 .dark .omp-settings-card,
 [data-theme="dark"] .omp-settings-card {
   background-color: var(--omp-surface-card) !important;
   border: 1px solid var(--omp-border-subtle) !important;
-  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.25);
+  /* Squircle elevation is handled via filter: drop-shadow on parent wrapper per DESIGN.md */
 }
 
 .omp-settings-nav {
