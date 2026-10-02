@@ -34,7 +34,7 @@ export class UnifiedDiffViewer extends LitElement {
     :host { display: block; min-height: 0; height: 100%; color: var(--pi-text); background: var(--pi-bg); }
     .empty { box-sizing: border-box; margin: 0; padding: 10px; color: var(--pi-muted); }
     .scroller { height: 100%; min-height: 0; overflow: auto; background: var(--pi-bg); }
-    .diff-grid { display: grid; grid-template-columns: max-content max-content 2ch max-content; width: max-content; min-width: 100%; padding: 6px 0; font: 12px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; line-height: 1.45; }
+    .diff-grid { display: grid; grid-template-columns: max-content max-content 2ch max-content; width: max-content; min-width: 100%; padding: 6px 0; font: 12px ui-monospace, Menlo, Consolas, monospace; line-height: 1.45; }
     .line { display: contents; }
     .cell { min-height: 1.45em; white-space: pre; }
     .line-number { min-width: 4ch; padding: 0 8px; border-right: 1px solid var(--pi-border-muted); color: var(--pi-dim); text-align: right; user-select: none; }

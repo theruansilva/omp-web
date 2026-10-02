@@ -239,7 +239,7 @@ export const workspacePanelStyles = css`
   code-viewer, unified-diff-viewer { flex: 1 1 auto; min-height: 0; }
   .image-preview { flex: 1 1 auto; min-height: 0; box-sizing: border-box; display: flex; align-items: center; justify-content: center; overflow: auto; padding: 16px; }
   .image-preview img { display: block; max-width: 100%; max-height: 100%; object-fit: contain; border: 1px solid var(--pi-border-muted); border-radius: 8px; background-color: var(--pi-surface); background-image: linear-gradient(45deg, color-mix(in srgb, var(--pi-border-muted) 45%, transparent) 25%, transparent 25%), linear-gradient(-45deg, color-mix(in srgb, var(--pi-border-muted) 45%, transparent) 25%, transparent 25%), linear-gradient(45deg, transparent 75%, color-mix(in srgb, var(--pi-border-muted) 45%, transparent) 75%), linear-gradient(-45deg, transparent 75%, color-mix(in srgb, var(--pi-border-muted) 45%, transparent) 75%); background-position: 0 0, 0 8px, 8px -8px, -8px 0; background-size: 16px 16px; box-shadow: 0 8px 24px var(--pi-shadow-soft); }
-  pre { margin: 0; padding: 10px; overflow: auto; font: 12px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; line-height: 1.45; white-space: pre-wrap; overflow-wrap: anywhere; }
+  pre { margin: 0; padding: 10px; overflow: auto; font: 12px ui-monospace, Menlo, Consolas, monospace; line-height: 1.45; white-space: pre-wrap; overflow-wrap: anywhere; }
   p { margin: 10px; }
 `;
 
@@ -612,7 +612,7 @@ export const chatStyles = css`
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    font: 11.5px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font: 11.5px ui-monospace, Menlo, Consolas, monospace;
     color: var(--pi-muted);
     opacity: 0.8;
   }
@@ -661,7 +661,7 @@ export const chatStyles = css`
   .skill-invocation > small, .skill-read > small { display: block; margin: 6px 0 0; color: var(--pi-muted); }
   summary { cursor: pointer; color: var(--pi-muted); }
   pre { margin: 6px 0 0; white-space: pre-wrap; overflow-wrap: anywhere; font: inherit; direction: ltr; text-align: left; unicode-bidi: isolate; }
-  .shell-output { color: var(--pi-text); font: 13px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; line-height: 1.45; direction: ltr; text-align: left; unicode-bidi: isolate; }
+  .shell-output { color: var(--pi-text); font: 13px ui-monospace, Menlo, Consolas, monospace; line-height: 1.45; direction: ltr; text-align: left; unicode-bidi: isolate; }
   @keyframes pulse { 0%, 100% { transform: scale(.75); opacity: .55; } 50% { transform: scale(1.2); opacity: 1; } }
 `;
 
@@ -672,10 +672,10 @@ export const formattedTextStyles = css`
   :is(p, ul, ol, pre, blockquote, table, .code-block-wrapper):last-child { margin-bottom: 0; }
   ul, ol { padding-left: 22px; }
   li + li { margin-top: 3px; }
-  code { border: 1px solid var(--pi-border); border-radius: 4px; background: var(--pi-bg); padding: 1px 4px; font: 13px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; direction: ltr; text-align: left; unicode-bidi: isolate; }
+  code { border: 1px solid var(--pi-border); border-radius: 4px; background: var(--pi-bg); padding: 1px 4px; font: 13px ui-monospace, Menlo, Consolas, monospace; direction: ltr; text-align: left; unicode-bidi: isolate; }
   .code-block-wrapper { position: relative; }
   .code-block-wrapper pre { margin: 0; padding-right: 40px; }
-  pre { border: 1px solid var(--pi-border); border-radius: 8px; background: var(--pi-bg); padding: 10px; overflow-x: auto; overflow-y: hidden; direction: ltr; text-align: left; unicode-bidi: isolate; font: 13px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  pre { border: 1px solid var(--pi-border); border-radius: 8px; background: var(--pi-bg); padding: 10px; overflow-x: auto; overflow-y: hidden; direction: ltr; text-align: left; unicode-bidi: isolate; font: 13px ui-monospace, Menlo, Consolas, monospace; }
   pre code { border: 0; padding: 0; background: transparent; font: inherit; }
   .tok-keyword { color: var(--pi-danger); font-weight: 500; }
   .tok-operator { color: var(--pi-danger); }
@@ -692,7 +692,7 @@ export const formattedTextStyles = css`
   .tok-labelName { color: var(--pi-accent); }
   .tok-meta { color: var(--pi-muted); }
   .tok-invalid { color: var(--pi-danger); text-decoration: underline; }
-  pre.ascii-diagram, .mermaid-diagram-wrapper pre.ascii-diagram { font-family: ui-monospace, SFMono-Regular, "Cascadia Code", "DejaVu Sans Mono", Menlo, Consolas, monospace; font-size: 12.5px; line-height: 1.18; letter-spacing: 0; font-variant-ligatures: none; white-space: pre; overflow-x: auto; }
+  pre.ascii-diagram, .mermaid-diagram-wrapper pre.ascii-diagram { font-family: ui-monospace, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; font-size: 12.5px; line-height: 1.18; letter-spacing: 0; font-variant-ligatures: none; white-space: pre; overflow-x: auto; }
   .mermaid-diagram-wrapper { position: relative; border: 1px solid var(--pi-border); border-radius: 8px; background: var(--pi-bg); margin: 0 0 10px; overflow: hidden; }
   .mermaid-diagram-wrapper pre { border: none; border-radius: 0; margin: 0; padding: 12px 14px; }
   .mermaid-diagram-container { width: 100%; overflow-x: auto; }
@@ -1186,7 +1186,7 @@ export const actionPaletteStyles = css`
   small { display: block; color: var(--pi-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .disabled-reason { color: var(--pi-warning); }
   .group { grid-column: 1 / -1; font-size: 12px; }
-  kbd { align-self: center; border: 1px solid var(--pi-border); border-radius: 6px; background: var(--pi-surface); color: var(--pi-muted); padding: 2px 6px; font: 12px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; white-space: nowrap; }
+  kbd { align-self: center; border: 1px solid var(--pi-border); border-radius: 6px; background: var(--pi-surface); color: var(--pi-muted); padding: 2px 6px; font: 12px ui-monospace, Menlo, Consolas, monospace; white-space: nowrap; }
   .empty { padding: 24px; color: var(--pi-muted); text-align: center; }
 `;
 

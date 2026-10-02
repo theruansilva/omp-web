@@ -613,7 +613,7 @@ export class OmpChatView extends LitElement {
               @click=${() => this.jumpToBottom()}
               title="Rolar para o final"
             >
-              <svg class="size-3.5 text-accent-500 animate-bounce" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+              <svg class="size-3.5 text-accent-500 transition-transform group-hover:translate-y-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
               </svg>
               <span>Ir para o final</span>

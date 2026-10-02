@@ -246,7 +246,7 @@ export class ToolExecutionView extends LitElement {
     @keyframes toolSpin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
     strong { flex: 0 0 auto; color: color-mix(in srgb, var(--pi-text) 65%, transparent); font-size: 13px; font-weight: 500; letter-spacing: -0.01em; transition: color 150ms ease; }
     summary.tool-header:hover strong, details.tool-card[open] summary.tool-header strong { color: var(--pi-text); }
-    .path, .summary { display: block; flex: 1 1 auto; min-width: 0; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; pointer-events: none; color: var(--pi-muted); font: 12px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; direction: ltr; text-align: left; unicode-bidi: isolate; opacity: 0.75; transition: opacity 150ms ease, color 150ms ease; }
+    .path, .summary { display: block; flex: 1 1 auto; min-width: 0; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; pointer-events: none; color: var(--pi-muted); font: 12px ui-monospace, Menlo, Consolas, monospace; direction: ltr; text-align: left; unicode-bidi: isolate; opacity: 0.75; transition: opacity 150ms ease, color 150ms ease; }
     summary.tool-header:hover .path, details.tool-card[open] .path { color: var(--pi-accent); opacity: 1; }
     .summary { color: var(--pi-muted); font-family: inherit; font-size: 12.5px; }
     .tool-meta { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 6px; color: var(--pi-muted); font-size: 11.5px; }
@@ -269,19 +269,19 @@ export class ToolExecutionView extends LitElement {
 
     .notice { margin: 0; color: var(--pi-warning); font-size: 12px; }
     .muted { margin: 0; color: var(--pi-muted); font-size: 12px; }
-    .error-text { margin: 0; max-height: 200px; overflow-y: auto; border: 1px solid var(--pi-danger); border-radius: 6px; background: color-mix(in srgb, var(--pi-danger) 6%, var(--pi-bg)); color: var(--pi-danger); padding: 8px; white-space: pre-wrap; overflow-wrap: anywhere; font: 12px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+    .error-text { margin: 0; max-height: 200px; overflow-y: auto; border: 1px solid var(--pi-danger); border-radius: 6px; background: color-mix(in srgb, var(--pi-danger) 6%, var(--pi-bg)); color: var(--pi-danger); padding: 8px; white-space: pre-wrap; overflow-wrap: anywhere; font: 12px ui-monospace, Menlo, Consolas, monospace; }
     .text-content, .eval-content { display: grid; gap: 8px; }
     .diff-content-wrap { display: grid; gap: 6px; }
     .diff-header-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; color: var(--pi-muted); font-size: 12px; }
     .detail-target, .detail-result { display: grid; gap: 4px; min-width: 0; }
     .detail-label { color: var(--pi-muted); font-size: 11px; text-transform: uppercase; letter-spacing: .04em; font-weight: 600; }
-    .detail-code-pre, .detail-result-pre, .detail-target-value { box-sizing: border-box; max-width: 100%; max-height: 220px; overflow-x: auto; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; border: 1px solid var(--pi-border-muted); border-radius: 6px; background: var(--pi-bg); padding: 8px; font: 12px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; color: var(--pi-text); white-space: pre-wrap; word-break: break-word; line-height: 1.45; }
+    .detail-code-pre, .detail-result-pre, .detail-target-value { box-sizing: border-box; max-width: 100%; max-height: 220px; overflow-x: auto; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; border: 1px solid var(--pi-border-muted); border-radius: 6px; background: var(--pi-bg); padding: 8px; font: 12px ui-monospace, Menlo, Consolas, monospace; color: var(--pi-text); white-space: pre-wrap; word-break: break-word; line-height: 1.45; }
     .detail-target-value { color: var(--pi-accent); max-height: 140px; }
     .diff-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-width: 0; color: var(--pi-muted); font-size: 12px; }
     .diff-toolbar span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     button { border: 1px solid var(--pi-border); border-radius: 5px; background: var(--pi-surface); color: var(--pi-text); padding: 3px 8px; font: 12px system-ui, sans-serif; cursor: pointer; }
     button:hover, button:focus { border-color: var(--pi-accent); }
-    .diff { box-sizing: border-box; width: 100%; max-width: 100%; min-width: 0; max-height: 320px; margin: 0; overflow-x: auto; overflow-y: auto; overscroll-behavior-x: contain; border: 1px solid var(--pi-border-muted); border-radius: 6px; background: var(--pi-bg); padding: 8px 0; color: var(--pi-muted); font: 12px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; line-height: 1.45; }
+    .diff { box-sizing: border-box; width: 100%; max-width: 100%; min-width: 0; max-height: 320px; margin: 0; overflow-x: auto; overflow-y: auto; overscroll-behavior-x: contain; border: 1px solid var(--pi-border-muted); border-radius: 6px; background: var(--pi-bg); padding: 8px 0; color: var(--pi-muted); font: 12px ui-monospace, Menlo, Consolas, monospace; line-height: 1.45; }
     .diff-content { display: block; width: max-content; min-width: 100%; }
     .diff span { display: block; min-height: 1.45em; padding: 0 8px; white-space: pre; }
     .diff .context { color: var(--pi-muted); }

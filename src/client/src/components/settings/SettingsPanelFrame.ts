@@ -110,7 +110,7 @@ export class SettingsPanelFrame extends LitElement {
     .notice.info { color: var(--pi-muted); }
     .notice-title { display: block; margin-bottom: 4px; color: inherit; }
     .notice-content { min-width: 0; }
-    code { border: 1px solid var(--pi-border-muted); border-radius: 5px; background: var(--pi-bg); padding: 1px 4px; color: var(--pi-text); font: 12px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; overflow-wrap: anywhere; }
+    code { border: 1px solid var(--pi-border-muted); border-radius: 5px; background: var(--pi-bg); padding: 1px 4px; color: var(--pi-text); font: 12px ui-monospace, Menlo, Consolas, monospace; overflow-wrap: anywhere; }
     .content { display: grid; gap: 14px; min-width: 0; }
     .content ::slotted(*) { min-width: 0; }
 

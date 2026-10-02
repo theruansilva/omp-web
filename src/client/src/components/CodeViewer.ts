@@ -75,7 +75,7 @@ const viewerTheme = EditorView.theme({
     fontSize: "12px",
   },
   ".cm-scroller": {
-    fontFamily: "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace",
+    fontFamily: "ui-monospace, Menlo, Consolas, monospace",
     lineHeight: "1.45",
   },
   ".cm-gutters": {

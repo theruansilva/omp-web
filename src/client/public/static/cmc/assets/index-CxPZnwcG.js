@@ -79,7 +79,7 @@ ${s.stack}`:"unknown"}}}}}const t_=(e={})=>{const t=e.limit??Yg;return{name:Xg,p
   --interactive-filter: ${e.interactiveFilter};
   `}function ey({colorScheme:e,themeDark:t,themeLight:n,styleNonce:r}){const s=re.createElement("style");return s.textContent=`
 :host {
-  --font-family: system-ui, 'Helvetica Neue', Arial, sans-serif;
+  --font-family: system-ui, '-apple-system, BlinkMacSystemFont, sans-serif', -apple-system, BlinkMacSystemFont, sans-serif;
   --font-size: 14px;
   --z-index: 100000;
 

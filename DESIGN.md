@@ -62,7 +62,18 @@ typography:
     fontSize: "0.71875rem"
     fontWeight: 600
     lineHeight: 1.2
+  label:
+    fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
+    fontSize: "0.71875rem"
+    fontWeight: 600
+    lineHeight: 1.2
     letterSpacing: "0.01em"
+  mono:
+    fontFamily: "ui-monospace, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace"
+    fontSize: "0.8125rem"
+    fontWeight: 400
+    lineHeight: 1.4
+    letterSpacing: "normal"
 rounded:
   squircle-container: "36px"
   squircle-card: "28px"
