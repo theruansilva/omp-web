@@ -113,19 +113,19 @@ export class OmpUpdateAnnouncementModal extends LitElement {
               <div>
                 <div class="flex items-center gap-2">
                   <span class="px-2 py-0.5 rounded-full text-[11px] font-semibold tracking-wide uppercase bg-[var(--primary)]/15 text-[var(--primary)] border border-[var(--primary)]/25">
-                    Novidades v3.0
+                    What's New in v3.0
                   </span>
-                  <span class="text-xs text-foreground-500 font-mono">Em breve na main</span>
+                  <span class="text-xs text-foreground-500 font-mono">Coming soon to main</span>
                 </div>
                 <h2 id="update-announcement-title" class="text-lg font-bold text-foreground-900 tracking-tight mt-1 font-sans">
-                  Estamos preparando grandes melhorias!
+                  Exciting upgrades are on the way!
                 </h2>
               </div>
             </div>
 
             <button
               type="button"
-              aria-label="Fechar"
+              aria-label="Close"
               class="p-1.5 rounded-xl text-foreground-500 hover:text-foreground-900 hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
               @click=${() => this.handleClose()}
             >
@@ -136,7 +136,7 @@ export class OmpUpdateAnnouncementModal extends LitElement {
           <!-- Body / Highlights -->
           <div class="p-6 space-y-4 max-h-[65vh] overflow-y-auto">
             <p class="text-sm text-foreground-700 dark:text-foreground-300 leading-relaxed">
-              Uma nova versão do <strong>OMP WEB</strong> está sendo finalizada e entrará no ar em instantes. Confira os destaques do que está mudando:
+              A major update to <strong>OMP WEB</strong> is currently being finalized and will be rolled out shortly. Here is a preview of what is changing:
             </p>
 
             <div class="space-y-3 pt-1">
@@ -145,8 +145,8 @@ export class OmpUpdateAnnouncementModal extends LitElement {
                   ${renderCheckIcon("size-3.5")}
                 </div>
                 <div class="text-xs leading-relaxed">
-                  <strong class="text-foreground-900 font-semibold block text-[13px] mb-0.5">Interface Flutuante & Cockpit Acrílico</strong>
-                  <span class="text-foreground-600 dark:text-foreground-400">Novo design system com geometria squircle contínua, temas com contraste refinado e transições ultrarrápidas.</span>
+                  <strong class="text-foreground-900 font-semibold block text-[13px] mb-0.5">Floating Acrylic Cockpit & Squircle UI</strong>
+                  <span class="text-foreground-600 dark:text-foreground-400">Streamlined superellipse design system, refined contrast themes, and fluid navigation transitions.</span>
                 </div>
               </div>
 
@@ -155,8 +155,8 @@ export class OmpUpdateAnnouncementModal extends LitElement {
                   ${renderCheckIcon("size-3.5")}
                 </div>
                 <div class="text-xs leading-relaxed">
-                  <strong class="text-foreground-900 font-semibold block text-[13px] mb-0.5">Ask Tool Interativa no Composer</strong>
-                  <span class="text-foreground-600 dark:text-foreground-400">Decisões, escolhas e perguntas do agente agora integradas de forma nativa e intuitiva diretamente na caixa de prompt.</span>
+                  <strong class="text-foreground-900 font-semibold block text-[13px] mb-0.5">Interactive Ask Tool in Composer</strong>
+                  <span class="text-foreground-600 dark:text-foreground-400">Native choices, confirmations, and agent questions directly inside the prompt composer dock.</span>
                 </div>
               </div>
 
@@ -165,8 +165,8 @@ export class OmpUpdateAnnouncementModal extends LitElement {
                   ${renderCheckIcon("size-3.5")}
                 </div>
                 <div class="text-xs leading-relaxed">
-                  <strong class="text-foreground-900 font-semibold block text-[13px] mb-0.5">Suporte a Subagentes & Ferramentas Paralelas</strong>
-                  <span class="text-foreground-600 dark:text-foreground-400">Capacidade de delegar tarefas para subagentes especializados executando com travas de segurança contra deadlocks.</span>
+                  <strong class="text-foreground-900 font-semibold block text-[13px] mb-0.5">Subagent Delegation & Parallel Tools</strong>
+                  <span class="text-foreground-600 dark:text-foreground-400">Autonomous subagent execution with built-in deadlock prevention and timeout safeguards.</span>
                 </div>
               </div>
 
@@ -175,8 +175,8 @@ export class OmpUpdateAnnouncementModal extends LitElement {
                   ${renderCheckIcon("size-3.5")}
                 </div>
                 <div class="text-xs leading-relaxed">
-                  <strong class="text-foreground-900 font-semibold block text-[13px] mb-0.5">Estabilidade & Reaper de Processos Órfãos</strong>
-                  <span class="text-foreground-600 dark:text-foreground-400">Limpeza automática de processos zumbis, garantindo máxima performance do servidor e menor consumo de recursos.</span>
+                  <strong class="text-foreground-900 font-semibold block text-[13px] mb-0.5">Stability & Orphan Process Reaper</strong>
+                  <span class="text-foreground-600 dark:text-foreground-400">Automated zombie process cleanup on shutdown, ensuring reliable runtime performance and minimal footprint.</span>
                 </div>
               </div>
             </div>
@@ -185,14 +185,14 @@ export class OmpUpdateAnnouncementModal extends LitElement {
           <!-- Footer Actions -->
           <div class="p-4 px-6 border-t border-black/5 dark:border-white/10 flex items-center justify-between bg-black/[0.01] dark:bg-white/[0.02]">
             <span class="text-xs text-foreground-500">
-              Versão 3.0.1 pronta para implantação
+              Version 3.0.1 ready for deployment
             </span>
             <button
               type="button"
               class="px-5 py-2 rounded-xl text-sm font-semibold bg-[var(--primary)] text-white hover:opacity-90 active:scale-[0.98] transition-all shadow-sm"
               @click=${() => this.handleClose()}
             >
-              Entendi, continuar
+              Got it, continue
             </button>
           </div>
         </div>
