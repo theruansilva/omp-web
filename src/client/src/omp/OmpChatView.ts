@@ -50,6 +50,9 @@ export class OmpChatView extends LitElement {
   @property({ attribute: false }) pendingCommand?: PendingCommandDialog;
   @property({ attribute: false }) planMode?: PlanModeStatus;
   @property({ attribute: false }) extensionStatuses?: Record<string, string>;
+  @property({ type: String }) sessionId?: string;
+  @property({ type: String }) cwd?: string;
+  @property({ type: String }) machineId = "local";
   @property({ attribute: false }) artifact?: ArtifactData;
   @property({ type: String }) progressStyle: "minimal" | "steps" = "steps";
   @property({ type: Boolean }) showThinking = true;
@@ -633,6 +636,9 @@ export class OmpChatView extends LitElement {
               .pendingCommand=${this.pendingCommand}
               .planMode=${this.planMode}
               .extensionStatuses=${this.extensionStatuses}
+              .sessionId=${this.sessionId}
+              .cwd=${this.cwd}
+              .machineId=${this.machineId}
               @submit-command=${(e: CustomEvent) => this.dispatchEvent(new CustomEvent("submit-command", { detail: e.detail, bubbles: true, composed: true }))}
               @cancel-command=${(e: CustomEvent) => this.dispatchEvent(new CustomEvent("cancel-command", { detail: e.detail, bubbles: true, composed: true }))}
               @open-models=${() => this.dispatchEvent(new CustomEvent("open-models", { bubbles: true, composed: true }))}

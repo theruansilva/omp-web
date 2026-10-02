@@ -413,6 +413,69 @@ export const gitApi = {
     request<GitDiffResponse>(machineGitDiffUrl(machineId, projectId, workspaceId, options)),
 };
 
+
+export interface UsageLimit {
+  id: string;
+  label: string;
+  scope?: {
+    provider?: string;
+    projectId?: string;
+    windowId?: string;
+    shared?: boolean;
+    sharedGroup?: string;
+  };
+  window?: {
+    id: string;
+    label?: string;
+    durationMs?: number;
+    resetsAt?: number;
+  };
+  amount?: {
+    unit?: string;
+    remainingFraction?: number;
+    usedFraction?: number;
+    remaining?: number;
+    used?: number;
+    limit?: number;
+  };
+  status?: "ok" | "warning" | "exhausted" | "unknown";
+}
+
+export interface UsageReport {
+  provider: string;
+  fetchedAt?: number;
+  limits: UsageLimit[];
+  metadata?: {
+    endpoint?: string;
+    projectId?: string;
+    email?: string;
+    accountId?: string;
+    planType?: string;
+  };
+}
+
+export interface UsageResponse {
+  generatedAt: number;
+  reports: UsageReport[];
+  error?: string;
+}
+
+export const usageApi = {
+  getUsage: (options?: { refresh?: boolean; provider?: string }, machineId = "local") => {
+    const params = new URLSearchParams();
+    if (options?.refresh) params.set("refresh", "true");
+    if (options?.provider) params.set("provider", options.provider);
+    const query = params.toString() ? `?${params.toString()}` : "";
+    return request<UsageResponse>(`${machinePrefix(machineId)}/usage${query}`);
+  },
+  invalidate: (provider?: string, machineId = "local") => {
+    const params = new URLSearchParams();
+    if (provider) params.set("provider", provider);
+    const query = params.toString() ? `?${params.toString()}` : "";
+    return request<{ ok: true; invalidatedAt: number }>(`${machinePrefix(machineId)}/usage/invalidate${query}`, { method: "POST" });
+  },
+};
+
 export const api = {
   ...ompWebApi,
   ...machinesApi,
@@ -426,4 +489,5 @@ export const api = {
   ...terminalsApi,
   ...filesApi,
   ...gitApi,
+  ...usageApi,
 };

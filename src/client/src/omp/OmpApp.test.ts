@@ -421,3 +421,57 @@ describe("OmpApp integration", () => {
     expect((app as any).currentSessionModel).toEqual({ provider: "anthropic", id: "claude-3-7-sonnet" });
   });
 });
+describe("OmpApp Composer Hub commands & shell handling", () => {
+  it("handles /clear slash command client-side by emptying messages", async () => {
+    const app = new OmpApp();
+    (app as any).messages = [{ id: "m1", role: "user", text: "hello" }];
+    (app as any).rawLines = [{ role: "user", parts: [{ type: "text", text: "hello" }] }];
+    expect((app as any).messages.length).toBe(1);
+
+    await (app as any).handlePromptSubmit({ prompt: "/clear" });
+    expect((app as any).messages.length).toBe(0);
+    expect((app as any).rawLines.length).toBe(0);
+  });
+
+  it("handles /help slash command client-side by inserting help card", async () => {
+    const app = new OmpApp();
+    (app as any).selectedProjectId = "proj-1";
+    (app as any).workspacesByProject = { "proj-1": [{ id: "w1", path: "/test", isPrimary: true }] };
+    (app as any).selectedWorkspaceId = "w1";
+
+    await (app as any).handlePromptSubmit({ prompt: "/help" });
+    expect((app as any).messages.length).toBe(1);
+    expect((app as any).messages[0].text).toContain("Comandos Rápidos do OMP");
+  });
+
+  it("handles /settings and /hotkeys by switching activeTab to settings", async () => {
+    const app = new OmpApp();
+    (app as any).selectedProjectId = "proj-1";
+    (app as any).workspacesByProject = { "proj-1": [{ id: "w1", path: "/test", isPrimary: true }] };
+    (app as any).selectedWorkspaceId = "w1";
+
+    await (app as any).handlePromptSubmit({ prompt: "/settings" });
+    expect((app as any).activeTab).toBe("settings");
+
+    (app as any).activeTab = "new-chat";
+    await (app as any).handlePromptSubmit({ prompt: "/hotkeys" });
+    expect((app as any).activeTab).toBe("settings");
+  });
+
+  it("handles /terminal, /files, /usage slash commands by switching activeTab", async () => {
+    const app = new OmpApp();
+    (app as any).selectedProjectId = "proj-1";
+    (app as any).workspacesByProject = { "proj-1": [{ id: "w1", path: "/test", isPrimary: true }] };
+    (app as any).selectedWorkspaceId = "w1";
+
+    await (app as any).handlePromptSubmit({ prompt: "/terminal" });
+    expect((app as any).activeTab).toBe("terminal");
+
+    await (app as any).handlePromptSubmit({ prompt: "/files" });
+    expect((app as any).activeTab).toBe("files");
+
+    await (app as any).handlePromptSubmit({ prompt: "/usage" });
+    expect((app as any).activeTab).toBe("usage");
+  });
+
+});

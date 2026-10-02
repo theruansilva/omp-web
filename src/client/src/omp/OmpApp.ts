@@ -1,3 +1,4 @@
+import { isShellInput } from "../inputModes";
 import { MobileDrawerController } from "../appShell/mobileDrawerController";
 import { LitElement, html, nothing } from "lit";
 import { customElement, state } from "lit/decorators.js";
@@ -13,6 +14,9 @@ import "./OmpProjectDetailView";
 import "./OmpSettingsView";
 import "./OmpModelsView";
 import "./OmpArtifactPanel";
+import "./OmpTerminalView";
+import "./OmpFilesView";
+import "./OmpUsageView";
 import type { ArtifactData } from "./OmpArtifactPanel";
 import type { ModelSelectDetail } from "./OmpModelsView";
 import type { PendingCommandDialog } from "./OmpComposer";
@@ -45,6 +49,7 @@ import {
 } from "../api";
 import { SessionSocket, RealtimeSocket, type RealtimeEvent } from "../sessionSocket";
 import { extractThinkingFromText, normalizeMessages, textMessage } from "../chatMessages";
+import { applyUiColors, loadUiColors, UI_COLORS_CHANGED_EVENT, type UiColorsConfig } from "../uiColors";
 import { applyTranscriptEvent, applyTranscriptEvents } from "../chatTranscript";
 import { pathFromArgs, toolTarget, diffFromDetails, countDiffLines } from "../components/ToolExecutionView";
 import {
@@ -98,6 +103,21 @@ export function linesToChatMessages(lines: ChatLine[]): ChatMessage[] {
           : undefined,
         rawIndex: i,
         entryId: (line.meta as any)?.entryId,
+      });
+    } else if (line.role === "bash") {
+      currentAssistant = null;
+      const text = line.parts
+        .filter((p): p is { type: "text"; text: string } => p.type === "text")
+        .map((p) => p.text)
+        .join("\n\n");
+      result.push({
+        id: `bash-${i}`,
+        role: "assistant",
+        text: `\`\`\`bash\n${text}\n\`\`\``,
+        timestamp: line.meta?.timestamp
+          ? new Date(line.meta.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+          : undefined,
+        rawIndex: i,
       });
     } else if (line.role === "system") {
       currentAssistant = null;
@@ -466,6 +486,8 @@ export class OmpApp extends LitElement {
       void this.loadProjects();
     }
     this.applyTheme(this.theme);
+    applyUiColors(loadUiColors(), this.theme === "light");
+    if (typeof window !== "undefined") window.addEventListener(UI_COLORS_CHANGED_EVENT, this.handleUiColorsChanged);
 
     this.connectRealtimeSocket();
     const machineParam = params.get("machine") || undefined;
@@ -485,6 +507,7 @@ export class OmpApp extends LitElement {
     this.sessionSocket.close();
     this.realtimeSocket.close();
     preferencesEventTarget()?.removeEventListener(CHAT_PREFERENCES_CHANGED_EVENT, this.handleChatPreferencesChanged);
+    if (typeof window !== "undefined") window.removeEventListener(UI_COLORS_CHANGED_EVENT, this.handleUiColorsChanged);
     if (this.pendingTranscriptFrame !== undefined) {
       cancelAnimationFrame(this.pendingTranscriptFrame);
       this.pendingTranscriptFrame = undefined;
@@ -1094,6 +1117,12 @@ export class OmpApp extends LitElement {
     }
   }
 
+  private readonly handleUiColorsChanged = (e: Event): void => {
+    if (e instanceof CustomEvent && e.detail) {
+      applyUiColors(e.detail as UiColorsConfig, this.theme === "light");
+    }
+  };
+
   private applyTheme(theme: "dark" | "light") {
     if (typeof document === "undefined" || !document.documentElement?.classList) return;
     const root = document.documentElement;
@@ -1104,6 +1133,7 @@ export class OmpApp extends LitElement {
       root.classList.remove("dark");
       root.setAttribute("data-theme", "light");
     }
+    applyUiColors(loadUiColors(), theme === "light");
   }
 
   private toggleTheme() {
@@ -1134,6 +1164,98 @@ export class OmpApp extends LitElement {
     const attachments = detail.attachments;
     const hasAttachments = Boolean(attachments && attachments.length > 0);
     if (!promptTrimmed && !hasAttachments) return;
+
+    const [earlyCmd = ""] = promptTrimmed.replace(/^\//, "").split(/\s+/);
+    const earlyLower = earlyCmd.toLowerCase();
+
+    // Client-side instant slash commands that don't need active session
+    if (earlyLower === "clear") {
+      this.messages = [];
+      this.rawLines = [];
+      this.requestUpdate();
+      return;
+    }
+
+    if (earlyLower === "new") {
+      await this.handleStartNewSession();
+      return;
+    }
+
+        if (earlyLower === "terminal") {
+      this.activeTab = "terminal";
+      this.syncUrl();
+      return;
+    }
+
+    if (earlyLower === "files") {
+      this.activeTab = "files";
+      this.syncUrl();
+      return;
+    }
+
+    if (earlyLower === "usage") {
+      this.activeTab = "usage";
+      this.syncUrl();
+      return;
+    }
+
+    if (earlyLower === "settings") {
+      this.activeTab = "settings";
+      this.syncUrl();
+      return;
+    }
+
+    if (earlyLower === "theme") {
+      this.toggleTheme();
+      return;
+    }
+
+    if (earlyLower === "hotkeys") {
+      this.activeTab = "settings";
+      this.syncUrl();
+      return;
+    }
+
+    if (earlyLower === "help") {
+      const helpText = [
+        '<card title="Comandos Rápidos do OMP" badge="Help" color="blue">',
+        '',
+        '### Comandos de Sessão',
+        '- `/clear` — Limpa a conversa visível do chat',
+        '- `/new` — Inicia uma nova sessão limpa',
+        '- `/compact` — Resume o contexto da sessão para economizar tokens',
+        '- `/session` — Exibe estatísticas de tokens, custo e mensagens',
+        '- `/name <nome>` — Renomeia a sessão atual',
+        '- `/fork` — Cria uma bifurcação a partir de uma mensagem anterior',
+        '- `/clone` — Duplica a sessão na posição atual',
+        '- `/exit` ou `/quit` — Arquiva a sessão atual',
+        '',
+        '### Planejamento & Raciocínio',
+        '- `/plan` — Alterna o modo de planejamento (o agente planeja antes de executar)',
+        '- `/plan-review` — Abre o painel lateral com o plano proposto',
+        '- `/btw <pergunta>` — Pergunta lateral efêmera usando o contexto atual',
+        '- `/model` — Abre o seletor de modelos de raciocínio',
+        '- `/advisor` — Alterna o consultor autônomo',
+        '',
+        '### Sistema & Terminal',
+        '- `!<comando>` — Execução direta de shell no workspace (ex: `!git status`, `!ls`)',
+        '- `@<arquivo>` — Menção e referência a arquivo do workspace',
+        '- `/settings` — Abre as configurações do sistema',
+        '- `/theme` — Alterna tema claro/escuro',
+        '- `/reload` — Recarrega extensões, skills e templates de prompt',
+        '- `/login` / `/logout` — Configura credenciais dos provedores de IA',
+        '</card>',
+      ].join("\n");
+      const helpLine: ChatLine = {
+        role: "assistant",
+        parts: [{ type: "text", text: helpText }],
+        meta: { timestamp: Date.now() },
+      };
+      this.rawLines = [...this.rawLines, helpLine];
+      this.messages = linesToChatMessages(this.rawLines);
+      this.requestUpdate();
+      return;
+    }
 
     if (detail.projectId && detail.projectId !== this.selectedProjectId) {
       await this.handleProjectSelect(detail.projectId);
@@ -1181,8 +1303,38 @@ export class OmpApp extends LitElement {
       return;
     }
 
+    // Direct Shell execution (!) from Composer Hub
+    if (!hasAttachments && isShellInput(promptTrimmed)) {
+      this.activeTab = "new-chat";
+      const userLine: ChatLine = {
+        role: "user",
+        parts: [{ type: "text", text: promptTrimmed }],
+        meta: { timestamp: Date.now() },
+      };
+      this.rawLines = [...this.rawLines, userLine];
+      this.messages = linesToChatMessages(this.rawLines);
+      this.isStreaming = true;
+      try {
+        await sessionsApi.shell({ id: sessionId, cwd: ws.path }, promptTrimmed, this.currentMachineId);
+      } catch (err) {
+        console.error("[OMP] Shell execution error:", err);
+        const errLine: ChatLine = {
+          role: "system",
+          parts: [{ type: "text", text: String(err) }],
+          meta: { timestamp: Date.now() },
+        };
+        this.rawLines = [...this.rawLines, errLine];
+        this.messages = linesToChatMessages(this.rawLines);
+      } finally {
+        this.isStreaming = false;
+      }
+      return;
+    }
+
     const [cmdName = ""] = promptTrimmed.replace(/^\//, "").split(/\s+/);
     const commandLower = cmdName.toLowerCase();
+
+    // Client-side slash commands
     if (commandLower === "quit" || commandLower === "exit") {
       await this.archiveSessionById(sessionId, ws.path);
       return;
@@ -1824,6 +1976,12 @@ Dica: você pode selecionar uma das opções abaixo para testar a injeção auto
     switch (this.activeTab) {
       case "library":
         return "Library";
+      case "files":
+        return "Arquivos";
+      case "terminal":
+        return "Terminal";
+      case "usage":
+        return "Uso & Métricas";
       case "projects":
         return "Projetos";
       case "project-detail":
@@ -1851,6 +2009,9 @@ Dica: você pode selecionar uma das opções abaixo para testar a injeção auto
                 .username=${this.currentUser}
                 .planMode=${this.currentPlanMode}
                 .extensionStatuses=${this.currentExtensionStatuses}
+                .sessionId=${this.selectedSessionId}
+                .cwd=${this.getActiveWorkspace()?.path}
+                .machineId=${this.currentMachineId}
                 @open-plan-review=${() => { if (this.currentPlanMode?.proposedPlan) { this.artifact = { type: "plan", ...this.currentPlanMode.proposedPlan } as any; this.isArtifactOpen = true; } }}
                 @project-select=${(e: CustomEvent<{ projectId: string }>) => void this.handleProjectSelect(e.detail.projectId)}
                 @open-models=${() => { this.activeTab = "models"; this.syncUrl(); }}
@@ -1874,6 +2035,9 @@ Dica: você pode selecionar uma das opções abaixo para testar a injeção auto
                 .pendingCommand=${this.pendingCommand}
                 .planMode=${this.currentPlanMode}
                 .extensionStatuses=${this.currentExtensionStatuses}
+                .sessionId=${this.selectedSessionId}
+                .cwd=${this.getActiveWorkspace()?.path}
+                .machineId=${this.currentMachineId}
                 .artifact=${this.artifact}
                 .progressStyle=${this.chatPrefs.progressStyle ?? "steps"}
                 .showThinking=${this.chatPrefs.showThinking ?? true}

@@ -9,6 +9,8 @@ import {
   renderPlusIcon,
   renderProjectsIcon,
   renderSettingsIcon,
+  renderTerminalIcon,
+  renderUsageIcon,
   renderServerIcon,
   renderModelsIcon,
   renderChevronUpIcon,
@@ -141,9 +143,12 @@ export class OmpSidebar extends LitElement {
 
   private readonly primaryNav: NavItem[] = [
     { id: "new-chat", label: "New chat" },
-    { id: "library", label: "Library" },
+    { id: "files", label: "Arquivos" },
+    { id: "terminal", label: "Terminal" },
+    { id: "usage", label: "Uso & Métricas" },
     { id: "projects", label: "Projetos" },
     { id: "models", label: "Modelos" },
+    { id: "library", label: "Library" },
     { id: "settings", label: "Configurações" },
   ];
 
@@ -218,6 +223,12 @@ export class OmpSidebar extends LitElement {
     switch (id) {
       case "new-chat":
         return renderNewChatIcon();
+      case "files":
+        return renderFolderIcon("size-5 shrink-0");
+      case "terminal":
+        return renderTerminalIcon("size-5 shrink-0");
+      case "usage":
+        return renderUsageIcon("size-5 shrink-0");
       case "library":
         return renderLibraryIcon();
       case "projects":

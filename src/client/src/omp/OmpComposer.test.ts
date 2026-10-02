@@ -354,3 +354,50 @@ describe("OmpComposer Status Badges", () => {
     expect(template).not.toContain("Plan Mode");
   });
 });
+
+describe("OmpComposer Hub (Slash commands, Shell direct !, File mentions @)", () => {
+  it("includes all full native slash commands in default list", () => {
+    const composer = new OmpComposer();
+    const names = composer.allAvailableSlashCommands.map((c) => c.name);
+    expect(names).toContain("clear");
+    expect(names).toContain("new");
+    expect(names).toContain("settings");
+    expect(names).toContain("theme");
+    expect(names).toContain("help");
+    expect(names).toContain("plan");
+    expect(names).toContain("plan-review");
+    expect(names).toContain("fork");
+    expect(names).toContain("clone");
+    expect(names).toContain("compact");
+    expect(names).toContain("reload");
+    expect(names).toContain("session");
+    expect(names).toContain("login");
+    expect(names).toContain("logout");
+  });
+
+  it("filters slash commands by title, name and desc", () => {
+    const composer = new OmpComposer();
+    composer.openSlashMenu("clear");
+    expect(composer.filteredSlashCommands.some((c) => c.name === "clear")).toBe(true);
+    composer.openSlashMenu("compact");
+    expect(composer.filteredSlashCommands.some((c) => c.name === "compact")).toBe(true);
+  });
+
+  it("detects shell mode with ! prefix and clears it", () => {
+    const composer = new OmpComposer();
+    const mockInput = { target: { value: "!git status" } } as unknown as Event;
+    (composer as any).handleInput(mockInput);
+    expect((composer as any).isShellMode).toBe(true);
+
+    composer.clearShellMode();
+    expect((composer as any).isShellMode).toBe(false);
+  });
+
+  it("opens file completion menu when @ is typed", () => {
+    const composer = new OmpComposer();
+    const mockInput = { target: { value: "check @src/" } } as unknown as Event;
+    (composer as any).handleInput(mockInput);
+    expect((composer as any).fileMenuOpen).toBe(true);
+    expect((composer as any).fileTrigger?.query).toBe("src/");
+  });
+});

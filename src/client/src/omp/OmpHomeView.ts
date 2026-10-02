@@ -15,6 +15,9 @@ export class OmpHomeView extends LitElement {
   @property({ type: String }) selectedProvider = "";
   @property({ attribute: false }) planMode?: PlanModeStatus;
   @property({ attribute: false }) extensionStatuses?: Record<string, string>;
+  @property({ type: String }) sessionId?: string;
+  @property({ type: String }) cwd?: string;
+  @property({ type: String }) machineId = "local";
 
   protected override createRenderRoot() {
     return this;
@@ -49,6 +52,9 @@ export class OmpHomeView extends LitElement {
               .selectedProvider=${this.selectedProvider}
               .planMode=${this.planMode}
               .extensionStatuses=${this.extensionStatuses}
+              .sessionId=${this.sessionId}
+              .cwd=${this.cwd}
+              .machineId=${this.machineId}
               @open-models=${() => this.dispatchEvent(new CustomEvent("open-models", { bubbles: true, composed: true }))}
               @model-change=${(e: CustomEvent) => this.dispatchEvent(new CustomEvent("model-change", { detail: e.detail, bubbles: true, composed: true }))}
               @model-tier-change=${(e: CustomEvent) => this.dispatchEvent(new CustomEvent("model-tier-change", { detail: e.detail, bubbles: true, composed: true }))}
