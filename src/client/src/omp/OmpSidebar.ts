@@ -343,7 +343,7 @@ export class OmpSidebar extends LitElement {
           <!-- Scrollable Body with Top Nav (New chat, Library, Projetos) + 1 Divider + Sessions -->
           <div class="flex-1 overflow-y-auto min-h-0 flex flex-col gap-1 pr-0.5 font-sans">
             <!-- 1. Primary Nav: New Chat, Library, Projetos (links diretos e limpos) -->
-            <div class="flex flex-col gap-0.5 shrink-0" role="menu">
+            <div class="flex flex-col gap-0.5 shrink-0 ml-3.5 pl-2 border-l border-black/8 dark:border-white/8" role="menu">
               ${this.visibleNavItems.map(
                 (item) => html`
                   <button
@@ -372,6 +372,10 @@ export class OmpSidebar extends LitElement {
                 `,
               )}
             </div>
+
+            <!-- Divider separating Pages from Projects/Sessions -->
+            <div class="h-px bg-black/8 dark:bg-white/8 my-2 mx-1 shrink-0"></div>
+
             ${projectsList.map((project) => {
               const pSessions = allSessions.filter(
                 (s) => (!s.projectId || s.projectId === project.id) && !s.archived,
@@ -396,7 +400,7 @@ export class OmpSidebar extends LitElement {
                     <span class="shrink-0 text-[var(--omp-primary)] opacity-85 group-hover/proj:opacity-100 transition-opacity">
                       ${renderFolderIcon("size-4")}
                     </span>
-                    <span class="truncate font-sans text-xs font-semibold tracking-tight text-[var(--omp-text-secondary)] group-hover/proj:text-[var(--omp-text-primary)]">
+                    <span class="truncate font-sans text-xs font-extrabold tracking-tight text-[var(--omp-text-secondary)] group-hover/proj:text-[var(--omp-text-primary)]">
                       ${project.name}
                     </span>
                   </button>
@@ -424,7 +428,7 @@ export class OmpSidebar extends LitElement {
                           <button
                             type="button"
                             role="menuitem"
-                            class="relative flex w-full items-center justify-between px-3 py-2 rounded-xl text-xs font-medium font-sans transition-colors cursor-pointer pointer-events-auto select-none ${
+                            class="relative flex w-full items-center justify-between px-2.5 py-1.5 rounded-xl text-xs font-medium font-sans transition-colors cursor-pointer pointer-events-auto select-none ${
                               this.selectedSessionId === session.id
                                 ? "bg-black/8 dark:bg-white/10 text-foreground-900 font-bold"
                                 : session.archived
