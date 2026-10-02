@@ -467,6 +467,33 @@ export class OmpSettingsView extends LitElement {
     `;
   }
 
+  private handleTabKeyDown(e: KeyboardEvent, items: { id: SettingsSection }[], currentIndex: number) {
+    let nextIndex = currentIndex;
+    if (e.key === "ArrowRight" || e.key === "ArrowDown") {
+      e.preventDefault();
+      nextIndex = (currentIndex + 1) % items.length;
+    } else if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
+      e.preventDefault();
+      nextIndex = (currentIndex - 1 + items.length) % items.length;
+    } else if (e.key === "Home") {
+      e.preventDefault();
+      nextIndex = 0;
+    } else if (e.key === "End") {
+      e.preventDefault();
+      nextIndex = items.length - 1;
+    } else {
+      return;
+    }
+    const nextItem = items[nextIndex];
+    if (nextItem) {
+      this.handleSectionSelect(nextItem.id);
+      void this.updateComplete.then(() => {
+        const btn = this.querySelector<HTMLButtonElement>(`#settings-tab-${nextItem.id}`);
+        btn?.focus();
+      });
+    }
+  }
+
   private renderNavPills() {
     const items: { id: SettingsSection; label: string; icon: unknown }[] = [
       { id: "general", label: "Geral", icon: renderSettingsIcon("size-4") },
@@ -479,14 +506,22 @@ export class OmpSettingsView extends LitElement {
     return html`
       <nav
         class="omp-settings-nav"
+        role="tablist"
+        aria-orientation="horizontal"
         aria-label="Seções de Configuração"
       >
         ${items.map(
-      (item) => html`
+      (item, idx) => html`
             <button
+              id="settings-tab-${item.id}"
+              role="tab"
+              aria-selected="${this.activeSection === item.id ? "true" : "false"}"
+              aria-controls="settings-panel-${item.id}"
+              tabindex="${this.activeSection === item.id ? "0" : "-1"}"
               type="button"
               class="omp-settings-nav-btn ${this.activeSection === item.id ? "active" : ""}"
               @click=${() => { this.handleSectionSelect(item.id); }}
+              @keydown=${(e: KeyboardEvent) => this.handleTabKeyDown(e, items, idx)}
             >
               ${item.icon}
               <span>${item.label}</span>
@@ -1535,7 +1570,13 @@ export class OmpSettingsView extends LitElement {
             </div>
 
             <!-- Active Section Content -->
-            <div class="w-full mt-2">
+            <div
+              class="w-full mt-2"
+              role="tabpanel"
+              id="settings-panel-${this.activeSection}"
+              aria-labelledby="settings-tab-${this.activeSection}"
+              tabindex="0"
+            >
               ${this.activeSection === "sessiond"
         ? this.renderSessiondSection()
         : this.activeSection === "plugins"

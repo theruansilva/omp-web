@@ -36,8 +36,29 @@ export class OmpLoginModal extends LitElement {
   }
 
   private handleKeyDown = (e: KeyboardEvent) => {
-    if (e.key === "Escape" && this.isOpen) {
+    if (!this.isOpen) return;
+    if (e.key === "Escape") {
       this.handleClose();
+      return;
+    }
+    if (e.key === "Tab") {
+      const modal = this.querySelector<HTMLElement>(".omp-squircle-wrapper");
+      if (!modal) return;
+      const focusables = Array.from(
+        modal.querySelectorAll<HTMLElement>(
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+        )
+      ).filter(el => !el.hasAttribute("disabled") && el.offsetParent !== null);
+      if (focusables.length === 0) return;
+      const first = focusables[0];
+      const last = focusables[focusables.length - 1];
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last?.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first?.focus();
+      }
     }
   };
 
@@ -639,13 +660,16 @@ export class OmpLoginModal extends LitElement {
         <!-- Squircle-36 Modal Wrapper with Curved Drop Shadow -->
         <div
           class="omp-squircle-wrapper"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="login-title"
           @click=${(e: Event) => e.stopPropagation()}
         >
           <!-- Squircle-36 Card -->
           <div class="omp-squircle-card">
             <!-- Header: Title + Close -->
             <div class="omp-squircle-header">
-              <h2 class="omp-squircle-title">${this.setupRequired ? "Primeiro Acesso" : this.tokenMode ? "Token de Acesso" : "Entrar"}</h2>
+              <h2 class="omp-squircle-title" id="login-title">${this.setupRequired ? "Primeiro Acesso" : this.tokenMode ? "Token de Acesso" : "Entrar"}</h2>
               <button
                 type="button"
                 aria-label="Fechar"
