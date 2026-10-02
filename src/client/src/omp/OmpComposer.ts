@@ -50,6 +50,14 @@ export interface PendingAttachment extends CapturedAttachment {
   readonly id: string;
 }
 
+function isInstantClientCommand(text: string): boolean {
+  const trimmed = text.trim();
+  const match = trimmed.match(/^\/([a-zA-Z0-9_-]+)/);
+  if (!match) return false;
+  const cmd = match[1].toLowerCase();
+  return ["clear", "new", "terminal", "files", "usage", "settings", "theme", "hotkeys", "help", "login", "logout"].includes(cmd);
+}
+
 export interface SubmitPromptDetail {
   prompt: string;
   model: string;
@@ -1882,9 +1890,11 @@ export class OmpComposer extends LitElement {
       this.attachments = [];
       this.attachmentError = undefined;
       this.isBtwMode = false;
+      this.isWorking = true;
       const textarea = (this.querySelector?.("textarea") as HTMLTextAreaElement | null);
       if (textarea) textarea.value = "";
       this.adjustTextareaHeight();
+      this.requestUpdate();
       return;
     }
 
@@ -1904,9 +1914,13 @@ export class OmpComposer extends LitElement {
     this.value = "";
     this.attachments = [];
     this.attachmentError = undefined;
+    if (!isInstantClientCommand(rawText)) {
+      this.isWorking = true;
+    }
     const textarea = (this.querySelector?.("textarea") as HTMLTextAreaElement | null);
     if (textarea) textarea.value = "";
     this.adjustTextareaHeight();
+    this.requestUpdate();
   }
 
   private renderBtwContent() {
@@ -2340,13 +2354,15 @@ export class OmpComposer extends LitElement {
           title="Stop generating"
           aria-label="Stop generating"
           class="relative flex items-center justify-center size-9 rounded-2xl bg-black text-white dark:bg-white dark:text-black hover:opacity-90 active:scale-95 transition-all shadow-sm cursor-pointer select-none"
-          @click=${() =>
+          @click=${() => {
+            this.isWorking = false;
             this.dispatchEvent(
               new CustomEvent("stop-generation", {
                 bubbles: true,
                 composed: true,
               }),
-            )}
+            );
+          }}
         >
           ${renderStopIcon("size-4")}
         </button>

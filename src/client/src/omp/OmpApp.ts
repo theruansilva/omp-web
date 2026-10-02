@@ -200,6 +200,7 @@ export class OmpApp extends LitElement {
   @state() private theme: "dark" | "light" = "dark";
   @state() private messages: ChatMessage[] = [];
   @state() private isStreaming = false;
+  private promptSubmissionId = 0;
   @state() private isFirstPrompt = false;
   @state() private isLoginModalOpen = false;
   @state() private currentUser: string | null = null;
@@ -693,7 +694,34 @@ export class OmpApp extends LitElement {
       const match = workspaces.find(w => w.id === this.selectedWorkspaceId);
       if (match) return match;
     }
-    return workspaces.find(w => w.isPrimary) || workspaces[0];
+    const found = workspaces.find(w => w.isPrimary) || workspaces[0];
+    if (found) return found;
+
+    for (const pId of Object.keys(this.workspacesByProject)) {
+      const list = this.workspacesByProject[pId];
+      if (list && list.length > 0) return list.find(w => w.isPrimary) || list[0];
+    }
+
+    if (this.realProjects.length > 0) {
+      const p = this.realProjects.find(p => p.id === this.selectedProjectId) || this.realProjects[0];
+      return {
+        id: "default",
+        name: p.name,
+        branch: "main",
+        path: p.path,
+        isPrimary: true,
+        projectId: p.id,
+      };
+    }
+
+    return {
+      id: "default",
+      name: "Workspace",
+      branch: "main",
+      path: ".",
+      isPrimary: true,
+      projectId: "default",
+    };
   }
 
   private getComposerProjects(): ComposerProject[] {
@@ -1181,7 +1209,7 @@ export class OmpApp extends LitElement {
       return;
     }
 
-        if (earlyLower === "terminal") {
+    if (earlyLower === "terminal") {
       this.activeTab = "terminal";
       this.syncUrl();
       return;
@@ -1199,7 +1227,7 @@ export class OmpApp extends LitElement {
       return;
     }
 
-    if (earlyLower === "settings") {
+    if (earlyLower === "settings" || earlyLower === "hotkeys") {
       this.activeTab = "settings";
       this.syncUrl();
       return;
@@ -1207,12 +1235,6 @@ export class OmpApp extends LitElement {
 
     if (earlyLower === "theme") {
       this.toggleTheme();
-      return;
-    }
-
-    if (earlyLower === "hotkeys") {
-      this.activeTab = "settings";
-      this.syncUrl();
       return;
     }
 
@@ -1257,6 +1279,23 @@ export class OmpApp extends LitElement {
       return;
     }
 
+    if (this.auth.handleSlashCommand(promptTrimmed)) {
+      return;
+    }
+
+    const [cmdName = ""] = promptTrimmed.replace(/^\//, "").split(/\s+/);
+    const commandLower = cmdName.toLowerCase();
+
+    // Client-side slash commands
+    if (commandLower === "quit" || commandLower === "exit") {
+      const ws = this.getActiveWorkspace();
+      const sessionId = this.selectedSessionId;
+      if (sessionId && ws) {
+        await this.archiveSessionById(sessionId, ws.path);
+      }
+      return;
+    }
+
     if (detail.projectId && detail.projectId !== this.selectedProjectId) {
       await this.handleProjectSelect(detail.projectId);
     }
@@ -1267,110 +1306,11 @@ export class OmpApp extends LitElement {
       return;
     }
 
-    let sessionId = this.selectedSessionId;
-    if (!sessionId) {
-      try {
-        const newSession = await sessionsApi.startSession(ws.path, this.currentMachineId);
-        sessionId = newSession.id;
-        this.selectedSessionId = sessionId;
-        this.currentConnectedSessionId = sessionId;
-        this.syncUrl({ replace: true });
-        this.saveSessionToStorage(sessionId, this.selectedProjectId);
-        this.sessionSocket.connect({ id: sessionId, cwd: ws.path }, (event) => this.handleSessionEvent(event), undefined, this.currentMachineId);
-        void this.loadSessions(ws.path, false);
-
-        if (this.pendingSelectedModel) {
-          try {
-            const status = await sessionsApi.setModel(
-              { id: sessionId, cwd: ws.path },
-              this.pendingSelectedModel.provider,
-              this.pendingSelectedModel.modelId,
-              this.pendingSelectedModel.persist ?? false,
-              this.currentMachineId,
-            );
-            if (status?.model) this.currentSessionModel = status.model;
-          } catch (err) {
-            console.warn("[OMP] Could not apply model to new session:", err);
-          }
-        }
-      } catch (err) {
-        console.error("[OMP] Failed to start new session:", err);
-        return;
-      }
-    }
-
-    if (this.auth.handleSlashCommand(promptTrimmed)) {
-      return;
-    }
-
-    // Direct Shell execution (!) from Composer Hub
-    if (!hasAttachments && isShellInput(promptTrimmed)) {
-      this.activeTab = "new-chat";
-      const userLine: ChatLine = {
-        role: "user",
-        parts: [{ type: "text", text: promptTrimmed }],
-        meta: { timestamp: Date.now() },
-      };
-      this.rawLines = [...this.rawLines, userLine];
-      this.messages = linesToChatMessages(this.rawLines);
-      this.isStreaming = true;
-      try {
-        await sessionsApi.shell({ id: sessionId, cwd: ws.path }, promptTrimmed, this.currentMachineId);
-      } catch (err) {
-        console.error("[OMP] Shell execution error:", err);
-        const errLine: ChatLine = {
-          role: "system",
-          parts: [{ type: "text", text: String(err) }],
-          meta: { timestamp: Date.now() },
-        };
-        this.rawLines = [...this.rawLines, errLine];
-        this.messages = linesToChatMessages(this.rawLines);
-      } finally {
-        this.isStreaming = false;
-      }
-      return;
-    }
-
-    const [cmdName = ""] = promptTrimmed.replace(/^\//, "").split(/\s+/);
-    const commandLower = cmdName.toLowerCase();
-
-    // Client-side slash commands
-    if (commandLower === "quit" || commandLower === "exit") {
-      await this.archiveSessionById(sessionId, ws.path);
-      return;
-    }
-
-    if (promptTrimmed.toLowerCase().startsWith("/btw")) {
-      const question = promptTrimmed.replace(/^\/btw\s*/i, "").trim();
-      this.btwState = { status: "running", question: question || "Pergunta lateral", answer: "", canBranch: true };
-      this.activeTab = "new-chat";
-      try {
-        await sessionsApi.runCommand({ id: sessionId, cwd: ws.path }, promptTrimmed, this.currentMachineId);
-      } catch (err) {
-        console.error("[OMP] Failed to run /btw:", err);
-        this.btwState = { status: "error", question: question || "", answer: "", error: String(err), canBranch: false };
-      }
-      return;
-    }
-
-    if (promptTrimmed.startsWith("/")) {
-      this.activeTab = "new-chat";
-      try {
-        const res = await sessionsApi.runCommand(
-          { id: sessionId, cwd: ws.path },
-          promptTrimmed,
-          this.currentMachineId,
-        );
-        this.applyCommandResult(res);
-      } catch (err) {
-        console.error("[OMP] Failed to run slash command:", err);
-      }
-      return;
-    }
-
     const now = Date.now();
-    if (this.isStreaming || (now - this.lastPromptTime < 350)) return;
+    if ((this.isStreaming && !detail.streamingBehavior) || (now - this.lastPromptTime < 350)) return;
     this.lastPromptTime = now;
+
+    const submissionId = ++this.promptSubmissionId;
 
     if (this.messages.length === 0) {
       this.isFirstPrompt = true;
@@ -1396,20 +1336,108 @@ export class OmpApp extends LitElement {
 
     this.activeTab = "new-chat";
     this.isStreaming = true;
+    this.requestUpdate();
+
+    let sessionId = this.selectedSessionId;
+    if (!sessionId) {
+      try {
+        const newSession = await sessionsApi.startSession(ws.path, this.currentMachineId);
+        if (this.promptSubmissionId !== submissionId) return;
+        sessionId = newSession.id;
+        this.selectedSessionId = sessionId;
+        this.currentConnectedSessionId = sessionId;
+        this.syncUrl({ replace: true });
+        this.saveSessionToStorage(sessionId, this.selectedProjectId);
+        this.sessionSocket.connect({ id: sessionId, cwd: ws.path }, (event) => this.handleSessionEvent(event), undefined, this.currentMachineId);
+        void this.loadSessions(ws.path, false);
+
+        if (this.pendingSelectedModel) {
+          try {
+            const status = await sessionsApi.setModel(
+              { id: sessionId, cwd: ws.path },
+              this.pendingSelectedModel.provider,
+              this.pendingSelectedModel.modelId,
+              this.pendingSelectedModel.persist ?? false,
+              this.currentMachineId,
+            );
+            if (this.promptSubmissionId !== submissionId) return;
+            if (status?.model) this.currentSessionModel = status.model;
+          } catch (err) {
+            console.warn("[OMP] Could not apply model to new session:", err);
+          }
+        }
+      } catch (err) {
+        console.error("[OMP] Failed to start new session:", err);
+        this.isStreaming = false;
+        return;
+      }
+    }
+
+    if (this.promptSubmissionId !== submissionId) return;
+
+    // Direct Shell execution (!) from Composer Hub
+    if (!hasAttachments && isShellInput(promptTrimmed)) {
+      try {
+        await sessionsApi.shell({ id: sessionId, cwd: ws.path }, promptTrimmed, this.currentMachineId);
+      } catch (err) {
+        console.error("[OMP] Shell execution error:", err);
+        const errLine: ChatLine = {
+          role: "system",
+          parts: [{ type: "text", text: String(err) }],
+          meta: { timestamp: Date.now() },
+        };
+        this.rawLines = [...this.rawLines, errLine];
+        this.messages = linesToChatMessages(this.rawLines);
+      } finally {
+        this.isStreaming = false;
+      }
+      return;
+    }
+
+    if (promptTrimmed.toLowerCase().startsWith("/btw")) {
+      const question = promptTrimmed.replace(/^\/btw\s*/i, "").trim();
+      this.btwState = { status: "running", question: question || "Pergunta lateral", answer: "", canBranch: true };
+      try {
+        await sessionsApi.runCommand({ id: sessionId, cwd: ws.path }, promptTrimmed, this.currentMachineId);
+      } catch (err) {
+        console.error("[OMP] Failed to run /btw:", err);
+        this.btwState = { status: "error", question: question || "", answer: "", error: String(err), canBranch: false };
+      }
+      return;
+    }
+
+    if (promptTrimmed.startsWith("/")) {
+      try {
+        const res = await sessionsApi.runCommand(
+          { id: sessionId, cwd: ws.path },
+          promptTrimmed,
+          this.currentMachineId,
+        );
+        this.applyCommandResult(res);
+      } catch (err) {
+        console.error("[OMP] Failed to run slash command:", err);
+      } finally {
+        this.isStreaming = false;
+      }
+      return;
+    }
 
     try {
       if (attachments && attachments.length > 0) {
         const canUseInline = promptAttachmentsCanUseInlineDelivery(attachments);
         if (canUseInline) {
+          if (this.promptSubmissionId !== submissionId) return;
           await sessionsApi.prompt({ id: sessionId, cwd: ws.path }, promptTrimmed, detail.streamingBehavior, this.currentMachineId, attachments);
         } else {
           const saved = await sessionsApi.saveAttachments({ id: sessionId, cwd: ws.path }, attachments, this.currentMachineId);
+          if (this.promptSubmissionId !== submissionId) return;
           const files = Array.isArray(saved) ? saved : ((saved as { attachments?: SavedPromptAttachment[] })?.attachments ?? []);
           const references = files.map((file) => `@${file.path}`).join(" ");
           const body = promptTrimmed === "" ? references : `${promptTrimmed}\n\n${references}`;
           await sessionsApi.prompt({ id: sessionId, cwd: ws.path }, body, detail.streamingBehavior, this.currentMachineId);
         }
       } else {
+        if (this.promptSubmissionId !== submissionId) return;
         await sessionsApi.prompt({ id: sessionId, cwd: ws.path }, promptTrimmed, detail.streamingBehavior, this.currentMachineId);
       }
       if (ws && this.sessionsByCwd[ws.path]) {
@@ -1433,7 +1461,6 @@ export class OmpApp extends LitElement {
       this.messages = [...this.messages, errorMsg];
     }
   }
-
 
   private async handleRevertTurn(message: ChatMessage, index: number) {
     const ws = this.getActiveWorkspace();
@@ -1734,6 +1761,10 @@ export class OmpApp extends LitElement {
   }
 
   private async handleStopGeneration() {
+    this.promptSubmissionId++;
+    this.isStreaming = false;
+    this.requestUpdate();
+
     const ws = this.getActiveWorkspace();
     const sessionId = this.selectedSessionId;
     if (!sessionId) return;
@@ -2063,6 +2094,42 @@ Dica: você pode selecionar uma das opções abaixo para testar a injeção auto
                 @open-plan-review=${() => { if (this.currentPlanMode?.proposedPlan) { this.artifact = { type: "plan", ...this.currentPlanMode.proposedPlan } as any; this.isArtifactOpen = true; } }}
               ></omp-chat-view>
             `;
+
+      case "terminal":
+        return html`
+          <omp-terminal-view
+            .workspace=${this.getActiveWorkspace()}
+            .machineId=${this.currentMachineId}
+            @close=${() => {
+              this.activeTab = "new-chat";
+              this.syncUrl();
+            }}
+          ></omp-terminal-view>
+        `;
+
+      case "files":
+        return html`
+          <omp-files-view
+            .workspace=${this.getActiveWorkspace()}
+            .projectId=${this.selectedProjectId}
+            .machineId=${this.currentMachineId}
+            @close=${() => {
+              this.activeTab = "new-chat";
+              this.syncUrl();
+            }}
+          ></omp-files-view>
+        `;
+
+      case "usage":
+        return html`
+          <omp-usage-view
+            .machineId=${this.currentMachineId}
+            @close=${() => {
+              this.activeTab = "new-chat";
+              this.syncUrl();
+            }}
+          ></omp-usage-view>
+        `;
 
       case "models":
         return html`

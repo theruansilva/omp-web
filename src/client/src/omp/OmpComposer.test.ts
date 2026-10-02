@@ -309,6 +309,56 @@ describe("OmpComposer Stop & Queue Buttons", () => {
     expect(detail.prompt).toBe("Explicit follow up");
     expect(detail.streamingBehavior).toBe("followUp");
   });
+
+  it("when submitting a normal prompt while isWorking is false, immediately sets isWorking to true and renders stop-button", () => {
+    const composer = new OmpComposer();
+    composer.isWorking = false;
+    composer.value = "Hello agent";
+
+    (composer as any).submit();
+
+    expect(composer.isWorking).toBe(true);
+    expect(composer.value).toBe("");
+
+    const rendered = composer.render();
+    const template = JSON.stringify(rendered);
+    expect(template).toContain("stop-button");
+    expect(template).not.toContain("submit-button");
+  });
+
+  it("when submitting an instant client slash command, does not set isWorking to true", () => {
+    const composer = new OmpComposer();
+    composer.isWorking = false;
+    composer.value = "/help";
+
+    (composer as any).submit();
+
+    expect(composer.isWorking).toBe(false);
+    expect(composer.value).toBe("");
+
+    const rendered = composer.render();
+    const template = JSON.stringify(rendered);
+    expect(template).toContain("submit-button");
+    expect(template).toContain("disabled");
+    expect(template).not.toContain("stop-button");
+  });
+
+  it("clicking stop-button dispatches stop-generation and resets isWorking to false", () => {
+    const composer = new OmpComposer();
+    composer.isWorking = true;
+    composer.value = "";
+
+    let stopped = false;
+    composer.addEventListener("stop-generation", () => {
+      stopped = true;
+    });
+
+    const btn = (composer as any).renderActionButton();
+    btn.values[0](); // simulate @click handler
+
+    expect(stopped).toBe(true);
+    expect(composer.isWorking).toBe(false);
+  });
 });
 
 describe("OmpComposer Status Badges", () => {

@@ -322,6 +322,59 @@ describe("OmpApp integration", () => {
     expect((app as any).selectedSessionId).toBe("new-sess-456");
     expect((app as any).activeTab).toBe("new-chat");
   });
+  it("handlePromptSubmit immediately sets isStreaming to true, switches activeTab to new-chat and adds user message", async () => {
+    installMockWindow("http://localhost:8504/omp?tab=new-chat");
+    const app = new OmpApp();
+    (app as any).selectedSessionId = "sess-123";
+    (app as any).getActiveWorkspace = () => ({ id: "ws-1", path: "/test/ws" });
+    vi.spyOn(sessionsApi, "prompt").mockResolvedValue({ accepted: true } as any);
+
+    const submitPromise = (app as any).handlePromptSubmit({
+      prompt: "Show me snake game",
+      model: "default",
+    });
+
+    expect((app as any).isStreaming).toBe(true);
+    expect((app as any).activeTab).toBe("new-chat");
+    expect((app as any).messages.length).toBe(1);
+    expect((app as any).messages[0].text).toBe("Show me snake game");
+
+    await submitPromise;
+    expect((app as any).isStreaming).toBe(true);
+  });
+
+  it("handleStopGeneration invalidates in-flight prompt submission so prompt is not sent", async () => {
+    installMockWindow("http://localhost:8504/omp?tab=new-chat");
+    const app = new OmpApp();
+    (app as any).selectedSessionId = "sess-123";
+    (app as any).getActiveWorkspace = () => ({ id: "ws-1", path: "/test/ws" });
+
+    let resolveStart: (value: any) => void = () => {};
+    const startPromise = new Promise((resolve) => { resolveStart = resolve; });
+    (app as any).selectedSessionId = ""; // needs startSession
+    vi.spyOn(sessionsApi, "startSession").mockImplementation(() => startPromise as any);
+    const promptSpy = vi.spyOn(sessionsApi, "prompt").mockResolvedValue({ accepted: true } as any);
+    const abortSpy = vi.spyOn(sessionsApi, "abort").mockResolvedValue({ aborted: true } as any);
+
+    const submitPromise = (app as any).handlePromptSubmit({
+      prompt: "Start something heavy",
+      model: "default",
+    });
+
+    expect((app as any).isStreaming).toBe(true);
+
+    // User cancels while startSession is pending
+    await (app as any).handleStopGeneration();
+    expect((app as any).isStreaming).toBe(false);
+
+    // Now startSession resolves
+    resolveStart({ id: "new-sess-aborted", cwd: "/test/ws" });
+    await submitPromise;
+
+    // Prompt should NOT have been sent
+    expect(promptSpy).not.toHaveBeenCalled();
+  });
+
   it("handleStopGeneration calls sessionsApi.abort on active session and clears isStreaming", async () => {
     installMockWindow("http://localhost:8504/omp?tab=new-chat&session=sess-active");
     const app = new OmpApp();
