@@ -487,19 +487,14 @@ export class OmpSidebar extends LitElement {
                                     @touchend=${() => this.endHold()}
                                     @touchcancel=${() => this.cancelHold()}
                                   >
-                                    <div class="flex items-center gap-1.5 min-w-0 flex-1 pr-1">
-                                      ${
-                                        session.isWorking
-                                          ? html`<span class="size-2 rounded-full bg-emerald-500 animate-pulse shrink-0" title="Trabalhando"></span>`
-                                          : nothing
-                                      }
-                                      <span class="truncate text-left flex-1 ${session.archived ? "opacity-75" : ""}">${session.title}</span>
-                                    </div>
+                                    <span class="truncate text-left flex-1 min-w-0 pr-1 ${session.archived ? "opacity-75" : ""}">${session.title}</span>
 
                                     ${
-                                      session.isUnread
-                                        ? html`<span class="size-2 rounded-full bg-[var(--omp-primary)] ring-2 ring-[var(--omp-primary)]/30 shrink-0 ml-1.5" title="Aguardando visualização"></span>`
-                                        : nothing
+                                      session.isWorking
+                                        ? html`<span class="size-2 rounded-full bg-emerald-500 animate-pulse shrink-0 ml-1.5" title="Trabalhando"></span>`
+                                        : session.isUnread
+                                          ? html`<span class="size-2 rounded-full bg-[var(--omp-primary)] ring-2 ring-[var(--omp-primary)]/30 shrink-0 ml-1.5" title="Aguardando visualização"></span>`
+                                          : nothing
                                     }
                                   </button>
 
