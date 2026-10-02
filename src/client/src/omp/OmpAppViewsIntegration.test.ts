@@ -39,16 +39,16 @@ describe("OmpApp renderActiveView for new pages", () => {
     expect(str).toContain("omp-usage-view");
   });
 
-  it("getHeaderTitle returns correct titles for the new pages", () => {
+  it("getHeaderTitle returns empty string for the full-viewport tool pages (no header clutter)", () => {
     const app = new OmpApp();
     const testApp = app as unknown as TestableOmpApp;
     testApp.activeTab = "terminal";
-    expect(testApp.getHeaderTitle()).toBe("Terminal");
+    expect(testApp.getHeaderTitle()).toBe("");
 
     testApp.activeTab = "files";
-    expect(testApp.getHeaderTitle()).toBe("Arquivos");
+    expect(testApp.getHeaderTitle()).toBe("");
 
     testApp.activeTab = "usage";
-    expect(testApp.getHeaderTitle()).toBe("Uso & Métricas");
+    expect(testApp.getHeaderTitle()).toBe("");
   });
 });

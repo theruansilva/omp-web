@@ -2007,12 +2007,6 @@ Dica: você pode selecionar uma das opções abaixo para testar a injeção auto
     switch (this.activeTab) {
       case "library":
         return "Library";
-      case "files":
-        return "Arquivos";
-      case "terminal":
-        return "Terminal";
-      case "usage":
-        return "Uso & Métricas";
       case "projects":
         return "Projetos";
       case "project-detail":
@@ -2100,10 +2094,7 @@ Dica: você pode selecionar uma das opções abaixo para testar a injeção auto
           <omp-terminal-view
             .workspace=${this.getActiveWorkspace()}
             .machineId=${this.currentMachineId}
-            @close=${() => {
-              this.activeTab = "new-chat";
-              this.syncUrl();
-            }}
+            .isSidebarOpen=${this.isSidebarOpen}
           ></omp-terminal-view>
         `;
 
@@ -2113,10 +2104,7 @@ Dica: você pode selecionar uma das opções abaixo para testar a injeção auto
             .workspace=${this.getActiveWorkspace()}
             .projectId=${this.selectedProjectId}
             .machineId=${this.currentMachineId}
-            @close=${() => {
-              this.activeTab = "new-chat";
-              this.syncUrl();
-            }}
+            .isSidebarOpen=${this.isSidebarOpen}
           ></omp-files-view>
         `;
 
@@ -2124,10 +2112,7 @@ Dica: você pode selecionar uma das opções abaixo para testar a injeção auto
         return html`
           <omp-usage-view
             .machineId=${this.currentMachineId}
-            @close=${() => {
-              this.activeTab = "new-chat";
-              this.syncUrl();
-            }}
+            .isSidebarOpen=${this.isSidebarOpen}
           ></omp-usage-view>
         `;
 

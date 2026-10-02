@@ -6,9 +6,7 @@ import { workspaceFileRawUrl, workspaceImagePreviewUrl } from "../api/urls";
 import {
   renderFolderIcon,
   renderDocumentIcon,
-  renderCloseIcon,
   renderRefreshIcon,
-  renderBranchIcon,
   renderCopyIcon,
   renderCheckIcon,
   renderArrowLeftIcon,
@@ -19,6 +17,7 @@ export class OmpFilesView extends LitElement {
   @property({ attribute: false }) workspace?: Workspace;
   @property({ type: String }) machineId = "local";
   @property({ type: String }) projectId?: string;
+  @property({ type: Boolean }) isSidebarOpen = true;
 
   @state() private currentPath = "";
   @state() private entries: FileTreeEntry[] = [];
@@ -138,12 +137,12 @@ export class OmpFilesView extends LitElement {
   override render() {
     if (!this.workspace) {
       return html`
-        <div class="size-full flex flex-col items-center justify-center p-6 text-center select-none">
-          <div class="size-16 rounded-3xl bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 flex items-center justify-center mb-4 text-foreground-450">
+        <div class="size-full flex flex-col items-center justify-center p-6 text-center select-none text-[var(--omp-text-secondary)] ${!this.isSidebarOpen ? "pt-14" : ""}">
+          <div class="size-16 rounded-3xl omp-settings-card flex items-center justify-center mb-4 text-[var(--omp-text-muted)]">
             ${renderFolderIcon("size-8")}
           </div>
-          <h2 class="text-xl font-bold text-foreground-800 mb-1">Nenhum Workspace Ativo</h2>
-          <p class="text-sm text-foreground-500 max-w-sm">
+          <h2 class="text-xl font-bold text-[var(--omp-text-primary)] mb-1">Nenhum Workspace Ativo</h2>
+          <p class="text-sm opacity-80 max-w-sm">
             Selecione um projeto e workspace na barra lateral para explorar os arquivos.
           </p>
         </div>
@@ -163,195 +162,175 @@ export class OmpFilesView extends LitElement {
       : "";
 
     return html`
-      <div class="size-full flex flex-col overflow-hidden bg-background-light dark:bg-background-dark font-sans select-none">
-        <!-- Header -->
-        <header class="h-14 px-4 sm:px-6 border-b border-black/8 dark:border-white/8 flex items-center justify-between shrink-0 bg-white/40 dark:bg-background-100/40 backdrop-blur-xl">
-          <div class="flex items-center gap-3 min-w-0">
-            <div class="size-9 rounded-2xl bg-black/5 dark:bg-white/10 flex items-center justify-center shrink-0 text-foreground-800">
-              ${renderFolderIcon("size-4.5")}
-            </div>
-            <div class="flex flex-col min-w-0">
-              <div class="flex items-center gap-2">
-                <span class="text-sm font-bold text-foreground-900 tracking-tight leading-tight">Arquivos</span>
-                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-mono bg-black/5 dark:bg-white/8 text-foreground-600 border border-black/5 dark:border-white/8">
-                  ${renderBranchIcon("size-3")}
-                  <span>${this.workspace.branch || this.workspace.name || "main"}</span>
+      <div class="size-full flex flex-col md:flex-row overflow-hidden select-none font-sans p-2 sm:p-3 gap-3 ${!this.isSidebarOpen ? "pt-12 sm:pt-14" : ""}">
+        <!-- Left: File Explorer Panel -->
+        <div
+          class="w-full md:w-80 md:min-w-80 omp-settings-card rounded-2xl sm:rounded-3xl flex flex-col shrink-0 overflow-hidden shadow-xs"
+          style="clip-path: var(--clip-path-squircle-28, none);"
+        >
+          <!-- Explorer Top Bar -->
+          <div class="p-3 border-b border-black/8 dark:border-white/8 flex flex-col gap-2">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-1.5 min-w-0">
+                ${renderFolderIcon("size-4 text-[var(--omp-primary)]")}
+                <span class="text-xs font-bold text-[var(--omp-text-primary)] truncate">
+                  ${this.currentPath ? `/${this.currentPath}` : (this.workspace.name || "Arquivos")}
                 </span>
               </div>
-              <span class="text-[11px] font-mono text-foreground-500 truncate leading-tight mt-0.5">
-                ${this.workspace.path}${this.currentPath ? `/${this.currentPath}` : ""}
-              </span>
+              <button
+                type="button"
+                class="size-7 rounded-xl hover:bg-black/5 dark:hover:bg-white/8 flex items-center justify-center text-[var(--omp-text-secondary)] hover:text-[var(--omp-text-primary)] transition-colors cursor-pointer"
+                @click=${() => void this.loadTree()}
+                title="Recarregar"
+              >
+                ${renderRefreshIcon("size-3.5")}
+              </button>
             </div>
-          </div>
 
-          <div class="flex items-center gap-2 shrink-0">
-            <button
-              type="button"
-              class="size-8 rounded-xl bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/15 flex items-center justify-center text-foreground-600 hover:text-foreground-900 dark:hover:text-white transition-colors cursor-pointer"
-              @click=${() => void this.loadTree()}
-              title="Recarregar arquivos"
-            >
-              ${renderRefreshIcon("size-4")}
-            </button>
-            <button
-              type="button"
-              class="size-8 rounded-xl bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/15 flex items-center justify-center text-foreground-600 hover:text-foreground-900 dark:hover:text-white transition-colors cursor-pointer"
-              @click=${() => this.dispatchEvent(new CustomEvent("close", { bubbles: true, composed: true }))}
-              title="Voltar para o chat"
-            >
-              ${renderCloseIcon("size-4")}
-            </button>
-          </div>
-        </header>
-
-        <!-- Body: 2-Column Split -->
-        <div class="flex-1 w-full min-h-0 flex flex-col md:flex-row overflow-hidden">
-          <!-- Left Column: File Explorer Tree -->
-          <div class="w-full md:w-80 md:min-w-80 border-b md:border-b-0 md:border-e border-black/8 dark:border-white/8 flex flex-col shrink-0 bg-white/20 dark:bg-background-150/20">
-            <!-- Search & Navigation -->
-            <div class="p-3 border-b border-black/5 dark:border-white/5 flex flex-col gap-2">
-              <input
-                type="text"
-                placeholder="Filtrar arquivos..."
-                .value=${this.searchQuery}
-                @input=${(e: Event) => {
+            <input
+              type="text"
+              placeholder="Filtrar arquivos..."
+              .value=${this.searchQuery}
+              @input=${(e: Event) => {
         this.searchQuery = (e.target as HTMLInputElement).value;
       }}
-                class="w-full px-3 py-1.5 rounded-xl bg-black/5 dark:bg-white/8 border border-black/8 dark:border-white/10 text-xs text-foreground-800 placeholder:text-foreground-450 focus:outline-none focus:ring-1 focus:ring-blue-500/40"
-              />
-              ${this.currentPath
-        ? html`
-                    <button
-                      type="button"
-                      class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold text-foreground-600 hover:text-foreground-900 hover:bg-black/5 dark:hover:bg-white/8 transition-colors cursor-pointer"
-                      @click=${() => this.handleGoUp()}
-                    >
-                      ${renderArrowLeftIcon("size-3")}
-                      <span>Subir nível</span>
-                      <span class="text-[10px] font-mono opacity-60 truncate">/${this.currentPath}</span>
-                    </button>
-                  `
-        : nothing}
-            </div>
+              class="w-full px-3 py-1.5 rounded-xl bg-black/5 dark:bg-white/5 border border-black/8 dark:border-white/8 text-xs text-[var(--omp-text-primary)] placeholder:text-[var(--omp-text-muted)] focus:outline-none focus:ring-1 focus:ring-[var(--omp-primary)]"
+            />
 
-            <!-- Entries List -->
-            <div class="flex-1 overflow-y-auto p-2 space-y-0.5">
-              ${this.loading
-        ? html`<div class="p-4 text-xs text-center text-foreground-450 font-mono">Carregando arquivos...</div>`
+            ${this.currentPath
+        ? html`
+                  <button
+                    type="button"
+                    class="flex items-center gap-1.5 px-2 py-1 rounded-lg text-xs font-semibold text-[var(--omp-primary)] hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer"
+                    @click=${() => this.handleGoUp()}
+                  >
+                    ${renderArrowLeftIcon("size-3")}
+                    <span>Voltar pasta</span>
+                  </button>
+                `
+        : nothing}
+          </div>
+
+          <!-- Entries List -->
+          <div class="flex-1 overflow-y-auto p-2 space-y-0.5">
+            ${this.loading
+        ? html`<div class="p-4 text-xs text-center text-[var(--omp-text-muted)] font-mono">Carregando...</div>`
         : this.error
           ? html`<div class="p-4 text-xs text-center text-red-500 font-mono">${this.error}</div>`
           : filtered.length === 0
-            ? html`<div class="p-4 text-xs text-center text-foreground-450 font-mono">Nenhum arquivo encontrado</div>`
+            ? html`<div class="p-4 text-xs text-center text-[var(--omp-text-muted)] font-mono">Vazio</div>`
             : filtered.map((entry) => {
               const isSelected = this.selectedPath === entry.path;
               const isDir = entry.type === "directory";
               return html`
-                          <button
-                            type="button"
-                            class="group flex w-full items-center justify-between gap-2 px-2.5 py-1.5 rounded-xl text-left text-xs transition-colors cursor-pointer ${isSelected
-                  ? "bg-blue-500/10 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400 font-semibold"
-                  : "hover:bg-black/5 dark:hover:bg-white/8 text-foreground-800"
+                        <button
+                          type="button"
+                          class="group flex w-full items-center justify-between gap-2 px-2.5 py-1.5 rounded-xl text-left text-xs transition-colors cursor-pointer ${isSelected
+                  ? "bg-[var(--omp-primary)]/15 text-[var(--omp-primary)] font-bold"
+                  : "hover:bg-black/5 dark:hover:bg-white/5 text-[var(--omp-text-primary)]"
                 }"
-                            @click=${() => void this.handleSelectEntry(entry)}
-                          >
-                            <div class="flex items-center gap-2 min-w-0">
-                              <span class="shrink-0 ${isDir ? "text-amber-500" : "text-foreground-500"}">
-                                ${isDir ? renderFolderIcon("size-4") : renderDocumentIcon("size-4")}
-                              </span>
-                              <span class="truncate font-mono text-[12px]">${entry.name}</span>
-                            </div>
-                            ${entry.size !== undefined && !isDir
-                  ? html`<span class="text-[10px] font-mono text-foreground-400 shrink-0">${this.formatBytes(entry.size)}</span>`
+                          @click=${() => void this.handleSelectEntry(entry)}
+                        >
+                          <div class="flex items-center gap-2 min-w-0">
+                            <span class="shrink-0 ${isDir ? "text-amber-500" : "text-[var(--omp-text-muted)]"}">
+                              ${isDir ? renderFolderIcon("size-4") : renderDocumentIcon("size-4")}
+                            </span>
+                            <span class="truncate font-mono text-[12px]">${entry.name}</span>
+                          </div>
+                          ${entry.size !== undefined && !isDir
+                  ? html`<span class="text-[10px] font-mono opacity-60 shrink-0 text-[var(--omp-text-muted)]">${this.formatBytes(entry.size)}</span>`
                   : nothing}
-                          </button>
-                        `;
+                        </button>
+                      `;
             })}
-            </div>
           </div>
+        </div>
 
-          <!-- Right Column: File Preview / Code Viewer -->
-          <div class="flex-1 min-w-0 flex flex-col overflow-hidden bg-white/40 dark:bg-background-100/30">
-            ${this.loadingFile
+        <!-- Right: File Viewer / Editor -->
+        <div
+          class="flex-1 min-w-0 omp-settings-card rounded-2xl sm:rounded-3xl flex flex-col overflow-hidden shadow-xs"
+          style="clip-path: var(--clip-path-squircle-28, none);"
+        >
+          ${this.loadingFile
         ? html`
-                  <div class="size-full flex items-center justify-center text-xs font-mono text-foreground-450">
-                    Carregando arquivo...
-                  </div>
-                `
+                <div class="size-full flex items-center justify-center text-xs font-mono text-[var(--omp-text-muted)]">
+                  Carregando arquivo...
+                </div>
+              `
         : this.selectedFile
           ? html`
-                    <!-- Viewer Header -->
-                    <div class="h-11 px-4 border-b border-black/8 dark:border-white/8 flex items-center justify-between shrink-0 bg-white/30 dark:bg-background-150/30 backdrop-blur-md">
-                      <div class="flex items-center gap-2 min-w-0">
-                        <span class="font-mono text-xs font-bold text-foreground-800 truncate">${this.selectedFile.path}</span>
-                        <span class="text-[10px] font-mono text-foreground-450 px-1.5 py-0.5 rounded-md bg-black/5 dark:bg-white/8 border border-black/5 dark:border-white/8">
-                          ${this.formatBytes(this.selectedFile.size)}
-                        </span>
-                      </div>
-                      <div class="flex items-center gap-1.5 shrink-0">
-                        ${!this.selectedFile.binary
-              ? html`
-                              <button
-                                type="button"
-                                class="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-black/5 dark:bg-white/8 hover:bg-black/10 dark:hover:bg-white/12 text-foreground-700 transition-colors cursor-pointer"
-                                @click=${() => void this.handleCopyContent()}
-                              >
-                                ${this.copied ? renderCheckIcon("size-3.5 text-emerald-500") : renderCopyIcon("size-3.5")}
-                                <span>${this.copied ? "Copiado!" : "Copiar"}</span>
-                              </button>
-                            `
-              : nothing}
-                        ${rawUrl
-              ? html`
-                              <a
-                                href=${rawUrl}
-                                target="_blank"
-                                download
-                                class="px-2.5 py-1 rounded-lg text-xs font-semibold bg-black/5 dark:bg-white/8 hover:bg-black/10 dark:hover:bg-white/12 text-foreground-700 transition-colors"
-                              >
-                                Download
-                              </a>
-                            `
-              : nothing}
-                      </div>
+                  <!-- File Action Bar -->
+                  <div class="h-12 px-4 border-b border-black/8 dark:border-white/8 flex items-center justify-between shrink-0">
+                    <div class="flex items-center gap-2 min-w-0">
+                      <span class="font-mono text-xs font-bold text-[var(--omp-text-primary)] truncate">${this.selectedFile.path}</span>
+                      <span class="text-[10px] font-mono text-[var(--omp-text-muted)] px-1.5 py-0.5 rounded-md bg-black/5 dark:bg-white/8">
+                        ${this.formatBytes(this.selectedFile.size)}
+                      </span>
                     </div>
-
-                    <!-- Viewer Content -->
-                    <div class="flex-1 min-h-0 overflow-auto p-4 select-text">
-                      ${isImage && imageUrl
+                    <div class="flex items-center gap-1.5 shrink-0">
+                      ${!this.selectedFile.binary
               ? html`
-                            <div class="size-full flex items-center justify-center p-4">
-                              <img
-                                src=${imageUrl}
-                                alt=${this.selectedFile.path}
-                                class="max-w-full max-h-full object-contain rounded-xl shadow-lg border border-black/10 dark:border-white/10"
-                              />
-                            </div>
+                            <button
+                              type="button"
+                              class="flex items-center gap-1 px-2.5 py-1 rounded-xl text-xs font-semibold bg-black/5 dark:bg-white/8 hover:bg-black/10 dark:hover:bg-white/12 text-[var(--omp-text-primary)] transition-colors cursor-pointer"
+                              @click=${() => void this.handleCopyContent()}
+                            >
+                              ${this.copied ? renderCheckIcon("size-3.5 text-emerald-500") : renderCopyIcon("size-3.5")}
+                              <span>${this.copied ? "Copiado!" : "Copiar"}</span>
+                            </button>
                           `
+              : nothing}
+                      ${rawUrl
+              ? html`
+                            <a
+                              href=${rawUrl}
+                              target="_blank"
+                              download
+                              class="px-2.5 py-1 rounded-xl text-xs font-semibold bg-black/5 dark:bg-white/8 hover:bg-black/10 dark:hover:bg-white/12 text-[var(--omp-text-primary)] transition-colors"
+                            >
+                              Baixar
+                            </a>
+                          `
+              : nothing}
+                    </div>
+                  </div>
+
+                  <!-- File Body -->
+                  <div class="flex-1 min-h-0 overflow-auto p-4 select-text">
+                    ${isImage && imageUrl
+              ? html`
+                          <div class="size-full flex items-center justify-center p-4">
+                            <img
+                              src=${imageUrl}
+                              alt=${this.selectedFile.path}
+                              class="max-w-full max-h-full object-contain rounded-2xl shadow-lg border border-black/10 dark:border-white/10"
+                            />
+                          </div>
+                        `
               : this.selectedFile.binary
                 ? html`
-                              <div class="size-full flex flex-col items-center justify-center text-center p-6 text-foreground-500 select-none">
-                                <div class="size-12 rounded-2xl bg-black/5 dark:bg-white/8 flex items-center justify-center mb-2">
-                                  ${renderDocumentIcon("size-6")}
-                                </div>
-                                <span class="text-sm font-semibold">Arquivo Binário</span>
-                                <span class="text-xs text-foreground-450 mt-1 font-mono">${this.formatBytes(this.selectedFile.size)}</span>
+                            <div class="size-full flex flex-col items-center justify-center text-center p-6 text-[var(--omp-text-muted)] select-none">
+                              <div class="size-12 rounded-2xl bg-black/5 dark:bg-white/8 flex items-center justify-center mb-2">
+                                ${renderDocumentIcon("size-6")}
                               </div>
-                            `
+                              <span class="text-sm font-semibold text-[var(--omp-text-primary)]">Arquivo Binário</span>
+                              <span class="text-xs opacity-60 mt-1 font-mono">${this.formatBytes(this.selectedFile.size)}</span>
+                            </div>
+                          `
                 : html`
-                              <pre class="font-mono text-xs leading-relaxed text-foreground-800 whitespace-pre-wrap break-all">${this.selectedFile.content}</pre>
-                            `}
-                    </div>
-                  `
+                            <pre class="font-mono text-xs leading-relaxed text-[var(--omp-text-primary)] whitespace-pre-wrap break-all">${this.selectedFile.content}</pre>
+                          `}
+                  </div>
+                `
           : html`
-                    <div class="size-full flex flex-col items-center justify-center text-center p-6 text-foreground-450 select-none">
-                      <div class="size-12 rounded-2xl bg-black/5 dark:bg-white/8 flex items-center justify-center mb-3">
-                        ${renderDocumentIcon("size-6")}
-                      </div>
-                      <span class="text-sm font-semibold text-foreground-700">Nenhum arquivo selecionado</span>
-                      <span class="text-xs text-foreground-450 mt-0.5">Clique em um arquivo na lista lateral para visualizar</span>
+                  <div class="size-full flex flex-col items-center justify-center text-center p-6 text-[var(--omp-text-muted)] select-none">
+                    <div class="size-14 rounded-3xl bg-black/5 dark:bg-white/5 border border-black/8 dark:border-white/8 flex items-center justify-center mb-3">
+                      ${renderDocumentIcon("size-7 opacity-60")}
                     </div>
-                  `}
-          </div>
+                    <span class="text-sm font-semibold text-[var(--omp-text-primary)]">Selecione um arquivo</span>
+                    <span class="text-xs opacity-75 mt-0.5">Navegue pelas pastas à esquerda para inspecionar</span>
+                  </div>
+                `}
         </div>
       </div>
     `;

@@ -13,7 +13,7 @@ describe("OmpTerminalView", () => {
     expect(template).toContain("Nenhum Workspace Ativo");
   });
 
-  it("renders terminal panel and workspace branch when workspace is provided", () => {
+  it("renders terminal panel and workspace when workspace is provided", () => {
     const view = new OmpTerminalView();
     view.workspace = {
       id: "w1",
@@ -26,8 +26,6 @@ describe("OmpTerminalView", () => {
     view.machineId = "local";
     const template = JSON.stringify(view.render());
     expect(template).toContain("terminal-panel");
-    expect(template).toContain("feat/terminal");
-    expect(template).toContain("/code/omp-web");
   });
 });
 
@@ -38,7 +36,7 @@ describe("OmpFilesView", () => {
     expect(template).toContain("Nenhum Workspace Ativo");
   });
 
-  it("renders files header and search input when workspace is provided", () => {
+  it("renders file explorer and search input when workspace is provided", () => {
     const view = new OmpFilesView();
     view.workspace = {
       id: "w1",
@@ -49,9 +47,8 @@ describe("OmpFilesView", () => {
       projectId: "proj-1",
     };
     const template = JSON.stringify(view.render());
-    expect(template).toContain("Arquivos");
     expect(template).toContain("Filtrar arquivos...");
-    expect(template).toContain("Nenhum arquivo selecionado");
+    expect(template).toContain("Selecione um arquivo");
   });
 });
 
@@ -60,7 +57,7 @@ describe("OmpUsageView", () => {
     const view = new OmpUsageView();
     const template = JSON.stringify(view.render());
     expect(template).toContain("Uso & Métricas");
-    expect(template).toContain("Provedores Conectados");
-    expect(template).toContain("Cotas Rastreadas");
+    expect(template).toContain("Provedores");
+    expect(template).toContain("Cotas");
   });
 });

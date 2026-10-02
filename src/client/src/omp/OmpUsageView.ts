@@ -3,16 +3,14 @@ import { customElement, property, state } from "lit/decorators.js";
 import { usageApi, type UsageResponse, type UsageReport, type UsageLimit } from "../api/clients";
 import {
   renderUsageIcon,
-  renderCloseIcon,
   renderRefreshIcon,
   renderModelProviderIcon,
-  renderCheckIcon,
-  renderServerIcon,
 } from "./icons";
 
 @customElement("omp-usage-view")
 export class OmpUsageView extends LitElement {
   @property({ type: String }) machineId = "local";
+  @property({ type: Boolean }) isSidebarOpen = true;
 
   @state() private data?: UsageResponse;
   @state() private loading = false;
@@ -38,10 +36,6 @@ export class OmpUsageView extends LitElement {
     } finally {
       this.loading = false;
     }
-  }
-
-  private handleClose() {
-    this.dispatchEvent(new CustomEvent("close", { bubbles: true, composed: true }));
   }
 
   private formatResetTime(timestamp?: number): string {
@@ -84,110 +78,91 @@ export class OmpUsageView extends LitElement {
     }
 
     return html`
-      <div class="size-full flex flex-col overflow-hidden bg-background-light dark:bg-background-dark font-sans select-none">
-        <!-- Header -->
-        <header class="h-14 px-4 sm:px-6 border-b border-black/8 dark:border-white/8 flex items-center justify-between shrink-0 bg-white/40 dark:bg-background-100/40 backdrop-blur-xl">
-          <div class="flex items-center gap-3 min-w-0">
-            <div class="size-9 rounded-2xl bg-black/5 dark:bg-white/10 flex items-center justify-center shrink-0 text-foreground-800">
-              ${renderUsageIcon("size-4.5")}
-            </div>
-            <div class="flex flex-col min-w-0">
-              <span class="text-sm font-bold text-foreground-900 tracking-tight leading-tight">Uso & Métricas</span>
-              <span class="text-[11px] text-foreground-500 truncate leading-tight mt-0.5">
-                Monitoramento de cotas de IA, rate limits e consumo de tokens
-              </span>
-            </div>
+      <div class="size-full overflow-y-auto font-sans select-none p-4 sm:p-6 md:p-8 space-y-6 max-w-6xl mx-auto ${!this.isSidebarOpen ? "pt-14 sm:pt-16" : ""}">
+        <!-- Top bar with refresh button -->
+        <div class="flex items-center justify-between pb-2 border-b border-black/8 dark:border-white/8">
+          <div>
+            <h1 class="text-xl sm:text-2xl font-bold text-[var(--omp-text-primary)] tracking-tight">Uso & Métricas</h1>
+            <p class="text-xs text-[var(--omp-text-muted)] mt-0.5">
+              Consumo de tokens, rate limits e renovação de cotas de IA
+            </p>
           </div>
 
-          <div class="flex items-center gap-2 shrink-0">
-            <button
-              type="button"
-              class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-black/5 dark:bg-white/8 hover:bg-black/10 dark:hover:bg-white/12 text-xs font-semibold text-foreground-700 transition-colors cursor-pointer ${this.loading ? "opacity-60 cursor-not-allowed" : ""
+          <button
+            type="button"
+            class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl omp-settings-card text-xs font-semibold text-[var(--omp-text-primary)] hover:opacity-90 transition-all cursor-pointer shadow-xs ${this.loading ? "opacity-60 cursor-not-allowed" : ""
       }"
-              ?disabled=${this.loading}
-              @click=${() => void this.fetchUsage(true)}
-              title="Atualizar métricas agora"
-            >
-              <span class="${this.loading ? "animate-spin" : ""}">
-                ${renderRefreshIcon("size-3.5")}
-              </span>
-              <span>${this.loading ? "Atualizando…" : "Atualizar"}</span>
-            </button>
-            <button
-              type="button"
-              class="size-8 rounded-xl bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/15 flex items-center justify-center text-foreground-600 hover:text-foreground-900 dark:hover:text-white transition-colors cursor-pointer"
-              @click=${() => this.handleClose()}
-              title="Voltar para o chat"
-            >
-              ${renderCloseIcon("size-4")}
-            </button>
-          </div>
-        </header>
+            ?disabled=${this.loading}
+            @click=${() => void this.fetchUsage(true)}
+          >
+            <span class="${this.loading ? "animate-spin" : ""}">
+              ${renderRefreshIcon("size-3.5")}
+            </span>
+            <span>${this.loading ? "Atualizando…" : "Atualizar"}</span>
+          </button>
+        </div>
 
-        <!-- Content Body -->
-        <div class="flex-1 w-full min-h-0 overflow-y-auto p-4 sm:p-6 space-y-6">
-          <!-- Top KPI Grid -->
-          <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
-            <div class="p-4 rounded-2xl bg-white/60 dark:bg-background-150/40 border border-black/8 dark:border-white/8 shadow-xs flex flex-col">
-              <span class="text-xs font-medium text-foreground-450">Provedores Conectados</span>
-              <span class="text-2xl font-extrabold text-foreground-900 font-sans mt-1">${reports.length}</span>
-              <span class="text-[11px] text-foreground-400 mt-0.5">Monitoramento ativo</span>
-            </div>
-
-            <div class="p-4 rounded-2xl bg-white/60 dark:bg-background-150/40 border border-black/8 dark:border-white/8 shadow-xs flex flex-col">
-              <span class="text-xs font-medium text-foreground-450">Cotas Rastreadas</span>
-              <span class="text-2xl font-extrabold text-foreground-900 font-sans mt-1">${totalLimits}</span>
-              <span class="text-[11px] text-foreground-400 mt-0.5">Janelas de limite</span>
-            </div>
-
-            <div class="p-4 rounded-2xl bg-white/60 dark:bg-background-150/40 border border-black/8 dark:border-white/8 shadow-xs flex flex-col">
-              <span class="text-xs font-medium text-foreground-450">Status Geral</span>
-              <span class="text-2xl font-extrabold font-sans mt-1 ${hasWarnings ? "text-amber-500" : "text-emerald-500"}">
-                ${hasWarnings ? "Atenção" : "Normal"}
-              </span>
-              <span class="text-[11px] text-foreground-400 mt-0.5">
-                ${hasWarnings ? "Cotas próximas do limite" : "Todas as cotas saudáveis"}
-              </span>
-            </div>
-
-            <div class="p-4 rounded-2xl bg-white/60 dark:bg-background-150/40 border border-black/8 dark:border-white/8 shadow-xs flex flex-col">
-              <span class="text-xs font-medium text-foreground-450">Próximo Reset</span>
-              <span class="text-2xl font-extrabold text-foreground-900 font-mono mt-1">
-                ${this.formatResetTime(nextReset)}
-              </span>
-              <span class="text-[11px] text-foreground-400 mt-0.5">Renovação de quota</span>
-            </div>
+        <!-- Top KPI Grid -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+          <div class="p-4 rounded-3xl omp-settings-card flex flex-col shadow-xs" style="clip-path: var(--clip-path-squircle-28, none);">
+            <span class="text-xs font-medium text-[var(--omp-text-muted)]">Provedores</span>
+            <span class="text-2xl font-extrabold text-[var(--omp-text-primary)] mt-1">${reports.length}</span>
+            <span class="text-[11px] text-[var(--omp-text-muted)] mt-0.5 opacity-80">Conectados</span>
           </div>
 
-          <!-- Reports List -->
-          ${this.error
+          <div class="p-4 rounded-3xl omp-settings-card flex flex-col shadow-xs" style="clip-path: var(--clip-path-squircle-28, none);">
+            <span class="text-xs font-medium text-[var(--omp-text-muted)]">Cotas</span>
+            <span class="text-2xl font-extrabold text-[var(--omp-text-primary)] mt-1">${totalLimits}</span>
+            <span class="text-[11px] text-[var(--omp-text-muted)] mt-0.5 opacity-80">Monitoradas</span>
+          </div>
+
+          <div class="p-4 rounded-3xl omp-settings-card flex flex-col shadow-xs" style="clip-path: var(--clip-path-squircle-28, none);">
+            <span class="text-xs font-medium text-[var(--omp-text-muted)]">Status</span>
+            <span class="text-2xl font-extrabold mt-1 ${hasWarnings ? "text-amber-500" : "text-emerald-500"}">
+              ${hasWarnings ? "Atenção" : "Normal"}
+            </span>
+            <span class="text-[11px] text-[var(--omp-text-muted)] mt-0.5 opacity-80">
+              ${hasWarnings ? "Próximo do limite" : "Saudável"}
+            </span>
+          </div>
+
+          <div class="p-4 rounded-3xl omp-settings-card flex flex-col shadow-xs" style="clip-path: var(--clip-path-squircle-28, none);">
+            <span class="text-xs font-medium text-[var(--omp-text-muted)]">Próximo Reset</span>
+            <span class="text-2xl font-extrabold text-[var(--omp-text-primary)] font-mono mt-1">
+              ${this.formatResetTime(nextReset)}
+            </span>
+            <span class="text-[11px] text-[var(--omp-text-muted)] mt-0.5 opacity-80">Renovação</span>
+          </div>
+        </div>
+
+        <!-- Reports List -->
+        ${this.error
         ? html`
-                <div class="p-6 rounded-2xl border border-red-500/20 bg-red-500/5 text-center text-red-500 text-sm">
-                  <p class="font-semibold">Erro ao obter métricas de uso</p>
-                  <p class="text-xs opacity-80 mt-1">${this.error}</p>
-                  <button
-                    type="button"
-                    class="mt-3 px-3 py-1.5 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-xs font-semibold transition-colors cursor-pointer"
-                    @click=${() => void this.fetchUsage(true)}
-                  >
-                    Tentar novamente
-                  </button>
-                </div>
-              `
+              <div class="p-6 rounded-3xl border border-red-500/20 bg-red-500/10 text-center text-red-500 text-sm">
+                <p class="font-bold">Erro ao obter métricas de uso</p>
+                <p class="text-xs opacity-80 mt-1">${this.error}</p>
+                <button
+                  type="button"
+                  class="mt-3 px-3 py-1.5 rounded-xl bg-red-500/15 hover:bg-red-500/25 text-xs font-semibold transition-colors cursor-pointer"
+                  @click=${() => void this.fetchUsage(true)}
+                >
+                  Tentar novamente
+                </button>
+              </div>
+            `
         : reports.length === 0
           ? html`
-                  <div class="p-12 rounded-3xl border border-black/8 dark:border-white/8 bg-white/40 dark:bg-background-150/20 text-center flex flex-col items-center">
-                    <div class="size-12 rounded-2xl bg-black/5 dark:bg-white/8 flex items-center justify-center mb-3 text-foreground-450">
-                      ${renderUsageIcon("size-6")}
-                    </div>
-                    <span class="text-base font-bold text-foreground-800">Nenhum dado de uso registrado</span>
-                    <p class="text-xs text-foreground-500 max-w-sm mt-1">
-                      Conecte provedores via /login ou utilize o modelo para gerar métricas de consumo e limites.
-                    </p>
+                <div class="p-12 rounded-3xl omp-settings-card text-center flex flex-col items-center">
+                  <div class="size-14 rounded-2xl bg-black/5 dark:bg-white/5 flex items-center justify-center mb-3 text-[var(--omp-text-muted)]">
+                    ${renderUsageIcon("size-7")}
                   </div>
-                `
+                  <span class="text-base font-bold text-[var(--omp-text-primary)]">Nenhum dado de uso registrado</span>
+                  <p class="text-xs text-[var(--omp-text-muted)] max-w-sm mt-1">
+                    Conecte provedores via /login para acompanhar limites e cotas.
+                  </p>
+                </div>
+              `
           : reports.map((report) => this.renderReportCard(report))}
-        </div>
       </div>
     `;
   }
@@ -196,26 +171,26 @@ export class OmpUsageView extends LitElement {
     const limits = report.limits || [];
 
     return html`
-      <div class="rounded-3xl border border-black/8 dark:border-white/8 bg-white/70 dark:bg-background-100/60 p-5 shadow-xs space-y-4">
+      <div class="rounded-3xl omp-settings-card p-5 shadow-xs space-y-4" style="clip-path: var(--clip-path-squircle-28, none);">
         <!-- Card Header -->
-        <div class="flex items-center justify-between pb-2 border-b border-black/5 dark:border-white/5">
+        <div class="flex items-center justify-between pb-3 border-b border-black/8 dark:border-white/8">
           <div class="flex items-center gap-3">
-            <div class="size-8 rounded-xl bg-black/5 dark:bg-white/10 flex items-center justify-center shrink-0">
-              ${renderModelProviderIcon(report.provider, "size-4.5")}
+            <div class="size-9 rounded-2xl bg-black/5 dark:bg-white/8 flex items-center justify-center shrink-0">
+              ${renderModelProviderIcon(report.provider, "size-5")}
             </div>
             <div class="flex flex-col">
-              <span class="text-sm font-bold text-foreground-900 capitalize tracking-tight">
+              <span class="text-sm font-bold text-[var(--omp-text-primary)] capitalize tracking-tight">
                 ${report.provider}
               </span>
               ${report.metadata?.email
-        ? html`<span class="text-[11px] font-mono text-foreground-500">${report.metadata.email}</span>`
+        ? html`<span class="text-[11px] font-mono text-[var(--omp-text-muted)]">${report.metadata.email}</span>`
         : nothing}
             </div>
           </div>
 
           ${report.metadata?.planType
         ? html`
-                <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 uppercase tracking-wider font-mono">
+                <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[var(--omp-primary)]/15 text-[var(--omp-primary)] uppercase tracking-wider font-mono">
                   ${report.metadata.planType}
                 </span>
               `
@@ -231,15 +206,15 @@ export class OmpUsageView extends LitElement {
           const resetsIn = this.formatResetTime(limit.window?.resetsAt);
 
           return html`
-              <div class="p-3.5 rounded-2xl bg-black/3 dark:bg-white/4 border border-black/5 dark:border-white/5 flex flex-col justify-between space-y-2.5">
+              <div class="p-3.5 rounded-2xl bg-black/5 dark:bg-white/5 border border-black/8 dark:border-white/8 flex flex-col justify-between space-y-2.5">
                 <div class="flex items-center justify-between">
                   <div class="flex items-center gap-1.5">
-                    <span class="text-xs font-bold text-foreground-800">${limit.label}</span>
+                    <span class="text-xs font-bold text-[var(--omp-text-primary)]">${limit.label}</span>
                     ${limit.window?.label
-              ? html`<span class="text-[10px] font-mono text-foreground-450">(${limit.window.label})</span>`
+              ? html`<span class="text-[10px] font-mono text-[var(--omp-text-muted)]">(${limit.window.label})</span>`
               : nothing}
                   </div>
-                  <span class="text-[11px] font-mono font-semibold text-foreground-700">
+                  <span class="text-[11px] font-mono font-bold text-[var(--omp-text-primary)]">
                     ${remaining}% livre
                   </span>
                 </div>
@@ -252,7 +227,7 @@ export class OmpUsageView extends LitElement {
                   ></div>
                 </div>
 
-                <div class="flex items-center justify-between text-[11px] text-foreground-450 font-mono">
+                <div class="flex items-center justify-between text-[11px] text-[var(--omp-text-muted)] font-mono">
                   <span>${usedPct}% consumido</span>
                   <span>Reset em: ${resetsIn}</span>
                 </div>
