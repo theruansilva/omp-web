@@ -404,13 +404,6 @@ export class OmpSidebar extends LitElement {
               )}
             </div>
 
-            <!-- Divider & Header separating Pages from Projects -->
-            <div class="h-px bg-black/8 dark:bg-white/8 my-2 mx-1 shrink-0"></div>
-
-            <div class="px-2 pt-0.5 pb-1 text-[11px] font-bold uppercase tracking-wider text-foreground-450 dark:text-foreground-500 select-none shrink-0">
-              <span>Projetos</span>
-            </div>
-
             <!-- Project Cards List -->
             <div class="flex flex-col gap-2 shrink-0">
               ${projectsList.map((project) => {
@@ -430,10 +423,10 @@ export class OmpSidebar extends LitElement {
 
                 return html`
                   <div
-                    class="group/proj-card flex flex-col p-2.5 rounded-2xl border transition-all duration-200 select-none bg-black/[0.02] dark:bg-white/[0.025] ${
+                    class="group/proj-card flex flex-col p-2.5 rounded-2xl border border-black/8 dark:border-white/8 transition-all duration-200 select-none ${
                       isSelectedProj
-                        ? "border-[var(--omp-primary)]/45 shadow-xs"
-                        : "border-black/8 dark:border-white/8 hover:border-black/15 dark:hover:border-white/12 hover:bg-black/[0.04] dark:hover:bg-white/[0.045]"
+                        ? "bg-black/[0.04] dark:bg-white/[0.05]"
+                        : "bg-black/[0.02] dark:bg-white/[0.025] hover:bg-black/[0.04] dark:hover:bg-white/[0.04]"
                     }"
                   >
                     <!-- Card Header: Title + Action Button -->
