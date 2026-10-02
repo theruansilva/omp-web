@@ -804,13 +804,9 @@ export class OmpComposer extends LitElement {
     }
     this.requestUpdate();
   }
-
   public adjustTextareaHeight(): void {
     const textarea = (this.querySelector?.("textarea") as HTMLTextAreaElement | null);
     if (!textarea) return;
-
-    // Temporarily reset height to auto to calculate accurate scrollHeight
-    textarea.style.height = "auto";
 
     if (!textarea.value) {
       textarea.style.height = "";
@@ -818,6 +814,7 @@ export class OmpComposer extends LitElement {
       return;
     }
 
+    textarea.style.height = "auto";
     const maxHeight = 280;
     const scrollHeight = textarea.scrollHeight;
 
