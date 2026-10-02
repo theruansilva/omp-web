@@ -396,7 +396,7 @@ export class OmpSidebar extends LitElement {
                     <span class="shrink-0 text-[var(--omp-primary)] opacity-85 group-hover/proj:opacity-100 transition-opacity">
                       ${renderFolderIcon("size-4")}
                     </span>
-                    <span class="truncate font-sans text-xs font-bold text-foreground-900 dark:text-foreground-100 tracking-tight">
+                    <span class="truncate font-sans text-xs font-semibold tracking-tight text-[var(--omp-text-secondary)] group-hover/proj:text-[var(--omp-text-primary)]">
                       ${project.name}
                     </span>
                   </button>
