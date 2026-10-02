@@ -233,9 +233,9 @@ export function renderMoonIcon(className = "size-4") {
 export function renderLoadingDots() {
   return html`
     <div class="inline-flex items-center gap-1.5 py-1">
-      <span class="size-2 rounded-full bg-[#8C48FF] animate-bounce" style="animation-delay: 0ms"></span>
-      <span class="size-2 rounded-full bg-[#00AEFF] animate-bounce" style="animation-delay: 150ms"></span>
-      <span class="size-2 rounded-full bg-[#FF5F3D] animate-bounce" style="animation-delay: 300ms"></span>
+      <span class="size-2 rounded-full bg-[#8C48FF] animate-bounce motion-reduce:animate-none" style="animation-delay: 0ms"></span>
+      <span class="size-2 rounded-full bg-[#00AEFF] animate-bounce motion-reduce:animate-none" style="animation-delay: 150ms"></span>
+      <span class="size-2 rounded-full bg-[#FF5F3D] animate-bounce motion-reduce:animate-none" style="animation-delay: 300ms"></span>
     </div>
   `;
 }

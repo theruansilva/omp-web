@@ -364,7 +364,7 @@ export class OmpSidebar extends LitElement {
                     ${
                       item.badge
                         ? html`<span
-                          class="text-[9px] font-extrabold tracking-wider px-1.5 py-0.5 rounded border border-black/15 dark:border-white/20 text-foreground-600 leading-none"
+                          class="text-xs font-bold tracking-wider px-1.5 py-0.5 rounded border border-black/15 dark:border-white/20 text-foreground-600 leading-none"
                           >${item.badge}</span
                         >`
                         : ""
@@ -451,7 +451,7 @@ export class OmpSidebar extends LitElement {
                               <span class="truncate text-left flex-1 ${session.archived ? "opacity-75" : ""}">${session.title}</span>
                             </div>
 
-                            ${session.isUnread ? html`<span class="size-2 rounded-full bg-[var(--omp-primary)] ring-2 ring-[var(--omp-primary)]/30 shrink-0 ml-2" title="Trabalho concluído (não lido)"></span>` : session.updatedAt ? html`<span class="text-[10px] text-foreground-400 font-mono shrink-0 ml-2">${session.updatedAt}</span>` : nothing}
+                            ${session.isUnread ? html`<span class="size-2 rounded-full bg-[var(--omp-primary)] ring-2 ring-[var(--omp-primary)]/30 shrink-0 ml-2" title="Trabalho concluído (não lido)"></span>` : session.updatedAt ? html`<span class="text-xs text-foreground-500 font-mono shrink-0 ml-2">${session.updatedAt}</span>` : nothing}
                           </button>
 
                           ${
@@ -525,7 +525,7 @@ export class OmpSidebar extends LitElement {
                     >
                       <div class="px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-wider text-foreground-500 flex items-center justify-between">
                         <span>Máquinas Conectadas</span>
-                        <span class="font-mono text-[9px] px-1.5 py-0.2 rounded bg-black/5 dark:bg-white/10">${this.machines.length || 1}</span>
+                        <span class="font-mono text-xs px-1.5 py-0.5 rounded bg-black/5 dark:bg-white/10">${this.machines.length || 1}</span>
                       </div>
 
                       <div class="flex flex-col gap-0.5 max-h-48 overflow-y-auto">
@@ -544,7 +544,7 @@ export class OmpSidebar extends LitElement {
                                 <span class="size-2 rounded-full shrink-0 ${mError ? "bg-red-500" : mOnline ? "bg-emerald-500" : "bg-zinc-400"}"></span>
                                 <div class="flex flex-col min-w-0 flex-1">
                                   <span class="text-xs truncate">${m.name}</span>
-                                  <span class="text-[10px] opacity-60 font-mono truncate leading-none">${m.kind === "local" ? "Local OMP Web" : (m.baseUrl || "Remote OMP Web")}</span>
+                                  <span class="text-xs opacity-70 font-mono truncate leading-none">${m.kind === "local" ? "Local OMP Web" : (m.baseUrl || "Remote OMP Web")}</span>
                                 </div>
                               </div>
                               ${canRemove ? html`

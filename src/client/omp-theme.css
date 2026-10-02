@@ -444,15 +444,15 @@
   to { scale: 0.94; }
 }
 
-.omp-ask-island {
-  view-transition-name: omp-ask-island;
-  animation: ask-spring-bounce-in 480ms var(--vt-bounce) both;
-  transform-origin: bottom center;
-}
-
-.omp-ask-island.closing {
-  animation: ask-spring-bounce-out 320ms cubic-bezier(0.32, 0.72, 0, 1) both;
-}
+ .omp-ask-island {
+   view-transition-name: omp-ask-island;
+   animation: ask-spring-bounce-in 360ms cubic-bezier(0.16, 1, 0.3, 1) both;
+   transform-origin: bottom center;
+ }
+ 
+ .omp-ask-island.closing {
+   animation: ask-spring-bounce-out 240ms cubic-bezier(0.16, 1, 0.3, 1) both;
+ }
 
 /* =========================================================
    COMPOSER BACKGROUND EXPANSION & TWO-PHASE REVEAL
@@ -461,7 +461,7 @@
 .composer-ask-expander {
   display: grid;
   grid-template-rows: 0fr;
-  transition: grid-template-rows 460ms var(--vt-bounce, linear(0, 0.22 8%, 0.6 18%, 0.94 30%, 1.07 40%, 1.05 48%, 1 60%, 0.99 74%, 1));
+   transition: grid-template-rows 320ms cubic-bezier(0.16, 1, 0.3, 1);
   overflow: hidden;
 }
 
@@ -2308,14 +2308,21 @@ html[data-theme="dark"] .composer-dropdown-popover .composer-dropdown-icon {
 }
 
 /* Accessibility: Reduced Motion */
-@media (prefers-reduced-motion: reduce) {
-  .omp-roll-enter,
-  .omp-roll-exit,
-  .omp-text-roll-enter,
-  .omp-text-roll-exit,
-  .omp-status-pulse {
-    animation: none !important;
-    transform: none !important;
-    filter: none !important;
-  }
-}
+ @media (prefers-reduced-motion: reduce) {
+   .omp-roll-enter,
+   .omp-roll-exit,
+   .omp-text-roll-enter,
+   .omp-text-roll-exit,
+   .omp-status-pulse,
+   .animate-bounce,
+   .animate-pulse,
+   .omp-ask-island,
+   .omp-ask-island.closing,
+   .composer-ask-expander,
+   .composer-ask-item {
+     animation: none !important;
+     transition: none !important;
+     transform: none !important;
+     filter: none !important;
+   }
+ }

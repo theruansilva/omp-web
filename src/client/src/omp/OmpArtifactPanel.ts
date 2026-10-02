@@ -102,26 +102,26 @@ export class OmpArtifactPanel extends LitElement {
                 <!-- Status Badge -->
                 ${status === "proposed"
         ? html`
-                      <span class="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 shrink-0">
+                      <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 shrink-0">
                         Em Revisão
                       </span>
                     `
         : status === "approved"
           ? html`
-                        <span class="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 shrink-0 flex items-center gap-1">
+                        <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 shrink-0 flex items-center gap-1">
                           ${renderCheckIcon("size-3")}
                           Aprovado
                         </span>
                       `
           : html`
-                        <span class="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20 shrink-0">
+                        <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20 shrink-0">
                           Rejeitado
                         </span>
                       `}
               </div>
               ${planFilePath
         ? html`
-                    <span class="text-[11px] text-foreground-500 font-mono truncate" title="${planFilePath}">
+                    <span class="text-xs text-foreground-500 font-mono truncate" title="${planFilePath}">
                       ${planFilePath}
                     </span>
                   `

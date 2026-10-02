@@ -402,13 +402,13 @@ export class OmpProjectDetailView extends LitElement {
                               ${branch.name}
                             </span>
                             ${branch.isMain
-            ? html`<span class="text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded-md bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20">main</span>`
+            ? html`<span class="text-xs font-bold uppercase px-1.5 py-0.5 rounded-md bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20">main</span>`
             : ""}
                             ${isActive
-            ? html`<span class="text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">ativo</span>`
+            ? html`<span class="text-xs font-bold uppercase px-1.5 py-0.5 rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">ativo</span>`
             : ""}
                           </div>
-                          <span class="text-[11px] text-foreground-500 font-mono truncate mt-0.5">
+                          <span class="text-xs text-foreground-500 font-mono truncate mt-0.5">
                             ${branch.worktreePath || `~/code/${currentProject.name}/${branch.name}`}
                           </span>
                         </div>
@@ -471,7 +471,7 @@ export class OmpProjectDetailView extends LitElement {
                                 </span>
                                 ${isRecent && !session.archived
               ? html`
-                                      <span class="text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                                      <span class="text-xs font-bold uppercase px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
                                         Última
                                       </span>
                                     `
