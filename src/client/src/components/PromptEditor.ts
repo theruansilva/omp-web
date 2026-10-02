@@ -15,7 +15,7 @@ import { detectPromptCompletionTrigger, fileCompletionInsertText, type PromptCom
 import { clearDraft, loadDraft, saveDraft } from "../promptDraftStorage";
 import { loadAttachmentDelivery, saveAttachmentDelivery } from "../attachmentPreferences";
 import { createMobilePromptEnterMedia, readPromptEnterPreference, shouldSendPromptOnEnterShortcut, shouldUsePromptEnterShiftShortcut } from "../promptEnterBehavior";
-import { handlePromptBlurAction, handlePromptEscapeAction, handlePromptShiftTabAction } from "../promptEscapeBehavior";
+import { handlePromptEscapeAction, handlePromptShiftTabAction } from "../promptEscapeBehavior";
 import { promptEditorStyles, type CompletionItem } from "./shared";
 import { renderAttachIcon, renderSendIcon, renderQueueIcon, renderSteerIcon, renderStopIcon, renderThinkingGauge } from "./promptEditorIcons";
 import { thinkingGauge, thinkingLevelLabel } from "../../../shared/thinkingLevels";
@@ -450,9 +450,8 @@ export class PromptEditor extends LitElement {
           EditorView.contentAttributes.of((view) => inputAssistanceContentAttributes(view.state.sliceDoc(0, view.state.selection.main.head))),
           EditorView.domEventHandlers({
             keyup: (event) => this.handleEditorKeyUp(event),
-            blur: (event: FocusEvent) => {
+            blur: () => {
               this.resetEditorModifierState();
-              handlePromptBlurAction(event.relatedTarget, this.onEscape);
             },
           }),
           placeholder("Message Oh My Pi... Use / for commands, @ for files, ↑/↓ for history"),

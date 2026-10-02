@@ -78,7 +78,7 @@ describe("handlePromptShiftTabAction", () => {
 });
 
 describe("handlePromptBlurAction", () => {
-  it("triggers onEscape when relatedTarget is null or undefined", () => {
+  it("does not trigger onEscape on blur to avoid swallowing click events", () => {
     let count = 0;
     handlePromptBlurAction(null, () => {
       count++;
@@ -86,12 +86,6 @@ describe("handlePromptBlurAction", () => {
     handlePromptBlurAction(undefined, () => {
       count++;
     });
-
-    expect(count).toBe(2);
-  });
-
-  it("does not trigger onEscape when relatedTarget is an element", () => {
-    let count = 0;
     handlePromptBlurAction({}, () => {
       count++;
     });

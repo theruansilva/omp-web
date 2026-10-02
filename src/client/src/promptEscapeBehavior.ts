@@ -26,10 +26,10 @@ export function handlePromptShiftTabAction(
 }
 
 export function handlePromptBlurAction(
-  relatedTarget: unknown,
-  onEscape?: () => void,
+  _relatedTarget?: unknown,
+  _onEscape?: () => void,
 ): void {
-  if (relatedTarget === null || relatedTarget === undefined) {
-    onEscape?.();
-  }
+  // Do not steal focus or trigger onEscape on blur.
+  // Blur events occur naturally when the user clicks elsewhere in the UI (e.g. sessions, tabs, buttons).
+  // Stealing focus to .chat on blur aborts the browser's click event sequence, causing the first click to be swallowed.
 }
