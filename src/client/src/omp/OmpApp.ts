@@ -1,3 +1,4 @@
+import "./OmpUpdateAnnouncementModal";
 import { isShellInput } from "../inputModes";
 import { MobileDrawerController } from "../appShell/mobileDrawerController";
 import { LitElement, html, nothing } from "lit";
@@ -2352,6 +2353,9 @@ Dica: você pode selecionar uma das opções abaixo para testar a injeção auto
             .onCancel=${() => { this.auth.closeDialog(); }}
           ></auth-dialog>
         ` : nothing}
+
+        <!-- Update Announcement Modal -->
+        <omp-update-announcement-modal></omp-update-announcement-modal>
 
         <!-- Login Modal Component -->
         <omp-login-modal
