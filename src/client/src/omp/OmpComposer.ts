@@ -1198,7 +1198,7 @@ export class OmpComposer extends LitElement {
               type="button"
               role="menuitem"
               tabindex="0"
-              class="group flex w-full items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium transition-colors hover:bg-black/5 dark:hover:bg-white/10 focus:bg-black/5 dark:focus:bg-white/10 focus:outline-none focus:ring-1 focus:ring-blue-500/40 active:bg-black/8 dark:active:bg-white/15 cursor-pointer select-none text-left"
+              class="group flex w-full items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium transition-colors hover:bg-black/5 dark:hover:bg-white/10 focus:bg-black/5 dark:focus:bg-white/10 focus:outline-none focus:outline-none active:bg-black/8 dark:active:bg-white/15 cursor-pointer select-none text-left"
               @click=${() => this.handleCreateAction("upload")}
             >
               <div class="composer-dropdown-icon size-5 shrink-0 flex items-center justify-center">
@@ -1214,7 +1214,7 @@ export class OmpComposer extends LitElement {
               type="button"
               role="menuitem"
               tabindex="0"
-              class="group flex w-full items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium transition-colors hover:bg-black/5 dark:hover:bg-white/10 focus:bg-black/5 dark:focus:bg-white/10 focus:outline-none focus:ring-1 focus:ring-blue-500/40 active:bg-black/8 dark:active:bg-white/15 cursor-pointer select-none text-left"
+              class="group flex w-full items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium transition-colors hover:bg-black/5 dark:hover:bg-white/10 focus:bg-black/5 dark:focus:bg-white/10 focus:outline-none focus:outline-none active:bg-black/8 dark:active:bg-white/15 cursor-pointer select-none text-left"
               @click=${() => this.handleCreateAction("screenshot")}
             >
               <div class="composer-dropdown-icon size-5 shrink-0 flex items-center justify-center">
@@ -1230,7 +1230,7 @@ export class OmpComposer extends LitElement {
               type="button"
               role="menuitem"
               tabindex="0"
-              class="group flex w-full items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium transition-colors hover:bg-black/5 dark:hover:bg-white/10 focus:bg-black/5 dark:focus:bg-white/10 focus:outline-none focus:ring-1 focus:ring-blue-500/40 active:bg-black/8 dark:active:bg-white/15 cursor-pointer select-none text-left"
+              class="group flex w-full items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium transition-colors hover:bg-black/5 dark:hover:bg-white/10 focus:bg-black/5 dark:focus:bg-white/10 focus:outline-none focus:outline-none active:bg-black/8 dark:active:bg-white/15 cursor-pointer select-none text-left"
               @click=${() => this.handleCreateAction("onedrive")}
             >
               <div class="composer-dropdown-icon size-5 shrink-0 flex items-center justify-center">
@@ -1246,7 +1246,7 @@ export class OmpComposer extends LitElement {
               type="button"
               role="menuitem"
               tabindex="0"
-              class="group flex w-full items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium transition-colors hover:bg-black/5 dark:hover:bg-white/10 focus:bg-black/5 dark:focus:bg-white/10 focus:outline-none focus:ring-1 focus:ring-blue-500/40 active:bg-black/8 dark:active:bg-white/15 cursor-pointer select-none text-left"
+              class="group flex w-full items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium transition-colors hover:bg-black/5 dark:hover:bg-white/10 focus:bg-black/5 dark:focus:bg-white/10 focus:outline-none focus:outline-none active:bg-black/8 dark:active:bg-white/15 cursor-pointer select-none text-left"
               @click=${() => this.handleCreateAction("gdrive")}
             >
               <div class="composer-dropdown-icon size-5 shrink-0 flex items-center justify-center">
@@ -1264,7 +1264,7 @@ export class OmpComposer extends LitElement {
               type="button"
               role="menuitem"
               tabindex="0"
-              class="group flex w-full items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium transition-colors hover:bg-black/5 dark:hover:bg-white/10 focus:bg-black/5 dark:focus:bg-white/10 focus:outline-none focus:ring-1 focus:ring-blue-500/40 active:bg-black/8 dark:active:bg-white/15 cursor-pointer select-none text-left"
+              class="group flex w-full items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium transition-colors hover:bg-black/5 dark:hover:bg-white/10 focus:bg-black/5 dark:focus:bg-white/10 focus:outline-none focus:outline-none active:bg-black/8 dark:active:bg-white/15 cursor-pointer select-none text-left"
               @click=${() => this.handleCreateAction("create-image")}
             >
               <div class="composer-dropdown-icon size-5 shrink-0 flex items-center justify-center">
@@ -1280,7 +1280,7 @@ export class OmpComposer extends LitElement {
               type="button"
               role="menuitem"
               tabindex="0"
-              class="group flex w-full items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium transition-colors hover:bg-black/5 dark:hover:bg-white/10 focus:bg-black/5 dark:focus:bg-white/10 focus:outline-none focus:ring-1 focus:ring-blue-500/40 active:bg-black/8 dark:active:bg-white/15 cursor-pointer select-none text-left"
+              class="group flex w-full items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium transition-colors hover:bg-black/5 dark:hover:bg-white/10 focus:bg-black/5 dark:focus:bg-white/10 focus:outline-none focus:outline-none active:bg-black/8 dark:active:bg-white/15 cursor-pointer select-none text-left"
               @click=${() => this.handleCreateAction("web-page")}
             >
               <div class="composer-dropdown-icon size-5 shrink-0 flex items-center justify-center">
@@ -1314,7 +1314,7 @@ export class OmpComposer extends LitElement {
               role="menuitem"
               tabindex="0"
               data-selected=${this.selectedModel === "Fast" ? "true" : "false"}
-              class="group flex w-full items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium transition-colors hover:bg-black/5 dark:hover:bg-white/10 focus:bg-black/5 dark:focus:bg-white/10 focus:outline-none focus:ring-1 focus:ring-blue-500/40 active:bg-black/8 dark:active:bg-white/15 cursor-pointer select-none text-left ${this.selectedModel === "Fast" ? "bg-black/5 dark:bg-white/10" : ""}"
+              class="group flex w-full items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium transition-colors hover:bg-black/5 dark:hover:bg-white/10 focus:bg-black/5 dark:focus:bg-white/10 focus:outline-none focus:outline-none active:bg-black/8 dark:active:bg-white/15 cursor-pointer select-none text-left ${this.selectedModel === "Fast" ? "bg-black/5 dark:bg-white/10" : ""}"
               @click=${() => this.selectModel("Fast", "smol")}
             >
               <div class="composer-dropdown-icon size-5 shrink-0 flex items-center justify-center ${this.selectedModel === "Fast" ? "!text-amber-500" : "text-amber-500"}">
@@ -1332,7 +1332,7 @@ export class OmpComposer extends LitElement {
               role="menuitem"
               tabindex="0"
               data-selected=${this.selectedModel === "Thinking" ? "true" : "false"}
-              class="group flex w-full items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium transition-colors hover:bg-black/5 dark:hover:bg-white/10 focus:bg-black/5 dark:focus:bg-white/10 focus:outline-none focus:ring-1 focus:ring-blue-500/40 active:bg-black/8 dark:active:bg-white/15 cursor-pointer select-none text-left ${this.selectedModel === "Thinking" ? "bg-black/5 dark:bg-white/10" : ""}"
+              class="group flex w-full items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium transition-colors hover:bg-black/5 dark:hover:bg-white/10 focus:bg-black/5 dark:focus:bg-white/10 focus:outline-none focus:outline-none active:bg-black/8 dark:active:bg-white/15 cursor-pointer select-none text-left ${this.selectedModel === "Thinking" ? "bg-black/5 dark:bg-white/10" : ""}"
               @click=${() => this.selectModel("Thinking", "slow")}
             >
               <div class="composer-dropdown-icon size-5 shrink-0 flex items-center justify-center ${this.selectedModel === "Thinking" ? "!text-blue-500" : "text-blue-500"}">
@@ -1350,7 +1350,7 @@ export class OmpComposer extends LitElement {
               role="menuitem"
               tabindex="0"
               data-selected=${this.selectedModel === "Smol" ? "true" : "false"}
-              class="group flex w-full items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium transition-colors hover:bg-black/5 dark:hover:bg-white/10 focus:bg-black/5 dark:focus:bg-white/10 focus:outline-none focus:ring-1 focus:ring-blue-500/40 active:bg-black/8 dark:active:bg-white/15 cursor-pointer select-none text-left ${this.selectedModel === "Smol" ? "bg-black/5 dark:bg-white/10" : ""}"
+              class="group flex w-full items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium transition-colors hover:bg-black/5 dark:hover:bg-white/10 focus:bg-black/5 dark:focus:bg-white/10 focus:outline-none focus:outline-none active:bg-black/8 dark:active:bg-white/15 cursor-pointer select-none text-left ${this.selectedModel === "Smol" ? "bg-black/5 dark:bg-white/10" : ""}"
               @click=${() => this.selectModel("Smol", "tiny")}
             >
               <div class="composer-dropdown-icon size-5 shrink-0 flex items-center justify-center ${this.selectedModel === "Smol" ? "!text-purple-500" : "text-purple-500"}">
@@ -1370,7 +1370,7 @@ export class OmpComposer extends LitElement {
               type="button"
               role="menuitem"
               tabindex="0"
-              class="group flex w-full items-center gap-3 px-3 py-2 rounded-xl text-sm font-semibold transition-colors hover:bg-black/5 dark:hover:bg-white/10 focus:bg-black/5 dark:focus:bg-white/10 focus:outline-none focus:ring-1 focus:ring-blue-500/40 cursor-pointer select-none text-left text-blue-600 dark:text-blue-400"
+              class="group flex w-full items-center gap-3 px-3 py-2 rounded-xl text-sm font-semibold transition-colors hover:bg-black/5 dark:hover:bg-white/10 focus:bg-black/5 dark:focus:bg-white/10 focus:outline-none focus:outline-none cursor-pointer select-none text-left text-blue-600 dark:text-blue-400"
               @click=${() => this.handleOpenModels()}
             >
               <div class="size-5 shrink-0 flex items-center justify-center">

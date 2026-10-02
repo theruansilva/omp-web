@@ -303,7 +303,7 @@ export class OmpModelsView extends LitElement {
           <div class="relative w-full">
             <input
               type="text"
-              class="w-full px-4 py-3 pl-11 rounded-2xl omp-settings-card text-sm text-foreground-900 placeholder:text-foreground-400 outline-none focus:ring-2 focus:ring-blue-500/30 transition-all shadow-xs"
+              class="w-full px-4 py-3 pl-11 rounded-2xl omp-settings-card text-sm text-foreground-900 placeholder:text-foreground-400 outline-none focus:outline-none focus:border-black/20 dark:focus:border-white/20 transition-all shadow-xs"
               placeholder="Pesquisar por modelo ou provedor (ex: claude, gpt-4o, gemini, deepseek, ollama)..."
               .value=${this.searchQuery}
               @input=${(e: Event) => {

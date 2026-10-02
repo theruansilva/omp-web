@@ -1885,8 +1885,8 @@ html[data-theme="dark"] .composer-dropdown-popover .composer-dropdown-icon {
 
 .omp-settings-input:focus {
   outline: none;
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.25);
+  border-color: var(--omp-card-hover-border, oklch(0% 0 0 / 0.18));
+  box-shadow: none;
 }
 
 .omp-settings-input::placeholder {
