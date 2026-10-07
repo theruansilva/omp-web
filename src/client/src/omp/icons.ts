@@ -266,6 +266,22 @@ export function renderThinkModeIcon(className = "size-4") {
   `;
 }
 
+export function renderDotMatrixIcon(className = "size-4 shrink-0", isAnimated = false) {
+  return html`
+    <svg class="${className} ${isAnimated ? "animate-pulse" : ""}" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+      <circle cx="3" cy="3" r="1.3" opacity="${isAnimated ? "0.9" : "0.75"}" />
+      <circle cx="8" cy="3" r="1.3" opacity="${isAnimated ? "0.4" : "0.9"}" />
+      <circle cx="13" cy="3" r="1.3" opacity="${isAnimated ? "0.8" : "0.55"}" />
+      <circle cx="3" cy="8" r="1.3" opacity="${isAnimated ? "0.5" : "0.85"}" />
+      <circle cx="8" cy="8" r="1.3" opacity="${isAnimated ? "0.9" : "0.6"}" />
+      <circle cx="13" cy="8" r="1.3" opacity="${isAnimated ? "0.3" : "0.8"}" />
+      <circle cx="3" cy="13" r="1.3" opacity="${isAnimated ? "0.8" : "0.6"}" />
+      <circle cx="8" cy="13" r="1.3" opacity="${isAnimated ? "0.6" : "0.8"}" />
+      <circle cx="13" cy="13" r="1.3" opacity="${isAnimated ? "1.0" : "1.0"}" />
+    </svg>
+  `;
+}
+
 export function renderPaperclipIcon(className = "size-4") {
   return html`
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="${className}">
@@ -782,6 +798,15 @@ export function renderUsageIcon(className = "size-5 shrink-0") {
   return html`
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="${className}">
       <path d="M12 20v-6M6 20V10M18 20V4"/>
+    </svg>
+  `;
+}
+
+export function renderScheduleIcon(className = "size-5 shrink-0") {
+  return html`
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="${className}">
+      <circle cx="12" cy="12" r="9"/>
+      <polyline points="12 7 12 12 15 15"/>
     </svg>
   `;
 }

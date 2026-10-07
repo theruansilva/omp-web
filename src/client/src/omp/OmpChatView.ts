@@ -1,6 +1,6 @@
 import { LitElement, html, nothing } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
-import { renderOmpLogo, renderLoadingDots, renderPaperclipIcon, renderBranchIcon } from "./icons";
+import { renderOmpLogo, renderLoadingDots, renderPaperclipIcon, renderBranchIcon, renderDotMatrixIcon } from "./icons";
 import type { PromptAttachment, PlanModeStatus } from "../../../shared/apiTypes";
 import "./OmpComposer";
 import type { BtwState, ComposerProject, PendingCommandDialog } from "./OmpComposer";
@@ -60,6 +60,7 @@ export class OmpChatView extends LitElement {
   @state() private pinnedToBottom = true;
   @state() private expandedToolKey: string | null = null;
   @state() private copiedMessageId: string | null = null;
+  @state() private showAllToolsMap = new Set<string>();
 
   private manuallyOpenedThinkingMap = new Set<string>();
   private lastScrollTop = 0;
@@ -174,8 +175,58 @@ export class OmpChatView extends LitElement {
     this.requestUpdate();
   }
 
+  private toggleShowAllTools(messageId: string) {
+    if (this.showAllToolsMap.has(messageId)) {
+      this.showAllToolsMap.delete(messageId);
+    } else {
+      this.showAllToolsMap.add(messageId);
+    }
+    this.requestUpdate();
+  }
+
   private renderThinkingBlock(thinking: string, messageId: string, isLastAssistant: boolean) {
-    const firstLine = thinking.trim().split("\n")[0]?.replace(/^[*#\s>-]+|[*#\s]+$/g, "").trim() || "";
+    if (this.progressStyle === "minimal") {
+      return this.renderThinkingMinimal(thinking, messageId, isLastAssistant);
+    }
+    return this.renderThinkingSteps(thinking, messageId, isLastAssistant);
+  }
+
+  private renderThinkingMinimal(thinking: string, messageId: string, isLastAssistant: boolean) {
+    const isOpen = this.isThinkingOpen(messageId);
+    const isStreamingThinking = isLastAssistant && this.isStreaming && !this.messages[this.messages.length - 1]?.text;
+
+    return html`
+      <div class="my-1.5 w-full flex flex-col font-sans select-none">
+        <button
+          type="button"
+          class="flex items-center gap-2 text-sm font-medium text-foreground-800 dark:text-foreground-200 hover:text-foreground-900 dark:hover:text-foreground-100 cursor-pointer transition-colors group/think-btn w-fit"
+          @click=${(e: Event) => {
+            e.preventDefault();
+            this.toggleThinking(messageId);
+          }}
+          title="Clique para ver o raciocínio completo"
+        >
+          ${renderDotMatrixIcon("size-4 text-foreground-600 dark:text-foreground-400", isStreamingThinking)}
+          <span>Thinking about your request</span>
+          <svg
+            class="size-3 text-foreground-400 group-hover/think-btn:text-foreground-600 dark:group-hover/think-btn:text-foreground-300 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}"
+            viewBox="0 0 20 20"
+            fill="currentColor"
+          >
+            <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"/>
+          </svg>
+        </button>
+        ${isOpen ? html`
+          <div class="mt-2 pl-6 pr-2 text-xs text-foreground-600 dark:text-foreground-400 leading-relaxed border-l-2 border-black/10 dark:border-white/10 select-text max-h-96 overflow-y-auto animate-fade-in font-sans">
+            <omp-markdown .text=${thinking}></omp-markdown>
+          </div>
+        ` : nothing}
+      </div>
+    `;
+  }
+
+  private renderThinkingSteps(thinking: string, messageId: string, isLastAssistant: boolean) {
+    const firstLine = thinking.trim().split("\n")[0]?.replace(/^[\*#\s>-]+|[\*#\s]+$/g, "").trim() || "";
     const summary = firstLine.length > 60 ? firstLine.slice(0, 58) + "…" : firstLine;
     const isOpen = this.isThinkingOpen(messageId);
     const isStreamingThinking = isLastAssistant && this.isStreaming && !this.messages[this.messages.length - 1]?.text;
@@ -215,6 +266,63 @@ export class OmpChatView extends LitElement {
     `;
   }
 
+  private renderToolActionIcon(toolName?: string) {
+    const name = (toolName || "").toLowerCase();
+    if (name === "bash" || name === "sh" || name === "terminal") {
+      return html`
+        <svg class="size-3.5 shrink-0 text-foreground-500" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="2" y="2.5" width="12" height="11" rx="2" />
+          <path d="M5 6l2.5 2L5 10M9 10.5h2" />
+        </svg>
+      `;
+    }
+    if (name === "read" || name === "cat") {
+      return html`
+        <svg class="size-3.5 shrink-0 text-foreground-500" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 2.5h6.5l3.5 3.5V13.5a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1v-10a1 1 0 0 1 1-1z" />
+          <path d="M9.5 2.5V6H13" />
+        </svg>
+      `;
+    }
+    if (name === "edit" || name === "patch" || name === "write") {
+      return html`
+        <svg class="size-3.5 shrink-0 text-foreground-500" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M11 2.5a1.4 1.4 0 0 1 2 2L5.5 12 2 13l1-3.5L10.5 2.5z" />
+        </svg>
+      `;
+    }
+    return html`
+      <svg class="size-3.5 shrink-0 text-foreground-500" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="7" cy="7" r="4.5" />
+        <path d="M10.5 10.5L14 14" />
+      </svg>
+    `;
+  }
+
+  private getToolActionText(tools: ToolItem[]) {
+    const running = tools.find((t) => t.status === "running" || t.status === "pending");
+    if (running) {
+      return `Searching on ${running.toolName}…`;
+    }
+    const hasSearch = tools.some((t) => ["grep", "glob", "search", "web_search"].some((s) => t.toolName.toLowerCase().includes(s)));
+    if (hasSearch) {
+      return "Searching on codebase";
+    }
+    const hasBash = tools.some((t) => ["bash", "sh", "terminal"].includes(t.toolName.toLowerCase()));
+    if (hasBash) {
+      return "Executing terminal";
+    }
+    const hasRead = tools.some((t) => ["read", "cat"].includes(t.toolName.toLowerCase()));
+    if (hasRead) {
+      return "Reading files";
+    }
+    const hasEdit = tools.some((t) => ["edit", "write", "patch"].includes(t.toolName.toLowerCase()));
+    if (hasEdit) {
+      return "Editing files";
+    }
+    return tools.length === 1 ? "1 tool executed" : `${tools.length} tools executed`;
+  }
+
   private renderFormattedDiff(diff: string) {
     const lines = diff.split("\n");
     return lines.map((line) => {
@@ -229,70 +337,98 @@ export class OmpChatView extends LitElement {
   }
 
   private renderToolsMinimal(tools: ToolItem[], messageId: string) {
-    return html`
-      <div class="flex flex-wrap items-center gap-1.5 my-2 w-full">
-        ${tools.map((t, idx) => {
-          const key = `${messageId}-tool-${idx}`;
-          const isExpanded = this.expandedToolKey === key;
-          const hasDetails = Boolean(t.diff || t.errorText || t.resultText || t.args);
+    const showAll = this.showAllToolsMap.has(messageId);
+    const visibleTools = showAll || tools.length <= 5 ? tools : tools.slice(0, 4);
+    const overflowCount = tools.length - 4;
+    const actionText = this.getToolActionText(tools);
+    const firstRunning = tools.find((t) => t.status === "running" || t.status === "pending");
+    const primaryTool = firstRunning || tools[0];
 
-          return html`
-            <div class="inline-flex flex-col">
-              <button
-                type="button"
-                class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-[11px] font-mono border border-black/5 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.04] text-foreground-600 hover:bg-black/5 dark:hover:bg-white/8 transition-colors ${hasDetails ? "cursor-pointer" : ""}"
-                @click=${() => hasDetails && this.toggleToolExpand(key)}
-                title=${hasDetails ? "Clique para inspecionar saída e detalhes" : ""}
-              >
-                <span class="size-1.5 rounded-full ${t.isError ? "bg-red-500" : t.status === "running" ? "bg-amber-500 animate-ping" : "bg-emerald-500"}"></span>
-                <span class="font-semibold text-foreground-800 dark:text-foreground-200">${t.toolName}</span>
-                ${t.target || t.summary ? html`<span class="opacity-70 truncate max-w-[200px]">${t.target || t.summary}</span>` : nothing}
-                ${t.diffStats ? html`<span class="text-[10px] font-semibold"><span class="text-emerald-500">+${t.diffStats.added}</span> <span class="text-red-500">-${t.diffStats.removed}</span></span>` : nothing}
-                ${hasDetails ? html`
-                  <svg class="size-3 text-foreground-400 transition-transform ${isExpanded ? "rotate-180" : ""}" viewBox="0 0 20 20" fill="currentColor">
-                    <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"/>
-                  </svg>
+    return html`
+      <div class="flex flex-col gap-1.5 my-1.5 w-full font-sans select-none">
+        <!-- Tool Action Line matching Grok Searching on X -->
+        <div class="flex items-center gap-2 text-xs font-normal text-foreground-500 dark:text-foreground-400 select-none">
+          ${this.renderToolActionIcon(primaryTool?.toolName)}
+          <span>${actionText}</span>
+          ${firstRunning ? html`<span class="size-1.5 rounded-full bg-amber-500 animate-ping"></span>` : nothing}
+        </div>
+
+        <!-- Pills Row -->
+        <div class="flex flex-wrap items-center gap-1.5 w-full">
+          ${visibleTools.map((t, idx) => {
+            const key = `${messageId}-tool-${idx}`;
+            const isExpanded = this.expandedToolKey === key;
+            const hasDetails = Boolean(t.diff || t.errorText || t.resultText || t.args);
+            const targetName = t.target
+              ? (t.target.includes("/") ? t.target.split("/").pop() || t.target : t.target)
+              : undefined;
+
+            return html`
+              <div class="inline-flex flex-col">
+                <button
+                  type="button"
+                  class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium border border-black/5 dark:border-white/10 bg-black/[0.03] dark:bg-white/[0.06] hover:bg-black/8 dark:hover:bg-white/10 text-foreground-700 dark:text-foreground-300 transition-colors shadow-xs ${hasDetails ? "cursor-pointer" : ""}"
+                  @click=${() => hasDetails && this.toggleToolExpand(key)}
+                  title=${t.target || t.summary || t.toolName}
+                >
+                  <span class="size-1.5 rounded-full ${t.isError ? "bg-red-500" : t.status === "running" ? "bg-amber-500 animate-ping" : "bg-emerald-500"}"></span>
+                  <span class="font-normal truncate max-w-[200px]">@${t.toolName}${targetName ? ` · ${targetName}` : ""}</span>
+                  ${t.diffStats ? html`<span class="text-[10px] font-semibold"><span class="text-emerald-500">+${t.diffStats.added}</span> <span class="text-red-500">-${t.diffStats.removed}</span></span>` : nothing}
+                  ${hasDetails ? html`
+                    <svg class="size-3 text-foreground-400 transition-transform ${isExpanded ? "rotate-180" : ""}" viewBox="0 0 20 20" fill="currentColor">
+                      <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"/>
+                    </svg>
+                  ` : nothing}
+                </button>
+                ${isExpanded ? html`
+                  <div class="mt-1.5 p-2 rounded-xl border border-black/8 dark:border-white/10 bg-black/[0.03] dark:bg-white/[0.04] text-xs space-y-1.5 w-full max-w-full">
+                    ${t.args ? html`
+                      <div>
+                        <span class="text-[10px] uppercase font-semibold text-foreground-400 tracking-wider font-sans block mb-0.5">Parâmetros</span>
+                        <pre class="font-mono text-[11px] whitespace-pre-wrap break-all bg-black/5 dark:bg-white/5 p-1.5 rounded-lg text-foreground-700 dark:text-foreground-300">${typeof t.args === "string" ? t.args : JSON.stringify(t.args, null, 2)}</pre>
+                      </div>
+                    ` : nothing}
+                    ${t.errorText ? html`
+                      <div class="bg-red-500/10 border border-red-500/20 rounded-lg p-2 text-red-600 dark:text-red-400">
+                        <span class="text-[10px] uppercase font-semibold tracking-wider font-sans block mb-0.5">Erro</span>
+                        <pre class="font-mono text-[11px] whitespace-pre-wrap break-all">${t.errorText}</pre>
+                      </div>
+                    ` : nothing}
+                    ${t.diff ? html`
+                      <div class="bg-black/5 dark:bg-white/5 rounded-lg p-2 overflow-x-auto">
+                        <span class="text-[10px] uppercase font-semibold text-foreground-400 tracking-wider font-sans block mb-1">Diff</span>
+                        <pre class="font-mono text-[11px] leading-tight">${this.renderFormattedDiff(t.diff)}</pre>
+                      </div>
+                    ` : nothing}
+                    ${t.resultText && !t.diff && !t.errorText ? html`
+                      <div class="bg-black/5 dark:bg-white/5 rounded-lg p-2 overflow-x-auto max-h-48">
+                        <span class="text-[10px] uppercase font-semibold text-foreground-400 tracking-wider font-sans block mb-0.5">Saída</span>
+                        <pre class="font-mono text-[11px] whitespace-pre-wrap break-all text-foreground-600 dark:text-foreground-400">${t.resultText}</pre>
+                      </div>
+                    ` : nothing}
+                  </div>
                 ` : nothing}
-              </button>
-              ${isExpanded ? html`
-                <div class="mt-1.5 p-2 rounded-xl border border-black/8 dark:border-white/10 bg-black/[0.03] dark:bg-white/[0.04] text-xs space-y-1.5 w-full max-w-full">
-                  ${t.args ? html`
-                    <div>
-                      <span class="text-[10px] uppercase font-semibold text-foreground-400 tracking-wider font-sans block mb-0.5">Parâmetros</span>
-                      <pre class="font-mono text-[11px] whitespace-pre-wrap break-all bg-black/5 dark:bg-white/5 p-1.5 rounded-lg text-foreground-700 dark:text-foreground-300">${typeof t.args === "string" ? t.args : JSON.stringify(t.args, null, 2)}</pre>
-                    </div>
-                  ` : nothing}
-                  ${t.errorText ? html`
-                    <div class="bg-red-500/10 border border-red-500/20 rounded-lg p-2 text-red-600 dark:text-red-400">
-                      <span class="text-[10px] uppercase font-semibold tracking-wider font-sans block mb-0.5">Erro</span>
-                      <pre class="font-mono text-[11px] whitespace-pre-wrap break-all">${t.errorText}</pre>
-                    </div>
-                  ` : nothing}
-                  ${t.diff ? html`
-                    <div class="bg-black/5 dark:bg-white/5 rounded-lg p-2 overflow-x-auto">
-                      <span class="text-[10px] uppercase font-semibold text-foreground-400 tracking-wider font-sans block mb-1">Diff</span>
-                      <pre class="font-mono text-[11px] leading-tight">${this.renderFormattedDiff(t.diff)}</pre>
-                    </div>
-                  ` : nothing}
-                  ${t.resultText && !t.diff && !t.errorText ? html`
-                    <div class="bg-black/5 dark:bg-white/5 rounded-lg p-2 overflow-x-auto max-h-48">
-                      <span class="text-[10px] uppercase font-semibold text-foreground-400 tracking-wider font-sans block mb-0.5">Saída</span>
-                      <pre class="font-mono text-[11px] whitespace-pre-wrap break-all text-foreground-600 dark:text-foreground-400">${t.resultText}</pre>
-                    </div>
-                  ` : nothing}
-                </div>
-              ` : nothing}
-            </div>
-          `;
-        })}
-        <button
-          type="button"
-          class="text-[10px] text-foreground-400 hover:text-foreground-700 dark:hover:text-foreground-200 transition-colors ml-1 cursor-pointer font-sans"
-          title="Mudar visualização para etapas"
-          @click=${() => this.toggleProgressStyle()}
-        >
-          Ver etapas
-        </button>
+              </div>
+            `;
+          })}
+
+          ${!showAll && tools.length > 5 ? html`
+            <button
+              type="button"
+              class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium border border-black/5 dark:border-white/10 bg-black/[0.03] dark:bg-white/[0.06] hover:bg-black/8 dark:hover:bg-white/10 text-foreground-600 dark:text-foreground-300 transition-colors cursor-pointer"
+              @click=${() => this.toggleShowAllTools(messageId)}
+            >+${overflowCount} more</button>
+          ` : nothing}
+
+          <button
+            type="button"
+            class="text-[10px] text-foreground-400 hover:text-foreground-700 dark:hover:text-foreground-200 transition-colors ml-1 cursor-pointer font-sans"
+            title="Mudar visualização para etapas"
+            @click=${() => this.toggleProgressStyle()}
+          >
+            Ver etapas
+          </button>
+        </div>
       </div>
     `;
   }
@@ -416,6 +552,24 @@ export class OmpChatView extends LitElement {
       }
     } else if (lastMsg?.thinking && !lastMsg.text) {
       statusText = "Pensando…";
+    }
+
+    if (this.progressStyle === "minimal") {
+      return html`
+        <div class="flex flex-col gap-1 w-full animate-fade-in my-1 select-none font-sans">
+          <div class="flex items-center gap-2 text-sm font-medium text-foreground-800 dark:text-foreground-200">
+            ${renderDotMatrixIcon("size-4 text-foreground-600 dark:text-foreground-400", true)}
+            <span>Thinking about your request</span>
+          </div>
+          ${lastMsg?.tools && lastMsg.tools.length > 0 ? html`
+            <div class="flex items-center gap-2 text-xs font-normal text-foreground-500 dark:text-foreground-400 ml-0.5">
+              ${this.renderToolActionIcon(lastMsg.tools[lastMsg.tools.length - 1].toolName)}
+              <span>${statusText}</span>
+              <span class="size-1.5 rounded-full bg-amber-500 animate-ping"></span>
+            </div>
+          ` : nothing}
+        </div>
+      `;
     }
 
     return html`

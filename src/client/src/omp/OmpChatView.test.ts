@@ -220,6 +220,67 @@ describe("OmpChatView rendering", () => {
     expect(text).toContain("Copiar resposta");
   });
 
+  it("renders redesigned Grok-style thinking and tool action line in minimal mode", () => {
+    const chatView = new OmpChatView();
+    chatView.progressStyle = "minimal";
+    chatView.messages = [
+      {
+        id: "msg-grok-1",
+        role: "assistant",
+        thinking: "Planejando os passos da pesquisa...",
+        tools: [
+          { toolName: "grep", target: "src/cli.ts", status: "completed" },
+        ],
+        text: "Resposta final.",
+      },
+    ];
+
+    let rendered = chatView.render();
+    let text = getAllTemplateText(rendered);
+    expect(text).toContain("Thinking about your request");
+    expect(text).toContain("Searching on codebase");
+    expect(text).toContain("grep");
+    expect(text).toContain("cli.ts");
+    expect(text).not.toContain("Planejando os passos da pesquisa...");
+
+    // Expand thinking
+    (chatView as any).toggleThinking("msg-grok-1");
+    rendered = chatView.render();
+    text = getAllTemplateText(rendered);
+    expect(text).toContain("Planejando os passos da pesquisa...");
+  });
+
+  it("renders + N more overflow badge in minimal mode when more than 5 tools are present", () => {
+    const chatView = new OmpChatView();
+    chatView.progressStyle = "minimal";
+    chatView.messages = [
+      {
+        id: "msg-tools-overflow",
+        role: "assistant",
+        tools: [
+          { toolName: "read", target: "file1.ts", status: "completed" },
+          { toolName: "read", target: "file2.ts", status: "completed" },
+          { toolName: "read", target: "file3.ts", status: "completed" },
+          { toolName: "read", target: "file4.ts", status: "completed" },
+          { toolName: "read", target: "file5.ts", status: "completed" },
+          { toolName: "read", target: "file6.ts", status: "completed" },
+        ],
+        text: "Pronto.",
+      },
+    ];
+
+    let rendered = chatView.render();
+    let text = getAllTemplateText(rendered);
+    expect(text).toMatch(/\+\s*2\s*more/);
+
+    // Toggle show all tools
+    (chatView as any).toggleShowAllTools("msg-tools-overflow");
+    rendered = chatView.render();
+    text = getAllTemplateText(rendered);
+    expect(text).not.toMatch(/\+\s*2\s*more/);
+    expect(text).toContain("file6.ts");
+  });
+
   it("renders tool inspection details when expanded", () => {
     const chatView = new OmpChatView();
     chatView.messages = [
