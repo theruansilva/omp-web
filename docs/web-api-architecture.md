@@ -1,64 +1,81 @@
 # Arquitetura da Camada Web/API e Frontend (`omp-web`)
 
 ## 1. Ponto de Entrada Principal (Server Entry Point)
-A porta de entrada do servidor web está localizada em `src/server/index.ts`. Ele atua apenas como um inicializador, invocando a função principal `buildApp()` (localizada em `src/server/app.ts`), que constrói a instância do servidor e injeta o limite de upload definido nas configurações.
+A porta de entrada do servidor web está localizada em `src/server/index.ts`. Ele atua como um inicializador executado no runtime **Bun**, invocando a função principal `buildApp()` (localizada em `src/server/app.ts`), que constrói a aplicação e gerencia os serviços de projeto, máquinas, configurações e rotas proxy.
 
 ## 2. Framework Web e Padrão de Roteamento
-- **Framework Utilizado:** O projeto utiliza **Fastify** (`fastify` e `@fastify/websocket`).
-- **Organização das Rotas (Routing Pattern):** O roteamento segue um padrão de "Controladores Modulares Registrados". Na função `buildApp`, as rotas são isoladas por domínio em funções de registro, como por exemplo `registerPiPackageRoutes(app, piPackages)`, `registerMachineRoutes(app, machines)`, e `registerSessionProxyRoutes(app, sessionDaemon)`. Isso mantém o núcleo limpo e isola as regras de negócio de cada módulo.
+- **Framework Utilizado:** O projeto utiliza **Hono** (`hono` e `hono/bun` com `createBunWebSocket`). O runtime servidor é alimentado nativamente por `Bun.serve`.
+- **Organização das Rotas (Routing Pattern):** O roteamento segue o padrão de módulos e controladores registrados no Hono. Na função `buildApp`, as rotas são isoladas por domínio em funções de registro, como:
+  - `registerLocalProjectRoutes(app, ...)`
+  - `registerMachineRoutes(app, machines)`
+  - `registerMachineProxyRoutes(app, machines)`
+  - `registerSessionProxyRoutes(app, sessionDaemon)`
+  - `registerConfigRoutes(app, config)`
+  - `registerPiPackageRoutes(app, piPackages)`
+  - `registerWorkspaceExplorerRoutes(app)`
+  - `registerGitRoutes(app)`
+  - `registerTerminalProxyRoutes(app, ...)`
+  - `registerPushRoutes(app, pushService)`
+  - `registerMcpRoutes(app)`
+  - `registerUsageRoutes(app)`
 
 ## 3. Comunicação entre Cliente e API
-A comunicação do frontend com o backend é híbrida, operando de duas formas fundamentais:
-- **REST (HTTP):** Utilizado para todo o controle de estado assíncrono, buscas, CRUDs e comandos de disparo único (como criar projeto, listar máquinas, ler configurações).
-- **WebSockets (WS/WSS):** Utilizado para telemetria contínua e eventos de alto tráfego. O cliente utiliza uma classe chamada `RealtimeSocket` (`src/client/src/sessionSocket.ts`) para se conectar ao `/api/events` e aos streams de terminais interativos, que o backend Fastify então repassa (proxies) para o `sessiond`.
+A comunicação do frontend com o backend opera de forma híbrida:
+- **REST (HTTP):** Endpoints JSON para controle de estado assíncrono, buscas, CRUDs e comandos de disparo único (como projetos, arquivos, configurações, máquinas, git e uso de tokens).
+- **WebSockets (WS/WSS):** Gerenciados via `createBunWebSocket()` do Hono para telemetria contínua, stream de eventos em tempo real (`/api/events`), shells interativos e multiplexação de mensagens bidirecionais.
 
-## 4. Exemplos de Endpoints CRUD Existentes
-O padrão de CRUD é muito claro no arquivo `src/server/app.ts`, dentro da função `registerLocalProjectRoutes`. Ele serve como a referência ideal de arquitetura para novas rotas:
+## 4. Padrões de Endpoints CRUD e Handlers Hono
+O padrão de rotas no Hono utiliza handlers tipados no `app` (`src/server/app.ts`):
 
-- **Listar (GET):** `app.get('${prefix}/projects', async () => projects.list());`
-- **Criar (POST):** 
+- **Listar (GET):**
   ```typescript
-  app.post<{ Body: { name?: string; path: string; create?: boolean } }>(`${prefix}/projects`, async (request, reply) => {
+  app.get(`${prefix}/projects`, async (c) => {
+    return c.json(await projects.list());
+  });
+  ```
+- **Criar (POST):**
+  ```typescript
+  app.post(`${prefix}/projects`, async (c) => {
     try {
-      return await projects.add(request.body);
+      const body = await c.req.json();
+      return c.json(await projects.add(body));
     } catch (error) {
-      return reply.code(400).send({ error: error.message });
+      return c.json({ error: (error as Error).message }, 400);
     }
   });
   ```
-- **Deletar (DELETE):** 
+- **Deletar (DELETE):**
   ```typescript
-  app.delete<{ Params: { projectId: string } }>(`${prefix}/projects/:projectId`, ... )
+  app.delete(`${prefix}/projects/:projectId`, async (c) => {
+    const projectId = c.req.param("projectId");
+    await projects.delete(projectId);
+    return c.json({ ok: true });
+  });
   ```
-- *Nota:* Erros são padronizados capturando a exception e devolvendo `HTTP 400` ou `404` com um objeto de formato `{ error: string }`.
+- *Tratamento de Erros:* Erros retornam status HTTP apropriado (`400`, `404`, `500`) com payload padronizado `{ error: string }`.
 
 ## 5. Padrões de Interface (UI) do Cliente
-A análise de `src/client/src/components/OmpWebApp.ts` (e o `package.json` anterior) revela que a interface **não** usa React, Vue ou Svelte.
+A interface frontend é construída como uma SPA reativa e modular:
 
-- **Framework Frontend:** A biblioteca escolhida é o **Lit** (Web Components).
-- **Sintaxe e Estado:** Os arquivos usam a API padrão do Lit com decoradores como `@customElement("omp-web-app")`, `@state()`, `@query()`, e montam o DOM utilizando *Template Literals* etiquetados com `html`.
-- **Organização de Estado:** O estado global da aplicação é controlado por uma árvore de "Controllers" injetados na classe principal (como `SessionController`, `WorkspaceController`, `MachineController`), que emitem atualizações de re-renderização quando mudam (`this.setState(patch)`).
+- **Framework Frontend:** **Lit** (Web Components) compilado via Vite.
+- **Renderização e Estilização:** 
+  - RenderRoot em **Light DOM** (`createRenderRoot() { return this; }`) para integração com utilitários Tailwind CSS, variáveis de tema OKLCH e design tokens dinâmicos.
+  - Componentes com geometria squircle (`clip-path: var(--clip-path-squircle-28, none)`) e paletas adaptativas dark/light.
+- **Organização de Estado:** A aplicação orquestra seu ciclo de vida em `OmpWebApp.ts` e `OmpApp.ts`, integrando serviços e controladores de sessão, terminal, exploração de arquivos, uso e configurações.
 
 ## 6. Autenticação e Camada de Segurança (Security Middleware & Authentication)
+A camada de segurança é centralizada no middleware em `src/server/security.ts` (`createSecurityMiddleware`).
 
-A partir da versão v2.3.0, o servidor implementa autenticação obrigatória por padrão via token e cookies HttpOnly através do middleware em `src/server/security.ts` (`createSecurityMiddleware`).
-
-### Funcionamento / How it Works
+### Funcionamento
 1. **Token Automático (Automatic Token)**:
    - Na inicialização (`src/server/index.ts`), o token é lido de `OMP_WEB_AUTH_TOKEN`, da chave `authToken` na configuração, ou gerado automaticamente em `~/.omp-web/auth-token` (com permissões `0600`).
-   - *On startup, the token is loaded from `OMP_WEB_AUTH_TOKEN`, config `authToken`, or auto-generated at `~/.omp-web/auth-token` (mode `0600`).*
-
-2. **Fluxo de Acesso no Navegador (Browser Access Flow)**:
-   - O usuário pode acessar diretamente via link com query param: `http://127.0.0.1:8504?token=<token>`. O middleware valida e emite automaticamente o cookie `omp_web_token` (`HttpOnly; SameSite=Lax`).
-   - Se o acesso for sem token, uma tela responsiva de Unlock é retornada (`renderLoginPage()`), permitindo enviar o token via `POST /api/omp-web/auth`.
-   - *Users can open `http://127.0.0.1:8504?token=<token>` which issues the `omp_web_token` cookie. Requests without token render a standalone Unlock page that posts to `/api/omp-web/auth`.*
-
-3. **Chamadas de API e WebSockets (API & WebSockets)**:
+2. **Fluxo de Acesso no Navegador**:
+   - Acesso via link com query param: `http://127.0.0.1:8504?token=<token>`. O middleware valida e emite automaticamente o cookie `omp_web_token` (`HttpOnly; SameSite=Lax`).
+   - Se o acesso for sem token, uma tela standalone de Unlock é retornada (`renderLoginPage()`), permitindo autenticar via `POST /api/omp-web/auth`.
+3. **Chamadas de API e WebSockets**:
    - Requisições para `/api/*` e upgrades de WebSocket exigem autenticação via header `Authorization: Bearer <token>`, cookie `omp_web_token` ou query param `?token=<token>`.
    - Comparação segura contra timing attacks (`safeTokenCompare` com `crypto.timingSafeEqual`).
    - Rotas isentas: `/health`, `/runtime`, `/api/omp-web/status`, `/api/omp-web/version`, `/api/omp-web/runtime`, `/api/omp-web/auth`, e `/omp-web-plugins/*`.
-   - *API calls and WebSocket connections must supply `Authorization: Bearer <token>`, the cookie, or `?token=<token>`. Timing-safe comparison prevents side-channel attacks.*
-
-4. **Configuração e Desativação (Configuration & Disabling)**:
+4. **Configuração e Desativação**:
    - Variáveis de ambiente: `OMP_WEB_AUTH_REQUIRED=0|1|false|true`, `OMP_WEB_AUTH_TOKEN=<secret>`.
    - Chaves no config (`~/.config/omp-web/config.json`): `"authRequired": false`, `"authToken": "..."`.

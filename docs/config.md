@@ -1,19 +1,19 @@
-# PI WEB configuration reference
+# OMP WEB configuration reference
 
-PI WEB configuration covers the machine-local and project-local settings you usually need: the web/API bind address, trusted development-host settings, UI preferences, plugin enablement, file-explorer path access, manual upload defaults, upload limits, and session-daemon tools.
+OMP WEB configuration covers the machine-local and project-local settings you usually need: the web/API bind address, trusted development-host settings, UI preferences, plugin enablement, file-explorer path access, manual upload defaults, upload limits, and session-daemon tools.
 
 This file is the markdown reference for agents and package consumers. The website page is <https://omp-web.dev/config>.
 
 ## Config files
 
-PI WEB uses two config files:
+OMP WEB uses two config files:
 
-- **Global PI WEB config:** `$OMP_WEB_CONFIG`, or `$XDG_CONFIG_HOME/omp-web/config.json`, or `~/.config/omp-web/config.json`.
-- **Project-local PI WEB config:** `<project>/.omp-web/config.json` for commit-able project settings.
+- **Global OMP WEB config:** `$OMP_WEB_CONFIG`, or `$XDG_CONFIG_HOME/omp-web/config.json`, or `~/.config/omp-web/config.json`.
+- **Project-local OMP WEB config:** `<project>/.omp-web/config.json` for commit-able project settings.
 
-Each PI WEB machine has its own config. When using Fleet/machine federation, Settings uses the selected machine for config that affects work running there: session daemon tools, PI WEB plugin enablement, external path access, and upload defaults. Gateway/browser-only settings stay local to the gateway: Vim mode defaults, keyboard shortcuts, remote machine registry/tokens, and gateway host/port/allowed-hosts. Remote servers that do not advertise selected-machine settings support report those settings as unavailable instead of silently falling back to the gateway.
+Each OMP WEB machine has its own config. When using Fleet/machine federation, Settings uses the selected machine for config that affects work running there: session daemon tools, OMP WEB plugin enablement, external path access, and upload defaults. Gateway/browser-only settings stay local to the gateway: Vim mode defaults, keyboard shortcuts, remote machine registry/tokens, and gateway host/port/allowed-hosts. Remote servers that do not advertise selected-machine settings support report those settings as unavailable instead of silently falling back to the gateway.
 
-Pi package settings are separate from PI WEB config. They live in Pi's package-manager settings on the target machine and are managed by Pi (`pi install`, `pi remove`, `pi update`) or **Settings → Pi packages**. In a federated setup, **Settings → Pi packages** targets the currently selected machine. The PI WEB `plugins` config key only enables or disables discovered PI WEB browser plugins on the machine whose config you are editing; it does not install, remove, or update Pi packages.
+Pi package settings are separate from OMP WEB config. They live in Pi's package-manager settings on the target machine and are managed by Pi (`pi install`, `pi remove`, `pi update`) or **Settings → Pi packages**. In a federated setup, **Settings → Pi packages** targets the currently selected machine. The OMP WEB `plugins` config key only enables or disables discovered OMP WEB browser plugins on the machine whose config you are editing; it does not install, remove, or update Pi packages.
 
 If you installed services with a custom config path, rerun `omp-web install --config /path/to/config.json` after changing that path or after upgrading from a version that only applied the custom path to the web service. This regenerates service files so the web/API and session daemon use the same `OMP_WEB_CONFIG`.
 
@@ -38,8 +38,8 @@ Process restarts depend on the key:
 - `spawnSessions` / `subsessions`: restart the session daemon on that machine.
 - `pathAccess`: applies on the next request; existing file views may need a browser refresh.
 - `uploads.defaultFolder`: applies to newly opened Files upload dialogs and new direct drag/drop batches after config/workspace refresh.
-- `plugins`: reload the browser tab after changing PI WEB plugin enablement.
-- Pi package install/remove/update: not a PI WEB config key; after a mutation, type `/reload` in each idle PI WEB session on the target machine to refresh Pi runtime resources such as extensions, skills, prompt templates, themes, and context/system prompt files as supported by Pi. Reload the browser page separately for PI WEB browser plugin changes. A routine session daemon restart is not required.
+- `plugins`: reload the browser tab after changing OMP WEB plugin enablement.
+- Pi package install/remove/update: not a OMP WEB config key; after a mutation, type `/reload` in each idle OMP WEB session on the target machine to refresh Pi runtime resources such as extensions, skills, prompt templates, themes, and context/system prompt files as supported by Pi. Reload the browser page separately for OMP WEB browser plugin changes. A routine session daemon restart is not required.
 - `shortcuts`: saved settings apply in the browser after config refresh/save.
 - `vimMode`: applies after config refresh; a saved browser preference overrides it.
 
@@ -90,7 +90,7 @@ Project-local config lives at `<project>/.omp-web/config.json`. Use it for setti
 
 Project-local `pathAccess.allowedPaths` entries are merged after the global list and deduplicated. Paths must still be host-absolute or `~`-prefixed; relative roots are not supported.
 
-Project-local `uploads.defaultFolder` overrides the global upload destination for workspaces in that project. Current PI WEB servers include this workspace-effective value on the existing workspace responses used locally and through machine federation. Older remote servers may omit the optional field; the browser falls back to the global/default upload folder.
+Project-local `uploads.defaultFolder` overrides the global upload destination for workspaces in that project. Current OMP WEB servers include this workspace-effective value on the existing workspace responses used locally and through machine federation. Older remote servers may omit the optional field; the browser falls back to the global/default upload folder.
 
 Plugins may own separate project files, such as `.omp-web/tasks.json` for the built-in Workspace Tasks plugin.
 
@@ -133,11 +133,11 @@ Rows with JSON key `—` are runtime-only environment variables, not config-file
 
 ### Authentication (token and unlock)
 
-Starting with v2.3.0, PI WEB enforces token authentication by default for the web interface, WebSocket event streams, and REST API endpoints.
+Starting with v2.3.0, OMP WEB enforces token authentication by default for the web interface, WebSocket event streams, and REST API endpoints.
 
-- **Default token generation**: If no custom token is configured, PI WEB automatically generates a cryptographically secure 32-byte hex token and stores it at `~/.omp-web/auth-token` with restricted `0600` permissions.
+- **Default token generation**: If no custom token is configured, OMP WEB automatically generates a cryptographically secure 32-byte hex token and stores it at `~/.omp-web/auth-token` with restricted `0600` permissions.
 - **Viewing the token**: Read the file directly (`cat ~/.omp-web/auth-token`) or check the server startup logs (`omp-web logs`), which output the full URL: `http://127.0.0.1:8504?token=<token>`.
-- **Browser access & unlock**: Navigating to `http://127.0.0.1:8504?token=<token>` validates the token and sets a secure `HttpOnly`, `SameSite=Lax` cookie (`omp_web_token`). If you navigate to the URL without a token or cookie, PI WEB displays a standalone Unlock screen where you can submit the token.
+- **Browser access & unlock**: Navigating to `http://127.0.0.1:8504?token=<token>` validates the token and sets a secure `HttpOnly`, `SameSite=Lax` cookie (`omp_web_token`). If you navigate to the URL without a token or cookie, OMP WEB displays a standalone Unlock screen where you can submit the token.
 - **API & WebSocket authentication**: Include the header `Authorization: Bearer <token>`, the `omp_web_token` cookie, or pass the query parameter `?token=<token>`.
 - **Custom token**: Configure `"authToken": "<secret>"` in your global config file or export `OMP_WEB_AUTH_TOKEN="<secret>"`.
 - **Disabling authentication**: Set `"authRequired": false` in `~/.config/omp-web/config.json` or export `OMP_WEB_AUTH_REQUIRED=0` (or `"false"`). Only disable authentication if your instance is protected by an external VPN, firewall, or authenticated reverse proxy.
@@ -156,9 +156,9 @@ Users can still enable or disable Vim keybindings in **Settings → General**. T
 
 ### External path access
 
-`pathAccess.allowedPaths` grants PI WEB's file explorer and absolute `@` path completions access to specific filesystem roots outside the current workspace.
+`pathAccess.allowedPaths` grants OMP WEB's file explorer and absolute `@` path completions access to specific filesystem roots outside the current workspace.
 
-By default, workspace-relative file reads stay inside the workspace and absolute paths are denied. Add only roots you trust PI WEB to list and read through the browser UI.
+By default, workspace-relative file reads stay inside the workspace and absolute paths are denied. Add only roots you trust OMP WEB to list and read through the browser UI.
 
 Accepted root forms:
 
@@ -166,11 +166,11 @@ Accepted root forms:
 - Home-relative paths: `~/SDKs`
 - Windows absolute paths on Windows hosts: `C:\Users\dev\SDKs`
 
-When an absolute request is served, PI WEB expands `~`, canonicalizes the configured roots with `realpath`, requires roots to be existing directories, and rejects symlink escapes outside the allowed roots.
+When an absolute request is served, OMP WEB expands `~`, canonicalizes the configured roots with `realpath`, requires roots to be existing directories, and rejects symlink escapes outside the allowed roots.
 
 In **Settings → General**, external filesystem roots are saved on the selected machine. Gateway host, port, and allowed-hosts fields stay on the gateway config.
 
-This is not a sandbox for the underlying Pi Coding Agent or your OS user. It only controls PI WEB UI/API file exposure outside a workspace.
+This is not a sandbox for the underlying Pi Coding Agent or your OS user. It only controls OMP WEB UI/API file exposure outside a workspace.
 
 ### Manual upload defaults
 
@@ -189,17 +189,17 @@ The Files panel can upload one or more files in two ways:
 }
 ```
 
-The value must be a non-empty workspace-relative folder. PI WEB normalizes repeated separators and backslashes to `/`, and rejects absolute paths or `..` traversal. In the upload dialog only, clearing the destination field uploads that batch to the workspace root.
+The value must be a non-empty workspace-relative folder. OMP WEB normalizes repeated separators and backslashes to `/`, and rejects absolute paths or `..` traversal. In the upload dialog only, clearing the destination field uploads that batch to the workspace root.
 
 Manual uploads use the workspace file-write path: paths stay workspace-relative, parent folder creation is enabled by default, and overwrite is disabled by default. Direct drag/drop always keeps `overwrite` off; the review dialog lets you explicitly enable overwrite when needed. Browser-owned XHR progress is shown per batch/file, conflicts and errors stay visible in the upload progress UI, and the final file-write response is the source of truth.
 
-For machine federation, Settings saves the global upload default on the selected machine. Current remote PI WEB servers also return `workspace.effectiveConfig.uploads.defaultFolder` on the existing workspace-list response. Older remote servers can omit that optional field without breaking clients; the Files panel falls back to the global/default upload folder.
+For machine federation, Settings saves the global upload default on the selected machine. Current remote OMP WEB servers also return `workspace.effectiveConfig.uploads.defaultFolder` on the existing workspace-list response. Older remote servers can omit that optional field without breaking clients; the Files panel falls back to the global/default upload folder.
 
 The per-request size limit is still controlled by `maxUploadBytes` / `OMP_WEB_MAX_UPLOAD_BYTES` on the machine serving the upload.
 
 ### Session daemon tools
 
-`spawnSessions` controls whether agents receive the `spawn_session` tool. It defaults to `true`; set it to `false` if you do not want an agent to start independent PI WEB sessions.
+`spawnSessions` controls whether agents receive the `spawn_session` tool. It defaults to `true`; set it to `false` if you do not want an agent to start independent OMP WEB sessions.
 
 `subsessions` is beta and controls whether agents receive the tracked-subsession tools: `spawn_subsession`, `list_subsessions`, `check_subsession`, and `read_subsession`. It defaults to `false` and also requires `spawnSessions` to be enabled.
 
@@ -209,7 +209,7 @@ In **Settings → Session daemon**, these keys are saved on the selected machine
 
 ### Plugin config
 
-The `plugins` key is only for PI WEB browser plugin enablement/settings on the machine whose config you are editing. It does not install, remove, or update Pi packages; use **Settings → Pi packages** or Pi's package manager for package operations. In a federated setup, **Settings → PI WEB plugins** and **Settings → Pi packages** both target the currently selected machine, and each panel labels where changes will be saved or run.
+The `plugins` key is only for OMP WEB browser plugin enablement/settings on the machine whose config you are editing. It does not install, remove, or update Pi packages; use **Settings → Pi packages** or Pi's package manager for package operations. In a federated setup, **Settings → OMP WEB plugins** and **Settings → Pi packages** both target the currently selected machine, and each panel labels where changes will be saved or run.
 
 Plugins are enabled by default. Set `plugins.<id>.enabled` to `false` to remove a plugin from that machine's `/omp-web-plugins/manifest.json` before the browser imports it. Settings lists discovered plugins from the selected machine, including disabled entries exposed by that machine.
 
@@ -238,4 +238,4 @@ Prefer Settings → Keyboard for editing shortcuts interactively.
 
 ## Optional completion tools
 
-File and path `@` completions work without extra tools. If `fzf` is available on the PI WEB server's `PATH`, PI WEB uses it to improve completion filtering/ranking; otherwise it falls back to built-in ranking.
+File and path `@` completions work without extra tools. If `fzf` is available on the OMP WEB server's `PATH`, OMP WEB uses it to improve completion filtering/ranking; otherwise it falls back to built-in ranking.

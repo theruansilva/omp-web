@@ -1,11 +1,11 @@
-# PI WEB Docker (beta)
+# OMP WEB Docker (beta)
 
 This Docker setup is beta. It is useful for trusted local/server testing and development, but it may still have rough edges and is intentionally documented only here for now.
 
-PI WEB has two Docker modes:
+OMP WEB has two Docker modes:
 
 - **Runtime/server mode** builds a local image from npm registry packages and runs split `sessiond` + `web` services. This is for users and servers.
-- **Development mode** builds from this checkout and runs the same split shape while letting the web/API/client services autoreload. This is for hacking on PI WEB.
+- **Development mode** builds from this checkout and runs the same split shape while letting the web/API/client services autoreload. This is for hacking on OMP WEB.
 
 No prebuilt image or registry is required in either mode. The single human-facing Docker entrypoint is `omp-web-docker`: runtime mode is the default, and development mode is explicit with `--dev`.
 
@@ -13,15 +13,15 @@ No prebuilt image or registry is required in either mode. The single human-facin
 
 The Docker setup is for trusted single-user or trusted-admin environments. It is not a sandbox and it is not suitable for untrusted multi-tenant use.
 
-By design, the runtime containers get deliberate host access so PI WEB agents can work on real host paths:
+By design, the runtime containers get deliberate host access so OMP WEB agents can work on real host paths:
 
 - `/var/run/docker.sock` is mounted into the containers. The Docker socket is root-equivalent on the Docker host.
 - On native Linux Docker Engine, existing `/home`, `/srv`, and `/opt` paths are mounted read/write, `/` is mounted read-only at `/host` for inspection, and `hostexec` can run explicit commands in the Linux host namespaces.
 - On Docker Desktop for Mac, existing `/Users`, `/Volumes`, and `/private` paths are mounted read/write. `hostexec` is disabled because Docker Desktop containers run inside a Linux VM and cannot enter native macOS namespaces.
 
-Only install this on machines where the PI WEB user, the selected workspaces, and the browser/API clients are trusted. Review scripts before piping them to `sh` if you do not already trust this repository.
+Only install this on machines where the OMP WEB user, the selected workspaces, and the browser/API clients are trusted. Review scripts before piping them to `sh` if you do not already trust this repository.
 
-The web port is bound to `127.0.0.1` by default. Do **not** expose PI WEB directly to the public internet. For remote access, use one of:
+The web port is bound to `127.0.0.1` by default. Do **not** expose OMP WEB directly to the public internet. For remote access, use one of:
 
 - an SSH tunnel;
 - a VPN/private network address such as Tailscale, NetBird, or WireGuard;
@@ -40,7 +40,7 @@ Prerequisites:
 
 The installer fails closed on unknown or unsupported Docker setups, such as remote Docker contexts, `DOCKER_HOST` overrides outside the supported local Unix socket, rootless/alternate Linux sockets, Docker Desktop for Linux, Colima, or OrbStack. It prints the detected host OS, Docker context, endpoint, `DOCKER_HOST`, socket source, and Docker OS before exiting, and it does not recreate services.
 
-The Docker bootstrap does not require Bun or Node.js on the host. It only needs a supported Docker/Compose setup plus `curl` or `wget`; Bun and PI WEB are installed inside the local Docker image.
+The Docker bootstrap does not require Bun or Node.js on the host. It only needs a supported Docker/Compose setup plus `curl` or `wget`; Bun and OMP WEB are installed inside the local Docker image.
 
 Install with the bootstrap one-liner:
 
@@ -57,13 +57,13 @@ Defaults:
 - browser URL: <http://127.0.0.1:8504>;
 - packages: latest `@theruansilva/omp-web` and latest Pi Coding Agent package unless pinned.
 
-Updating recreates the Docker `sessiond` container. Active Pi agent runtimes in this Docker install may stop, so update while sessions are idle. Persisted PI WEB state, Pi config, and session history under the data directory are kept.
+Updating recreates the Docker `sessiond` container. Active Pi agent runtimes in this Docker install may stop, so update while sessions are idle. Persisted OMP WEB state, Pi config, and session history under the data directory are kept.
 
-Inside the Docker runtime, the Updates panel uses `omp-web-docker` for status, update, and restart commands. Update and restart commands first start a detached helper container with the same Docker/host mounts and generated Compose environment, including the project name, ports/data paths, helper image, and generated UID/GID/Docker group. The helper then runs Docker Compose, so work continues even when `web`, `sessiond`, or the PI WEB terminal that launched the command exits.
+Inside the Docker runtime, the Updates panel uses `omp-web-docker` for status, update, and restart commands. Update and restart commands first start a detached helper container with the same Docker/host mounts and generated Compose environment, including the project name, ports/data paths, helper image, and generated UID/GID/Docker group. The helper then runs Docker Compose, so work continues even when `web`, `sessiond`, or the OMP WEB terminal that launched the command exits.
 
 ### Command matrix
 
-From a production/runtime install directory, run `./omp-web-docker <command>`. From a checkout, run `./docker/omp-web-docker --dev <command>` for development mode. Inside PI WEB Docker containers and in the Updates panel, the command name is `omp-web-docker`; development commands include the explicit `--dev` flag, for example `omp-web-docker --dev status`.
+From a production/runtime install directory, run `./omp-web-docker <command>`. From a checkout, run `./docker/omp-web-docker --dev <command>` for development mode. Inside OMP WEB Docker containers and in the Updates panel, the command name is `omp-web-docker`; development commands include the explicit `--dev` flag, for example `omp-web-docker --dev status`.
 
 | Command | Runtime/default | Development | Notes |
 | --- | --- | --- | --- |
@@ -80,7 +80,7 @@ From a production/runtime install directory, run `./omp-web-docker <command>`. F
 | `doctor` | `./omp-web-docker doctor` | `./docker/omp-web-docker --dev doctor` | Prints static Docker command diagnostics and generated asset paths. |
 | `cli` | `./omp-web-docker cli <omp-web args...>` | `./docker/omp-web-docker --dev cli <omp-web args...>` | Proxies the existing `omp-web` CLI in the `web` container. |
 
-Do not run `docker compose down -v` unless you intentionally want to remove Compose-managed volumes. The default persistent PI WEB data is a bind mount, but avoiding `-v` keeps the update/stop flow conservative.
+Do not run `docker compose down -v` unless you intentionally want to remove Compose-managed volumes. The default persistent OMP WEB data is a bind mount, but avoiding `-v` keeps the update/stop flow conservative.
 
 ### Installer options
 
@@ -138,7 +138,7 @@ You can also pass installer flags such as `--opensuse-image`, `--nodejs-major`, 
 
 ### Custom image hooks
 
-The runtime image can be extended without changing PI WEB's Dockerfile. Put local Bash scripts ending in `.sh` under:
+The runtime image can be extended without changing OMP WEB's Dockerfile. Put local Bash scripts ending in `.sh` under:
 
 ```text
 ~/.local/share/omp-web-docker/custom-image.d/
@@ -219,11 +219,11 @@ If you use a reverse proxy, keep the container bound to localhost or a private a
 
 ## `hostexec` examples
 
-`hostexec [--root] <command...>` is the native Linux host command bridge provided by this Docker setup. It is enabled only for the `linux-native-docker` profile and intentionally does not abstract package managers or detect distributions. By default, commands run as the same numeric user/group as the PI WEB container. Use `--root` only for administrative host commands.
+`hostexec [--root] <command...>` is the native Linux host command bridge provided by this Docker setup. It is enabled only for the `linux-native-docker` profile and intentionally does not abstract package managers or detect distributions. By default, commands run as the same numeric user/group as the OMP WEB container. Use `--root` only for administrative host commands.
 
 On Docker Desktop for Mac, `hostexec` exits with a clear disabled message because the Docker daemon and containers run inside a Linux VM, not in native macOS namespaces. Docker CLI and Docker Compose commands still work through the mounted Docker socket.
 
-Run it from a PI WEB session, a PI WEB terminal, or by execing into the runtime container on native Linux:
+Run it from a OMP WEB session, a OMP WEB terminal, or by execing into the runtime container on native Linux:
 
 ```bash
 hostexec uname -a
@@ -244,7 +244,7 @@ On native Linux, `hostexec` starts a temporary privileged helper container throu
 
 ## Development Docker setup
 
-Use this mode when developing PI WEB from this checkout. It bind-mounts the source tree, keeps dependencies in a Docker volume, stores PI WEB/Pi data in the same host data directory as runtime mode by default, and preserves the split runtime model:
+Use this mode when developing OMP WEB from this checkout. It bind-mounts the source tree, keeps dependencies in a Docker volume, stores OMP WEB/Pi data in the same host data directory as runtime mode by default, and preserves the split runtime model:
 
 - `sessiond` runs `bun run start:sessiond` as the long-lived owner of Pi agent runtimes;
 - `web` runs `bun run dev:web` and `bun run dev:client` so API, plugin, and Vite changes can autoreload without restarting `sessiond`.
@@ -304,7 +304,7 @@ Useful development commands:
 ./docker/omp-web-docker --dev stop
 ```
 
-Restart `sessiond` manually after changes that affect `src/server/sessiond.ts`, daemon ownership, or session-daemon-only code paths. Restarting only `web` is enough for ordinary API/client/plugin development reloads. Commands launched from the Updates panel use the same detached `omp-web-docker` helper as runtime mode, so update/restart work continues after the current PI WEB terminal or container exits. In both modes detached helpers load the generated Docker env and run as the generated `OMP_WEB_UID:OMP_WEB_GID` with the generated Docker group; development helpers still refuse UID 0 unless `--allow-root` is explicit.
+Restart `sessiond` manually after changes that affect `src/server/sessiond.ts`, daemon ownership, or session-daemon-only code paths. Restarting only `web` is enough for ordinary API/client/plugin development reloads. Commands launched from the Updates panel use the same detached `omp-web-docker` helper as runtime mode, so update/restart work continues after the current OMP WEB terminal or container exits. In both modes detached helpers load the generated Docker env and run as the generated `OMP_WEB_UID:OMP_WEB_GID` with the generated Docker group; development helpers still refuse UID 0 unless `--allow-root` is explicit.
 
 The dev setup intentionally has the same Docker socket and profile-specific host mounts as the runtime setup. The same trust warnings apply. The command refuses to run development mode as UID 0, or to generate a dev env with `OMP_WEB_UID=0`, unless you pass `--allow-root`; use that override only when root-owned checkout writes are intentional.
 
@@ -328,7 +328,7 @@ Set `OMP_WEB_DOCKER_DATA_DIR=/some/path` for both modes if you want that shared 
 
 Use this shared directory to switch between runtime and dev mode, not to run both at the same time. Stop one Compose stack before starting the other so two session daemons do not share the same socket/state directory concurrently.
 
-For sessions to appear under the same workspace in both modes, use the same project path in PI WEB. On Linux, prefer host-mounted paths such as `/home/core/<repo>`, `/srv/<project>`, or `/opt/<project>`. On Mac, prefer paths under `/Users/<you>/...`. The dev container also exposes this checkout as `/workspace` so the PI WEB dev server can run from it, but sessions started against `/workspace` are organized under that different working-directory path and will not line up with runtime sessions for the host-mounted path.
+For sessions to appear under the same workspace in both modes, use the same project path in OMP WEB. On Linux, prefer host-mounted paths such as `/home/core/<repo>`, `/srv/<project>`, or `/opt/<project>`. On Mac, prefer paths under `/Users/<you>/...`. The dev container also exposes this checkout as `/workspace` so the OMP WEB dev server can run from it, but sessions started against `/workspace` are organized under that different working-directory path and will not line up with runtime sessions for the host-mounted path.
 
 When `package-lock.json` changes, rebuild the dev image and recreate the `node_modules` volume so the bind-mounted checkout sees the new dependency tree:
 

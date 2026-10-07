@@ -1,29 +1,34 @@
 # Arquitetura do Session Daemon (`sessiond`)
 
 ## 1. Ponto de Entrada (Entry Point) e Modelo de Processo
-O daemon de sessões é uma aplicação isolada baseada no framework `Fastify` com suporte a WebSockets (`@fastify/websocket`). 
+O daemon de sessões é um serviço isolado em background construído com **Hono** e WebSocket nativo do **Bun** (`hono/bun` com `createBunWebSocket`).
 - **Entry Point:** O arquivo principal é o `src/server/sessiond.ts`.
-- **Como inicia:** Ele é invocado pelo Bun no terminal via script do `package.json` (`bun src/server/sessiond.ts`). Na máquina do usuário local, o serviço é comumente encapsulado em um serviço systemd de usuário chamado `omp-web-sessiond.service`.
-- **Motivo do Isolamento:** Manter os processos do `sessiond` isolados do servidor web/API e Vite UI (`omp-web-ui-dev.service`). Isso garante que os reloads automáticos da UI (hot-reload) durante o desenvolvimento e quedas de conexão não afetem as sessões do Pi que estejam rodando em background.
+- **Como inicia:** Ele é invocado pelo Bun no terminal (`bun src/server/sessiond.ts`) ou como serviço gerenciado pelo systemd do usuário (`omp-web-sessiond.service`).
+- **Motivo do Isolamento:** Manter os runtimes das sessões de agentes de IA desacoplados do servidor HTTP da interface web (`omp-web.service` / Vite UI). Quedas de conexão, reloads de interface ou atualizações na camada web não afetam as execuções e tarefas em background.
 
 ## 2. Mecanismo de Comunicação IPC (Inter-process Communication)
-Como a interface UI/Web roda em um processo diferente do `sessiond`, há uma camada de proxy para conectá-los:
-- O processo Web/API intercepta requisições nos caminhos `/api/activity`, `/api/auth`, `/api/sessions` (e seus eventos WebSocket) via roteador em `src/server/sessiond/sessionProxyRoutes.ts`.
-- O repasse ocorre usando um cliente HTTP/WS (`SessionDaemonClient` em `src/sessiond/sessionDaemonClient.ts`).
-- A comunicação de rede local é feita através de um **Unix Domain Socket** (o padrão é `~/.omp-web/sessiond.sock`) ou usando uma porta HTTP TCP normal, caso seja definida pela variável de ambiente `OMP_WEB_SESSIOND_PORT`.
+Como a interface web e o `sessiond` rodam em processos separados:
+- O processo Web/API atua como proxy para requisições em `/api/activity`, `/api/auth`, `/api/sessions`, `/api/terminals`, `/api/schedule-prompt` (e seus eventos WebSocket) via roteador em `src/server/sessiond/sessionProxyRoutes.ts`.
+- O repasse ocorre usando `SessionDaemonClient` (`src/sessiond/sessionDaemonClient.ts`).
+- A comunicação local padrão é feita via **Unix Domain Socket** (`~/.omp-web/sessiond.sock`) ou porta TCP se `OMP_WEB_SESSIOND_PORT` for definida.
 
-## 3. Hooks de Ciclo de Vida (Lifecycle)
-Em `src/server/sessiond.ts`, o daemon escuta pelos sinais do sistema `SIGINT` e `SIGTERM`. Quando chamados, invocam a função assíncrona `shutdown(signal)`, que se encarrega de realizar o _dispose_ gradativo e limpo nos serviços internos: terminais (`terminals.dispose()`), autenticação (`auth.dispose()`), das sessões ativas (`sessions.dispose()`), e encerra ordenadamente o servidor HTTP Fastify.
+## 3. Hooks de Ciclo de Vida e Process Reaper
+Em `src/server/sessiond.ts`, o daemon escuta os sinais do sistema `SIGINT` e `SIGTERM`:
+- Invoca a função assíncrona de shutdown para realizar o encerramento ordenado dos serviços (`terminals`, `auth`, `sessions`, `workspaceActivity`, socket).
+- **Process Reaper (`src/server/sessions/processReaper.ts`):** Na inicialização e no ciclo de vida, o sessiond executa a limpeza de processos órfãos (`reapOrphanProcesses`), garantindo que processos filhos de ferramentas anteriores não permaneçam consumindo recursos da máquina.
 
-## 4. Padrões de Tarefas Periódicas (Scheduled / Periodic Tasks)
-Foram mapeadas as seguintes rotinas periódicas na runtime do daemon:
-- No `PiSessionService` (`src/server/sessions/piSessionService.ts`), há um `setInterval` atachado ao loop principal que dispara `publishHeartbeats()` continuamente a cada **2000 milissegundos**, informando a integridade das sessões ativas via WebSocket.
-- No serviço de fluxo de login (`src/server/sessions/oauthLoginFlowService.ts`), utiliza-se o padrão de `setTimeout` funcionando como TTLs (Time-To-Live) baseados nas variáveis `runningTtlMs` e `terminalTtlMs` para invalidar e ejetar da memória tentativas de login abandonadas ou travadas.
-- O `piSessionService.ts` também agenda via timeout o escoamento de requisições de prompts e compactações pendentes (`compactionDrainTimers`).
+## 4. Agendamento e Tarefas Periódicas (Scheduled Tasks)
+O `sessiond` conta com serviços periódicos e agendamento nativo:
+- **Schedule Prompt Service (`src/server/sessions/schedulePrompt/`):** Rotas e motor para agendamento de prompts em intervalos regulares ou cron expressions (alimentado pela lib `croner`), permitindo disparar comandos e tarefas recorrentes nos workspaces e sessões.
+- **Heartbeats:** No `PiSessionService` (`src/server/sessions/piSessionService.ts`), há um loop contínuo de `publishHeartbeats()` via WebSocket notificando o status das sessões ativas.
+- **TTL de Autenticação OAuth:** Em `oauthLoginFlowService.ts`, timeouts invalidam fluxos de login expirados ou abandonados.
+- **Drenagem de Prompts e Compactação:** Filas de compactação e drenagem de buffers operam com timers dedicados para evitar concorrência desordenada.
 
 ## 5. Principais Caminhos (Key File Paths)
-* `src/server/sessiond.ts` (Core Runtime e Roteador Fastify Principal)
-* `src/server/sessiond/sessionProxyRoutes.ts` (Setup das rotas Proxy na Web)
-* `src/sessiond/sessionDaemonClient.ts` (O cliente RPC local para comunicação do Web/API com o Socket)
-* `src/server/sessions/piSessionService.ts` (Gerenciador e orquestrador principal do runtime de cada sessão)
-* `src/cli.ts` (Definição e instalação dos arquivos `.service` do systemd, via subcomandos da CLI)
+* `src/server/sessiond.ts` (Core Runtime e Inicializador Hono do Daemon)
+* `src/server/sessiond/sessionProxyRoutes.ts` (Rotas proxy na API web para o sessiond)
+* `src/sessiond/sessionDaemonClient.ts` (Cliente RPC local via Unix socket / HTTP)
+* `src/server/sessions/piSessionService.ts` (Orquestrador do runtime e ciclo de vida de sessões)
+* `src/server/sessions/schedulePrompt/` (Serviço e rotas de agendamento cron de prompts)
+* `src/server/sessions/processReaper.ts` (Reaper para varredura e término de processos órfãos)
+* `src/cli.ts` (Gerenciamento de serviços systemd via CLI `omp-web`)

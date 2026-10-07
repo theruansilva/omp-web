@@ -65,11 +65,12 @@ Useful commands:
 
 ```bash
 omp-web status
+omp-web sessions         # List active sessions and states
+omp-web restart --wait   # Safely restart waiting for working sessions
 omp-web logs
-omp-web restart
 omp-web doctor
+omp-web update
 omp-web version
-omp-web uninstall
 ```
 
 For more install options, including one-line install, Pi package install, WSL/manual usage, and remote access, see the [installation guide](https://omp-web.dev/install).
