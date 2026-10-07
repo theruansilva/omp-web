@@ -390,6 +390,40 @@ describe("OmpApp integration", () => {
     expect((app as any).isStreaming).toBe(false);
   });
 
+  it("handleSessionEvent keeps isStreaming true during tool calls and message.end, clearing only on agent.end or session.error", () => {
+    installMockWindow("http://localhost:8504/omp?tab=new-chat&session=sess-active");
+    const app = new OmpApp();
+    (app as any).selectedSessionId = "sess-active";
+
+    (app as any).handleSessionEvent({ type: "agent.start" });
+    expect((app as any).isStreaming).toBe(true);
+
+    (app as any).handleSessionEvent({ type: "assistant.thinking.delta", text: "thinking..." });
+    expect((app as any).isStreaming).toBe(true);
+
+    // Assistant finishes thinking and yields tool calls -> message.end must NOT clear isStreaming!
+    (app as any).handleSessionEvent({ type: "message.end", message: { role: "assistant", content: [] } });
+    expect((app as any).isStreaming).toBe(true);
+
+    // Tool executes
+    (app as any).handleSessionEvent({ type: "tool.start", toolName: "bash", toolCallId: "call-1" });
+    expect((app as any).isStreaming).toBe(true);
+
+    (app as any).handleSessionEvent({ type: "tool.update", toolName: "bash", toolCallId: "call-1", text: "running" });
+    expect((app as any).isStreaming).toBe(true);
+
+    (app as any).handleSessionEvent({ type: "tool.end", toolName: "bash", toolCallId: "call-1" });
+    expect((app as any).isStreaming).toBe(true);
+
+    // Tool result message ends -> must NOT clear isStreaming
+    (app as any).handleSessionEvent({ type: "message.end", message: { role: "toolResult", toolCallId: "call-1" } });
+    expect((app as any).isStreaming).toBe(true);
+
+    // Agent finishes
+    (app as any).handleSessionEvent({ type: "agent.end" });
+    expect((app as any).isStreaming).toBe(false);
+  });
+
   it("handlePromptSubmit forwards streamingBehavior to sessionsApi.prompt", async () => {
     installMockWindow("http://localhost:8504/omp?tab=new-chat&session=sess-active");
     const app = new OmpApp();

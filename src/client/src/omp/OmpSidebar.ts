@@ -11,6 +11,7 @@ import {
   renderSettingsIcon,
   renderTerminalIcon,
   renderUsageIcon,
+  renderScheduleIcon,
   renderServerIcon,
   renderModelsIcon,
   renderChevronUpIcon,
@@ -159,6 +160,7 @@ export class OmpSidebar extends LitElement {
     { id: "files", label: "Arquivos" },
     { id: "terminal", label: "Terminal" },
     { id: "usage", label: "Uso & Métricas" },
+    { id: "schedules", label: "Agendamentos" },
     { id: "projects", label: "Projetos" },
     { id: "models", label: "Modelos" },
     { id: "library", label: "Library" },
@@ -273,6 +275,10 @@ export class OmpSidebar extends LitElement {
       case "terminal":
         return renderTerminalIcon(
           "size-5 shrink-0 text-sky-500 dark:text-sky-400 group-hover:text-sky-600 dark:group-hover:text-sky-300 transition-colors",
+        );
+      case "schedules":
+        return renderScheduleIcon(
+          "size-5 shrink-0 text-cyan-500 dark:text-cyan-400 group-hover:text-cyan-600 dark:group-hover:text-cyan-300 transition-colors",
         );
       case "usage":
         return renderUsageIcon(

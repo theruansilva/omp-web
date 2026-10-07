@@ -1,3 +1,5 @@
+import "./OmpSchedulesView";
+import { OmpSchedulesView } from "./OmpSchedulesView";
 import { describe, expect, it } from "bun:test";
 import "./OmpTerminalView";
 import { OmpTerminalView } from "./OmpTerminalView";
@@ -59,5 +61,31 @@ describe("OmpUsageView", () => {
     expect(template).toContain("Uso & Métricas");
     expect(template).toContain("Provedores");
     expect(template).toContain("Cotas");
+  });
+});
+
+describe("OmpSchedulesView", () => {
+  it("renders empty state when no workspace is active", () => {
+    const view = new OmpSchedulesView();
+    const template = JSON.stringify(view.render());
+    expect(template).toContain("Agendamentos de Tarefas");
+    expect(template).toContain("Nenhum workspace ativo");
+  });
+
+  it("renders scheduled tasks grid when workspace is provided", () => {
+    const view = new OmpSchedulesView();
+    view.workspace = {
+      id: "w1",
+      name: "main",
+      branch: "main",
+      path: "/code/omp-web",
+      isPrimary: true,
+      projectId: "proj-1",
+    };
+    const template = JSON.stringify(view.render());
+    expect(template).toContain("Agendamentos de Tarefas");
+    expect(template).toContain("Total de Tarefas");
+    expect(template).toContain("Ativas");
+    expect(template).toContain("Nova Tarefa");
   });
 });

@@ -476,7 +476,80 @@ export const usageApi = {
   },
 };
 
+
+export type CronJobType = "cron" | "once" | "interval";
+export type CronJobStatus = "success" | "error" | "running";
+export type CronJobTarget = "prompt" | "command";
+
+export interface CronJob {
+  id: string;
+  name: string;
+  schedule: string;
+  target?: CronJobTarget;
+  prompt?: string;
+  command?: string;
+  enabled: boolean;
+  type: CronJobType;
+  intervalMs?: number;
+  createdAt: string;
+  runCount: number;
+  lastRun?: string;
+  lastStatus?: CronJobStatus;
+  nextRun?: string;
+  description?: string;
+  scope?: "session" | "workspace";
+  sessionId?: string;
+}
+
+export const schedulePromptsApi = {
+  getJobs: (cwd: string, machineId = "local") =>
+    request<{ ok: boolean; jobs: CronJob[] }>(
+      `${machinePrefix(machineId)}/schedule-prompts?cwd=${encodeURIComponent(cwd)}`
+    ),
+  createJob: (
+    data: {
+      cwd: string;
+      schedule: string;
+      target?: CronJobTarget;
+      prompt?: string;
+      command?: string;
+      name?: string;
+      enabled?: boolean;
+      type?: CronJobType;
+      description?: string;
+    },
+    machineId = "local"
+  ) =>
+    request<{ ok: boolean; job: CronJob }>(
+      `${machinePrefix(machineId)}/schedule-prompts`,
+      { method: "POST", body: JSON.stringify(data) }
+    ),
+  updateJob: (
+    jobId: string,
+    data: {
+      cwd: string;
+      updates: Partial<CronJob>;
+    },
+    machineId = "local"
+  ) =>
+    request<{ ok: boolean; job: CronJob }>(
+      `${machinePrefix(machineId)}/schedule-prompts/${encodeURIComponent(jobId)}`,
+      { method: "PATCH", body: JSON.stringify(data) }
+    ),
+  deleteJob: (jobId: string, cwd: string, machineId = "local") =>
+    request<{ ok: boolean; removed: boolean }>(
+      `${machinePrefix(machineId)}/schedule-prompts/${encodeURIComponent(jobId)}?cwd=${encodeURIComponent(cwd)}`,
+      { method: "DELETE" }
+    ),
+  runJob: (jobId: string, cwd: string, machineId = "local") =>
+    request<{ ok: boolean; ran: boolean }>(
+      `${machinePrefix(machineId)}/schedule-prompts/${encodeURIComponent(jobId)}/run`,
+      { method: "POST", body: JSON.stringify({ cwd }) }
+    ),
+};
+
 export const api = {
+  ...schedulePromptsApi,
   ...ompWebApi,
   ...machinesApi,
   ...configApi,

@@ -18,6 +18,7 @@ import "./OmpArtifactPanel";
 import "./OmpTerminalView";
 import "./OmpFilesView";
 import "./OmpUsageView";
+import "./OmpSchedulesView";
 import type { ArtifactData } from "./OmpArtifactPanel";
 import type { ModelSelectDetail } from "./OmpModelsView";
 import type { PendingCommandDialog } from "./OmpComposer";
@@ -293,7 +294,8 @@ export class OmpApp extends LitElement {
 
   private scheduleTranscriptFlush(): void {
     if (this.pendingTranscriptFrame !== undefined) return;
-    this.pendingTranscriptFrame = requestAnimationFrame(() => {
+    const schedule = typeof requestAnimationFrame === "function" ? requestAnimationFrame : (cb: FrameRequestCallback) => setTimeout(cb, 16) as unknown as number;
+    this.pendingTranscriptFrame = schedule(() => {
       this.pendingTranscriptFrame = undefined;
       this.flushPendingTranscript();
     });
@@ -511,7 +513,11 @@ export class OmpApp extends LitElement {
     preferencesEventTarget()?.removeEventListener(CHAT_PREFERENCES_CHANGED_EVENT, this.handleChatPreferencesChanged);
     if (typeof window !== "undefined") window.removeEventListener(UI_COLORS_CHANGED_EVENT, this.handleUiColorsChanged);
     if (this.pendingTranscriptFrame !== undefined) {
-      cancelAnimationFrame(this.pendingTranscriptFrame);
+      if (typeof cancelAnimationFrame === "function") {
+        cancelAnimationFrame(this.pendingTranscriptFrame);
+      } else {
+        clearTimeout(this.pendingTranscriptFrame);
+      }
       this.pendingTranscriptFrame = undefined;
     }
   }
@@ -674,6 +680,9 @@ export class OmpApp extends LitElement {
         if (wasWorking && this.selectedSessionId !== status.sessionId) {
           this.unseenCompletedSessionIds.add(status.sessionId);
         }
+      }
+      if (status.sessionId === this.selectedSessionId) {
+        this.isStreaming = isWorking;
       }
 
       const ws = this.getActiveWorkspace();
@@ -1022,6 +1031,18 @@ export class OmpApp extends LitElement {
       if (status?.thinkingLevel) {
         this.currentThinkingLevel = status.thinkingLevel;
       }
+      const isWorking = Boolean(
+        status?.isStreaming ||
+        status?.isBashRunning ||
+        status?.isCompacting ||
+        (status?.pendingMessageCount ?? 0) > 0
+      );
+      this.isStreaming = isWorking;
+      if (isWorking) {
+        this.workingSessionIds.add(sessionId);
+      } else {
+        this.workingSessionIds.delete(sessionId);
+      }
       void this.loadSessionModels(effectiveCwd, sessionId);
     } catch (err) {
       console.warn(`[OMP] Could not load messages for session ${sessionId}:`, err);
@@ -1040,10 +1061,19 @@ export class OmpApp extends LitElement {
   }
 
   private handleSessionEvent(event: SessionUiEvent) {
-    if (event.type === "agent.start" || event.type === "assistant.delta" || event.type === "assistant.thinking.delta") {
+    if (
+      event.type === "agent.start" ||
+      event.type === "assistant.delta" ||
+      event.type === "assistant.thinking.delta" ||
+      event.type === "tool.start" ||
+      event.type === "tool.update" ||
+      event.type === "tool.end" ||
+      event.type === "shell.start" ||
+      event.type === "shell.chunk"
+    ) {
       this.isStreaming = true;
       if (this.selectedSessionId) this.workingSessionIds.add(this.selectedSessionId);
-    } else if (event.type === "agent.end" || event.type === "message.end") {
+    } else if (event.type === "agent.end" || event.type === "session.error") {
       this.isStreaming = false;
       if (this.selectedSessionId) this.workingSessionIds.delete(this.selectedSessionId);
     }
@@ -1092,6 +1122,13 @@ export class OmpApp extends LitElement {
       }
     } else if (event.type === "status.update") {
       if (event.status.sessionId === this.selectedSessionId) {
+        const statusIsWorking = Boolean(
+          event.status.isStreaming ||
+          event.status.isBashRunning ||
+          event.status.isCompacting ||
+          (event.status.pendingMessageCount ?? 0) > 0
+        );
+        this.isStreaming = statusIsWorking;
         this.pendingAsk = event.status.pendingAsk;
         this.currentPlanMode = event.status.planMode;
         this.currentExtensionStatuses = event.status.extensionStatuses;
@@ -1218,6 +1255,12 @@ export class OmpApp extends LitElement {
 
     if (earlyLower === "files") {
       this.activeTab = "files";
+      this.syncUrl();
+      return;
+    }
+
+    if (earlyLower === "schedules" || earlyLower === "schedule") {
+      this.activeTab = "schedules";
       this.syncUrl();
       return;
     }
@@ -2016,6 +2059,8 @@ Dica: você pode selecionar uma das opções abaixo para testar a injeção auto
         return "Modelos de IA";
       case "settings":
         return "Configurações";
+      case "schedules":
+        return "Agendamentos";
       default:
         return "";
     }
