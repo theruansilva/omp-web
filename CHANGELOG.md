@@ -1,5 +1,13 @@
 # Changelog
 
+## v3.0.1
+
+- 🛠️ **AskTool & Interactive Composer**: Natively integrated `ask` tool drawer into composer for keyboard-first interactive choices, deprecating legacy markdown options.
+- 🔒 **Process Reaper & Execution Safeguards**: Automated cleanup of orphan processes on startup and loop/deadlock detection guards in prompt execution.
+- 🎨 **Design System & Contrast Tokens**: Refined sidebar hierarchy, contrasted project cards, calibrated OKLCH surface tokens (anti-black/anti-white compliance), and polished monospace fonts.
+- ♿ **Accessibility & Motion**: Implemented focus trap, ARIA dialog roles, settings tablist navigation, expanded touch targets, and `prefers-reduced-motion` calibration.
+- ⚡ **Performance & Bundle Pruning**: Removed `@material/web` dependency and eliminated textarea layout reflows.
+
 ## v3.0.0
 
 - 🚀 **Major UI Overhaul (Cockpit Architecture)**: Promoted the modern OMP Web Cockpit to the default root route (`/`), retaining seamless access to the classic interface via `/classic` and in-app settings switcher.
