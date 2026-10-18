@@ -221,6 +221,92 @@ export class OmpChatView extends LitElement {
   private lastClientHeight = 0;
   private scrollToBottomFrame?: number;
 
+  override connectedCallback() {
+    super.connectedCallback();
+    this.ensureProcessExpanderStyles();
+  }
+
+  private ensureProcessExpanderStyles() {
+    if (typeof document === "undefined" || document.getElementById("omp-process-expander-styles")) return;
+    const style = document.createElement("style");
+    style.id = "omp-process-expander-styles";
+    style.textContent = `
+      .omp-process-expander {
+        display: grid;
+        grid-template-rows: 0fr;
+        transition: grid-template-rows 460ms linear(0, 0.22 8%, 0.6 18%, 0.94 30%, 1.07 40%, 1.05 48%, 1 60%, 0.99 74%, 1);
+        overflow: hidden;
+      }
+      .omp-process-expander.open {
+        grid-template-rows: 1fr;
+      }
+      .omp-process-expander-inner {
+        min-height: 0;
+        overflow: hidden;
+      }
+      .omp-process-expander.open .process-item-1 {
+        animation: process-item-reveal 260ms cubic-bezier(0.16, 1, 0.3, 1) 180ms both;
+      }
+      .omp-process-expander.open .process-item-2 {
+        animation: process-item-reveal 260ms cubic-bezier(0.16, 1, 0.3, 1) 220ms both;
+      }
+      .omp-process-expander.open .process-item-3 {
+        animation: process-item-reveal 260ms cubic-bezier(0.16, 1, 0.3, 1) 270ms both;
+      }
+      .omp-process-expander.open .process-item-4 {
+        animation: process-item-reveal 260ms cubic-bezier(0.16, 1, 0.3, 1) 320ms both;
+      }
+      .omp-process-expander.open .process-item-5 {
+        animation: process-item-reveal 260ms cubic-bezier(0.16, 1, 0.3, 1) 370ms both;
+      }
+      .omp-process-expander:not(.open) .group\\/think-step,
+      .omp-process-expander:not(.open) .tool-card {
+        opacity: 0;
+        transform: translateY(-4px);
+        transition: opacity 120ms linear, transform 120ms linear;
+      }
+      @keyframes process-item-reveal {
+        0% {
+          opacity: 0;
+          transform: translateY(12px) scale(0.96);
+        }
+        100% {
+          opacity: 1;
+          transform: translateY(0) scale(1);
+        }
+      }
+      @keyframes executing-pulse {
+        0%, 100% {
+          border-color: rgba(59, 130, 246, 0.35);
+          background-color: rgba(59, 130, 246, 0.04);
+        }
+        50% {
+          border-color: rgba(59, 130, 246, 0.70);
+          background-color: rgba(59, 130, 246, 0.10);
+        }
+      }
+      .omp-item-executing {
+        animation: executing-pulse 1.8s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        border-radius: 10px;
+        border: 1px solid rgba(59, 130, 246, 0.40);
+      }
+      .omp-sub-expander {
+        display: grid;
+        grid-template-rows: 0fr;
+        transition: grid-template-rows 380ms linear(0, 0.22 8%, 0.6 18%, 0.94 30%, 1.07 40%, 1.05 48%, 1 60%, 0.99 74%, 1);
+        overflow: hidden;
+      }
+      .omp-sub-expander.open {
+        grid-template-rows: 1fr;
+      }
+      .omp-sub-expander-inner {
+        min-height: 0;
+        overflow: hidden;
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
   protected override createRenderRoot() {
     return this;
   }
