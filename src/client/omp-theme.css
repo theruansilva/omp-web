@@ -552,6 +552,60 @@
   }
 }
 
+
+/* Staggered cascade reveal for items inside process body */
+.omp-process-expander.open .process-item-1 { animation: process-item-reveal 240ms cubic-bezier(0.16, 1, 0.3, 1) 40ms both; }
+.omp-process-expander.open .process-item-2 { animation: process-item-reveal 240ms cubic-bezier(0.16, 1, 0.3, 1) 90ms both; }
+.omp-process-expander.open .process-item-3 { animation: process-item-reveal 240ms cubic-bezier(0.16, 1, 0.3, 1) 140ms both; }
+.omp-process-expander.open .process-item-4 { animation: process-item-reveal 240ms cubic-bezier(0.16, 1, 0.3, 1) 190ms both; }
+.omp-process-expander.open .process-item-5 { animation: process-item-reveal 240ms cubic-bezier(0.16, 1, 0.3, 1) 240ms both; }
+
+@keyframes process-item-reveal {
+  0% {
+    opacity: 0;
+    transform: translateY(6px) scale(0.99);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Active execution animation for running tools and thinking steps */
+@keyframes executing-pulse {
+  0%, 100% {
+    border-color: rgba(59, 130, 246, 0.30);
+    background-color: rgba(59, 130, 246, 0.04);
+  }
+  50% {
+    border-color: rgba(59, 130, 246, 0.65);
+    background-color: rgba(59, 130, 246, 0.08);
+  }
+}
+
+.omp-item-executing {
+  animation: executing-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  border-radius: 12px;
+  border: 1px solid rgba(59, 130, 246, 0.35);
+}
+
+/* Sub-expander for thinking steps & tool card details */
+.omp-sub-expander {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 300ms cubic-bezier(0.16, 1, 0.3, 1);
+  overflow: hidden;
+}
+
+.omp-sub-expander.open {
+  grid-template-rows: 1fr;
+}
+
+.omp-sub-expander-inner {
+  min-height: 0;
+  overflow: hidden;
+}
+
 /* =========================================================
    COMPOSER DROPDOWN POPOVERS (MODEL & ATTACHMENTS)
    ========================================================= */
