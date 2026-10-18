@@ -202,7 +202,7 @@ Importante: monitorar CTR na primeira semana.
 
   it("differentiates single-choice options and multi-choice checklist with overrides", () => {
     const singleMd = `
-<options title="Qual arquitetura?">
+<options badge="Opções" title="Qual arquitetura?">
   <option label="Monólito" desc="Simples" />
   <option label="Microserviços" desc="Escalável" />
 </options>
@@ -315,6 +315,18 @@ Importante: monitorar CTR na primeira semana.
     expect(html).toContain("ui-options-submit-btn");
     expect(html).toContain("Tarefa Concluída");
     expect(html).toContain("Tarefa Pendente");
+  });
+
+  it("renders card containing inline code backticks without breaking tags", () => {
+    const markdown = `
+<card title="Resumo da Mudança" badge="Concluído" color="blue">
+- **Removida a linha**: \`<div class="flex">\` com avatar \`omp-surface-avatar\`
+</card>
+`;
+    const html = toSafeMarkdownHtml(markdown);
+    expect(html).toContain("ui-card");
+    expect(html).toContain("Resumo da Mudança");
+    expect(html).toContain("Concluído");
   });
 
   it("supports markdown bullet checkboxes with [x] in checklist", () => {

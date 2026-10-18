@@ -1,11 +1,12 @@
 import { LitElement, html, nothing, render } from "lit";
-import type { AskDialogQuestion, AskDialogResult, FileSuggestion, SlashCommand } from "../api";
+import type { AskDialogQuestion, AskDialogResult, FileSuggestion, SlashCommand, Machine, MachineHealth } from "../api";
 import { sessionsApi, filesApi } from "../api/clients";
 import { detectPromptCompletionTrigger, fileCompletionInsertText } from "../promptCompletions";
 import { isShellInput } from "../inputModes";
 import { customElement, property, state } from "lit/decorators.js";
 import {
   renderPlusIcon,
+  renderServerIcon,
   renderChevronDownIcon,
   renderSendIcon,
   renderStopIcon,
@@ -148,6 +149,7 @@ export interface AskOption {
   desc: string;
   value?: string;
   recommended?: boolean;
+  preview?: string;
 }
 
 export interface PendingCommandDialog {
@@ -180,7 +182,14 @@ export class OmpComposer extends LitElement {
   @property({ type: String }) sessionId?: string;
   @property({ type: String }) cwd?: string;
   @property({ type: String }) machineId = "local";
-  @property({ type: String }) askMode: "options" | "projects" = "projects";
+  @property({ type: String }) askContext = "";
+  @property({ attribute: false }) machines: Machine[] = [];
+  @property({ attribute: false }) selectedMachine?: Machine;
+  @property({ attribute: false }) machineStatuses: Record<string, MachineHealth> = {};
+  @property({ type: String }) askMode: "options" | "projects" | "machines" = "machines";
+  private readonly defaultMachines: Machine[] = [
+    { id: "local", name: "Local", kind: "local" },
+  ];
   @property({ attribute: false }) customPills: unknown[] = [];
   @property({ attribute: false }) planMode?: PlanModeStatus;
   @property({ attribute: false }) extensionStatuses?: Record<string, string>;
@@ -631,6 +640,7 @@ export class OmpComposer extends LitElement {
           title: opt.label,
           desc: opt.description || "",
           recommended: q.recommended === idx,
+          preview: opt.preview,
         }));
         if (typeof requestAnimationFrame !== "undefined") {
           requestAnimationFrame(() => {
@@ -827,6 +837,53 @@ export class OmpComposer extends LitElement {
       textarea.style.height = `${scrollHeight}px`;
       textarea.style.overflowY = "hidden";
     }
+  }
+
+  public toggleMachineSelector() {
+    if (this.isAskOpen && this.askMode === "machines") {
+      this.isAskOpen = false;
+    } else {
+      this.isAskOpen = true;
+      this.askMode = "machines";
+    }
+    this.requestUpdate();
+  }
+
+  private selectMachineOption(machine: Machine) {
+    this.isAskOpen = false;
+    this.selectedMachine = machine;
+    this.machineId = machine.id;
+    this.dispatchEvent(
+      new CustomEvent("select-machine", {
+        detail: { machine },
+        bubbles: true,
+        composed: true,
+      }),
+    );
+    this.requestUpdate();
+  }
+
+  private handleAddMachine() {
+    this.isAskOpen = false;
+    this.dispatchEvent(
+      new CustomEvent("add-machine", {
+        bubbles: true,
+        composed: true,
+      }),
+    );
+    this.requestUpdate();
+  }
+
+  private handleRemoveMachine(machine: Machine, e?: Event) {
+    e?.stopPropagation();
+    this.dispatchEvent(
+      new CustomEvent("remove-machine", {
+        detail: { machine },
+        bubbles: true,
+        composed: true,
+      }),
+    );
+    this.requestUpdate();
   }
 
   public toggleProjectSelector() {
@@ -2159,14 +2216,24 @@ export class OmpComposer extends LitElement {
         <!-- Header row -->
         <div class="composer-ask-header px-1 pb-2">
           <div class="flex items-center justify-between">
-            <div class="text-sm font-bold text-foreground-900 leading-snug flex items-center gap-2">
-              ${this.askMode === "projects" ? renderFolderIcon("size-4 text-foreground-700") : nothing}
+            <div class="text-sm font-bold text-foreground-900 leading-snug flex items-center gap-2 flex-wrap">
+              ${this.askMode === "machines" ? renderServerIcon("size-4 text-foreground-700") : this.askMode === "projects" ? renderFolderIcon("size-4 text-foreground-700") : nothing}
               <span>
-                ${this.askMode === "projects" ? "Selecione o projeto para esta sessão" : this.askTitle}
+                ${this.askMode === "machines" ? "Selecione a máquina para esta sessão" : this.askMode === "projects" ? "Selecione o projeto para esta sessão" : this.askTitle}
               </span>
+              ${this.askMode === "machines" ? html`
+                <span class="font-mono text-xs px-1.5 py-0.5 rounded bg-black/5 dark:bg-white/10 text-foreground-600">
+                  ${(this.machines.length > 0 ? this.machines : this.defaultMachines).length}
+                </span>
+              ` : nothing}
               ${
                 this.pendingAsk?.questions[0]?.header && this.askMode === "options"
                   ? html`<span class="text-[11px] px-2 py-0.5 rounded-full font-medium bg-black/5 dark:bg-white/10 text-foreground-700 font-mono">${this.pendingAsk.questions[0].header}</span>`
+                  : nothing
+              }
+              ${
+                this.pendingAsk?.questions[0]?.multi && this.askMode === "options"
+                  ? html`<span class="text-[10px] px-2 py-0.5 rounded-full font-medium bg-blue-500/10 text-blue-600 dark:text-blue-400">Múltipla escolha</span>`
                   : nothing
               }
             </div>
@@ -2205,8 +2272,97 @@ export class OmpComposer extends LitElement {
           </div>
         </div>
 
+        ${this.askContext && this.askMode === "options" ? html`
+          <div class="mb-2.5 px-3 py-2 rounded-xl bg-blue-500/10 dark:bg-blue-400/10 border border-blue-500/20 text-xs text-foreground-800 dark:text-foreground-200 flex items-start gap-2.5">
+            <span class="shrink-0 text-blue-500 dark:text-blue-400 mt-0.5">${renderLightbulbIcon("size-3.5")}</span>
+            <div class="flex-1 min-w-0">
+              <div class="text-[10px] font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400 mb-0.5">Contexto</div>
+              <div class="text-xs text-foreground-700 dark:text-foreground-300 leading-relaxed whitespace-pre-wrap line-clamp-3">${this.askContext}</div>
+            </div>
+          </div>
+        ` : nothing}
+
         ${
-          this.askMode === "projects"
+          this.askMode === "machines"
+            ? html`
+            <!-- Lista de Máquinas Estilo Ask Tool -->
+            <div class="flex flex-col gap-1.5" role="radiogroup" aria-label="Máquinas disponíveis">
+              ${(this.machines.length > 0 ? this.machines : this.defaultMachines).map((m, idx) => {
+                const currentId = this.selectedMachine?.id || this.machineId || "local";
+                const isSelected = currentId === m.id;
+                const health = this.machineStatuses[m.id];
+                const mOnline = m.kind === "local" ? true : (health?.status === "online" || (health?.ok ?? true));
+                const mError = health?.status === "error" || health?.status === "offline";
+                const canRemove = m.kind === "remote";
+
+                return html`
+                  <button
+                    type="button"
+                    role="radio"
+                    aria-checked="${isSelected}"
+                    class="composer-ask-item composer-ask-item-${idx + 1} pointer-events-auto cursor-pointer group flex items-center justify-between w-full px-3 py-2 sm:py-2.5 rounded-2xl text-left transition-all duration-150 border ${
+                      isSelected
+                        ? "!bg-blue-500/15 !border-blue-500/40 text-blue-600 dark:text-blue-400 font-semibold"
+                        : "border-black/5 dark:border-white/10 hover:border-blue-500/30 bg-black/[0.02] dark:bg-white/[0.04] hover:bg-black/[0.05] dark:hover:bg-white/[0.08] text-foreground-900"
+                    } active:scale-[0.99]"
+                    @click=${(e: MouseEvent) => {
+                      e.stopPropagation();
+                      this.selectMachineOption(m);
+                    }}
+                  >
+                    <div class="flex items-center gap-3 min-w-0">
+                      <div class="relative size-9 shrink-0 flex items-center justify-center rounded-xl bg-black/8 dark:bg-white/10 border border-black/10 dark:border-white/10 shadow-xs">
+                        ${renderServerIcon("size-4 text-foreground-700 dark:text-foreground-300")}
+                        <span class="absolute -bottom-0.5 -right-0.5 size-2 rounded-full border border-background-100 dark:border-background-200 ${mError ? "bg-red-500" : mOnline ? "bg-emerald-500" : "bg-zinc-400"}"></span>
+                      </div>
+                      <div class="min-w-0 flex flex-col">
+                        <div class="flex items-center gap-2">
+                          <span class="text-sm font-bold leading-tight truncate">
+                            ${m.name}
+                          </span>
+                          <span class="text-[10px] px-1.5 py-0.2 rounded font-medium ${mOnline ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400" : "bg-zinc-500/15 text-zinc-500"}">
+                            ${mOnline ? "Online" : "Offline"}
+                          </span>
+                        </div>
+                        <span class="text-xs opacity-65 leading-tight mt-0.5 font-mono truncate">
+                          ${m.kind === "local" ? "Local OMP Web" : m.baseUrl || "Remote OMP Web"}
+                        </span>
+                      </div>
+                    </div>
+                    <div class="flex items-center gap-2 shrink-0 ps-2">
+                      ${canRemove ? html`
+                        <span
+                          role="button"
+                          class="p-1 rounded-md hover:bg-red-500/15 text-foreground-450 hover:text-red-500 transition-colors text-sm font-bold leading-none cursor-pointer"
+                          title="Remover máquina ${m.name}"
+                          @click=${(e: MouseEvent) => {
+                            e.stopPropagation();
+                            this.handleRemoveMachine(m, e);
+                          }}
+                        >
+                          ×
+                        </span>
+                      ` : nothing}
+                      ${isSelected ? renderCheckIcon("size-4 text-blue-600 dark:text-blue-400") : html`<span class="text-xs font-semibold text-foreground-400 opacity-0 group-hover:opacity-100 transition-opacity">Selecionar</span>`}
+                    </div>
+                  </button>
+                `;
+              })}
+
+              <button
+                type="button"
+                class="composer-ask-item flex items-center gap-2 w-full px-3 py-2 rounded-xl text-xs font-bold text-foreground-700 hover:text-foreground-900 hover:bg-black/5 dark:hover:bg-white/8 transition-colors cursor-pointer text-left border border-dashed border-black/15 dark:border-white/15 mt-1"
+                @click=${(e: MouseEvent) => {
+                  e.stopPropagation();
+                  this.handleAddMachine();
+                }}
+              >
+                ${renderPlusIcon("size-3.5")}
+                <span>Adicionar Máquina</span>
+              </button>
+            </div>
+          `
+          : this.askMode === "projects"
             ? html`
             <!-- Lista de Projetos Estilo Ask Tool (1, 2, 3...) -->
             <div class="flex flex-col gap-1.5" role="radiogroup" aria-label="Projetos disponíveis">
@@ -2282,7 +2438,7 @@ export class OmpComposer extends LitElement {
                       </span>
                       <div class="min-w-0 flex flex-col">
                         <div class="flex items-center gap-2 min-w-0">
-                          <span class="text-sm font-medium leading-tight truncate">
+                          <span class="text-sm font-semibold leading-tight text-foreground-900">
                             ${opt.title}
                           </span>
                           ${
@@ -2291,7 +2447,10 @@ export class OmpComposer extends LitElement {
                               : nothing
                           }
                         </div>
-                        ${opt.desc ? html`<span class="text-xs opacity-65 leading-tight mt-0.5 font-normal truncate">${opt.desc}</span>` : nothing}
+                        ${opt.desc ? html`<div class="text-xs opacity-75 leading-relaxed mt-1 font-normal break-words">${opt.desc}</div>` : nothing}
+                        ${opt.preview ? html`
+                          <pre class="mt-2 p-2 rounded-xl bg-black/5 dark:bg-white/5 border border-black/8 dark:border-white/10 font-mono text-[11px] leading-relaxed text-foreground-800 dark:text-foreground-200 overflow-x-auto whitespace-pre-wrap">${opt.preview}</pre>
+                        ` : nothing}
                       </div>
                     </div>
                     <div class="flex items-center gap-2 shrink-0 ps-2">
@@ -2715,29 +2874,45 @@ export class OmpComposer extends LitElement {
                       </button>
                     </div>
 
-                    <!-- Project Selector Pill -->
+                    <!-- Machine Selector Pill -->
                     <div class="relative">
-                      <button
-                        id="composer-project-pill"
-                        data-testid="composer-project-pill"
-                        title="Selecionar projeto ativo"
-                        type="button"
-                        aria-label="Selecionar projeto"
-                        class="relative flex items-center text-foreground-800 fill-foreground-800 bg-transparent safe-hover:bg-black/5 active:bg-black/3 dark:safe-hover:bg-white/8 dark:active:bg-white/5 text-xs justify-center min-h-9 px-2.5 py-1 rounded-2xl gap-1.5 select-none font-semibold border border-black/8 dark:border-white/10 transition-colors cursor-pointer pointer-events-auto ${
-                          this.isAskOpen && this.askMode === "projects"
-                            ? "!bg-blue-500/10 !text-blue-600 dark:!text-blue-400 !border-blue-500/30"
-                            : ""
-                        }"
-                        @click=${(e: MouseEvent) => {
-                          e.stopPropagation();
-                          this.toggleProjectSelector();
-                        }}
-                      >
-                        ${renderFolderIcon("size-3.5 shrink-0")}
-                        <span class="max-w-[120px] truncate">
-                          ${((this.projects.length > 0 ? this.projects : this.defaultProjects).find((p) => p.id === this.selectedProjectId) ?? (this.projects.length > 0 ? this.projects[0] : this.defaultProjects[0]))?.name || "Projeto"}
-                        </span>
-                      </button>
+                      ${(() => {
+                        const machinesList = this.machines.length > 0 ? this.machines : this.defaultMachines;
+                        const currentMachine = this.selectedMachine ||
+                          machinesList.find((m) => m.id === this.machineId) ||
+                          machinesList.find((m) => m.id === "local") ||
+                          machinesList[0] || { id: "local", name: "Local", kind: "local" as const };
+                        const currentHealth = this.machineStatuses[currentMachine.id];
+                        const isOnline = currentMachine.kind === "local" ? true : (currentHealth?.status === "online" || (currentHealth?.ok ?? true));
+                        const isError = currentHealth?.status === "error" || currentHealth?.status === "offline";
+
+                        return html`
+                          <button
+                            id="composer-machine-pill"
+                            data-testid="composer-machine-pill"
+                            title="Selecionar máquina ativa: ${currentMachine.name}"
+                            type="button"
+                            aria-label="Selecionar máquina"
+                            class="relative flex items-center text-foreground-800 fill-foreground-800 bg-transparent safe-hover:bg-black/5 active:bg-black/3 dark:safe-hover:bg-white/8 dark:active:bg-white/5 text-xs justify-center min-h-9 px-2.5 py-1 rounded-2xl gap-1.5 select-none font-semibold border border-black/8 dark:border-white/10 transition-colors cursor-pointer pointer-events-auto ${
+                              this.isAskOpen && this.askMode === "machines"
+                                ? "!bg-blue-500/10 !text-blue-600 dark:!text-blue-400 !border-blue-500/30"
+                                : ""
+                            }"
+                            @click=${(e: MouseEvent) => {
+                              e.stopPropagation();
+                              this.toggleMachineSelector();
+                            }}
+                          >
+                            <span class="relative flex items-center justify-center">
+                              ${renderServerIcon("size-3.5 shrink-0")}
+                              <span class="absolute -bottom-0.5 -right-0.5 size-1.5 rounded-full border border-background-100 dark:border-background-200 ${isError ? "bg-red-500" : isOnline ? "bg-emerald-500" : "bg-zinc-400"}"></span>
+                            </span>
+                            <span class="max-w-[120px] truncate">
+                              ${currentMachine.name}
+                            </span>
+                          </button>
+                        `;
+                      })()}
                     </div>
 
                     <!-- Status badges: plan-mode & extension statuses matching toolbar pill style -->

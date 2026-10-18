@@ -1111,6 +1111,15 @@ export class OmpSettingsView extends LitElement {
               ${this.renderToggleSwitch(this.chatPrefs.showEvents, () => { this.updateChatPref("showEvents"); })}
             </div>
 
+            <!-- Categorizar Prompts do Sistema e Skills -->
+            <div class="flex items-center justify-between py-3">
+              <div class="flex flex-col pr-4">
+                <span class="text-sm font-semibold text-foreground-800">Categorizar Prompts e Skills</span>
+                <span class="text-xs text-foreground-500">Exibir avisos de sistema e skills em cards dedicados em vez de balões de usuário</span>
+              </div>
+              ${this.renderToggleSwitch(this.chatPrefs.categorizePrompts ?? true, () => { this.updateChatPref("categorizePrompts" as any); })}
+            </div>
+
             <!-- Vim Mode -->
             <div class="flex items-center justify-between py-3">
               <div class="flex flex-col pr-4">

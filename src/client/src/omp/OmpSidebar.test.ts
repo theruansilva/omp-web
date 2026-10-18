@@ -124,44 +124,34 @@ describe("OmpSidebar", () => {
     expect(str).not.toContain("1h atrás");
   });
 
-  it("renders machines switcher in bottom footer and dispatches machine events", () => {
+  it("limits primary nav to 4 items (Terminal, Arquivos, Projetos, Modelos) and expands with Ver mais", () => {
     const sidebar = new OmpSidebar();
-    sidebar.machines = [
-      { id: "local", name: "Local Machine", kind: "local" },
-      { id: "remote-1", name: "GPU Rig", kind: "remote", baseUrl: "http://100.1.2.3:8504" },
-    ];
-    sidebar.selectedMachine = sidebar.machines[0];
-    sidebar.machineStatuses = {
-      local: { machineId: "local", ok: true, status: "online" } as any,
-    };
-
+    sidebar.sessions = [{ id: "dummy", title: "Custom Active Session", projectId: "proj-1" }];
     let rendered = sidebar.render();
     let str = JSON.stringify(rendered);
-    expect(str).toContain("Local Machine");
-    expect(str).toContain("Máquina");
 
-    // Open dropup menu
-    (sidebar as any).isMachineMenuOpen = true;
+    // Initial render shows 4 items: Terminal, Arquivos, Projetos, Modelos and "Ver mais"
+    expect(str).toContain("Ver mais");
+    expect(str).toContain("+3");
+    expect(str).toContain("Terminal");
+    expect(str).toContain("Arquivos");
+    expect(str).toContain("Projetos");
+    expect(str).toContain("Modelos");
+    // Uso & Métricas, Agendamentos, Configurações are in "Ver mais"
+    expect(str).not.toContain("Uso & Métricas");
+    expect(str).not.toContain("Agendamentos");
+    expect(str).not.toContain("Configurações");
+    // Library is hidden from sidebar
+    expect(str).not.toContain("Library");
+
+    // Toggling expand shows remaining items and "Ver menos"
+    (sidebar as any).isNavExpanded = true;
     rendered = sidebar.render();
     str = JSON.stringify(rendered);
-    expect(str).toContain("Máquinas Conectadas");
-    expect(str).toContain("GPU Rig");
-    expect(str).toContain("Adicionar Máquina");
-
-    // Select machine event
-    let selectedDetail: any = null;
-    sidebar.addEventListener("select-machine", ((e: CustomEvent) => {
-      selectedDetail = e.detail;
-    }) as EventListener);
-    (sidebar as any).handleSelectMachine(sidebar.machines[1]);
-    expect(selectedDetail?.machine?.id).toBe("remote-1");
-
-    // Add machine event
-    let addFired = false;
-    sidebar.addEventListener("add-machine", (() => {
-      addFired = true;
-    }) as EventListener);
-    (sidebar as any).handleAddMachine();
-    expect(addFired).toBe(true);
+    expect(str).toContain("Ver menos");
+    expect(str).toContain("Uso & Métricas");
+    expect(str).toContain("Agendamentos");
+    expect(str).toContain("Configurações");
+    expect(str).not.toContain("Library");
   });
 });

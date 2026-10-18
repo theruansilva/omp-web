@@ -15,6 +15,7 @@ import {
   renderServerIcon,
   renderModelsIcon,
   renderChevronUpIcon,
+  renderChevronDownIcon,
 } from "./icons";
 import type { Machine, MachineHealth } from "../api";
 
@@ -56,6 +57,8 @@ export class OmpSidebar extends LitElement {
     MachineHealth
   > = {};
   @state() private isMachineMenuOpen = false;
+  @state() private isNavExpanded = false;
+  private readonly navLimit = 4;
   @state() private activeMenuSessionId: string | null = null;
 
   protected override createRenderRoot() {
@@ -157,14 +160,14 @@ export class OmpSidebar extends LitElement {
   }
 
   private readonly primaryNav: NavItem[] = [
-    { id: "files", label: "Arquivos" },
     { id: "terminal", label: "Terminal" },
-    { id: "usage", label: "Uso & Métricas" },
-    { id: "schedules", label: "Agendamentos" },
+    { id: "files", label: "Arquivos" },
     { id: "projects", label: "Projetos" },
     { id: "models", label: "Modelos" },
-    { id: "library", label: "Library" },
+    { id: "usage", label: "Uso & Métricas" },
+    { id: "schedules", label: "Agendamentos" },
     { id: "settings", label: "Configurações" },
+    { id: "library", label: "Library" },
   ];
 
   private isDevMode(): boolean {
@@ -180,8 +183,7 @@ export class OmpSidebar extends LitElement {
   }
 
   private get visibleNavItems(): NavItem[] {
-    const isDev = this.isDevMode();
-    return this.primaryNav.filter((item) => item.id !== "library" || isDev);
+    return this.primaryNav.filter((item) => item.id !== "library");
   }
 
   private handleProjectClick(projectId: string) {
@@ -377,38 +379,64 @@ export class OmpSidebar extends LitElement {
             </button>
           </div>
 
-          <!-- Scrollable Body with Top Nav (New chat, Library, Projetos) + 1 Divider + Sessions -->
+          <!-- Scrollable Body with Top Nav -->
           <div class="flex-1 overflow-y-auto min-h-0 flex flex-col gap-1 pr-0.5 font-sans">
-            <!-- 1. Primary Nav: New Chat, Library, Projetos (links diretos e limpos) -->
-            <div class="flex flex-col gap-0.5 shrink-0" role="menu">
-              ${this.visibleNavItems.map(
-                (item) => html`
-                  <button
-                    type="button"
-                    role="menuitem"
-                    class="group relative flex w-full items-center justify-between px-3 py-2 rounded-xl text-sm font-bold font-sans transition-all cursor-pointer pointer-events-auto ${
-                      this.activeTab === item.id
-                        ? "bg-[var(--omp-primary)]/10 text-foreground-900 font-extrabold shadow-2xs ring-1 ring-[var(--omp-primary)]/25 before:absolute before:left-0 before:top-2 before:bottom-2 before:w-1 before:rounded-full before:bg-[var(--omp-primary)]"
-                        : "text-foreground-700 hover:bg-black/5 dark:hover:bg-white/8 hover:text-foreground-900"
-                    }"
-                    @click=${() => this.handleSelect(item.id)}
-                  >
-                    <div class="flex items-center gap-3 min-w-0">
-                      ${this.renderNavIcon(item.id)}
-                      <span class="truncate">${item.label}</span>
-                    </div>
-                    ${
-                      item.badge
-                        ? html`<span
-                          class="text-xs font-bold tracking-wider px-1.5 py-0.5 rounded border border-black/15 dark:border-white/20 text-foreground-600 leading-none"
-                          >${item.badge}</span
-                        >`
-                        : ""
-                    }
-                  </button>
-                `,
-              )}
-            </div>
+            <!-- 1. Primary Nav: limit to 6 items with "Ver mais" -->
+            ${(() => {
+              const allNav = this.visibleNavItems;
+              const hasMore = allNav.length > this.navLimit;
+              const isHiddenActive = allNav.slice(this.navLimit).some((item) => item.id === this.activeTab);
+              const isExpanded = this.isNavExpanded || isHiddenActive;
+              const displayed = isExpanded ? allNav : allNav.slice(0, this.navLimit);
+
+              return html`
+                <div class="flex flex-col gap-0.5 shrink-0" role="menu">
+                  ${displayed.map(
+                    (item) => html`
+                      <button
+                        type="button"
+                        role="menuitem"
+                        class="group relative flex w-full items-center justify-between px-3 py-2 rounded-xl text-sm font-bold font-sans transition-all cursor-pointer pointer-events-auto ${
+                          this.activeTab === item.id
+                            ? "bg-[var(--omp-primary)]/10 text-foreground-900 font-extrabold shadow-2xs ring-1 ring-[var(--omp-primary)]/25 before:absolute before:left-0 before:top-2 before:bottom-2 before:w-1 before:rounded-full before:bg-[var(--omp-primary)]"
+                            : "text-foreground-700 hover:bg-black/5 dark:hover:bg-white/8 hover:text-foreground-900"
+                        }"
+                        @click=${() => this.handleSelect(item.id)}
+                      >
+                        <div class="flex items-center gap-3 min-w-0">
+                          ${this.renderNavIcon(item.id)}
+                          <span class="truncate">${item.label}</span>
+                        </div>
+                        ${
+                          item.badge
+                            ? html`<span
+                              class="text-xs font-bold tracking-wider px-1.5 py-0.5 rounded border border-black/15 dark:border-white/20 text-foreground-600 leading-none"
+                              >${item.badge}</span
+                            >`
+                            : ""
+                        }
+                      </button>
+                    `,
+                  )}
+                  ${hasMore ? html`
+                    <button
+                      type="button"
+                      class="flex items-center justify-between w-full px-3 py-1.5 rounded-xl text-xs font-semibold text-foreground-600 hover:text-foreground-900 hover:bg-black/5 dark:hover:bg-white/8 transition-colors cursor-pointer select-none pointer-events-auto"
+                      @click=${() => { this.isNavExpanded = !this.isNavExpanded; }}
+                      aria-expanded=${String(isExpanded)}
+                    >
+                      <div class="flex items-center gap-2">
+                        ${isExpanded ? renderChevronUpIcon("size-3.5 text-foreground-500") : renderChevronDownIcon("size-3.5 text-foreground-500")}
+                        <span>${isExpanded ? "Ver menos" : "Ver mais"}</span>
+                      </div>
+                      <span class="text-[10px] font-mono opacity-70 px-1.5 py-0.5 rounded bg-black/5 dark:bg-white/10">
+                        ${isExpanded ? allNav.length : "+" + (allNav.length - this.navLimit)}
+                      </span>
+                    </button>
+                  ` : nothing}
+                </div>
+              `;
+            })()}
 
             <!-- Project Cards List -->
             <div class="flex flex-col gap-1.5 shrink-0">
@@ -536,130 +564,7 @@ export class OmpSidebar extends LitElement {
             </div>
           </div>
 
-          <!-- Bottom Footer: Machines Selector (New UI) -->
-          <div class="pt-2 mt-auto shrink-0 border-t border-black/10 dark:border-white/10 relative">
-            ${(() => {
-              const currentMachine = this.selectedMachine ||
-                this.machines.find((m) => m.id === "local") ||
-                this.machines[0] || {
-                  id: "local",
-                  name: "Local",
-                  kind: "local" as const,
-                };
-              const currentHealth = this.machineStatuses[currentMachine.id];
-              const isOnline =
-                currentMachine.kind === "local"
-                  ? true
-                  : currentHealth?.status === "online" ||
-                    (currentHealth?.ok ?? true);
-              const isError =
-                currentHealth?.status === "error" ||
-                currentHealth?.status === "offline";
-
-              return html`
-                <div class="relative w-full">
-                  <button
-                    type="button"
-                    class="group flex w-full items-center justify-between px-2.5 py-2 rounded-xl text-xs font-sans transition-colors cursor-pointer pointer-events-auto select-none ${this.isMachineMenuOpen ? "bg-black/8 dark:bg-white/10 text-foreground-900" : "text-foreground-700 hover:bg-black/5 dark:hover:bg-white/8 hover:text-foreground-900"}"
-                    aria-label="Selecionar Máquina: ${currentMachine.name}"
-                    aria-expanded=${String(this.isMachineMenuOpen)}
-                    @click=${(e: Event) => {
-                      e.stopPropagation();
-                      this.isMachineMenuOpen = !this.isMachineMenuOpen;
-                    }}
-                  >
-                    <div class="flex items-center gap-2.5 min-w-0 flex-1">
-                      <div class="relative flex items-center justify-center size-7 rounded-lg bg-black/5 dark:bg-white/10 text-foreground-700 dark:text-foreground-300 shrink-0">
-                        ${renderServerIcon("size-4")}
-                        <span class="absolute -bottom-0.5 -right-0.5 size-2 rounded-full border border-sidebar-light dark:border-sidebar-dark ${isError ? "bg-red-500" : isOnline ? "bg-emerald-500" : "bg-zinc-400"}"></span>
-                      </div>
-                      <div class="flex flex-col text-left min-w-0 flex-1">
-                        <span class="text-[10px] uppercase font-bold tracking-wider text-foreground-450 leading-none mb-0.5">Máquina</span>
-                        <span class="text-xs font-bold text-foreground-900 truncate leading-tight">${currentMachine.name}</span>
-                      </div>
-                    </div>
-                    ${renderChevronUpIcon("size-3.5 text-foreground-450 transition-transform duration-200 " + (this.isMachineMenuOpen ? "rotate-180" : ""))}
-                  </button>
-
-                  <!-- Popover Dropup Menu -->
-                  ${
-                    this.isMachineMenuOpen
-                      ? html`
-                    <div
-                      class="absolute bottom-full left-0 mb-1.5 w-full z-40 p-1.5 rounded-2xl border border-black/10 dark:border-white/10 bg-surface-150/95 dark:bg-background-800/95 backdrop-blur-xl shadow-2xl flex flex-col gap-1 font-sans select-none pointer-events-auto"
-                      @click=${(e: Event) => e.stopPropagation()}
-                    >
-                      <div class="px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-wider text-foreground-500 flex items-center justify-between">
-                        <span>Máquinas Conectadas</span>
-                        <span class="font-mono text-xs px-1.5 py-0.5 rounded bg-black/5 dark:bg-white/10">${this.machines.length || 1}</span>
-                      </div>
-
-                      <div class="flex flex-col gap-0.5 max-h-48 overflow-y-auto">
-                        ${(
-                          this.machines.length > 0
-                            ? this.machines
-                            : [currentMachine]
-                        ).map((m) => {
-                          const isSelected = m.id === currentMachine.id;
-                          const health = this.machineStatuses[m.id];
-                          const mOnline =
-                            m.kind === "local"
-                              ? true
-                              : health?.status === "online" ||
-                                (health?.ok ?? true);
-                          const mError =
-                            health?.status === "error" ||
-                            health?.status === "offline";
-                          const canRemove = m.kind === "remote";
-
-                          return html`
-                            <div class="group/item flex items-center justify-between px-2 py-1.5 rounded-xl transition-colors cursor-pointer ${isSelected ? "bg-black/8 dark:bg-white/10 text-foreground-900 font-bold" : "hover:bg-black/5 dark:hover:bg-white/8 text-foreground-700"}"
-                              @click=${(e: Event) => this.handleSelectMachine(m, e)}
-                            >
-                              <div class="flex items-center gap-2 min-w-0 flex-1">
-                                <span class="size-2 rounded-full shrink-0 ${mError ? "bg-red-500" : mOnline ? "bg-emerald-500" : "bg-zinc-400"}"></span>
-                                <div class="flex flex-col min-w-0 flex-1">
-                                  <span class="text-xs truncate">${m.name}</span>
-                                  <span class="text-xs opacity-70 font-mono truncate leading-none">${m.kind === "local" ? "Local OMP Web" : m.baseUrl || "Remote OMP Web"}</span>
-                                </div>
-                              </div>
-                              ${
-                                canRemove
-                                  ? html`
-                                <button
-                                  type="button"
-                                  class="opacity-0 group-hover/item:opacity-100 p-1 rounded-md hover:bg-red-500/10 text-foreground-450 hover:text-red-500 transition-opacity"
-                                  title="Remover ${m.name}"
-                                  @click=${(e: Event) => this.handleRemoveMachine(m, e)}
-                                >
-                                  ×
-                                </button>
-                              `
-                                  : nothing
-                              }
-                            </div>
-                          `;
-                        })}
-                      </div>
-
-                      <div class="h-px bg-black/10 dark:bg-white/10 my-0.5"></div>
-                      <button
-                        type="button"
-                        class="flex items-center gap-2 w-full px-2.5 py-1.5 rounded-xl text-xs font-bold text-foreground-700 hover:text-foreground-900 hover:bg-black/5 dark:hover:bg-white/8 transition-colors cursor-pointer text-left"
-                        @click=${(e: Event) => this.handleAddMachine(e)}
-                      >
-                        ${renderPlusIcon("size-3.5")}
-                        <span>Adicionar Máquina</span>
-                      </button>
-                    </div>
-                  `
-                      : nothing
-                  }
-                </div>
-              `;
-            })()}
           </div>
-        </div>
       </aside>
     `;
   }

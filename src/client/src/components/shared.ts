@@ -757,42 +757,23 @@ export const formattedTextStyles = css`
   }
 
   /* Badges / Pills */
-  .ui-badge {
+  .ui-badge,
+  .ui-badge-neutral,
+  .ui-badge-orange,
+  .ui-badge-blue,
+  .ui-badge-green,
+  .ui-badge-purple,
+  .ui-badge-red {
     display: inline-flex;
     align-items: center;
-    padding: 3px 10px;
+    padding: 2.5px 8px;
     border-radius: 9999px;
     font-size: 11px;
     font-weight: 600;
     letter-spacing: 0.02em;
-    background: rgba(88, 166, 255, 0.15);
-    color: var(--pi-accent, #58a6ff);
-    border: 1px solid rgba(88, 166, 255, 0.25);
-  }
-  .ui-badge-orange {
-    background: rgba(210, 153, 34, 0.15);
-    color: #f0883e;
-    border-color: rgba(210, 153, 34, 0.3);
-  }
-  .ui-badge-blue {
-    background: rgba(88, 166, 255, 0.15);
-    color: #58a6ff;
-    border-color: rgba(88, 166, 255, 0.3);
-  }
-  .ui-badge-green {
-    background: rgba(63, 185, 80, 0.15);
-    color: #3fb950;
-    border-color: rgba(63, 185, 80, 0.3);
-  }
-  .ui-badge-purple {
-    background: rgba(188, 140, 255, 0.15);
-    color: #bc8cff;
-    border-color: rgba(188, 140, 255, 0.3);
-  }
-  .ui-badge-red {
-    background: rgba(248, 81, 73, 0.15);
-    color: #f85149;
-    border-color: rgba(248, 81, 73, 0.3);
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--pi-muted, #94a3b8);
+    border: 1px solid rgba(255, 255, 255, 0.12);
   }
 
   /* KPI Grid */

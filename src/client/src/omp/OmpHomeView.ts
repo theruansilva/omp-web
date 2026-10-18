@@ -1,4 +1,5 @@
 import { LitElement, html } from "lit";
+import type { Machine, MachineHealth } from "../api";
 import { customElement, property } from "lit/decorators.js";
 import "./OmpComposer";
 import type { ComposerProject } from "./OmpComposer";
@@ -18,6 +19,9 @@ export class OmpHomeView extends LitElement {
   @property({ type: String }) sessionId?: string;
   @property({ type: String }) cwd?: string;
   @property({ type: String }) machineId = "local";
+  @property({ attribute: false }) machines: Machine[] = [];
+  @property({ attribute: false }) selectedMachine?: Machine;
+  @property({ attribute: false }) machineStatuses: Record<string, MachineHealth> = {};
 
   protected override createRenderRoot() {
     return this;
@@ -55,6 +59,12 @@ export class OmpHomeView extends LitElement {
               .sessionId=${this.sessionId}
               .cwd=${this.cwd}
               .machineId=${this.machineId}
+              .machines=${this.machines}
+              .selectedMachine=${this.selectedMachine}
+              .machineStatuses=${this.machineStatuses}
+              @select-machine=${(e: CustomEvent) => this.dispatchEvent(new CustomEvent("select-machine", { detail: e.detail, bubbles: true, composed: true }))}
+              @add-machine=${(e: CustomEvent) => this.dispatchEvent(new CustomEvent("add-machine", { detail: e.detail, bubbles: true, composed: true }))}
+              @remove-machine=${(e: CustomEvent) => this.dispatchEvent(new CustomEvent("remove-machine", { detail: e.detail, bubbles: true, composed: true }))}
               @open-models=${() => this.dispatchEvent(new CustomEvent("open-models", { bubbles: true, composed: true }))}
               @model-change=${(e: CustomEvent) => this.dispatchEvent(new CustomEvent("model-change", { detail: e.detail, bubbles: true, composed: true }))}
               @model-tier-change=${(e: CustomEvent) => this.dispatchEvent(new CustomEvent("model-tier-change", { detail: e.detail, bubbles: true, composed: true }))}

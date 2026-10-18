@@ -484,3 +484,94 @@ describe("OmpComposer Hub (Slash commands, Shell direct !, File mentions @)", ()
     expect((composer as any).fileTrigger?.query).toBe("src/");
   });
 });
+
+describe("OmpComposer Machine Selector Integration", () => {
+  it("renders composer-machine-pill in bottom dock", () => {
+    const composer = new OmpComposer();
+    composer.machines = [
+      { id: "local", name: "Local", kind: "local" },
+      { id: "remote-gpu", name: "GPU Rig", kind: "remote", baseUrl: "http://10.0.0.2:8504" },
+    ];
+    composer.selectedMachine = composer.machines[0];
+    const rendered = composer.render();
+    const str = JSON.stringify(rendered);
+    expect(str).toContain("composer-machine-pill");
+    expect(str).toContain("Local");
+  });
+
+  it("toggles machine selector drawer and dispatches select-machine and add-machine", () => {
+    const composer = new OmpComposer();
+    composer.machines = [
+      { id: "local", name: "Local Machine", kind: "local" },
+      { id: "remote-1", name: "GPU Rig", kind: "remote", baseUrl: "http://10.0.0.2:8504" },
+    ];
+    composer.selectedMachine = composer.machines[0];
+
+    // Toggle open
+    composer.toggleMachineSelector();
+    expect(composer.isAskOpen).toBe(true);
+    expect(composer.askMode).toBe("machines");
+
+    const rendered = composer.render();
+    const str = JSON.stringify(rendered);
+    expect(str).toContain("Selecione a máquina para esta sessão");
+    expect(str).toContain("Local Machine");
+    expect(str).toContain("GPU Rig");
+    expect(str).toContain("Adicionar Máquina");
+
+    // Select machine event
+    let selectedMachine: any = null;
+    composer.addEventListener("select-machine", ((e: CustomEvent) => {
+      selectedMachine = e.detail.machine;
+    }) as EventListener);
+
+    (composer as any).selectMachineOption(composer.machines[1]);
+    expect(selectedMachine?.id).toBe("remote-1");
+    expect(composer.isAskOpen).toBe(false);
+
+    // Add machine event
+    let addFired = false;
+    composer.addEventListener("add-machine", (() => {
+      addFired = true;
+    }) as EventListener);
+    (composer as any).handleAddMachine();
+    expect(addFired).toBe(true);
+  });
+});
+
+describe("OmpComposer Ask Context and Preview", () => {
+  it("renders context banner and option preview when provided", () => {
+    const composer = new OmpComposer();
+    composer.askContext = "Analisando abordagem para autenticação JWT vs Sessões";
+    composer.pendingAsk = {
+      requestId: "req-preview",
+      questions: [
+        {
+          id: "q1",
+          question: "Qual mecanismo de auth?",
+          header: "Segurança",
+          options: [
+            {
+              label: "JWT",
+              description: "Tokens sem estado armazenados em cookie HttpOnly",
+              preview: "const token = jwt.sign(payload, secret);",
+            },
+          ],
+        },
+      ],
+    };
+    composer.updated(new Map([["pendingAsk", undefined]]));
+
+    const rendered = composer.render();
+    const str = JSON.stringify(rendered);
+
+    // Context banner
+    expect(str).toContain("Contexto");
+    expect(str).toContain("Analisando abordagem para autenticação JWT vs Sessões");
+
+    // Option title, full description without truncate, and preview
+    expect(str).toContain("JWT");
+    expect(str).toContain("Tokens sem estado armazenados em cookie HttpOnly");
+    expect(str).toContain("const token = jwt.sign(payload, secret);");
+  });
+});
