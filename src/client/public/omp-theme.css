@@ -510,6 +510,48 @@
 }
 
 
+
+/* =========================================================
+   PROCESS BODY EXPANDER (CHAT PROCESS / THINKING)
+   ========================================================= */
+
+.omp-process-expander {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 360ms cubic-bezier(0.16, 1, 0.3, 1);
+  overflow: hidden;
+}
+
+.omp-process-expander.open {
+  grid-template-rows: 1fr;
+}
+
+.omp-process-expander-inner {
+  min-height: 0;
+  overflow: hidden;
+}
+
+.omp-process-expander.open .omp-process-content {
+  animation: process-body-reveal 260ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.omp-process-expander:not(.open) .omp-process-content {
+  opacity: 0;
+  transform: translateY(-4px);
+  transition: opacity 120ms linear, transform 120ms linear;
+}
+
+@keyframes process-body-reveal {
+  0% {
+    opacity: 0;
+    transform: translateY(8px) scale(0.99);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
 /* =========================================================
    COMPOSER DROPDOWN POPOVERS (MODEL & ATTACHMENTS)
    ========================================================= */
@@ -2349,7 +2391,9 @@ html[data-theme="dark"] .composer-dropdown-popover .composer-dropdown-icon {
    .omp-ask-island,
    .omp-ask-island.closing,
    .composer-ask-expander,
-   .composer-ask-item {
+   .composer-ask-item,
+   .omp-process-expander,
+   .omp-process-content {
      animation: none !important;
      transition: none !important;
      transform: none !important;
