@@ -2296,20 +2296,20 @@ export class OmpComposer extends LitElement {
         <!-- Header row -->
         <div class="composer-ask-header px-1 pb-2">
           <div class="flex items-center justify-between">
-            <div class="text-sm font-bold text-foreground-900 leading-snug flex items-center gap-2 flex-wrap">
-              <span class="size-5 rounded-lg flex items-center justify-center font-mono font-bold text-xs bg-black/5 dark:bg-white/10 text-foreground-800 dark:text-foreground-100 border border-black/8 dark:border-white/10">/</span>
+            <div class="text-sm font-bold text-foreground-900 dark:text-white leading-snug flex items-center gap-2 flex-wrap">
+              <span class="size-5 rounded-lg flex items-center justify-center font-mono font-bold text-xs bg-black/5 dark:bg-white/10 text-foreground-800 dark:text-white border border-black/8 dark:border-white/15">/</span>
               <span>Comandos & Skills</span>
-              <span class="font-mono text-xs px-1.5 py-0.5 rounded bg-black/5 dark:bg-white/10 text-foreground-700 dark:text-foreground-200 border border-black/8 dark:border-white/10">
+              <span class="font-mono text-xs px-1.5 py-0.5 rounded bg-black/5 dark:bg-white/10 text-foreground-700 dark:text-white border border-black/8 dark:border-white/15">
                 ${this.activeSlashCommands.length}
               </span>
-              <span class="text-[10px] opacity-75 text-foreground-600 dark:text-foreground-400 font-mono hidden sm:inline">↑↓ Navegar · ↵ Selecionar</span>
+              <span class="text-[10px] text-foreground-600 dark:text-white/60 font-mono hidden sm:inline">↑↓ Navegar · ↵ Selecionar</span>
             </div>
 
             <button
               type="button"
               title="Fechar"
               aria-label="Fechar comandos"
-              class="rounded-full text-foreground-500 hover:text-foreground-900 hover:bg-black/5 dark:hover:bg-white/10 transition-colors cursor-pointer pointer-events-auto text-xs p-1"
+              class="rounded-full text-foreground-500 dark:text-white/70 hover:dark:text-white hover:bg-black/5 dark:hover:bg-white/10 transition-colors cursor-pointer pointer-events-auto text-xs p-1"
               @click=${(e: MouseEvent) => {
                 e.stopPropagation();
                 this.closeSlashMenu();
@@ -2356,7 +2356,7 @@ export class OmpComposer extends LitElement {
                         ? "bg-purple-500/15 text-purple-600 dark:text-purple-400 border-purple-500/25"
                         : isSelected
                           ? "bg-blue-500/15 text-blue-600 dark:text-blue-400 border-blue-500/30"
-                          : "bg-black/5 dark:bg-white/10 border-black/8 dark:border-white/12 text-foreground-800 dark:text-foreground-100"
+                          : "bg-black/5 dark:bg-white/10 border-black/8 dark:border-white/15 text-foreground-800 dark:text-white"
                   }">
                     ${
                       isBtw
@@ -2371,22 +2371,22 @@ export class OmpComposer extends LitElement {
                       <span class="text-sm font-bold leading-tight font-mono truncate ${
                         isSelected
                           ? "text-blue-600 dark:text-blue-400"
-                          : "text-foreground-900"
+                          : "text-foreground-900 dark:text-white"
                       }">
                         ${cmd.label}
                       </span>
                       <span class="text-xs font-medium leading-tight truncate ${
                         isSelected
-                          ? "text-blue-600/80 dark:text-blue-300/80"
-                          : "text-foreground-600 dark:text-foreground-300"
+                          ? "text-blue-600/90 dark:text-blue-200"
+                          : "text-foreground-600 dark:text-white/80"
                       }">
                         · ${cmd.title}
                       </span>
                     </div>
                     <span class="text-xs leading-tight mt-0.5 truncate ${
                       isSelected
-                        ? "text-foreground-800 dark:text-foreground-200 font-medium"
-                        : "text-foreground-600 dark:text-foreground-300 opacity-80"
+                        ? "text-foreground-800 dark:text-white/85 font-medium"
+                        : "text-foreground-600 dark:text-white/60"
                     }">
                       ${cmd.desc}
                     </span>
@@ -2400,11 +2400,11 @@ export class OmpComposer extends LitElement {
                         ? "bg-purple-500/15 text-purple-600 dark:text-purple-400 border-purple-500/20"
                         : isSelected
                           ? "bg-blue-500/15 text-blue-600 dark:text-blue-400 border-blue-500/30"
-                          : "bg-black/5 dark:bg-white/10 text-foreground-700 dark:text-foreground-200 border-black/8 dark:border-white/10"
+                          : "bg-black/5 dark:bg-white/10 text-foreground-700 dark:text-white border-black/8 dark:border-white/15"
                   }">
                     ${cmd.badge}
                   </span>
-                  ${isSelected ? renderCheckIcon("size-4 text-blue-600 dark:text-blue-400") : html`<span class="text-xs font-semibold text-foreground-400 opacity-0 group-hover:opacity-100 transition-opacity">Selecionar</span>`}
+                  ${isSelected ? renderCheckIcon("size-4 text-blue-600 dark:text-blue-400") : html`<span class="text-xs font-semibold text-foreground-400 dark:text-white/60 opacity-0 group-hover:opacity-100 transition-opacity">Selecionar</span>`}
                 </div>
               </button>
             `;
@@ -2420,20 +2420,20 @@ export class OmpComposer extends LitElement {
         <!-- Header row -->
         <div class="composer-ask-header px-1 pb-2">
           <div class="flex items-center justify-between">
-            <div class="text-sm font-bold text-foreground-900 leading-snug flex items-center gap-2 flex-wrap">
-              <span class="size-5 rounded-lg flex items-center justify-center font-mono font-bold text-xs bg-black/5 dark:bg-white/10 text-foreground-800 dark:text-foreground-100 border border-black/8 dark:border-white/10">@</span>
+            <div class="text-sm font-bold text-foreground-900 dark:text-white leading-snug flex items-center gap-2 flex-wrap">
+              <span class="size-5 rounded-lg flex items-center justify-center font-mono font-bold text-xs bg-black/5 dark:bg-white/10 text-foreground-800 dark:text-white border border-black/8 dark:border-white/15">@</span>
               <span>Arquivos do Workspace</span>
-              <span class="font-mono text-xs px-1.5 py-0.5 rounded bg-black/5 dark:bg-white/10 text-foreground-700 dark:text-foreground-200 border border-black/8 dark:border-white/10">
+              <span class="font-mono text-xs px-1.5 py-0.5 rounded bg-black/5 dark:bg-white/10 text-foreground-700 dark:text-white border border-black/8 dark:border-white/15">
                 ${this.activeFileSuggestions.length}
               </span>
-              <span class="text-[10px] opacity-75 text-foreground-600 dark:text-foreground-400 font-mono hidden sm:inline">↑↓ Navegar · ↵ Selecionar</span>
+              <span class="text-[10px] text-foreground-600 dark:text-white/60 font-mono hidden sm:inline">↑↓ Navegar · ↵ Selecionar</span>
             </div>
 
             <button
               type="button"
               title="Fechar"
               aria-label="Fechar arquivos"
-              class="rounded-full text-foreground-500 hover:text-foreground-900 hover:bg-black/5 dark:hover:bg-white/10 transition-colors cursor-pointer pointer-events-auto text-xs p-1"
+              class="rounded-full text-foreground-500 dark:text-white/70 hover:dark:text-white hover:bg-black/5 dark:hover:bg-white/10 transition-colors cursor-pointer pointer-events-auto text-xs p-1"
               @click=${(e: MouseEvent) => {
                 e.stopPropagation();
                 this.closeFileMenu();
@@ -2475,7 +2475,7 @@ export class OmpComposer extends LitElement {
                   <div class="relative size-9 shrink-0 flex items-center justify-center rounded-xl border shadow-xs transition-colors ${
                     isSelected
                       ? "bg-blue-500/15 text-blue-600 dark:text-blue-400 border-blue-500/30"
-                      : "bg-black/5 dark:bg-white/10 border-black/8 dark:border-white/12 text-foreground-800 dark:text-foreground-100"
+                      : "bg-black/5 dark:bg-white/10 border-black/8 dark:border-white/15 text-foreground-800 dark:text-white"
                   }">
                     ${isDir ? renderFolderIcon("size-4") : html`<span class="text-xs font-mono font-bold">@</span>`}
                   </div>
@@ -2483,14 +2483,14 @@ export class OmpComposer extends LitElement {
                     <span class="text-sm font-semibold leading-tight font-mono truncate ${
                       isSelected
                         ? "text-blue-600 dark:text-blue-400"
-                        : "text-foreground-900"
+                        : "text-foreground-900 dark:text-white"
                     }">
                       ${file.path}
                     </span>
                     <span class="text-xs leading-tight mt-0.5 font-mono truncate ${
                       isSelected
-                        ? "text-foreground-800 dark:text-foreground-200 font-medium"
-                        : "text-foreground-600 dark:text-foreground-300 opacity-80"
+                        ? "text-foreground-800 dark:text-white/85 font-medium"
+                        : "text-foreground-600 dark:text-white/60"
                     }">
                       ${isDir ? "Diretório" : "Arquivo"}
                     </span>
@@ -2500,11 +2500,11 @@ export class OmpComposer extends LitElement {
                   <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full font-mono border transition-colors ${
                     isSelected
                       ? "bg-blue-500/15 text-blue-600 dark:text-blue-400 border-blue-500/30"
-                      : "bg-black/5 dark:bg-white/10 text-foreground-700 dark:text-foreground-200 border-black/8 dark:border-white/10"
+                      : "bg-black/5 dark:bg-white/10 text-foreground-700 dark:text-white border-black/8 dark:border-white/15"
                   }">
                     ${file.kind}
                   </span>
-                  ${isSelected ? renderCheckIcon("size-4 text-blue-600 dark:text-blue-400") : html`<span class="text-xs font-semibold text-foreground-400 opacity-0 group-hover:opacity-100 transition-opacity">Selecionar</span>`}
+                  ${isSelected ? renderCheckIcon("size-4 text-blue-600 dark:text-blue-400") : html`<span class="text-xs font-semibold text-foreground-400 dark:text-white/60 opacity-0 group-hover:opacity-100 transition-opacity">Selecionar</span>`}
                 </div>
               </button>
             `;
