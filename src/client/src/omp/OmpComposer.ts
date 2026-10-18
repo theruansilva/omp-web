@@ -2290,6 +2290,43 @@ export class OmpComposer extends LitElement {
     `;
   }
 
+  private renderCommandBadge(badge: string) {
+    const b = (badge || "").toLowerCase();
+    let colorClass = "bg-white/8 text-zinc-300 dark:text-zinc-200 border-white/10";
+    if (b === "contexto") {
+      colorClass = "bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/25";
+    } else if (b === "tarefas" || b === "plan") {
+      colorClass = "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/25";
+    } else if (b === "modelo" || b === "model") {
+      colorClass = "bg-blue-500/15 text-blue-600 dark:text-blue-400 border-blue-500/25";
+    } else if (b === "skill") {
+      colorClass = "bg-purple-500/15 text-purple-600 dark:text-purple-400 border-purple-500/25";
+    } else if (b === "workspace") {
+      colorClass = "bg-cyan-500/15 text-cyan-600 dark:text-cyan-400 border-cyan-500/25";
+    } else if (b === "métricas" || b === "runtime") {
+      colorClass = "bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 border-indigo-500/25";
+    }
+
+    return html`
+      <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full font-mono border ${colorClass}">
+        ${badge}
+      </span>
+    `;
+  }
+
+  private renderFileBadge(kind: string) {
+    const isDir = kind === "directory";
+    return html`
+      <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full font-mono border ${
+        isDir
+          ? "bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/25"
+          : "bg-blue-500/15 text-blue-600 dark:text-blue-400 border-blue-500/25"
+      }">
+        ${kind}
+      </span>
+    `;
+  }
+
   private renderSlashCommandsContent() {
     return html`
       <div class="px-3.5 pt-3 pb-1 flex flex-col pointer-events-auto font-sans">
@@ -2297,19 +2334,19 @@ export class OmpComposer extends LitElement {
         <div class="composer-ask-header px-1 pb-2">
           <div class="flex items-center justify-between">
             <div class="text-sm font-bold text-foreground-900 dark:text-white leading-snug flex items-center gap-2 flex-wrap">
-              <span class="size-5 rounded-lg flex items-center justify-center font-mono font-bold text-xs bg-black/5 dark:bg-white/10 text-foreground-800 dark:text-white border border-black/8 dark:border-white/15">/</span>
+              <span class="size-5 rounded-lg flex items-center justify-center font-mono font-bold text-xs bg-black/5 dark:bg-white/10 text-foreground-800 dark:text-zinc-200 border border-black/8 dark:border-white/15">/</span>
               <span>Comandos & Skills</span>
-              <span class="font-mono text-xs px-1.5 py-0.5 rounded bg-black/5 dark:bg-white/10 text-foreground-700 dark:text-white border border-black/8 dark:border-white/15">
+              <span class="font-mono text-xs px-1.5 py-0.5 rounded bg-black/5 dark:bg-white/10 text-foreground-700 dark:text-zinc-300 border border-black/8 dark:border-white/15">
                 ${this.activeSlashCommands.length}
               </span>
-              <span class="text-[10px] text-foreground-600 dark:text-white/60 font-mono hidden sm:inline">↑↓ Navegar · ↵ Selecionar</span>
+              <span class="text-[10px] text-foreground-600 dark:text-zinc-400 font-mono hidden sm:inline">↑↓ Navegar · ↵ Selecionar</span>
             </div>
 
             <button
               type="button"
               title="Fechar"
               aria-label="Fechar comandos"
-              class="rounded-full text-foreground-500 dark:text-white/70 hover:dark:text-white hover:bg-black/5 dark:hover:bg-white/10 transition-colors cursor-pointer pointer-events-auto text-xs p-1"
+              class="rounded-full text-foreground-500 dark:text-zinc-400 hover:dark:text-white hover:bg-black/5 dark:hover:bg-white/10 transition-colors cursor-pointer pointer-events-auto text-xs p-1"
               @click=${(e: MouseEvent) => {
                 e.stopPropagation();
                 this.closeSlashMenu();
@@ -2356,7 +2393,7 @@ export class OmpComposer extends LitElement {
                         ? "bg-purple-500/15 text-purple-600 dark:text-purple-400 border-purple-500/25"
                         : isSelected
                           ? "bg-blue-500/15 text-blue-600 dark:text-blue-400 border-blue-500/30"
-                          : "bg-black/5 dark:bg-white/10 border-black/8 dark:border-white/15 text-foreground-800 dark:text-white"
+                          : "bg-black/5 dark:bg-white/10 border-black/8 dark:border-white/15 text-foreground-800 dark:text-zinc-200"
                   }">
                     ${
                       isBtw
@@ -2378,33 +2415,23 @@ export class OmpComposer extends LitElement {
                       <span class="text-xs font-medium leading-tight truncate ${
                         isSelected
                           ? "text-blue-600/90 dark:text-blue-200"
-                          : "text-foreground-600 dark:text-white/80"
+                          : "text-foreground-600 dark:text-zinc-400"
                       }">
                         · ${cmd.title}
                       </span>
                     </div>
                     <span class="text-xs leading-tight mt-0.5 truncate ${
                       isSelected
-                        ? "text-foreground-800 dark:text-white/85 font-medium"
-                        : "text-foreground-600 dark:text-white/60"
+                        ? "text-foreground-800 dark:text-zinc-300 font-medium"
+                        : "text-foreground-500 dark:text-zinc-400"
                     }">
                       ${cmd.desc}
                     </span>
                   </div>
                 </div>
                 <div class="flex items-center gap-2 shrink-0 ps-2">
-                  <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full font-mono border transition-colors ${
-                    isBtw
-                      ? "bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/20"
-                      : isSkill
-                        ? "bg-purple-500/15 text-purple-600 dark:text-purple-400 border-purple-500/20"
-                        : isSelected
-                          ? "bg-blue-500/15 text-blue-600 dark:text-blue-400 border-blue-500/30"
-                          : "bg-black/5 dark:bg-white/10 text-foreground-700 dark:text-white border-black/8 dark:border-white/15"
-                  }">
-                    ${cmd.badge}
-                  </span>
-                  ${isSelected ? renderCheckIcon("size-4 text-blue-600 dark:text-blue-400") : html`<span class="text-xs font-semibold text-foreground-400 dark:text-white/60 opacity-0 group-hover:opacity-100 transition-opacity">Selecionar</span>`}
+                  ${this.renderCommandBadge(cmd.badge)}
+                  ${isSelected ? renderCheckIcon("size-4 text-blue-600 dark:text-blue-400") : html`<span class="text-xs font-semibold text-foreground-400 opacity-0 group-hover:opacity-100 transition-opacity">Selecionar</span>`}
                 </div>
               </button>
             `;
@@ -2421,19 +2448,19 @@ export class OmpComposer extends LitElement {
         <div class="composer-ask-header px-1 pb-2">
           <div class="flex items-center justify-between">
             <div class="text-sm font-bold text-foreground-900 dark:text-white leading-snug flex items-center gap-2 flex-wrap">
-              <span class="size-5 rounded-lg flex items-center justify-center font-mono font-bold text-xs bg-black/5 dark:bg-white/10 text-foreground-800 dark:text-white border border-black/8 dark:border-white/15">@</span>
+              <span class="size-5 rounded-lg flex items-center justify-center font-mono font-bold text-xs bg-black/5 dark:bg-white/10 text-foreground-800 dark:text-zinc-200 border border-black/8 dark:border-white/15">@</span>
               <span>Arquivos do Workspace</span>
-              <span class="font-mono text-xs px-1.5 py-0.5 rounded bg-black/5 dark:bg-white/10 text-foreground-700 dark:text-white border border-black/8 dark:border-white/15">
+              <span class="font-mono text-xs px-1.5 py-0.5 rounded bg-black/5 dark:bg-white/10 text-foreground-700 dark:text-zinc-300 border border-black/8 dark:border-white/15">
                 ${this.activeFileSuggestions.length}
               </span>
-              <span class="text-[10px] text-foreground-600 dark:text-white/60 font-mono hidden sm:inline">↑↓ Navegar · ↵ Selecionar</span>
+              <span class="text-[10px] text-foreground-600 dark:text-zinc-400 font-mono hidden sm:inline">↑↓ Navegar · ↵ Selecionar</span>
             </div>
 
             <button
               type="button"
               title="Fechar"
               aria-label="Fechar arquivos"
-              class="rounded-full text-foreground-500 dark:text-white/70 hover:dark:text-white hover:bg-black/5 dark:hover:bg-white/10 transition-colors cursor-pointer pointer-events-auto text-xs p-1"
+              class="rounded-full text-foreground-500 dark:text-zinc-400 hover:dark:text-white hover:bg-black/5 dark:hover:bg-white/10 transition-colors cursor-pointer pointer-events-auto text-xs p-1"
               @click=${(e: MouseEvent) => {
                 e.stopPropagation();
                 this.closeFileMenu();
@@ -2473,9 +2500,11 @@ export class OmpComposer extends LitElement {
               >
                 <div class="flex items-center gap-3 min-w-0">
                   <div class="relative size-9 shrink-0 flex items-center justify-center rounded-xl border shadow-xs transition-colors ${
-                    isSelected
-                      ? "bg-blue-500/15 text-blue-600 dark:text-blue-400 border-blue-500/30"
-                      : "bg-black/5 dark:bg-white/10 border-black/8 dark:border-white/15 text-foreground-800 dark:text-white"
+                    isDir
+                      ? "bg-amber-500/15 text-amber-500 dark:text-amber-400 border-amber-500/25"
+                      : isSelected
+                        ? "bg-blue-500/15 text-blue-600 dark:text-blue-400 border-blue-500/30"
+                        : "bg-black/5 dark:bg-white/10 border-black/8 dark:border-white/15 text-foreground-800 dark:text-zinc-200"
                   }">
                     ${isDir ? renderFolderIcon("size-4") : html`<span class="text-xs font-mono font-bold">@</span>`}
                   </div>
@@ -2489,22 +2518,16 @@ export class OmpComposer extends LitElement {
                     </span>
                     <span class="text-xs leading-tight mt-0.5 font-mono truncate ${
                       isSelected
-                        ? "text-foreground-800 dark:text-white/85 font-medium"
-                        : "text-foreground-600 dark:text-white/60"
+                        ? "text-foreground-800 dark:text-zinc-300 font-medium"
+                        : "text-foreground-500 dark:text-zinc-400"
                     }">
                       ${isDir ? "Diretório" : "Arquivo"}
                     </span>
                   </div>
                 </div>
                 <div class="flex items-center gap-2 shrink-0 ps-2">
-                  <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full font-mono border transition-colors ${
-                    isSelected
-                      ? "bg-blue-500/15 text-blue-600 dark:text-blue-400 border-blue-500/30"
-                      : "bg-black/5 dark:bg-white/10 text-foreground-700 dark:text-white border-black/8 dark:border-white/15"
-                  }">
-                    ${file.kind}
-                  </span>
-                  ${isSelected ? renderCheckIcon("size-4 text-blue-600 dark:text-blue-400") : html`<span class="text-xs font-semibold text-foreground-400 dark:text-white/60 opacity-0 group-hover:opacity-100 transition-opacity">Selecionar</span>`}
+                  ${this.renderFileBadge(file.kind)}
+                  ${isSelected ? renderCheckIcon("size-4 text-blue-600 dark:text-blue-400") : html`<span class="text-xs font-semibold text-foreground-400 opacity-0 group-hover:opacity-100 transition-opacity">Selecionar</span>`}
                 </div>
               </button>
             `;
@@ -2513,7 +2536,6 @@ export class OmpComposer extends LitElement {
       </div>
     `;
   }
-
   private renderExpanderContent() {
     let mode: "commands" | "files" | "ask" = this.lastExpanderMode;
     if (this.isExpanderOpen) {

@@ -1,7 +1,5 @@
 // Import squircles library so Vite bundles it into client assets
 import "@progmruansilva/squircles/index.css";
-import "../../omp-theme.css";
-import "../../ui-colors.css";
 
 export * from "./icons";
 export * from "./OmpSidebar";
