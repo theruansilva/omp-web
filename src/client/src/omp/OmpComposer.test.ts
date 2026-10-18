@@ -575,3 +575,55 @@ describe("OmpComposer Ask Context and Preview", () => {
     expect(str).toContain("const token = jwt.sign(payload, secret);");
   });
 });
+
+
+describe("OmpComposer In-Composer Autocomplete (Skills & Files)", () => {
+  it("limits slash commands to at most 5 items", () => {
+    const composer = new OmpComposer();
+    composer.openSlashMenu("");
+    expect(composer.filteredSlashCommands.length).toBeLessThanOrEqual(5);
+  });
+  it("renders slash commands in composer-ask-expander with max-h-[260px] scroll container", () => {
+    const composer = new OmpComposer();
+    composer.openSlashMenu("");
+    expect(composer.isExpanderOpen).toBe(true);
+
+    const rendered = composer.render();
+    const str = JSON.stringify(rendered);
+    expect(str).toContain("composer-ask-expander");
+    expect(str).toContain("composer-slash-menu");
+    expect(str).toContain("max-h-[260px]");
+    expect(str).toContain("overflow-y-auto");
+    expect(str).toContain("Comandos & Skills");
+    expect(str).toContain("/btw");
+  });
+
+  it("renders file suggestions in composer-ask-expander with height limit", () => {
+    const composer = new OmpComposer();
+    (composer as any).fileMenuOpen = true;
+    (composer as any).fileSuggestions = [
+      { path: "src/main.ts", kind: "file" },
+      { path: "src/omp/", kind: "directory" },
+    ];
+    expect(composer.isExpanderOpen).toBe(true);
+
+    const rendered = composer.render();
+    const str = JSON.stringify(rendered);
+    expect(str).toContain("composer-ask-expander");
+    expect(str).toContain("composer-file-menu");
+    expect(str).toContain("max-h-[260px]");
+    expect(str).toContain("Arquivos do Workspace");
+    expect(str).toContain("src/main.ts");
+    expect(str).toContain("src/omp/");
+  });
+
+  it("closes in-composer expander when selecting a command", () => {
+    const composer = new OmpComposer();
+    composer.openSlashMenu("");
+    expect(composer.isExpanderOpen).toBe(true);
+
+    composer.selectSlashCommand("btw");
+    expect((composer as any).slashCommandsOpen).toBe(false);
+    expect(composer.isExpanderOpen).toBe(false);
+  });
+});

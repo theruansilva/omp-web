@@ -245,6 +245,53 @@ export class OmpComposer extends LitElement {
   @state() private btwCopied = false;
   @state() private isBtwOpen = false;
   @state() private cachedBtwState?: BtwState;
+  @state() private lastExpanderMode: "commands" | "files" | "ask" = "ask";
+  @state() private cachedSlashCommands: SlashCommandItem[] = [];
+  @state() private cachedFileSuggestions: FileSuggestion[] = [];
+
+  get isExpanderOpen(): boolean {
+    return (
+      (this.slashCommandsOpen && this.filteredSlashCommands.length > 0) ||
+      (this.fileMenuOpen && this.fileSuggestions.length > 0) ||
+      this.isAskOpen
+    );
+  }
+
+  private get activeSlashCommands(): SlashCommandItem[] {
+    if (this.slashCommandsOpen && this.filteredSlashCommands.length > 0) {
+      this.cachedSlashCommands = this.filteredSlashCommands.slice(0, 5);
+      return this.cachedSlashCommands;
+    }
+    return this.cachedSlashCommands.slice(0, 5);
+  }
+
+  private get activeFileSuggestions(): FileSuggestion[] {
+    if (this.fileMenuOpen && this.fileSuggestions.length > 0) {
+      this.cachedFileSuggestions = this.fileSuggestions.slice(0, 5);
+      return this.cachedFileSuggestions;
+    }
+    return this.cachedFileSuggestions.slice(0, 5);
+  }
+
+  private scrollSelectedSlashItemIntoView() {
+    if (typeof requestAnimationFrame === "undefined") return;
+    requestAnimationFrame(() => {
+      const selected = this.querySelector?.(
+        '#composer-slash-menu [aria-selected="true"]',
+      ) as HTMLElement | null;
+      selected?.scrollIntoView?.({ block: "nearest" });
+    });
+  }
+
+  private scrollSelectedFileItemIntoView() {
+    if (typeof requestAnimationFrame === "undefined") return;
+    requestAnimationFrame(() => {
+      const selected = this.querySelector?.(
+        '#composer-file-menu [aria-selected="true"]',
+      ) as HTMLElement | null;
+      selected?.scrollIntoView?.({ block: "nearest" });
+    });
+  }
 
   private readonly defaultSlashCommands: SlashCommandItem[] = [
     {
@@ -471,13 +518,15 @@ export class OmpComposer extends LitElement {
   get filteredSlashCommands(): SlashCommandItem[] {
     const q = this.slashFilter.trim().toLowerCase();
     const all = this.allAvailableSlashCommands;
-    if (!q) return all;
-    return all.filter(
-      (cmd) =>
-        cmd.name.toLowerCase().startsWith(q) ||
-        cmd.title.toLowerCase().includes(q) ||
-        cmd.desc.toLowerCase().includes(q),
-    );
+    const matches = !q
+      ? all
+      : all.filter(
+          (cmd) =>
+            cmd.name.toLowerCase().startsWith(q) ||
+            cmd.title.toLowerCase().includes(q) ||
+            cmd.desc.toLowerCase().includes(q),
+        );
+    return matches.slice(0, 5);
   }
 
   @state() private activeMenu: "create" | "model" | null = null;
@@ -677,6 +726,12 @@ export class OmpComposer extends LitElement {
         this.closeSlashMenu();
         return;
       }
+      if (this.fileMenuOpen) {
+        e.preventDefault();
+        e.stopPropagation();
+        this.closeFileMenu();
+        return;
+      }
       if (this.hasActiveBtw) {
         e.preventDefault();
         e.stopPropagation();
@@ -840,6 +895,8 @@ export class OmpComposer extends LitElement {
   }
 
   public toggleMachineSelector() {
+    this.closeSlashMenu();
+    this.closeFileMenu();
     if (this.isAskOpen && this.askMode === "machines") {
       this.isAskOpen = false;
     } else {
@@ -887,6 +944,8 @@ export class OmpComposer extends LitElement {
   }
 
   public toggleProjectSelector() {
+    this.closeSlashMenu();
+    this.closeFileMenu();
     if (this.isAskOpen && this.askMode === "projects") {
       this.isAskOpen = false;
     } else {
@@ -1484,19 +1543,29 @@ export class OmpComposer extends LitElement {
   }
 
   public openFileMenu(trigger: { from: number; to: number; query: string }) {
+    if (this.isAskOpen) {
+      this.isAskOpen = false;
+    }
     this.fileTrigger = trigger;
     this.fileMenuOpen = true;
     this.selectedFileIndex = 0;
+    this.scrollSelectedFileItemIntoView();
     void this.fetchFileSuggestions(trigger.query);
   }
 
   public closeFileMenu() {
     if (!this.fileMenuOpen) return;
     this.fileMenuOpen = false;
-    this.fileSuggestions = [];
     this.fileTrigger = undefined;
     this.selectedFileIndex = 0;
     this.requestUpdate();
+    setTimeout(() => {
+      if (!this.fileMenuOpen) {
+        this.fileSuggestions = [];
+        this.cachedFileSuggestions = [];
+        if (this.isConnected) this.requestUpdate();
+      }
+    }, 460);
   }
 
   private async fetchFileSuggestions(query: string) {
@@ -1507,8 +1576,9 @@ export class OmpComposer extends LitElement {
         projectId: this.selectedProjectId,
       });
       if (Array.isArray(files)) {
-        this.fileSuggestions = files.slice(0, 15);
+        this.fileSuggestions = files.slice(0, 5);
         this.selectedFileIndex = 0;
+        this.scrollSelectedFileItemIntoView();
         this.requestUpdate();
       }
     } catch {
@@ -1547,10 +1617,14 @@ export class OmpComposer extends LitElement {
   }
 
   public openSlashMenu(query = "") {
+    if (this.isAskOpen) {
+      this.isAskOpen = false;
+    }
     void this.fetchDynamicCommands();
     this.slashCommandsOpen = true;
     this.slashFilter = query;
     this.selectedSlashIndex = 0;
+    this.scrollSelectedSlashItemIntoView();
     this.requestUpdate();
   }
 
@@ -1560,6 +1634,12 @@ export class OmpComposer extends LitElement {
     this.slashFilter = "";
     this.selectedSlashIndex = 0;
     this.requestUpdate();
+    setTimeout(() => {
+      if (!this.slashCommandsOpen) {
+        this.cachedSlashCommands = [];
+        if (this.isConnected) this.requestUpdate();
+      }
+    }, 460);
   }
 
   public selectSlashCommand(name: string) {
@@ -1731,6 +1811,7 @@ export class OmpComposer extends LitElement {
         const len = this.filteredSlashCommands.length;
         if (len > 0) {
           this.selectedSlashIndex = (this.selectedSlashIndex + 1) % len;
+          this.scrollSelectedSlashItemIntoView();
           this.requestUpdate();
         }
         return;
@@ -1740,6 +1821,7 @@ export class OmpComposer extends LitElement {
         const len = this.filteredSlashCommands.length;
         if (len > 0) {
           this.selectedSlashIndex = (this.selectedSlashIndex - 1 + len) % len;
+          this.scrollSelectedSlashItemIntoView();
           this.requestUpdate();
         }
         return;
@@ -1763,12 +1845,14 @@ export class OmpComposer extends LitElement {
       if (e.key === "ArrowDown") {
         e.preventDefault();
         this.selectedFileIndex = (this.selectedFileIndex + 1) % this.fileSuggestions.length;
+        this.scrollSelectedFileItemIntoView();
         this.requestUpdate();
         return;
       }
       if (e.key === "ArrowUp") {
         e.preventDefault();
         this.selectedFileIndex = (this.selectedFileIndex - 1 + this.fileSuggestions.length) % this.fileSuggestions.length;
+        this.scrollSelectedFileItemIntoView();
         this.requestUpdate();
         return;
       }
@@ -2117,15 +2201,7 @@ export class OmpComposer extends LitElement {
     `;
   }
 
-  private renderAskToolContent() {
-    const projectsList =
-      this.projects.length > 0 ? this.projects : this.defaultProjects;
-    const currentProject =
-      projectsList.find((p) => p.id === this.selectedProjectId) ??
-      projectsList[0];
-    const optionsToUse =
-      this.askOptions.length > 0 ? this.askOptions : this.defaultAskOptions;
-
+  private renderExpanderStyles() {
     return html`
       <style>
         .composer-dropdown-popover {
@@ -2142,7 +2218,6 @@ export class OmpComposer extends LitElement {
         .composer-dropdown-popover .composer-dropdown-desc {
           color: var(--omp-text-secondary) !important;
         }
-
 
         .composer-btw-expander {
           display: grid;
@@ -2212,6 +2287,268 @@ export class OmpComposer extends LitElement {
           }
         }
       </style>
+    `;
+  }
+
+  private renderSlashCommandsContent() {
+    return html`
+      <div class="px-3.5 pt-3 pb-1 flex flex-col pointer-events-auto font-sans">
+        <!-- Header row -->
+        <div class="composer-ask-header px-1 pb-2">
+          <div class="flex items-center justify-between">
+            <div class="text-sm font-bold text-foreground-900 leading-snug flex items-center gap-2 flex-wrap">
+              <span class="size-5 rounded-lg flex items-center justify-center font-mono font-bold text-xs bg-black/5 dark:bg-white/10 text-foreground-800 dark:text-foreground-100 border border-black/8 dark:border-white/10">/</span>
+              <span>Comandos & Skills</span>
+              <span class="font-mono text-xs px-1.5 py-0.5 rounded bg-black/5 dark:bg-white/10 text-foreground-700 dark:text-foreground-200 border border-black/8 dark:border-white/10">
+                ${this.activeSlashCommands.length}
+              </span>
+              <span class="text-[10px] opacity-75 text-foreground-600 dark:text-foreground-400 font-mono hidden sm:inline">↑↓ Navegar · ↵ Selecionar</span>
+            </div>
+
+            <button
+              type="button"
+              title="Fechar"
+              aria-label="Fechar comandos"
+              class="rounded-full text-foreground-500 hover:text-foreground-900 hover:bg-black/5 dark:hover:bg-white/10 transition-colors cursor-pointer pointer-events-auto text-xs p-1"
+              @click=${(e: MouseEvent) => {
+                e.stopPropagation();
+                this.closeSlashMenu();
+              }}
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+
+        <!-- Lista de Comandos / Skills Estilo Ask Tool com Limite de Altura e Scroll -->
+        <div
+          id="composer-slash-menu"
+          data-testid="composer-slash-menu"
+          class="flex flex-col gap-1.5 max-h-[260px] overflow-y-auto omp-composer-textarea pr-1 scroll-smooth"
+          role="listbox"
+          aria-label="Comandos e skills disponíveis"
+        >
+          ${this.activeSlashCommands.map((cmd, idx) => {
+            const isSelected = idx === this.selectedSlashIndex;
+            const isSkill = cmd.badge === "Skill" || cmd.name.startsWith("skill:");
+            const isBtw = cmd.name === "btw";
+
+            return html`
+              <button
+                type="button"
+                role="option"
+                aria-selected=${isSelected}
+                class="composer-ask-item ${idx < 4 ? "composer-ask-item-" + (idx + 1) : ""} pointer-events-auto cursor-pointer group flex items-center justify-between w-full px-3 py-2 sm:py-2.5 rounded-2xl text-left transition-all duration-150 border ${
+                  isSelected
+                    ? "!bg-blue-500/15 !border-blue-500/40 font-semibold"
+                    : "border-black/5 dark:border-white/10 hover:border-blue-500/30 bg-black/[0.02] dark:bg-white/[0.04] hover:bg-black/[0.05] dark:hover:bg-white/[0.08]"
+                } active:scale-[0.99]"
+                @click=${(e: MouseEvent) => {
+                  e.stopPropagation();
+                  this.selectSlashCommand(cmd.name);
+                }}
+              >
+                <div class="flex items-center gap-3 min-w-0">
+                  <div class="relative size-9 shrink-0 flex items-center justify-center rounded-xl border shadow-xs transition-colors ${
+                    isBtw
+                      ? "bg-amber-500/15 text-amber-500 dark:text-amber-400 border-amber-500/25"
+                      : isSkill
+                        ? "bg-purple-500/15 text-purple-600 dark:text-purple-400 border-purple-500/25"
+                        : isSelected
+                          ? "bg-blue-500/15 text-blue-600 dark:text-blue-400 border-blue-500/30"
+                          : "bg-black/5 dark:bg-white/10 border-black/8 dark:border-white/12 text-foreground-800 dark:text-foreground-100"
+                  }">
+                    ${
+                      isBtw
+                        ? renderLightbulbIcon("size-4")
+                        : isSkill
+                          ? renderSparklesIcon("size-4")
+                          : html`<span class="text-xs font-mono font-bold">/</span>`
+                    }
+                  </div>
+                  <div class="min-w-0 flex flex-col">
+                    <div class="flex items-center gap-2">
+                      <span class="text-sm font-bold leading-tight font-mono truncate ${
+                        isSelected
+                          ? "text-blue-600 dark:text-blue-400"
+                          : "text-foreground-900"
+                      }">
+                        ${cmd.label}
+                      </span>
+                      <span class="text-xs font-medium leading-tight truncate ${
+                        isSelected
+                          ? "text-blue-600/80 dark:text-blue-300/80"
+                          : "text-foreground-600 dark:text-foreground-300"
+                      }">
+                        · ${cmd.title}
+                      </span>
+                    </div>
+                    <span class="text-xs leading-tight mt-0.5 truncate ${
+                      isSelected
+                        ? "text-foreground-800 dark:text-foreground-200 font-medium"
+                        : "text-foreground-600 dark:text-foreground-300 opacity-80"
+                    }">
+                      ${cmd.desc}
+                    </span>
+                  </div>
+                </div>
+                <div class="flex items-center gap-2 shrink-0 ps-2">
+                  <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full font-mono border transition-colors ${
+                    isBtw
+                      ? "bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/20"
+                      : isSkill
+                        ? "bg-purple-500/15 text-purple-600 dark:text-purple-400 border-purple-500/20"
+                        : isSelected
+                          ? "bg-blue-500/15 text-blue-600 dark:text-blue-400 border-blue-500/30"
+                          : "bg-black/5 dark:bg-white/10 text-foreground-700 dark:text-foreground-200 border-black/8 dark:border-white/10"
+                  }">
+                    ${cmd.badge}
+                  </span>
+                  ${isSelected ? renderCheckIcon("size-4 text-blue-600 dark:text-blue-400") : html`<span class="text-xs font-semibold text-foreground-400 opacity-0 group-hover:opacity-100 transition-opacity">Selecionar</span>`}
+                </div>
+              </button>
+            `;
+          })}
+        </div>
+      </div>
+    `;
+  }
+
+  private renderFileSuggestionsContent() {
+    return html`
+      <div class="px-3.5 pt-3 pb-1 flex flex-col pointer-events-auto font-sans">
+        <!-- Header row -->
+        <div class="composer-ask-header px-1 pb-2">
+          <div class="flex items-center justify-between">
+            <div class="text-sm font-bold text-foreground-900 leading-snug flex items-center gap-2 flex-wrap">
+              <span class="size-5 rounded-lg flex items-center justify-center font-mono font-bold text-xs bg-black/5 dark:bg-white/10 text-foreground-800 dark:text-foreground-100 border border-black/8 dark:border-white/10">@</span>
+              <span>Arquivos do Workspace</span>
+              <span class="font-mono text-xs px-1.5 py-0.5 rounded bg-black/5 dark:bg-white/10 text-foreground-700 dark:text-foreground-200 border border-black/8 dark:border-white/10">
+                ${this.activeFileSuggestions.length}
+              </span>
+              <span class="text-[10px] opacity-75 text-foreground-600 dark:text-foreground-400 font-mono hidden sm:inline">↑↓ Navegar · ↵ Selecionar</span>
+            </div>
+
+            <button
+              type="button"
+              title="Fechar"
+              aria-label="Fechar arquivos"
+              class="rounded-full text-foreground-500 hover:text-foreground-900 hover:bg-black/5 dark:hover:bg-white/10 transition-colors cursor-pointer pointer-events-auto text-xs p-1"
+              @click=${(e: MouseEvent) => {
+                e.stopPropagation();
+                this.closeFileMenu();
+              }}
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+
+        <!-- Lista de Arquivos Estilo Ask Tool com Limite de Altura e Scroll -->
+        <div
+          id="composer-file-menu"
+          data-testid="composer-file-menu"
+          class="flex flex-col gap-1.5 max-h-[260px] overflow-y-auto omp-composer-textarea pr-1 scroll-smooth"
+          role="listbox"
+          aria-label="Arquivos disponíveis"
+        >
+          ${this.activeFileSuggestions.map((file, idx) => {
+            const isSelected = idx === this.selectedFileIndex;
+            const isDir = file.kind === "directory";
+
+            return html`
+              <button
+                type="button"
+                role="option"
+                aria-selected=${isSelected}
+                class="composer-ask-item ${idx < 4 ? "composer-ask-item-" + (idx + 1) : ""} pointer-events-auto cursor-pointer group flex items-center justify-between w-full px-3 py-2 sm:py-2.5 rounded-2xl text-left transition-all duration-150 border ${
+                  isSelected
+                    ? "!bg-blue-500/15 !border-blue-500/40 font-semibold"
+                    : "border-black/5 dark:border-white/10 hover:border-blue-500/30 bg-black/[0.02] dark:bg-white/[0.04] hover:bg-black/[0.05] dark:hover:bg-white/[0.08]"
+                } active:scale-[0.99]"
+                @click=${(e: MouseEvent) => {
+                  e.stopPropagation();
+                  this.selectFileSuggestion(file);
+                }}
+              >
+                <div class="flex items-center gap-3 min-w-0">
+                  <div class="relative size-9 shrink-0 flex items-center justify-center rounded-xl border shadow-xs transition-colors ${
+                    isSelected
+                      ? "bg-blue-500/15 text-blue-600 dark:text-blue-400 border-blue-500/30"
+                      : "bg-black/5 dark:bg-white/10 border-black/8 dark:border-white/12 text-foreground-800 dark:text-foreground-100"
+                  }">
+                    ${isDir ? renderFolderIcon("size-4") : html`<span class="text-xs font-mono font-bold">@</span>`}
+                  </div>
+                  <div class="min-w-0 flex flex-col">
+                    <span class="text-sm font-semibold leading-tight font-mono truncate ${
+                      isSelected
+                        ? "text-blue-600 dark:text-blue-400"
+                        : "text-foreground-900"
+                    }">
+                      ${file.path}
+                    </span>
+                    <span class="text-xs leading-tight mt-0.5 font-mono truncate ${
+                      isSelected
+                        ? "text-foreground-800 dark:text-foreground-200 font-medium"
+                        : "text-foreground-600 dark:text-foreground-300 opacity-80"
+                    }">
+                      ${isDir ? "Diretório" : "Arquivo"}
+                    </span>
+                  </div>
+                </div>
+                <div class="flex items-center gap-2 shrink-0 ps-2">
+                  <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full font-mono border transition-colors ${
+                    isSelected
+                      ? "bg-blue-500/15 text-blue-600 dark:text-blue-400 border-blue-500/30"
+                      : "bg-black/5 dark:bg-white/10 text-foreground-700 dark:text-foreground-200 border-black/8 dark:border-white/10"
+                  }">
+                    ${file.kind}
+                  </span>
+                  ${isSelected ? renderCheckIcon("size-4 text-blue-600 dark:text-blue-400") : html`<span class="text-xs font-semibold text-foreground-400 opacity-0 group-hover:opacity-100 transition-opacity">Selecionar</span>`}
+                </div>
+              </button>
+            `;
+          })}
+        </div>
+      </div>
+    `;
+  }
+
+  private renderExpanderContent() {
+    let mode: "commands" | "files" | "ask" = this.lastExpanderMode;
+    if (this.isExpanderOpen) {
+      if (this.slashCommandsOpen && this.filteredSlashCommands.length > 0) {
+        mode = "commands";
+      } else if (this.fileMenuOpen && this.fileSuggestions.length > 0) {
+        mode = "files";
+      } else if (this.isAskOpen) {
+        mode = "ask";
+      }
+      this.lastExpanderMode = mode;
+    }
+
+    return html`
+      ${this.renderExpanderStyles()}
+      ${
+        mode === "commands" && this.activeSlashCommands.length > 0
+          ? this.renderSlashCommandsContent()
+          : mode === "files" && this.activeFileSuggestions.length > 0
+            ? this.renderFileSuggestionsContent()
+            : this.renderAskToolContent()
+      }
+    `;
+  }
+
+  private renderAskToolContent() {
+    const projectsList =
+      this.projects.length > 0 ? this.projects : this.defaultProjects;
+    const currentProject =
+      projectsList.find((p) => p.id === this.selectedProjectId) ??
+      projectsList[0];
+    const optionsToUse =
+      this.askOptions.length > 0 ? this.askOptions : this.defaultAskOptions;
+
+    return html`
       <div class="px-3.5 pt-3 pb-1 flex flex-col pointer-events-auto font-sans">
         <!-- Header row -->
         <div class="composer-ask-header px-1 pb-2">
@@ -2621,106 +2958,6 @@ export class OmpComposer extends LitElement {
 
       <!-- OMP Web Exact 4-Tier Composer Hierarchy with Unclipped Popover Support -->
       <div class="relative max-h-full min-h-composer min-w-16 w-expanded-composer max-w-chat max-w-full rounded-5xl">
-        <!-- Floating Slash Command Autocomplete Popover -->
-        ${
-          this.slashCommandsOpen && this.filteredSlashCommands.length > 0
-            ? html`
-            <div
-              id="composer-slash-menu"
-              data-testid="composer-slash-menu"
-              class="absolute bottom-full mb-3 left-2 sm:left-4 z-40 min-w-[280px] max-w-[360px] w-[calc(100%-16px)] sm:w-auto p-1.5 rounded-[22px] shadow-2xl backdrop-blur-2xl backdrop-saturate-200 bg-white/95 dark:bg-background-100/90 border border-black/8 dark:border-white/12 flex flex-col gap-0.5 animate-in fade-in select-none font-sans"
-            >
-              <div class="px-3 py-1.5 text-[10px] font-semibold tracking-wider uppercase text-foreground-450 flex items-center justify-between border-b border-black/5 dark:border-white/5 mb-0.5">
-                <span>Comandos Rápidos</span>
-                <span class="font-mono text-[9px]">↑↓ Navegar · ↵ Selecionar</span>
-              </div>
-              ${this.filteredSlashCommands.map((cmd, idx) => {
-                const isSelected = idx === this.selectedSlashIndex;
-                return html`
-                  <button
-                    type="button"
-                    role="option"
-                    aria-selected=${isSelected}
-                    class="group flex w-full items-center justify-between gap-3 px-3 py-2 rounded-xl text-left transition-all duration-100 cursor-pointer ${
-                      isSelected
-                        ? "bg-blue-500/10 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400 font-medium"
-                        : "hover:bg-black/5 dark:hover:bg-white/10 text-foreground-900"
-                    }"
-                    @click=${() => this.selectSlashCommand(cmd.name)}
-                  >
-                    <div class="flex items-center gap-2.5 min-w-0">
-                      <div class="size-6 rounded-lg flex items-center justify-center shrink-0 ${
-                        cmd.name === "btw"
-                          ? "bg-amber-500/15 text-amber-500 dark:text-amber-400"
-                          : "bg-black/5 dark:bg-white/10 text-foreground-700"
-                      }">
-                        ${cmd.name === "btw" ? renderLightbulbIcon("size-3.5") : html`<span class="text-xs font-mono font-bold">/</span>`}
-                      </div>
-                      <div class="flex flex-col min-w-0">
-                        <div class="flex items-center gap-1.5">
-                          <span class="text-sm font-bold leading-tight font-mono">${cmd.label}</span>
-                          <span class="text-xs font-medium text-foreground-600 leading-tight">· ${cmd.title}</span>
-                        </div>
-                        <span class="text-[11px] opacity-70 leading-tight truncate mt-0.5">${cmd.desc}</span>
-                      </div>
-                    </div>
-                    <span class="text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${
-                      cmd.name === "btw"
-                        ? "bg-amber-500/15 text-amber-600 dark:text-amber-400 font-mono"
-                        : "bg-black/5 dark:bg-white/10 text-foreground-500 font-mono"
-                    }">${cmd.badge}</span>
-                  </button>
-                `;
-              })}
-            </div>
-          `
-            : nothing
-        }
-
-                <!-- Floating File Mention Autocomplete Popover (@) -->
-        ${
-          this.fileMenuOpen && this.fileSuggestions.length > 0
-            ? html`
-            <div
-              id="composer-file-menu"
-              data-testid="composer-file-menu"
-              class="absolute bottom-full mb-3 left-2 sm:left-4 z-40 min-w-[280px] max-w-[380px] w-[calc(100%-16px)] sm:w-auto p-1.5 rounded-[22px] shadow-2xl backdrop-blur-2xl backdrop-saturate-200 bg-white/95 dark:bg-background-100/90 border border-black/8 dark:border-white/12 flex flex-col gap-0.5 animate-in fade-in select-none font-sans"
-            >
-              <div class="px-3 py-1.5 text-[10px] font-semibold tracking-wider uppercase text-foreground-450 flex items-center justify-between border-b border-black/5 dark:border-white/5 mb-0.5">
-                <span>Arquivos do Workspace</span>
-                <span class="font-mono text-[9px]">↑↓ Navegar · ↵ Selecionar</span>
-              </div>
-              ${this.fileSuggestions.map((file, idx) => {
-                const isSelected = idx === this.selectedFileIndex;
-                return html`
-                  <button
-                    type="button"
-                    role="option"
-                    aria-selected=${isSelected}
-                    class="group flex w-full items-center justify-between gap-3 px-3 py-2 rounded-xl text-left transition-all duration-100 cursor-pointer ${
-                      isSelected
-                        ? "bg-blue-500/10 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400 font-medium"
-                        : "hover:bg-black/5 dark:hover:bg-white/10 text-foreground-900"
-                    }"
-                    @click=${() => this.selectFileSuggestion(file)}
-                  >
-                    <div class="flex items-center gap-2.5 min-w-0">
-                      <div class="size-6 rounded-lg flex items-center justify-center shrink-0 bg-black/5 dark:bg-white/10 text-foreground-700">
-                        ${file.kind === "directory" ? renderFolderIcon("size-3.5") : html`<span class="text-xs font-mono">@</span>`}
-                      </div>
-                      <div class="flex flex-col min-w-0">
-                        <span class="text-sm font-medium leading-tight font-mono truncate">${file.path}</span>
-                      </div>
-                    </div>
-                    <span class="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-black/5 dark:bg-white/10 text-foreground-500 font-mono">${file.kind}</span>
-                  </button>
-                `;
-              })}
-            </div>
-          `
-            : nothing
-        }
-
         <!-- 1. Background layer with shadow-tinted-xl and backdrop-blur -->
         <div
           class="relative flex flex-col shadow-tinted-xl backdrop-blur-2xl backdrop-saturate-200 bg-accent-100/60 dark:bg-muted-200/50 w-full ${this.isDragOver ? "ring-2 ring-blue-500/50 bg-blue-500/5" : ""}"
@@ -2746,10 +2983,10 @@ export class OmpComposer extends LitElement {
                 class="bg-white/95 dark:bg-background-100/45 backdrop-blur-xl relative flex flex-col shadow-xs w-full overflow-hidden"
                 style="border-radius: 26px;"
               >
-                <!-- Ask Tool Expander (Composer background rises upwards with spring!) -->
-                <div class="composer-ask-expander ${this.isAskOpen ? "open" : ""}">
+                <!-- Ask / Commands / Files Expander (Composer background rises upwards with spring!) -->
+                <div class="composer-ask-expander ${this.isExpanderOpen ? "open" : ""}">
                   <div class="composer-ask-inner">
-                    ${this.renderAskToolContent()}
+                    ${this.renderExpanderContent()}
                   </div>
                 </div>
 
