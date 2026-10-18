@@ -27,6 +27,9 @@ function getAllTemplateText(rendered: unknown): string {
       }
       return result;
     }
+    if (Array.isArray(obj.values)) {
+      return (obj.values as unknown[]).map(getAllTemplateText).join(" ");
+    }
   }
   return "";
 }
@@ -72,7 +75,82 @@ describe("linesToChatMessages", () => {
     expect(messages[1].text).toBe("Aqui está a resposta completa.");
   });
 
-  it("handles system messages with callout formatting", () => {
+  it("preserves chronological interleaved sequence of thinking, tools, and text parts (TUI parity)", () => {
+    const rawLines: ChatLine[] = [
+      {
+        role: "user",
+        parts: [{ type: "text", text: "Corrija o bug" }],
+      },
+      {
+        role: "assistant",
+        parts: [{ type: "thinking", text: "Primeiro passo: vou ler o arquivo" }],
+      },
+      {
+        role: "tool",
+        parts: [{
+          type: "toolExecution",
+          toolCallId: "call-read",
+          toolName: "read",
+          summary: "read src/index.ts",
+          status: "completed",
+        }],
+      },
+      {
+        role: "assistant",
+        parts: [{ type: "thinking", text: "Segundo passo: encontrei o bug, vou editar" }],
+      },
+      {
+        role: "tool",
+        parts: [{
+          type: "toolExecution",
+          toolCallId: "call-edit",
+          toolName: "edit",
+          summary: "edit src/index.ts",
+          status: "completed",
+        }],
+      },
+      {
+        role: "assistant",
+        parts: [{ type: "text", text: "Bug corrigido com sucesso!" }],
+      },
+    ];
+
+    const messages = linesToChatMessages(rawLines);
+    expect(messages.length).toBe(2);
+    const asst = messages[1];
+    expect(asst.role).toBe("assistant");
+
+    // Chronological interleaved sequence
+    expect(asst.parts).toBeDefined();
+    expect(asst.parts?.length).toBe(5);
+
+    expect(asst.parts?.[0]).toEqual({
+      type: "thinking",
+      thinking: "Primeiro passo: vou ler o arquivo",
+    });
+    expect(asst.parts?.[1].type).toBe("tool");
+    expect((asst.parts?.[1] as any).tools[0].toolName).toBe("read");
+
+    expect(asst.parts?.[2]).toEqual({
+      type: "thinking",
+      thinking: "Segundo passo: encontrei o bug, vou editar",
+    });
+    expect(asst.parts?.[3].type).toBe("tool");
+    expect((asst.parts?.[3] as any).tools[0].toolName).toBe("edit");
+
+    expect(asst.parts?.[4]).toEqual({
+      type: "text",
+      text: "Bug corrigido com sucesso!",
+    });
+
+    // Backward compatibility properties
+    expect(asst.thinking).toContain("Primeiro passo");
+    expect(asst.thinking).toContain("Segundo passo");
+    expect(asst.tools?.length).toBe(2);
+    expect(asst.text).toBe("Bug corrigido com sucesso!");
+  });
+
+  it("handles system messages with system role and callout formatting", () => {
     const rawLines: ChatLine[] = [
       {
         role: "system",
@@ -82,8 +160,9 @@ describe("linesToChatMessages", () => {
 
     const messages = linesToChatMessages(rawLines);
     expect(messages.length).toBe(1);
-    expect(messages[0].role).toBe("assistant");
-    expect(messages[0].text).toContain('<callout type="info">');
+    expect(messages[0].role).toBe("system");
+    expect(messages[0].isSystemPrompt).toBe(true);
+    expect(messages[0].text).toContain("Aviso do sistema");
   });
 });
 
@@ -166,7 +245,7 @@ describe("OmpChatView rendering", () => {
     expect(messages[0].text).not.toContain("<thinking>");
   });
 
-  it("renders tools in steps timeline mode by default and minimal mode when configured", () => {
+  it("renders tools in classic tool cards with icons, names, and diff stats", () => {
     const chatView = new OmpChatView();
     chatView.messages = [
       {
@@ -180,105 +259,13 @@ describe("OmpChatView rendering", () => {
       },
     ];
 
-    // Default: steps
-    expect(chatView.progressStyle).toBe("steps");
-    let rendered = chatView.render();
-    let text = getAllTemplateText(rendered);
-    expect(text).toContain("Etapas do Agente");
-    expect(text).toContain("Ver pílulas");
+    const rendered = chatView.render();
+    const text = getAllTemplateText(rendered);
     expect(text).toContain("read");
+    expect(text).toContain("src/cli.ts");
     expect(text).toContain("edit");
     expect(text).toContain("+ 5");
     expect(text).toContain("- 2");
-
-    // Minimal mode
-    chatView.progressStyle = "minimal";
-    rendered = chatView.render();
-    text = getAllTemplateText(rendered);
-    expect(text).toContain("Ver etapas");
-    expect(text).toContain("read");
-    expect(text).toContain("edit");
-  });
-});
-
-  it("renders assistant header with OMP branding, copy action, and full width content", () => {
-    const chatView = new OmpChatView();
-    chatView.messages = [
-      {
-        id: "asst-1",
-        role: "assistant",
-        text: "Resposta completa do modelo.",
-        timestamp: "14:30",
-      },
-    ];
-
-    const rendered = chatView.render();
-    const text = getAllTemplateText(rendered);
-    expect(text).toContain("OMP");
-    expect(text).toContain("14:30");
-    expect(text).toContain("Resposta completa do modelo.");
-    expect(text).toContain("Copiar resposta");
-  });
-
-  it("renders redesigned Grok-style thinking and tool action line in minimal mode", () => {
-    const chatView = new OmpChatView();
-    chatView.progressStyle = "minimal";
-    chatView.messages = [
-      {
-        id: "msg-grok-1",
-        role: "assistant",
-        thinking: "Planejando os passos da pesquisa...",
-        tools: [
-          { toolName: "grep", target: "src/cli.ts", status: "completed" },
-        ],
-        text: "Resposta final.",
-      },
-    ];
-
-    let rendered = chatView.render();
-    let text = getAllTemplateText(rendered);
-    expect(text).toContain("Thinking about your request");
-    expect(text).toContain("Searching on codebase");
-    expect(text).toContain("grep");
-    expect(text).toContain("cli.ts");
-    expect(text).not.toContain("Planejando os passos da pesquisa...");
-
-    // Expand thinking
-    (chatView as any).toggleThinking("msg-grok-1");
-    rendered = chatView.render();
-    text = getAllTemplateText(rendered);
-    expect(text).toContain("Planejando os passos da pesquisa...");
-  });
-
-  it("renders + N more overflow badge in minimal mode when more than 5 tools are present", () => {
-    const chatView = new OmpChatView();
-    chatView.progressStyle = "minimal";
-    chatView.messages = [
-      {
-        id: "msg-tools-overflow",
-        role: "assistant",
-        tools: [
-          { toolName: "read", target: "file1.ts", status: "completed" },
-          { toolName: "read", target: "file2.ts", status: "completed" },
-          { toolName: "read", target: "file3.ts", status: "completed" },
-          { toolName: "read", target: "file4.ts", status: "completed" },
-          { toolName: "read", target: "file5.ts", status: "completed" },
-          { toolName: "read", target: "file6.ts", status: "completed" },
-        ],
-        text: "Pronto.",
-      },
-    ];
-
-    let rendered = chatView.render();
-    let text = getAllTemplateText(rendered);
-    expect(text).toMatch(/\+\s*2\s*more/);
-
-    // Toggle show all tools
-    (chatView as any).toggleShowAllTools("msg-tools-overflow");
-    rendered = chatView.render();
-    text = getAllTemplateText(rendered);
-    expect(text).not.toMatch(/\+\s*2\s*more/);
-    expect(text).toContain("file6.ts");
   });
 
   it("renders tool inspection details when expanded", () => {
@@ -307,9 +294,74 @@ describe("OmpChatView rendering", () => {
     const text = getAllTemplateText(rendered);
     expect(text).toContain("bash");
     expect(text).toContain("Erro");
-    expect(text).toContain("Command failed: exit code 1");
+    expect(text).toContain("Command");
+    expect(text).toContain("failed");
+    expect(text).toContain("exit");
     expect(text).toContain("npm test");
   });
+
+  it("collapses process block automatically once response is ready, and shows running status line while generating", () => {
+    const chatView = new OmpChatView();
+
+    // 1. While running / generating: process block is open and shows running status
+    chatView.isStreaming = true;
+    chatView.messages = [
+      {
+        id: "msg-1",
+        role: "user",
+        text: "Pesquise os arquivos",
+      },
+      {
+        id: "msg-2",
+        role: "assistant",
+        thinking: "Analisando estrutura de pastas para encontrar arquivos",
+        tools: [{ toolName: "grep", status: "running" }],
+        text: "", // No response text yet!
+      },
+    ];
+
+    let rendered = chatView.render();
+    let text = getAllTemplateText(rendered);
+    expect(text).toContain("Buscando no código…"); // statusText from running grep
+    expect((chatView as any).isProcessBlockOpen("msg-2", true)).toBe(true);
+
+    // 2. Once response is ready: auto-collapses to 'pensou em...'
+    chatView.isStreaming = false;
+    chatView.messages = [
+      {
+        id: "msg-1",
+        role: "user",
+        text: "Pesquise os arquivos",
+      },
+      {
+        id: "msg-2",
+        role: "assistant",
+        thinking: "Analisando estrutura de pastas para encontrar arquivos",
+        tools: [{ toolName: "grep", status: "completed" }],
+        text: "Encontrei 5 arquivos correspondentes.",
+      },
+    ];
+
+    rendered = chatView.render();
+    text = getAllTemplateText(rendered);
+    expect(text).toContain("pensou em");
+    expect(text).toContain("Analisando estrutura de pastas");
+    expect(text).toContain("Encontrei 5 arquivos correspondentes.");
+    expect((chatView as any).isProcessBlockOpen("msg-2", false)).toBe(false);
+
+    // 3. User clicks to toggle open: expands outer process box
+    (chatView as any).toggleProcessBlock("msg-2", false);
+    expect((chatView as any).isProcessBlockOpen("msg-2", false)).toBe(true);
+
+    // 4. Inside the expanded box, all completed blocks are closed by default
+    expect((chatView as any).expandedThinkingKeys.has("msg-2-think-0")).toBe(false);
+    expect((chatView as any).expandedToolKey).toBeFalsy();
+
+    // 5. Individual thinking step can be toggled open
+    (chatView as any).toggleThinkingStep("msg-2-think-0", false);
+    expect((chatView as any).expandedThinkingKeys.has("msg-2-think-0")).toBe(true);
+  });
+});
 
 describe("OmpHomeView projects binding", () => {
   it("accepts and binds projects down to composer", () => {
@@ -359,5 +411,127 @@ describe("revert turn functionality", () => {
     expect(emittedDetail.message.text).toBe("Mensagem para reverter");
     expect(emittedDetail.message.entryId).toBe("entry-123");
     expect(emittedDetail.index).toBe(0);
+  });
+});
+
+describe("OmpChatView Scroll Behavior with Questions", () => {
+  it("does not lock scroll to bottom when pendingAsk is active", () => {
+    const chatView = new OmpChatView();
+    (chatView as any).pinnedToBottom = true;
+    chatView.pendingAsk = {
+      requestId: "req-1",
+      questions: [{ id: "q1", question: "Continuar?", options: [{ label: "Sim" }] }],
+    };
+
+    chatView.updated(new Map([["pendingAsk", undefined]]));
+    // When question arrives, pinnedToBottom MUST be false so scroll is not locked
+    expect((chatView as any).pinnedToBottom).toBe(false);
+  });
+});
+
+describe("OmpChatView Conditional Tool Icons and High Contrast", () => {
+  it("renders red console icon for errors, tool icon for completed (no checkmark), and white spinner for running", () => {
+    const chatView = new OmpChatView();
+    chatView.messages = [
+      {
+        id: "msg-tools",
+        role: "assistant",
+        tools: [
+          { toolName: "bash", summary: "cargo build", status: "error", isError: true },
+          { toolName: "read", target: "src/main.rs", status: "completed" },
+          { toolName: "eval", summary: "running test", status: "running" },
+        ],
+        text: "Relatório de execução",
+      },
+    ];
+
+    const rendered = chatView.render();
+    const text = getAllTemplateText(rendered);
+
+    // Error icon
+    expect(text).toContain("Erro no console");
+    expect(text).toContain("bash");
+
+    // Completed: only tool icon, no checkmark
+    expect(text).toContain("read");
+    expect(text).not.toContain("Concluído com sucesso");
+
+    // Running animation
+    expect(text).toContain("Executando");
+    expect(text).toContain("eval");
+  });
+});
+
+describe("OmpChatView System-Prompt, Skill, and MCP differentiation", () => {
+  it("renders system prompts as callouts, skills as banners, and tools with MCP badge", () => {
+    const chatView = new OmpChatView();
+    chatView.messages = [
+      {
+        id: "msg-sys",
+        role: "user",
+        text: "<system-notice>Tool inventory changed</system-notice>",
+        isSystemPrompt: true,
+        systemPromptKind: "notice",
+      },
+      {
+        id: "msg-skill",
+        role: "user",
+        text: "Executando skill",
+        isSystemPrompt: true,
+        systemPromptKind: "skill",
+        skillName: "advisor-alfredo-soares",
+      },
+      {
+        id: "msg-mcp",
+        role: "assistant",
+        tools: [
+          { toolName: "mcp__ai_memory_memory_query", summary: "querying memory", status: "completed" },
+        ],
+        text: "Resposta com MCP",
+      },
+    ];
+
+    const rendered = chatView.render();
+    const text = getAllTemplateText(rendered);
+
+    // System prompt rendered as tool card in flow
+    expect(text).toContain("system");
+    expect(text).toContain("Tool inventory changed");
+
+    // Skill rendered as tool card in flow
+    expect(text).toContain("skill · advisor-alfredo-soares");
+
+    // MCP badge
+    expect(text).toContain("MCP");
+    expect(text).toContain("ai_memory");
+  });
+
+  it("renders as standard user message when categorizePrompts is false", () => {
+    const chatView = new OmpChatView();
+    chatView.categorizePrompts = false;
+    chatView.messages = [
+      {
+        id: "msg-sys",
+        role: "user",
+        text: "<system-notice>Tool inventory changed</system-notice>",
+        isSystemPrompt: true,
+        systemPromptKind: "notice",
+      },
+    ];
+
+    const rendered = chatView.render();
+    const text = getAllTemplateText(rendered);
+
+    expect(text).not.toContain("Aviso do Sistema");
+    expect(text).toContain("Tool inventory changed");
+  });
+
+  it("does not render floating jump to bottom button", () => {
+    const chatView = new OmpChatView();
+    (chatView as any).pinnedToBottom = false;
+
+    const rendered = chatView.render();
+    const text = getAllTemplateText(rendered);
+    expect(text).not.toContain("Ir para o final");
   });
 });

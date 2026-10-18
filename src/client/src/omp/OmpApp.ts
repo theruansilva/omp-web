@@ -30,7 +30,7 @@ import type { MachineDialogSubmit } from "../components/MachineDialog";
 import "../components/AuthDialog";
 import { AuthController, type AuthDialogState } from "../controllers/authController";
 import type { AuthType } from "../api";
-import type { ChatMessage } from "./OmpChatView";
+import type { ChatMessage, ChatMessagePart, ToolItem } from "./OmpChatView";
 import type { SubmitPromptDetail, BtwState, ComposerProject } from "./OmpComposer";
 import type { ProjectCardData } from "./OmpProjectsView";
 import type { ProjectBranch } from "./OmpProjectDetailView";
@@ -89,22 +89,42 @@ export function linesToChatMessages(lines: ChatLine[]): ChatMessage[] {
 
     if (line.role === "user") {
       currentAssistant = null;
+      const skillPart = line.parts.find((p) => p.type === "skillInvocation") as { type: "skillInvocation"; name: string; location?: string; content?: string } | undefined;
       const textParts = line.parts
         .filter((p): p is { type: "text"; text: string } => p.type === "text")
         .map((p) => p.text);
+      const rawText = textParts.join("\n\n");
+
+      // Check if it's an injected system prompt, checkpoint notice, or skill invocation
+      const isRewind = rawText.includes("Branch-return summary") || rawText.includes("Branch summary") || rawText.includes("Checkpoint called and rewound");
+      const isSystemNotice = rawText.includes("<system-notice>") || rawText.includes("<system-reminder>") || rawText.includes("<system-instruction>");
+      const isSkill = Boolean(skillPart || rawText.startsWith("<skill name=") || rawText.includes("User invoked the \""));
+      let skillName = skillPart?.name;
+      if (!skillName && isSkill) {
+        const m = rawText.match(/<skill name="([^"]+)"|User invoked the "([^"]+)"/);
+        skillName = m?.[1] || m?.[2];
+      }
+
+      const isSystem = isRewind || isSystemNotice || isSkill;
+      const systemKind = isRewind ? "rewind" : isSkill ? "skill" : isSystemNotice ? (rawText.includes("<system-reminder>") ? "reminder" : "notice") : undefined;
+
       const imageParts = line.parts
         .filter((p): p is { type: "image"; mimeType: string; data: string } => p.type === "image")
         .map((p) => ({ kind: "image" as const, mimeType: p.mimeType, data: p.data }));
+
       result.push({
         id: `user-${i}`,
-        role: "user",
-        text: textParts.join("\n\n"),
+        role: isSystem ? "system" : "user",
+        text: rawText,
         attachments: imageParts.length > 0 ? imageParts : undefined,
         timestamp: line.meta?.timestamp
           ? new Date(line.meta.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
           : undefined,
         rawIndex: i,
         entryId: (line.meta as any)?.entryId,
+        isSystemPrompt: isSystem,
+        systemPromptKind: systemKind,
+        skillName,
       });
     } else if (line.role === "bash") {
       currentAssistant = null;
@@ -128,10 +148,14 @@ export function linesToChatMessages(lines: ChatLine[]): ChatMessage[] {
         .map((p) => p.text)
         .join("\n\n");
       if (text) {
+        const isCheckpoint = text.includes("checkpoint") || text.includes("Checkpoint");
+        const isRewind = text.includes("Branch-return") || text.includes("Branch summary") || text.includes("rewind") || text.includes("Compacted history");
         result.push({
           id: `sys-${i}`,
-          role: "assistant",
-          text: `<callout type="info">\n${text}\n</callout>`,
+          role: "system",
+          text,
+          isSystemPrompt: true,
+          systemPromptKind: isCheckpoint ? "checkpoint" : isRewind ? "rewind" : "notice",
         });
       }
     } else {
@@ -142,6 +166,7 @@ export function linesToChatMessages(lines: ChatLine[]): ChatMessage[] {
           text: "",
           thinking: "",
           tools: [],
+          parts: [],
           timestamp: line.meta?.timestamp
             ? new Date(line.meta.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
             : undefined,
@@ -149,24 +174,69 @@ export function linesToChatMessages(lines: ChatLine[]): ChatMessage[] {
         result.push(currentAssistant);
       }
 
+      const appendThinking = (text: string) => {
+        if (!text) return;
+        currentAssistant!.thinking = currentAssistant!.thinking
+          ? `${currentAssistant!.thinking}\n\n${text}`
+          : text;
+        if (!currentAssistant!.parts) currentAssistant!.parts = [];
+        const last = currentAssistant!.parts[currentAssistant!.parts.length - 1];
+        if (last && last.type === "thinking") {
+          last.thinking = `${last.thinking}\n\n${text}`;
+        } else {
+          currentAssistant!.parts.push({ type: "thinking", thinking: text });
+        }
+      };
+
+      const appendText = (text: string) => {
+        if (!text) return;
+        currentAssistant!.text = currentAssistant!.text
+          ? `${currentAssistant!.text}\n\n${text}`
+          : text;
+        if (!currentAssistant!.parts) currentAssistant!.parts = [];
+        const last = currentAssistant!.parts[currentAssistant!.parts.length - 1];
+        if (last && last.type === "text") {
+          last.text = `${last.text}\n\n${text}`;
+        } else {
+          currentAssistant!.parts.push({ type: "text", text });
+        }
+      };
+
+      const appendTool = (toolItem: ToolItem) => {
+        currentAssistant!.tools = currentAssistant!.tools || [];
+        currentAssistant!.tools.push(toolItem);
+        if (!currentAssistant!.parts) currentAssistant!.parts = [];
+        const last = currentAssistant!.parts[currentAssistant!.parts.length - 1];
+        if (last && last.type === "tool") {
+          last.tools.push(toolItem);
+        } else {
+          currentAssistant!.parts.push({ type: "tool", tools: [toolItem] });
+        }
+      };
+
       for (const part of line.parts) {
         if (part.type === "text") {
+          const isBranchSummary = part.text.includes("Branch-return summary") || part.text.includes("Checkpoint called and rewound");
+          if (isBranchSummary) {
+            result.push({
+              id: `sys-${i}`,
+              role: "system",
+              text: part.text,
+              isSystemPrompt: true,
+              systemPromptKind: "rewind",
+            });
+            continue;
+          }
           const extractedParts = extractThinkingFromText(part.text);
           for (const item of extractedParts) {
             if (item.type === "thinking") {
-              currentAssistant.thinking = currentAssistant.thinking
-                ? `${currentAssistant.thinking}\n\n${item.text}`
-                : item.text;
+              appendThinking(item.text);
             } else if (item.type === "text") {
-              currentAssistant.text = currentAssistant.text
-                ? `${currentAssistant.text}\n\n${item.text}`
-                : item.text;
+              appendText(item.text);
             }
           }
         } else if (part.type === "thinking") {
-          currentAssistant.thinking = currentAssistant.thinking
-            ? `${currentAssistant.thinking}\n\n${part.text}`
-            : part.text;
+          appendThinking(part.text);
         } else if (part.type === "toolExecution") {
           const path = pathFromArgs(part.args);
           const target = toolTarget(part, path)?.text;
@@ -174,8 +244,7 @@ export function linesToChatMessages(lines: ChatLine[]): ChatMessage[] {
           const diffStats = diff ? countDiffLines(diff) : undefined;
           const summary = part.summary ? `${part.toolName}: ${part.summary}` : part.toolName;
           const errorText = part.status === "error" ? part.resultText : part.preview?.error;
-          currentAssistant.tools = currentAssistant.tools || [];
-          currentAssistant.tools.push({
+          appendTool({
             toolName: part.toolName,
             summary,
             target,
@@ -2083,6 +2152,12 @@ Dica: você pode selecionar uma das opções abaixo para testar a injeção auto
                 .sessionId=${this.selectedSessionId}
                 .cwd=${this.getActiveWorkspace()?.path}
                 .machineId=${this.currentMachineId}
+                .machines=${this.machines}
+                .selectedMachine=${this.selectedMachine}
+                .machineStatuses=${this.machineStatuses}
+                @select-machine=${(e: CustomEvent<{ machine: Machine }>) => void this.handleSelectMachine(e.detail.machine)}
+                @add-machine=${() => { this.machineDialogError = ""; this.isMachineDialogOpen = true; }}
+                @remove-machine=${(e: CustomEvent<{ machine: Machine }>) => void this.handleRemoveMachine(e.detail.machine)}
                 @open-plan-review=${() => { if (this.currentPlanMode?.proposedPlan) { this.artifact = { type: "plan", ...this.currentPlanMode.proposedPlan } as any; this.isArtifactOpen = true; } }}
                 @project-select=${(e: CustomEvent<{ projectId: string }>) => void this.handleProjectSelect(e.detail.projectId)}
                 @open-models=${() => { this.activeTab = "models"; this.syncUrl(); }}
@@ -2109,9 +2184,16 @@ Dica: você pode selecionar uma das opções abaixo para testar a injeção auto
                 .sessionId=${this.selectedSessionId}
                 .cwd=${this.getActiveWorkspace()?.path}
                 .machineId=${this.currentMachineId}
+                .machines=${this.machines}
+                .selectedMachine=${this.selectedMachine}
+                .machineStatuses=${this.machineStatuses}
+                @select-machine=${(e: CustomEvent<{ machine: Machine }>) => void this.handleSelectMachine(e.detail.machine)}
+                @add-machine=${() => { this.machineDialogError = ""; this.isMachineDialogOpen = true; }}
+                @remove-machine=${(e: CustomEvent<{ machine: Machine }>) => void this.handleRemoveMachine(e.detail.machine)}
                 .artifact=${this.artifact}
                 .progressStyle=${this.chatPrefs.progressStyle ?? "steps"}
                 .showThinking=${this.chatPrefs.showThinking ?? true}
+                .categorizePrompts=${this.chatPrefs.categorizePrompts ?? true}
                 @open-artifact=${() => { this.isArtifactOpen = true; }}
                 @progress-style-change=${(e: CustomEvent<{ progressStyle: "minimal" | "steps" }>) => {
               saveChatPreferenceOverrides({ progressStyle: e.detail.progressStyle });

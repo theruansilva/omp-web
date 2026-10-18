@@ -240,7 +240,6 @@ export function renderLoadingDots() {
   `;
 }
 
-
 export function renderSmartModeIcon(className = "size-4") {
   return html`
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="${className}">
@@ -360,8 +359,6 @@ export function renderLockIcon(className = "size-4") {
   `;
 }
 
-
-
 export function renderEyeIcon(className = "size-4") {
   return html`
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="${className}">
@@ -405,6 +402,15 @@ export function renderBranchIcon(className = "size-4") {
       <circle cx="18" cy="6" r="3"></circle>
       <circle cx="6" cy="18" r="3"></circle>
       <path d="M18 9a9 9 0 0 1-9 9"></path>
+    </svg>
+  `;
+}
+
+export function renderPencilIcon(className = "size-4") {
+  return html`
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="${className}">
+      <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/>
+      <path d="m15 5 4 4"/>
     </svg>
   `;
 }
@@ -590,7 +596,6 @@ export function renderModelsIcon(className = "size-5 shrink-0") {
     </svg>
   `;
 }
-
 
 export function renderMetaIcon(className = "size-4") {
   return html`
