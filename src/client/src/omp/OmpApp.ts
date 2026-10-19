@@ -754,14 +754,18 @@ export class OmpApp extends LitElement {
         this.isStreaming = isWorking;
       }
 
-      const ws = this.getActiveWorkspace();
-      if (ws && this.sessionsByCwd[ws.path] && status.archived !== undefined) {
-        this.sessionsByCwd = {
-          ...this.sessionsByCwd,
-          [ws.path]: this.sessionsByCwd[ws.path].map(s =>
-            s.id === status.sessionId ? { ...s, archived: status.archived } : s
-          ),
-        };
+      if (status.archived !== undefined) {
+        let changed = false;
+        const updated = { ...this.sessionsByCwd };
+        for (const [p, sessions] of Object.entries(updated)) {
+          if (sessions.some(s => s.id === status.sessionId)) {
+            updated[p] = sessions.map(s => s.id === status.sessionId ? { ...s, archived: status.archived } : s);
+            changed = true;
+          }
+        }
+        if (changed) {
+          this.sessionsByCwd = updated;
+        }
       }
       this.requestUpdate();
     }
@@ -773,12 +777,12 @@ export class OmpApp extends LitElement {
       const match = workspaces.find(w => w.id === this.selectedWorkspaceId);
       if (match) return match;
     }
-    const found = workspaces.find(w => w.isPrimary) || workspaces[0];
+    const found = workspaces.find(w => (w as any).isPrimary ?? w.isMain) || workspaces[0];
     if (found) return found;
 
     for (const pId of Object.keys(this.workspacesByProject)) {
       const list = this.workspacesByProject[pId];
-      if (list && list.length > 0) return list.find(w => w.isPrimary) || list[0];
+      if (list && list.length > 0) return list.find(w => (w as any).isPrimary ?? w.isMain) || list[0];
     }
 
     if (this.realProjects.length > 0) {
@@ -859,8 +863,8 @@ export class OmpApp extends LitElement {
     const workspaces = this.workspacesByProject[this.selectedProjectId] || [];
     const activeWs = this.getActiveWorkspace();
     return workspaces.map(w => ({
-      name: w.branch || w.name,
-      isMain: w.isPrimary,
+      name: w.branch || (w as any).name || w.label,
+      isMain: (w as any).isPrimary ?? w.isMain,
       worktreePath: w.path,
       active: w.id === activeWs?.id,
     }));
@@ -872,23 +876,45 @@ export class OmpApp extends LitElement {
       ? this.realProjects
       : [{ id: this.selectedProjectId, name: "Projeto" }];
 
+    const seenSessionIds = new Set<string>();
     for (const proj of projects) {
       const workspaces = this.workspacesByProject[proj.id] || [];
-      const primaryWs = workspaces.find(w => w.isPrimary) || workspaces[0];
-      if (!primaryWs) continue;
-      const sessions = this.sessionsByCwd[primaryWs.path] || [];
-      for (const s of sessions) {
-        const isArchived = s.archived === true;
-        const rawTime = (s as any).updatedAt || s.modified || (s as any).createdAt || s.created;
-        result.push({
-          id: s.id,
-          title: s.name || (s.id.length > 12 ? s.id.slice(0, 10) + "..." : s.id),
-          updatedAt: isArchived ? undefined : formatRelativeTime(rawTime),
-          projectId: proj.id,
-          archived: isArchived,
-          isWorking: this.workingSessionIds.has(s.id),
-          isUnread: this.unseenCompletedSessionIds.has(s.id),
-        });
+      if (workspaces.length === 0) {
+        const fallbackSessions = this.sessionsByCwd[(proj as any).path] || [];
+        for (const s of fallbackSessions) {
+          if (seenSessionIds.has(s.id)) continue;
+          seenSessionIds.add(s.id);
+          const isArchived = s.archived === true;
+          const rawTime = (s as any).updatedAt || s.modified || (s as any).createdAt || s.created;
+          result.push({
+            id: s.id,
+            title: s.name || (s.id.length > 12 ? s.id.slice(0, 10) + "..." : s.id),
+            updatedAt: isArchived ? undefined : formatRelativeTime(rawTime),
+            projectId: proj.id,
+            archived: isArchived,
+            isWorking: this.workingSessionIds.has(s.id),
+            isUnread: this.unseenCompletedSessionIds.has(s.id),
+          });
+        }
+      } else {
+        for (const ws of workspaces) {
+          const sessions = this.sessionsByCwd[ws.path] || [];
+          for (const s of sessions) {
+            if (seenSessionIds.has(s.id)) continue;
+            seenSessionIds.add(s.id);
+            const isArchived = s.archived === true;
+            const rawTime = (s as any).updatedAt || s.modified || (s as any).createdAt || s.created;
+            result.push({
+              id: s.id,
+              title: s.name || (s.id.length > 12 ? s.id.slice(0, 10) + "..." : s.id),
+              updatedAt: isArchived ? undefined : formatRelativeTime(rawTime),
+              projectId: proj.id,
+              archived: isArchived,
+              isWorking: this.workingSessionIds.has(s.id),
+              isUnread: this.unseenCompletedSessionIds.has(s.id),
+            });
+          }
+        }
       }
     }
     return result;
@@ -959,16 +985,30 @@ export class OmpApp extends LitElement {
           ...this.workspacesByProject,
           [projectId]: workspaces,
         };
-        const primary = workspaces.find(w => w.isPrimary) || workspaces[0];
-        if (primary && !this.sessionsByCwd[primary.path]) {
-          const sessions = await sessionsApi.sessions(primary.path, this.selectedMachine?.id || "local");
-          if (Array.isArray(sessions)) {
-            this.sessionsByCwd = {
-              ...this.sessionsByCwd,
-              [primary.path]: sessions,
-            };
-            this.requestUpdate();
+        const results = await Promise.all(
+          workspaces.map(async (w) => {
+            if (!this.sessionsByCwd[w.path]) {
+              try {
+                const sessions = await sessionsApi.sessions(w.path, this.selectedMachine?.id || "local");
+                return { path: w.path, sessions: Array.isArray(sessions) ? sessions : [] };
+              } catch {
+                return { path: w.path, sessions: [] };
+              }
+            }
+            return null;
+          })
+        );
+        let changed = false;
+        const newSessions = { ...this.sessionsByCwd };
+        for (const res of results) {
+          if (res) {
+            newSessions[res.path] = res.sessions;
+            changed = true;
           }
+        }
+        if (changed) {
+          this.sessionsByCwd = newSessions;
+          this.requestUpdate();
         }
       }
     } catch {
@@ -985,30 +1025,33 @@ export class OmpApp extends LitElement {
           [projectId]: workspaces,
         };
 
+        const sessionResults = await Promise.all(
+          workspaces.map(async (w) => {
+            try {
+              const sessions = await sessionsApi.sessions(w.path, this.currentMachineId);
+              return { path: w.path, sessions: Array.isArray(sessions) ? sessions : [] };
+            } catch {
+              return { path: w.path, sessions: [] };
+            }
+          })
+        );
+        const updatedSessions = { ...this.sessionsByCwd };
+        for (const res of sessionResults) {
+          updatedSessions[res.path] = res.sessions;
+        }
+        this.sessionsByCwd = updatedSessions;
+
         let targetWs: Workspace | undefined;
-        if (this.selectedWorkspaceId) {
+        if (this.selectedSessionId) {
+          targetWs = workspaces.find(w => this.sessionsByCwd[w.path]?.some(s => s.id === this.selectedSessionId));
+        }
+
+        if (!targetWs && this.selectedWorkspaceId) {
           targetWs = workspaces.find(w => w.id === this.selectedWorkspaceId);
         }
 
-        if (!targetWs && this.selectedSessionId) {
-          for (const w of workspaces) {
-            try {
-              const sessions = await sessionsApi.sessions(w.path, this.currentMachineId);
-              if (Array.isArray(sessions)) {
-                this.sessionsByCwd = { ...this.sessionsByCwd, [w.path]: sessions };
-                if (sessions.some(s => s.id === this.selectedSessionId)) {
-                  targetWs = w;
-                  break;
-                }
-              }
-            } catch {
-              // ignore
-            }
-          }
-        }
-
         if (!targetWs) {
-          targetWs = workspaces.find(w => w.isPrimary) || workspaces[0];
+          targetWs = workspaces.find(w => (w as any).isPrimary ?? w.isMain) || workspaces[0];
         }
 
         this.selectedWorkspaceId = targetWs.id;
@@ -1031,17 +1074,20 @@ export class OmpApp extends LitElement {
           const targetId = this.selectedSessionId;
           const targetInSessions = targetId ? sessions.find(s => s.id === targetId) : undefined;
 
+          const anyWsHasTarget = targetId && Object.values(this.sessionsByCwd).some(list => list.some(s => s.id === targetId));
+
           if (targetInSessions) {
             if (this.currentConnectedSessionId !== targetInSessions.id) {
               await this.selectSession(targetInSessions.id, cwd);
             }
           } else if (selectIfNone && !targetId) {
             await this.selectSession(sessions[0].id, cwd);
-          } else if (selectIfNone && targetId && !targetInSessions) {
+          } else if (selectIfNone && targetId && !targetInSessions && !anyWsHasTarget) {
             await this.selectSession(sessions[0].id, cwd);
           }
         } else {
-          if (selectIfNone) {
+          const anyWsHasTarget = this.selectedSessionId && Object.values(this.sessionsByCwd).some(list => list.some(s => s.id === this.selectedSessionId));
+          if (selectIfNone && !anyWsHasTarget) {
             this.selectedSessionId = "";
             this.messages = [];
             this.rawLines = [];
@@ -1065,14 +1111,47 @@ export class OmpApp extends LitElement {
       this.selectedProjectId = projectId;
       await this.loadWorkspaces(this.selectedProjectId, false);
     }
-    await this.selectSession(sessionId, undefined, { pushHistory: true });
+    let targetCwd: string | undefined;
+    const workspaces = this.workspacesByProject[this.selectedProjectId] || [];
+    const wsWithSession = workspaces.find(w => this.sessionsByCwd[w.path]?.some(s => s.id === sessionId));
+    if (wsWithSession) {
+      this.selectedWorkspaceId = wsWithSession.id;
+      targetCwd = wsWithSession.path;
+    }
+    await this.selectSession(sessionId, targetCwd, { pushHistory: true });
     this.activeTab = "new-chat";
   }
 
   private async selectSession(sessionId: string, cwd?: string, options?: { pushHistory?: boolean }) {
     this.selectedSessionId = sessionId;
     this.unseenCompletedSessionIds.delete(sessionId);
-    const effectiveCwd = cwd || this.getActiveWorkspace()?.path;
+
+    let effectiveCwd = cwd;
+    if (!effectiveCwd) {
+      for (const pId of Object.keys(this.workspacesByProject)) {
+        const list = this.workspacesByProject[pId] || [];
+        const match = list.find(w => this.sessionsByCwd[w.path]?.some(s => s.id === sessionId));
+        if (match) {
+          effectiveCwd = match.path;
+          if (this.selectedProjectId !== pId) {
+            this.selectedProjectId = pId;
+          }
+          if (this.selectedWorkspaceId !== match.id) {
+            this.selectedWorkspaceId = match.id;
+          }
+          break;
+        }
+      }
+    } else {
+      const workspaces = this.workspacesByProject[this.selectedProjectId] || [];
+      const match = workspaces.find(w => w.path === effectiveCwd);
+      if (match && this.selectedWorkspaceId !== match.id) {
+        this.selectedWorkspaceId = match.id;
+      }
+    }
+    if (!effectiveCwd) {
+      effectiveCwd = this.getActiveWorkspace()?.path;
+    }
     if (!effectiveCwd || !sessionId) return;
 
     this.syncUrl({ replace: !options?.pushHistory });
@@ -1222,24 +1301,32 @@ export class OmpApp extends LitElement {
           this.isArtifactOpen = false;
         }
       }
-      const ws = this.getActiveWorkspace();
-      if (ws && this.sessionsByCwd[ws.path] && event.status.archived !== undefined) {
-        this.sessionsByCwd = {
-          ...this.sessionsByCwd,
-          [ws.path]: this.sessionsByCwd[ws.path].map(s =>
-            s.id === event.status.sessionId ? { ...s, archived: event.status.archived } : s
-          ),
-        };
+      if (event.status.archived !== undefined) {
+        let changed = false;
+        const updated = { ...this.sessionsByCwd };
+        for (const [p, sessions] of Object.entries(updated)) {
+          if (sessions.some(s => s.id === event.status.sessionId)) {
+            updated[p] = sessions.map(s => s.id === event.status.sessionId ? { ...s, archived: event.status.archived } : s);
+            changed = true;
+          }
+        }
+        if (changed) {
+          this.sessionsByCwd = updated;
+        }
       }
     }
 
     if (event.type === "session.name") {
-      const ws = this.getActiveWorkspace();
-      if (ws && this.sessionsByCwd[ws.path]) {
-        this.sessionsByCwd = {
-          ...this.sessionsByCwd,
-          [ws.path]: this.sessionsByCwd[ws.path].map(s => s.id === event.sessionId ? { ...s, name: event.name } : s),
-        };
+      let changed = false;
+      const updated = { ...this.sessionsByCwd };
+      for (const [p, sessions] of Object.entries(updated)) {
+        if (sessions.some(s => s.id === event.sessionId)) {
+          updated[p] = sessions.map(s => s.id === event.sessionId ? { ...s, name: event.name } : s);
+          changed = true;
+        }
+      }
+      if (changed) {
+        this.sessionsByCwd = updated;
       }
     }
 
@@ -1553,13 +1640,16 @@ export class OmpApp extends LitElement {
         if (this.promptSubmissionId !== submissionId) return;
         await sessionsApi.prompt({ id: sessionId, cwd: ws.path }, promptTrimmed, detail.streamingBehavior, this.currentMachineId);
       }
-      if (ws && this.sessionsByCwd[ws.path]) {
-        this.sessionsByCwd = {
-          ...this.sessionsByCwd,
-          [ws.path]: this.sessionsByCwd[ws.path].map(s =>
-            s.id === sessionId ? { ...s, archived: false } : s
-          ),
-        };
+      let unarchived = false;
+      const updatedSessions = { ...this.sessionsByCwd };
+      for (const [p, sessions] of Object.entries(updatedSessions)) {
+        if (sessions.some(s => s.id === sessionId)) {
+          updatedSessions[p] = sessions.map(s => s.id === sessionId ? { ...s, archived: false } : s);
+          unarchived = true;
+        }
+      }
+      if (unarchived) {
+        this.sessionsByCwd = updatedSessions;
       }
     } catch (err) {
       console.error("[OMP] Failed to send prompt to sessiond:", err);
@@ -1963,17 +2053,35 @@ export class OmpApp extends LitElement {
 
   private async handleArchiveSession(sessionId: string, projectId?: string) {
     let cwd: string | undefined;
-    if (projectId) {
-      const workspaces = this.workspacesByProject[projectId] || [];
-      const primaryWs = workspaces.find(w => w.isPrimary) || workspaces[0];
-      cwd = primaryWs?.path;
+    const projId = projectId || this.selectedProjectId;
+    const workspaces = this.workspacesByProject[projId] || [];
+    const matchingWs = workspaces.find(w => this.sessionsByCwd[w.path]?.some(s => s.id === sessionId));
+    if (matchingWs) {
+      cwd = matchingWs.path;
+    } else {
+      for (const [p, sessions] of Object.entries(this.sessionsByCwd)) {
+        if (sessions.some(s => s.id === sessionId)) {
+          cwd = p;
+          break;
+        }
+      }
     }
     await this.archiveSessionById(sessionId, cwd);
   }
 
   private async archiveSessionById(sessionId: string, cwd?: string) {
-    const ws = this.getActiveWorkspace();
-    const targetCwd = cwd || ws?.path;
+    let targetCwd = cwd;
+    if (!targetCwd) {
+      for (const [p, sessions] of Object.entries(this.sessionsByCwd)) {
+        if (sessions.some(s => s.id === sessionId)) {
+          targetCwd = p;
+          break;
+        }
+      }
+    }
+    if (!targetCwd) {
+      targetCwd = this.getActiveWorkspace()?.path;
+    }
     if (!sessionId) return;
     try {
       await sessionsApi.archive({ id: sessionId, cwd: targetCwd || "" }, this.currentMachineId);

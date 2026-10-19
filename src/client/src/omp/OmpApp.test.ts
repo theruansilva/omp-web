@@ -128,6 +128,58 @@ describe("OmpApp integration", () => {
     expect(sidebarSessions[1].updatedAt).toBe("agora");
   });
 
+  it("includes sessions from non-main worktrees in sidebar sessions", () => {
+    const app = new OmpApp();
+    (app as any).selectedProjectId = "proj-1";
+    (app as any).workspacesByProject = {
+      "proj-1": [
+        { id: "ws-main", projectId: "proj-1", name: "main", path: "/test/main", isPrimary: true },
+        { id: "ws-feat", projectId: "proj-1", name: "feat/other", path: "/test/feat", isPrimary: false },
+      ],
+    };
+    (app as any).selectedWorkspaceId = "ws-main";
+    (app as any).sessionsByCwd = {
+      "/test/main": [
+        { id: "s-main", name: "Main Session", archived: false, created: "2026-10-01T00:00:00.000Z", modified: "2026-10-01T12:00:00.000Z" },
+      ],
+      "/test/feat": [
+        { id: "s-feat", name: "Worktree Session", archived: false, created: "2026-10-02T00:00:00.000Z", modified: "2026-10-02T12:00:00.000Z" },
+      ],
+    };
+    const sidebarSessions = (app as any).getSidebarSessions();
+    expect(sidebarSessions).toHaveLength(2);
+    expect(sidebarSessions.map((s: any) => s.id)).toEqual(["s-main", "s-feat"]);
+    expect(sidebarSessions.find((s: any) => s.id === "s-feat")?.title).toBe("Worktree Session");
+  });
+
+  it("handleSessionSelect switches selectedWorkspaceId to the worktree that owns the session", async () => {
+    const app = new OmpApp();
+    (app as any).selectedProjectId = "proj-1";
+    (app as any).workspacesByProject = {
+      "proj-1": [
+        { id: "ws-main", projectId: "proj-1", name: "main", path: "/test/main", isPrimary: true },
+        { id: "ws-feat", projectId: "proj-1", name: "feat/other", path: "/test/feat", isPrimary: false },
+      ],
+    };
+    (app as any).selectedWorkspaceId = "ws-main";
+    (app as any).sessionsByCwd = {
+      "/test/main": [
+        { id: "s-main", name: "Main Session", archived: false },
+      ],
+      "/test/feat": [
+        { id: "s-feat", name: "Worktree Session", archived: false },
+      ],
+    };
+
+    const selectSpy = vi.spyOn(app as any, "selectSession").mockResolvedValue(undefined as any);
+
+    await (app as any).handleSessionSelect("s-feat", "proj-1");
+
+    expect((app as any).selectedWorkspaceId).toBe("ws-feat");
+    expect(selectSpy).toHaveBeenCalledWith("s-feat", "/test/feat", { pushHistory: true });
+    expect((app as any).activeTab).toBe("new-chat");
+  });
+
   it("restores session and project from URL on reload (connectedCallback)", () => {
     installMockWindow("http://localhost:8504/omp?session=sess-abc-123&project=proj-xyz");
     const app = new OmpApp();
