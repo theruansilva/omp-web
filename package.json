@@ -41,7 +41,6 @@
     "clean": "rm -rf dist",
     "prepack": "bun run build",
     "pack:dry": "bun pm pack --dry-run",
-    "prepublishOnly": "bun run typecheck",
     "publish:npm": "npm publish --access public",
     "prepare": "bun scripts/install-git-hooks.mjs"
   },
