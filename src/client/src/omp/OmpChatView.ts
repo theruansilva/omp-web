@@ -234,41 +234,46 @@ export class OmpChatView extends LitElement {
       .omp-process-expander {
         display: grid;
         grid-template-rows: 0fr;
-        transition: grid-template-rows 460ms linear(0, 0.22 8%, 0.6 18%, 0.94 30%, 1.07 40%, 1.05 48%, 1 60%, 0.99 74%, 1);
+        visibility: hidden;
+        transition: grid-template-rows 360ms cubic-bezier(0.16, 1, 0.3, 1), visibility 360ms step-end;
         overflow: hidden;
       }
       .omp-process-expander.open {
         grid-template-rows: 1fr;
+        visibility: visible;
+        transition: grid-template-rows 360ms cubic-bezier(0.16, 1, 0.3, 1), visibility 0s;
       }
       .omp-process-expander-inner {
         min-height: 0;
         overflow: hidden;
       }
-      .omp-process-expander.open .process-item-1 {
-        animation: process-item-reveal 260ms cubic-bezier(0.16, 1, 0.3, 1) 180ms both;
+      .omp-process-expander.open .omp-process-content {
+        animation: process-body-reveal 240ms cubic-bezier(0.16, 1, 0.3, 1) both;
       }
-      .omp-process-expander.open .process-item-2 {
-        animation: process-item-reveal 260ms cubic-bezier(0.16, 1, 0.3, 1) 220ms both;
-      }
-      .omp-process-expander.open .process-item-3 {
-        animation: process-item-reveal 260ms cubic-bezier(0.16, 1, 0.3, 1) 270ms both;
-      }
-      .omp-process-expander.open .process-item-4 {
-        animation: process-item-reveal 260ms cubic-bezier(0.16, 1, 0.3, 1) 320ms both;
-      }
-      .omp-process-expander.open .process-item-5 {
-        animation: process-item-reveal 260ms cubic-bezier(0.16, 1, 0.3, 1) 370ms both;
-      }
-      .omp-process-expander:not(.open) .group\\/think-step,
-      .omp-process-expander:not(.open) .tool-card {
+      .omp-process-expander:not(.open) .omp-process-content {
         opacity: 0;
         transform: translateY(-4px);
         transition: opacity 120ms linear, transform 120ms linear;
       }
+      .omp-process-expander.open .process-item-1 { animation: process-item-reveal 220ms cubic-bezier(0.16, 1, 0.3, 1) 40ms both; }
+      .omp-process-expander.open .process-item-2 { animation: process-item-reveal 220ms cubic-bezier(0.16, 1, 0.3, 1) 80ms both; }
+      .omp-process-expander.open .process-item-3 { animation: process-item-reveal 220ms cubic-bezier(0.16, 1, 0.3, 1) 120ms both; }
+      .omp-process-expander.open .process-item-4 { animation: process-item-reveal 220ms cubic-bezier(0.16, 1, 0.3, 1) 160ms both; }
+      .omp-process-expander.open .process-item-5 { animation: process-item-reveal 220ms cubic-bezier(0.16, 1, 0.3, 1) 200ms both; }
+      @keyframes process-body-reveal {
+        0% {
+          opacity: 0;
+          transform: translateY(8px) scale(0.99);
+        }
+        100% {
+          opacity: 1;
+          transform: translateY(0) scale(1);
+        }
+      }
       @keyframes process-item-reveal {
         0% {
           opacity: 0;
-          transform: translateY(12px) scale(0.96);
+          transform: translateY(6px) scale(0.99);
         }
         100% {
           opacity: 1;
@@ -277,27 +282,31 @@ export class OmpChatView extends LitElement {
       }
       @keyframes executing-pulse {
         0%, 100% {
-          border-color: rgba(59, 130, 246, 0.35);
-          background-color: rgba(59, 130, 246, 0.04);
+          opacity: 1;
         }
         50% {
-          border-color: rgba(59, 130, 246, 0.70);
-          background-color: rgba(59, 130, 246, 0.10);
+          opacity: 0.55;
         }
       }
       .omp-item-executing {
-        animation: executing-pulse 1.8s cubic-bezier(0.4, 0, 0.6, 1) infinite;
         border-radius: 10px;
-        border: 1px solid rgba(59, 130, 246, 0.40);
+        border: 1px solid rgba(59, 130, 246, 0.35);
+        background-color: rgba(59, 130, 246, 0.04);
+      }
+      .omp-item-executing .tool-icon {
+        animation: executing-pulse 1.4s ease-in-out infinite;
       }
       .omp-sub-expander {
         display: grid;
         grid-template-rows: 0fr;
-        transition: grid-template-rows 380ms linear(0, 0.22 8%, 0.6 18%, 0.94 30%, 1.07 40%, 1.05 48%, 1 60%, 0.99 74%, 1);
+        visibility: hidden;
+        transition: grid-template-rows 300ms cubic-bezier(0.16, 1, 0.3, 1), visibility 300ms step-end;
         overflow: hidden;
       }
       .omp-sub-expander.open {
         grid-template-rows: 1fr;
+        visibility: visible;
+        transition: grid-template-rows 300ms cubic-bezier(0.16, 1, 0.3, 1), visibility 0s;
       }
       .omp-sub-expander-inner {
         min-height: 0;
@@ -1073,9 +1082,11 @@ export class OmpChatView extends LitElement {
                                                     </div>
                                                     <div class="omp-sub-expander ${isThinkOpen ? "open" : ""}">
                                                       <div class="omp-sub-expander-inner">
-                                                        <div class="my-1 pl-7 py-1 text-xs leading-relaxed border-l-2 border-amber-500/40 font-sans" style="color: var(--omp-text-primary, #F8FAFC);">
-                                                          <omp-markdown .text=${part.thinking}></omp-markdown>
-                                                        </div>
+                                                        ${isThinkOpen ? html`
+                                                          <div class="my-1 pl-7 py-1 text-xs leading-relaxed border-l-2 border-amber-500/40 font-sans" style="color: var(--omp-text-primary, #F8FAFC);">
+                                                            <omp-markdown .text=${part.thinking}></omp-markdown>
+                                                          </div>
+                                                        ` : nothing}
                                                       </div>
                                                     </div>
                                                   </div>

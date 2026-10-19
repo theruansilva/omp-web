@@ -511,6 +511,7 @@
 
 
 
+
 /* =========================================================
    PROCESS BODY EXPANDER (CHAT PROCESS / THINKING)
    ========================================================= */
@@ -518,12 +519,15 @@
 .omp-process-expander {
   display: grid;
   grid-template-rows: 0fr;
-  transition: grid-template-rows 360ms cubic-bezier(0.16, 1, 0.3, 1);
+  visibility: hidden;
+  transition: grid-template-rows 360ms cubic-bezier(0.16, 1, 0.3, 1), visibility 360ms step-end;
   overflow: hidden;
 }
 
 .omp-process-expander.open {
   grid-template-rows: 1fr;
+  visibility: visible;
+  transition: grid-template-rows 360ms cubic-bezier(0.16, 1, 0.3, 1), visibility 0s;
 }
 
 .omp-process-expander-inner {
@@ -532,7 +536,7 @@
 }
 
 .omp-process-expander.open .omp-process-content {
-  animation: process-body-reveal 260ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation: process-body-reveal 240ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 .omp-process-expander:not(.open) .omp-process-content {
@@ -552,13 +556,12 @@
   }
 }
 
-
 /* Staggered cascade reveal for items inside process body */
-.omp-process-expander.open .process-item-1 { animation: process-item-reveal 240ms cubic-bezier(0.16, 1, 0.3, 1) 40ms both; }
-.omp-process-expander.open .process-item-2 { animation: process-item-reveal 240ms cubic-bezier(0.16, 1, 0.3, 1) 90ms both; }
-.omp-process-expander.open .process-item-3 { animation: process-item-reveal 240ms cubic-bezier(0.16, 1, 0.3, 1) 140ms both; }
-.omp-process-expander.open .process-item-4 { animation: process-item-reveal 240ms cubic-bezier(0.16, 1, 0.3, 1) 190ms both; }
-.omp-process-expander.open .process-item-5 { animation: process-item-reveal 240ms cubic-bezier(0.16, 1, 0.3, 1) 240ms both; }
+.omp-process-expander.open .process-item-1 { animation: process-item-reveal 220ms cubic-bezier(0.16, 1, 0.3, 1) 40ms both; }
+.omp-process-expander.open .process-item-2 { animation: process-item-reveal 220ms cubic-bezier(0.16, 1, 0.3, 1) 80ms both; }
+.omp-process-expander.open .process-item-3 { animation: process-item-reveal 220ms cubic-bezier(0.16, 1, 0.3, 1) 120ms both; }
+.omp-process-expander.open .process-item-4 { animation: process-item-reveal 220ms cubic-bezier(0.16, 1, 0.3, 1) 160ms both; }
+.omp-process-expander.open .process-item-5 { animation: process-item-reveal 220ms cubic-bezier(0.16, 1, 0.3, 1) 200ms both; }
 
 @keyframes process-item-reveal {
   0% {
@@ -571,34 +574,39 @@
   }
 }
 
-/* Active execution animation for running tools and thinking steps */
+/* Active execution animation for running tools and thinking steps (GPU-accelerated, zero repaint) */
 @keyframes executing-pulse {
   0%, 100% {
-    border-color: rgba(59, 130, 246, 0.30);
-    background-color: rgba(59, 130, 246, 0.04);
+    opacity: 1;
   }
   50% {
-    border-color: rgba(59, 130, 246, 0.65);
-    background-color: rgba(59, 130, 246, 0.08);
+    opacity: 0.55;
   }
 }
 
 .omp-item-executing {
-  animation: executing-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-  border-radius: 12px;
+  border-radius: 10px;
   border: 1px solid rgba(59, 130, 246, 0.35);
+  background-color: rgba(59, 130, 246, 0.04);
+}
+
+.omp-item-executing .tool-icon {
+  animation: executing-pulse 1.4s ease-in-out infinite;
 }
 
 /* Sub-expander for thinking steps & tool card details */
 .omp-sub-expander {
   display: grid;
   grid-template-rows: 0fr;
-  transition: grid-template-rows 300ms cubic-bezier(0.16, 1, 0.3, 1);
+  visibility: hidden;
+  transition: grid-template-rows 300ms cubic-bezier(0.16, 1, 0.3, 1), visibility 300ms step-end;
   overflow: hidden;
 }
 
 .omp-sub-expander.open {
   grid-template-rows: 1fr;
+  visibility: visible;
+  transition: grid-template-rows 300ms cubic-bezier(0.16, 1, 0.3, 1), visibility 0s;
 }
 
 .omp-sub-expander-inner {
