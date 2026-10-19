@@ -221,101 +221,6 @@ export class OmpChatView extends LitElement {
   private lastClientHeight = 0;
   private scrollToBottomFrame?: number;
 
-  override connectedCallback() {
-    super.connectedCallback();
-    this.ensureProcessExpanderStyles();
-  }
-
-  private ensureProcessExpanderStyles() {
-    if (typeof document === "undefined" || document.getElementById("omp-process-expander-styles")) return;
-    const style = document.createElement("style");
-    style.id = "omp-process-expander-styles";
-    style.textContent = `
-      .omp-process-expander {
-        display: grid;
-        grid-template-rows: 0fr;
-        visibility: hidden;
-        transition: grid-template-rows 360ms cubic-bezier(0.16, 1, 0.3, 1), visibility 360ms step-end;
-        overflow: hidden;
-      }
-      .omp-process-expander.open {
-        grid-template-rows: 1fr;
-        visibility: visible;
-        transition: grid-template-rows 360ms cubic-bezier(0.16, 1, 0.3, 1), visibility 0s;
-      }
-      .omp-process-expander-inner {
-        min-height: 0;
-        overflow: hidden;
-      }
-      .omp-process-expander.open .omp-process-content {
-        animation: process-body-reveal 240ms cubic-bezier(0.16, 1, 0.3, 1) both;
-      }
-      .omp-process-expander:not(.open) .omp-process-content {
-        opacity: 0;
-        transform: translateY(-4px);
-        transition: opacity 120ms linear, transform 120ms linear;
-      }
-      .omp-process-expander.open .process-item-1 { animation: process-item-reveal 220ms cubic-bezier(0.16, 1, 0.3, 1) 40ms both; }
-      .omp-process-expander.open .process-item-2 { animation: process-item-reveal 220ms cubic-bezier(0.16, 1, 0.3, 1) 80ms both; }
-      .omp-process-expander.open .process-item-3 { animation: process-item-reveal 220ms cubic-bezier(0.16, 1, 0.3, 1) 120ms both; }
-      .omp-process-expander.open .process-item-4 { animation: process-item-reveal 220ms cubic-bezier(0.16, 1, 0.3, 1) 160ms both; }
-      .omp-process-expander.open .process-item-5 { animation: process-item-reveal 220ms cubic-bezier(0.16, 1, 0.3, 1) 200ms both; }
-      @keyframes process-body-reveal {
-        0% {
-          opacity: 0;
-          transform: translateY(8px) scale(0.99);
-        }
-        100% {
-          opacity: 1;
-          transform: translateY(0) scale(1);
-        }
-      }
-      @keyframes process-item-reveal {
-        0% {
-          opacity: 0;
-          transform: translateY(6px) scale(0.99);
-        }
-        100% {
-          opacity: 1;
-          transform: translateY(0) scale(1);
-        }
-      }
-      @keyframes executing-pulse {
-        0%, 100% {
-          opacity: 1;
-        }
-        50% {
-          opacity: 0.55;
-        }
-      }
-      .omp-item-executing {
-        border-radius: 10px;
-        border: 1px solid rgba(59, 130, 246, 0.35);
-        background-color: rgba(59, 130, 246, 0.04);
-      }
-      .omp-item-executing .tool-icon {
-        animation: executing-pulse 1.4s ease-in-out infinite;
-      }
-      .omp-sub-expander {
-        display: grid;
-        grid-template-rows: 0fr;
-        visibility: hidden;
-        transition: grid-template-rows 300ms cubic-bezier(0.16, 1, 0.3, 1), visibility 300ms step-end;
-        overflow: hidden;
-      }
-      .omp-sub-expander.open {
-        grid-template-rows: 1fr;
-        visibility: visible;
-        transition: grid-template-rows 300ms cubic-bezier(0.16, 1, 0.3, 1), visibility 0s;
-      }
-      .omp-sub-expander-inner {
-        min-height: 0;
-        overflow: hidden;
-      }
-    `;
-    document.head.appendChild(style);
-  }
-
   protected override createRenderRoot() {
     return this;
   }
@@ -742,21 +647,12 @@ export class OmpChatView extends LitElement {
     const targetText = t.target || t.summary;
 
     return html`
-      <div class="tool-card ${t.status || 'completed'} w-full bg-transparent overflow-hidden my-0.5 select-none transition-colors ${isRunning ? "omp-item-executing p-0.5" : ""}">
-        <div
+      <details class="tool-card ${t.status || 'completed'} w-full bg-transparent overflow-hidden my-0.5 select-none" .open=${isExpanded}>
+        <summary
           class="tool-header inline-flex items-center gap-2 py-1 px-1.5 rounded-lg cursor-pointer transition-colors hover:bg-black/5 dark:hover:bg-white/8 list-none select-none font-sans max-w-full"
-          role="button"
-          tabindex="0"
-          aria-expanded=${isExpanded}
           @click=${(e: Event) => {
             e.preventDefault();
             if (hasDetails) this.toggleToolExpand(key);
-          }}
-          @keydown=${(e: KeyboardEvent) => {
-            if ((e.key === "Enter" || e.key === " ") && hasDetails) {
-              e.preventDefault();
-              this.toggleToolExpand(key);
-            }
           }}
         >
           ${this.renderToolItemIcon(t)}
@@ -773,48 +669,44 @@ export class OmpChatView extends LitElement {
             </span>
           ` : nothing}
           ${hasDetails ? html`
-            <svg class="size-3.5 shrink-0 transition-transform duration-300 ease-out ${isExpanded ? "rotate-90" : ""}" style="color: var(--omp-text-primary, #F8FAFC); opacity: 0.6;" viewBox="0 0 20 20" fill="currentColor">
+            <svg class="size-3.5 shrink-0 transition-transform duration-200 ${isExpanded ? "rotate-90" : ""}" style="color: var(--omp-text-primary, #F8FAFC); opacity: 0.6;" viewBox="0 0 20 20" fill="currentColor">
               <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"/>
             </svg>
           ` : nothing}
-        </div>
+        </summary>
 
-        <div class="omp-sub-expander ${isExpanded ? "open" : ""}">
-          <div class="omp-sub-expander-inner">
-            ${hasDetails ? html`
-              <div class="tool-content px-2 pb-2.5 pt-1 space-y-2 text-xs font-sans select-text">
-                ${t.errorText ? html`
-                  <div class="p-2.5 rounded-lg bg-red-500/15 border border-red-500/30 text-red-400 font-mono text-xs whitespace-pre-wrap break-all">
-                    <span class="text-[10px] uppercase font-bold tracking-wider font-sans block mb-1 text-red-500">Erro no console</span>
-                    <pre class="font-mono text-xs whitespace-pre-wrap break-all leading-relaxed">${this.renderHighlightedCode(t.errorText, "typescript")}</pre>
-                  </div>
-                ` : nothing}
+        ${isExpanded ? html`
+          <div class="tool-content px-2 pb-2.5 pt-1 space-y-2 text-xs font-sans select-text">
+            ${t.errorText ? html`
+              <div class="p-2.5 rounded-lg bg-red-500/15 border border-red-500/30 text-red-400 font-mono text-xs whitespace-pre-wrap break-all">
+                <span class="text-[10px] uppercase font-bold tracking-wider font-sans block mb-1 text-red-500">Erro no console</span>
+                <pre class="font-mono text-xs whitespace-pre-wrap break-all leading-relaxed">${this.renderHighlightedCode(t.errorText, "typescript")}</pre>
+              </div>
+            ` : nothing}
 
-                ${t.args ? html`
-                  <div>
-                    <span class="text-[10px] uppercase font-bold text-foreground-700 tracking-wider font-sans block mb-1">Entrada / Argumentos</span>
-                    <pre class="font-mono text-xs p-2.5 rounded-lg border border-black/10 dark:border-white/10 bg-black/10 dark:bg-black/40 text-foreground-900 whitespace-pre-wrap break-all leading-relaxed">${this.renderHighlightedCode(typeof t.args === "string" ? t.args : JSON.stringify(t.args, null, 2), "json")}</pre>
-                  </div>
-                ` : nothing}
+            ${t.args ? html`
+              <div>
+                <span class="text-[10px] uppercase font-bold text-foreground-700 tracking-wider font-sans block mb-1">Entrada / Argumentos</span>
+                <pre class="font-mono text-xs p-2.5 rounded-lg border border-black/10 dark:border-white/10 bg-black/10 dark:bg-black/40 text-foreground-900 whitespace-pre-wrap break-all leading-relaxed">${this.renderHighlightedCode(typeof t.args === "string" ? t.args : JSON.stringify(t.args, null, 2), "json")}</pre>
+              </div>
+            ` : nothing}
 
-                ${t.diff ? html`
-                  <div>
-                    <span class="text-[10px] uppercase font-bold text-foreground-700 tracking-wider font-sans block mb-1">Alterações (Diff)</span>
-                    <pre class="font-mono text-xs p-2.5 rounded-xl border border-black/10 dark:border-white/10 bg-black/10 dark:bg-black/40 overflow-x-auto max-h-72 leading-relaxed text-foreground-900">${this.renderFormattedDiff(t.diff)}</pre>
-                  </div>
-                ` : nothing}
+            ${t.diff ? html`
+              <div>
+                <span class="text-[10px] uppercase font-bold text-foreground-700 tracking-wider font-sans block mb-1">Alterações (Diff)</span>
+                <pre class="font-mono text-xs p-2.5 rounded-xl border border-black/10 dark:border-white/10 bg-black/10 dark:bg-black/40 overflow-x-auto max-h-72 leading-relaxed text-foreground-900">${this.renderFormattedDiff(t.diff)}</pre>
+              </div>
+            ` : nothing}
 
-                ${t.resultText && !t.diff && !t.errorText ? html`
-                  <div>
-                    <span class="text-[10px] uppercase font-bold text-foreground-700 tracking-wider font-sans block mb-1">Saída</span>
-                    <pre class="font-mono text-xs p-2.5 rounded-lg border border-black/10 dark:border-white/10 bg-black/10 dark:bg-black/40 text-foreground-850 whitespace-pre-wrap break-all max-h-56 overflow-y-auto leading-relaxed">${this.renderHighlightedCode(t.resultText)}</pre>
-                  </div>
-                ` : nothing}
+            ${t.resultText && !t.diff && !t.errorText ? html`
+              <div>
+                <span class="text-[10px] uppercase font-bold text-foreground-700 tracking-wider font-sans block mb-1">Saída</span>
+                <pre class="font-mono text-xs p-2.5 rounded-lg border border-black/10 dark:border-white/10 bg-black/10 dark:bg-black/40 text-foreground-850 whitespace-pre-wrap break-all max-h-56 overflow-y-auto leading-relaxed">${this.renderHighlightedCode(t.resultText)}</pre>
               </div>
             ` : nothing}
           </div>
-        </div>
-      </div>
+        ` : nothing}
+      </details>
     `;
   }
 
@@ -862,7 +754,6 @@ export class OmpChatView extends LitElement {
     const lastIndex = this.messages.length - 1;
 
     return html`
-
       <!-- OMP Web Exact Chat Page Structure -->
       <div class="relative flex flex-col h-full w-full overflow-hidden">
         ${this.artifact
@@ -997,26 +888,18 @@ export class OmpChatView extends LitElement {
 
                               return html`
                                 ${processParts.length > 0 ? html`
-                                  <div
+                                  <details
                                     class="group/process-block my-1 w-full bg-transparent border-0 select-none transition-colors"
+                                    .open=${isOpen}
                                   >
-                                    <div
+                                    <summary
                                       class="inline-flex items-center gap-2 py-1 px-1.5 cursor-pointer select-none text-xs bg-transparent rounded-lg hover:bg-black/5 dark:hover:bg-white/5 list-none transition-colors max-w-full"
-                                      role="button"
-                                      tabindex="0"
-                                      aria-expanded=${isOpen}
                                       @click=${(e: Event) => {
                                         e.preventDefault();
                                         this.toggleProcessBlock(msg.id, isOpen);
                                       }}
-                                      @keydown=${(e: KeyboardEvent) => {
-                                        if (e.key === "Enter" || e.key === " ") {
-                                          e.preventDefault();
-                                          this.toggleProcessBlock(msg.id, isOpen);
-                                        }
-                                      }}
                                     >
-                                      <span class="tool-icon inline-flex items-center justify-center size-5 shrink-0 text-amber-400 ${isRunningProcess ? "animate-pulse" : ""}">
+                                      <span class="tool-icon inline-flex items-center justify-center size-5 shrink-0 text-amber-400">
                                         <svg class="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                           <path d="M12 2a7 7 0 0 0-7 7c0 2.38 1.19 4.47 3 5.74V17a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2v-2.26c1.81-1.27 3-3.36 3-5.74a7 7 0 0 0-7-7z"/>
                                           <path d="M9 21h6"/>
@@ -1028,91 +911,73 @@ export class OmpChatView extends LitElement {
                                       <span class="font-normal text-xs truncate max-w-[280px] sm:max-w-lg" style="color: var(--omp-text-primary, #F8FAFC); opacity: 0.9;">
                                         ${summaryText}
                                       </span>
-                                      <svg class="size-3.5 shrink-0 transition-transform duration-300 ease-out ${isOpen ? "rotate-90" : ""}" style="color: var(--omp-text-primary, #F8FAFC); opacity: 0.6;" viewBox="0 0 20 20" fill="currentColor">
+                                      <svg class="size-3.5 shrink-0 transition-transform duration-200 ${isOpen ? "rotate-90" : ""}" style="color: var(--omp-text-primary, #F8FAFC); opacity: 0.6;" viewBox="0 0 20 20" fill="currentColor">
                                         <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"/>
                                       </svg>
+                                    </summary>
+
+                                    <!-- Process Body: Clean indentation without horizontal or vertical dividing lines -->
+                                    <div class="pl-3 py-1 space-y-1 select-text font-sans">
+                                      ${(() => {
+                                        let toolCounter = 0;
+                                        return processParts.map((part, pIdx) => {
+                                          const isLastPart = pIdx === processParts.length - 1;
+                                          const isCurrent = isRunningProcess && isLastPart;
+                                          const thinkKey = `${msg.id}-think-${pIdx}`;
+                                          const isThinkOpen = this.expandedThinkingKeys.has(thinkKey) || isCurrent;
+
+                                          if (part.type === "thinking") {
+                                            const firstLine = part.thinking.trim().split("\n")[0]?.replace(/^[\*#\s>-]+|[\*#\s]+$/g, "").trim() || "Raciocínio";
+                                            const stepSummary = firstLine.length > 55 ? `${firstLine.slice(0, 52)}…` : firstLine;
+
+                                            return this.showThinking && part.thinking ? html`
+                                              <details class="my-0.5 group/think-step" .open=${isThinkOpen}>
+                                                <summary
+                                                  class="inline-flex items-center gap-2 py-1 px-1.5 text-xs cursor-pointer select-none rounded hover:bg-black/5 dark:hover:bg-white/5 list-none max-w-full"
+                                                  @click=${(e: Event) => {
+                                                    e.preventDefault();
+                                                    this.toggleThinkingStep(thinkKey, isThinkOpen);
+                                                  }}
+                                                >
+                                                  <span class="tool-icon inline-flex items-center justify-center size-5 shrink-0 text-amber-400">
+                                                    <svg class="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                      <path d="M12 2a7 7 0 0 0-7 7c0 2.38 1.19 4.47 3 5.74V17a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2v-2.26c1.81-1.27 3-3.36 3-5.74a7 7 0 0 0-7-7z"/>
+                                                      <path d="M9 21h6"/>
+                                                    </svg>
+                                                  </span>
+                                                  <strong class="font-bold text-xs shrink-0" style="color: var(--omp-text-primary, #F8FAFC);">Raciocínio</strong>
+                                                  <span class="font-normal text-xs truncate max-w-[240px] sm:max-w-md" style="color: var(--omp-text-primary, #F8FAFC); opacity: 0.85;">${stepSummary}</span>
+                                                  <svg class="size-3.5 shrink-0 transition-transform duration-200 ${isThinkOpen ? "rotate-90" : ""}" style="color: var(--omp-text-primary, #F8FAFC); opacity: 0.6;" viewBox="0 0 20 20" fill="currentColor">
+                                                    <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"/>
+                                                  </svg>
+                                                </summary>
+                                                <div class="my-1 pl-7 py-1 text-xs leading-relaxed border-l-2 border-amber-500/40 font-sans" style="color: var(--omp-text-primary, #F8FAFC);">
+                                                  <omp-markdown .text=${part.thinking}></omp-markdown>
+                                                </div>
+                                              </details>
+                                            ` : nothing;
+                                          }
+                                          if (part.type === "tool") {
+                                            const startIdx = toolCounter;
+                                            toolCounter += part.tools.length;
+                                            return part.tools && part.tools.length > 0
+                                              ? html`
+                                                <div class="my-0.5 space-y-0.5 w-full font-sans">
+                                                  ${part.tools.map((t, idx) => {
+                                                    const isToolCurrent = isCurrent && idx === part.tools.length - 1;
+                                                    return this.renderClassicToolCard(t, `${msg.id}-tool-${startIdx + idx}`, isToolCurrent);
+                                                  })}
+                                                </div>
+                                              `
+                                              : nothing;
+                                          }
+                                          return nothing;
+                                        });
+                                      })()}
+
+
                                     </div>
-
-                                    <!-- Process Body: Composer-style spring expander -->
-                                    <div class="omp-process-expander ${isOpen ? "open" : ""}">
-                                      <div class="omp-process-expander-inner">
-                                        <div class="omp-process-content pl-3 py-1 space-y-1 select-text font-sans">
-                                          ${(() => {
-                                            let toolCounter = 0;
-                                            return processParts.map((part, pIdx) => {
-                                              const isLastPart = pIdx === processParts.length - 1;
-                                              const isCurrent = isRunningProcess && isLastPart;
-                                              const thinkKey = `${msg.id}-think-${pIdx}`;
-                                              const isThinkOpen = this.expandedThinkingKeys.has(thinkKey) || isCurrent;
-                                              const animClass = pIdx < 5 ? `process-item-${pIdx + 1}` : "";
-
-                                              if (part.type === "thinking") {
-                                                const firstLine = part.thinking.trim().split("\n")[0]?.replace(/^[\*#\s>-]+|[\*#\s]+$/g, "").trim() || "Raciocínio";
-                                                const stepSummary = firstLine.length > 55 ? `${firstLine.slice(0, 52)}…` : firstLine;
-
-                                                return this.showThinking && part.thinking ? html`
-                                                  <div class="my-0.5 group/think-step ${animClass} ${isCurrent ? "omp-item-executing p-0.5" : ""}">
-                                                    <div
-                                                      class="inline-flex items-center gap-2 py-1 px-1.5 text-xs cursor-pointer select-none rounded-lg hover:bg-black/5 dark:hover:bg-white/5 list-none max-w-full transition-colors"
-                                                      role="button"
-                                                      tabindex="0"
-                                                      aria-expanded=${isThinkOpen}
-                                                      @click=${(e: Event) => {
-                                                        e.preventDefault();
-                                                        this.toggleThinkingStep(thinkKey, isThinkOpen);
-                                                      }}
-                                                      @keydown=${(e: KeyboardEvent) => {
-                                                        if (e.key === "Enter" || e.key === " ") {
-                                                          e.preventDefault();
-                                                          this.toggleThinkingStep(thinkKey, isThinkOpen);
-                                                        }
-                                                      }}
-                                                    >
-                                                      <span class="tool-icon inline-flex items-center justify-center size-5 shrink-0 text-amber-400 ${isCurrent ? "animate-pulse" : ""}">
-                                                        <svg class="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                                          <path d="M12 2a7 7 0 0 0-7 7c0 2.38 1.19 4.47 3 5.74V17a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2v-2.26c1.81-1.27 3-3.36 3-5.74a7 7 0 0 0-7-7z"/>
-                                                          <path d="M9 21h6"/>
-                                                        </svg>
-                                                      </span>
-                                                      <strong class="font-bold text-xs shrink-0" style="color: var(--omp-text-primary, #F8FAFC);">Raciocínio</strong>
-                                                      <span class="font-normal text-xs truncate max-w-[240px] sm:max-w-md" style="color: var(--omp-text-primary, #F8FAFC); opacity: 0.85;">${stepSummary}</span>
-                                                      <svg class="size-3.5 shrink-0 transition-transform duration-300 ease-out ${isThinkOpen ? "rotate-90" : ""}" style="color: var(--omp-text-primary, #F8FAFC); opacity: 0.6;" viewBox="0 0 20 20" fill="currentColor">
-                                                        <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"/>
-                                                      </svg>
-                                                    </div>
-                                                    <div class="omp-sub-expander ${isThinkOpen ? "open" : ""}">
-                                                      <div class="omp-sub-expander-inner">
-                                                        ${isThinkOpen ? html`
-                                                          <div class="my-1 pl-7 py-1 text-xs leading-relaxed border-l-2 border-amber-500/40 font-sans" style="color: var(--omp-text-primary, #F8FAFC);">
-                                                            <omp-markdown .text=${part.thinking}></omp-markdown>
-                                                          </div>
-                                                        ` : nothing}
-                                                      </div>
-                                                    </div>
-                                                  </div>
-                                                ` : nothing;
-                                              }
-                                              if (part.type === "tool") {
-                                                const startIdx = toolCounter;
-                                                toolCounter += part.tools.length;
-                                                return part.tools && part.tools.length > 0
-                                                  ? html`
-                                                    <div class="my-0.5 space-y-0.5 w-full font-sans ${animClass}">
-                                                      ${part.tools.map((t, idx) => {
-                                                        const isToolCurrent = isCurrent && idx === part.tools.length - 1;
-                                                        return this.renderClassicToolCard(t, `${msg.id}-tool-${startIdx + idx}`, isToolCurrent);
-                                                      })}
-                                                    </div>
-                                                  `
-                                                  : nothing;
-                                              }
-                                              return nothing;
-                                            });
-                                          })()}
-                                        </div>
-                                      </div>
-                                    </div>
-                                  </div>
+                                  </details>
                                 ` : nothing}
 
                                 ${msg.text ? html`
