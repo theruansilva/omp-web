@@ -7,52 +7,48 @@
 web
 
 ## Users
-- **Desenvolvedores & Power-Users**: Engenheiros de software e desenvolvedores que utilizam o Oh My Pi como harness principal para desenvolvimento autônomo, execução de tarefas em background e comandos via linguagem natural.
-- **Usuários & Criadores**: Pessoas que buscam automatizar rotinas, gerenciar tarefas e interagir com agentes autônomos sem atrito de configuração técnica em terminais de linha de comando.
-- **Exploradores de Ferramentas & Plugins**: Usuários interessados em testar fluxos generativos e extensões experimentais centralizadas na área de Labs.
+- **Developers & Power-Users**: Software engineers who use Oh My Pi as their primary harness for autonomous development, background task execution, and natural language workspace operations.
+- **Builders & Creators**: Users looking to automate routines, supervise long-running tasks, and orchestrate autonomous agents without manual terminal overhead.
+- **Tool & Plugin Explorers**: Users experimenting with generative UI workflows, extensions, and workspace plugins.
 
 ## Product Purpose
-Ser o cockpit web definitivo do Oh My Pi (OMP Web), substituindo a interface legada pela nova experiência moderna e fluida inspirada na arquitetura de chat acrílico — unificando chat conversacional com modos de raciocínio, execução autônoma em segundo plano e laboratório de extensões.
+Serve as the definitive web cockpit for Oh My Pi (OMP Web), unifying real-time conversational supervision, reasoning modes, background agent execution, and integrated engineering tooling (terminal, file explorer, schedules, usage metrics).
 
 ## Positioning
-Diferente de interfaces de chat genéricas ou terminais CLI áridos, o OMP Web combina a usabilidade de um assistente moderno de alta fidelidade com o motor real de execução do Oh My Pi:
-1. **Cockpit Moderno Unificado**: Interface limpa com design acrílico, cantos squircle e tokens semânticos OKLCH, substituindo a interface legada como a experiência padrão do ecossistema.
-2. **Composer com Modos de Raciocínio**: Seleção integrada de modos de raciocínio (Smart, Quick, Think), menção rápida de arquivos (`@`) e execução de comandos (`/`).
-3. **Persistência & Daemon Desacoplado**: Conexão com o daemon `sessiond`, mantendo execuções ativas e tarefas em andamento mesmo com aba fechada ou troca de dispositivo.
-4. **Laboratório Dedicado (Labs)**: Área isolada para testes e experimentação de recursos generativos e protótipos de plugins sem poluir o fluxo de trabalho principal.
+Unlike generic chat surfaces or bare terminal windows, OMP Web couples high-fidelity desktop UI with the actual Oh My Pi agent execution engine:
+1. **Unified Modern Cockpit**: Clean acrylic surfaces, squircle geometry, and calibrated OKLCH semantic tokens.
+2. **Context-Aware Composer Hub**: Dynamic reasoning model controls, slash command hub (`/`), workspace file picker (`@`), and inline shell runner (`!`).
+3. **Persistent Decoupled Daemon**: Direct connection to `sessiond`, keeping agent processes and background tasks alive across tab closes and device switches.
+4. **Interactive AskTool & Generative UI**: Keyboard-first interactive parameter drawers (`ask`) and structured UI components (`<checklist>`, `<card>`, `<kpi-grid>`, `<callout>`).
 
 ## Operating Context
-- Navegadores modernos em desktop e dispositivos móveis (drawer lateral retrátil e layout adaptativo touch-friendly).
-- Comunicação bidirecional contínua em tempo real via WebSockets para streaming de tokens, status de ferramentas e interações do agente.
-- Ferramenta nativa `ask` integrada ao OmpComposer como padrão para opções, perguntas e escolhas interativas do usuário, acompanhada de componentes de Generative UI (`<checklist>`, `<kpi-grid>`, `<card>`, `<callout>`) para exibição estruturada no feed.
+- Modern desktop and mobile browsers with responsive side drawers and touch-calibrated navigation.
+- Real-time bidirectional WebSockets for token streaming, tool callout events, and agent status.
+- Native integrated `ask` drawer in composer replacing legacy static option blocks.
 
 ## Capabilities and Constraints
-- **Navegação Focada**:
-  - `New chat`: Tela inicial com hero greeting dinâmico e composer centralizado.
-  - `Tasks`: Acompanhamento e controle de tarefas em execução e jobs em segundo plano.
-  - `Library`: Histórico de sessões, workspaces e artefatos gerados.
-  - `Labs`: Ambiente para prototipar novos recursos e extensões de IA.
-  - *(Seções genéricas de consumo como Shopping, Imagine e Discover externo são expressamente descartadas).*
-- **Composer Multifuncional**: Entrada de texto com redimensionamento dinâmico, menus suspensos posicionados, anexo de capturas de tela e arquivos locais.
-- **Rebranding Total**: Eliminação de marcas e logotipos de terceiros  em prol da identidade visual oficial "OMP Web".
-- **Design Tokens Rígidos**: Aderência estrita a tokens OKLCH (`omp-theme.css`), curvatura concêntrica WWDC25 e classes utilitárias de superfície acrílica (`.omp-surface-*`). Cores hexadecimais brutas são proibidas.
+- **Focused Engineering Navigation**:
+  - `New chat`: Home greeting view with sticky bottom composer dock.
+  - `Terminal`: Interactive PTY console powered by xterm.js.
+  - `Files`: Workspace directory explorer, file viewer, and download utility.
+  - `Projects`: Multi-workspace and Git worktree manager.
+  - `Models`: Model discovery, reasoning level controls, and provider tags.
+  - `Schedules`: Visual cron management for automated agent tasks.
+  - `Settings`: Gateway, session daemon, and UI Colors customization.
+- **Multifunctional Composer**: Auto-expanding input, image and file attachments, keyboard autocomplete dock, and instant execution abort.
+- **Design System Tokens**: Strict adherence to OKLCH tokens (`omp-theme.css`), squircle curvature, and anti-black/anti-white contrast constraints.
 
 ## Brand Commitments
-- **Nome Oficial**: OMP Web (Oh My Pi Web).
-- **Tom de Voz**: Preciso, elegante, responsivo e descomplicado.
-- **Identidade Visual**: Acrílica e contemporânea, suporte nativo a temas Dark/Light de alto contraste, tipografia com ajustes ópticos e proporções concêntricas.
-
-## Evidence on Hand
-- Implementação de componentes Lit em `src/client/src/omp/` e template de entrada em `src/client/omp.html`.
-- Sistema de design semântico documentado em `src/client/omp-theme.css`, `_rules/omp-color-and-tokens-convention.md` e `_rules/shape-taxonomy-and-concentricity.md`.
-- Conexão e sincronização com backend em `src/server/` e daemon `sessiond`.
+- **Official Name**: OMP Web (Oh My Pi Web).
+- **Tone of Voice**: Precise, responsive, focused, and uncluttered.
+- **Visual Identity**: Acrylic surfaces, native dark/light high-contrast themes, and concentric squircle radii.
 
 ## Product Principles
-1. **Clareza & Foco em Execução**: O usuário interage com um chat limpo e poderoso; distrações cosméticas de consumo não pertencem ao cockpit de desenvolvimento.
-2. **Raciocínio Sob Medida**: O modo de modelo (Smart para raciocínio geral, Quick para patches ágeis, Think para planejamento complexo) é acessível diretamente no composer.
-3. **Fidelidade Visual Semântica**: Toda elevação, borda e fundo deriva de tokens matematicamente consistentes em OKLCH com acessibilidade visual garantida em qualquer tema.
-4. **Laboratório Isolado**: Novas capacidades são validadas no Labs antes de alterar fluxos consolidados do dia a dia.
+1. **Clarity & Execution Focus**: Every component serves real development and agent supervision; unnecessary consumer bloat is eliminated.
+2. **Tailored Reasoning**: Model modes and reasoning effort are configurable directly within the composer dock.
+3. **Semantic Visual Consistency**: Surfaces, elevations, and borders derive mathematically from OKLCH tokens ensuring WCAG AA contrast.
+4. **Resilient Persistence**: Work runs where code and credentials live; disconnection never interrupts active agent execution.
 
 ## Accessibility & Inclusion
-- Contraste estrito WCAG AA/AAA nos modos claro e escuro através do pareamento de tokens semânticos (`--omp-surface-*` e `--omp-text-*`).
-- Suporte a navegação por teclado, foco visível e gaveta colapsável em telas menores (< 768px).
+- Strict WCAG AA contrast across light and dark modes via semantic token pairs (`--omp-surface-*` and `--omp-text-*`).
+- Keyboard navigation, visible focus indicators, and responsive collapse on smaller viewports (< 768px).

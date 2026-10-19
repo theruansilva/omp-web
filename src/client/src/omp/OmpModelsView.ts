@@ -30,17 +30,17 @@ export interface ModelRoleItem {
 
 export const TUI_ROLES: ModelRoleItem[] = [
   { id: "default", tag: "@default", name: "Padrão", desc: "Modelo principal para chat e raciocínio geral", color: "text-emerald-500" },
-  { id: "smol", tag: "@smol", name: "Fast / Smol", desc: "Execução rápida para tarefas cotidianas e edições", color: "text-amber-500" },
-  { id: "slow", tag: "@slow", name: "Thinking / Slow", desc: "Raciocínio profundo e planejamento de arquitetura", color: "text-blue-500" },
-  { id: "tiny", tag: "@tiny", name: "Tiny", desc: "Modelos ultraleves ou locais para reparo de sintaxe", color: "text-purple-500" },
-  { id: "advisor", tag: "@advisor", name: "Advisor", desc: "Consultor de estratégia, vendas e arquitetura", color: "text-cyan-500" },
-  { id: "image", tag: "@image", name: "Imagem", desc: "Geração e transformação de imagens", color: "text-pink-500" },
-  { id: "vision", tag: "@vision", name: "Visão", desc: "Análise multimodal de imagens e capturas de tela", color: "text-rose-500" },
-  { id: "commit", tag: "@commit", name: "Commit", desc: "Geração de mensagens semânticas de commit", color: "text-orange-500" },
-  { id: "plan", tag: "@plan", name: "Arquiteto", desc: "Geração e validação de planos de execução", color: "text-indigo-500" },
-  { id: "task", tag: "@task", name: "Subtarefa", desc: "Execução autônoma de subtarefas e subagentes", color: "text-teal-500" },
-  { id: "memory", tag: "@memory", name: "Memória", desc: "Extração, sumarização e consolidação na memória", color: "text-yellow-500" },
-  { id: "web", tag: "@web", name: "Web Search", desc: "Busca na web e raspagem de dados", color: "text-green-500" },
+  { id: "smol", tag: "@smol", name: "Fast / Smol", desc: "Fast execution for everyday tasks and quick edits", color: "text-amber-500" },
+  { id: "slow", tag: "@slow", name: "Thinking / Slow", desc: "Deep reasoning and architecture planning", color: "text-blue-500" },
+  { id: "tiny", tag: "@tiny", name: "Tiny", desc: "Ultra-lightweight or local models for syntax repairs", color: "text-purple-500" },
+  { id: "advisor", tag: "@advisor", name: "Advisor", desc: "Strategy, sales, and architecture advisor", color: "text-cyan-500" },
+  { id: "image", tag: "@image", name: "Imagem", desc: "Image generation and transformation", color: "text-pink-500" },
+  { id: "vision", tag: "@vision", name: "Visão", desc: "Multimodal analysis of images and screenshots", color: "text-rose-500" },
+  { id: "commit", tag: "@commit", name: "Commit", desc: "Semantic commit message generation", color: "text-orange-500" },
+  { id: "plan", tag: "@plan", name: "Arquiteto", desc: "Execution plan generation and validation", color: "text-indigo-500" },
+  { id: "task", tag: "@task", name: "Subtarefa", desc: "Autonomous execution of subtasks and subagents", color: "text-teal-500" },
+  { id: "memory", tag: "@memory", name: "Memória", desc: "Extraction, summarization, and memory consolidation", color: "text-yellow-500" },
+  { id: "web", tag: "@web", name: "Web Search", desc: "Web search and data scraping", color: "text-green-500" },
 ];
 
 @customElement("omp-models-view")
@@ -171,9 +171,9 @@ export class OmpModelsView extends LitElement {
             </button>
             <div class="flex flex-col">
               <h1 class="text-xl md:text-2xl font-black text-foreground-900 tracking-tight flex items-center gap-2">
-                <span>Catálogo de Modelos de IA</span>
+                <span>AI Models Catalog</span>
                 <span class="text-xs px-2.5 py-0.5 rounded-full bg-blue-500/15 text-blue-600 dark:text-blue-400 font-bold">
-                  ${this.models.length} modelos
+                  ${this.models.length} models
                 </span>
               </h1>
               <p class="text-xs text-foreground-500 mt-0.5">
@@ -257,7 +257,7 @@ export class OmpModelsView extends LitElement {
               </span>
             </div>
             <div class="flex items-center justify-between gap-2 flex-wrap">
-              <span class="text-xs font-semibold text-foreground-700">Nível de Raciocínio:</span>
+              <span class="text-xs font-semibold text-foreground-700">Reasoning Level:</span>
               <div class="flex items-center gap-1 p-0.5 rounded-xl bg-black/5 dark:bg-white/10 border border-black/5 dark:border-white/10">
                 ${["off", "low", "medium", "high"].map(
           (lvl) => html`

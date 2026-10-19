@@ -1,34 +1,33 @@
-# Arquitetura do Session Daemon (`sessiond`)
+# Session Daemon Architecture (`sessiond`)
 
-## 1. Ponto de Entrada (Entry Point) e Modelo de Processo
-O daemon de sessões é um serviço isolado em background construído com **Hono** e WebSocket nativo do **Bun** (`hono/bun` com `createBunWebSocket`).
-- **Entry Point:** O arquivo principal é o `src/server/sessiond.ts`.
-- **Como inicia:** Ele é invocado pelo Bun no terminal (`bun src/server/sessiond.ts`) ou como serviço gerenciado pelo systemd do usuário (`omp-web-sessiond.service`).
-- **Motivo do Isolamento:** Manter os runtimes das sessões de agentes de IA desacoplados do servidor HTTP da interface web (`omp-web.service` / Vite UI). Quedas de conexão, reloads de interface ou atualizações na camada web não afetam as execuções e tarefas em background.
+## 1. Entry Point and Process Model
+The session daemon is an isolated background service built with **Hono** and native **Bun** WebSockets (`hono/bun` with `createBunWebSocket`).
+- **Entry Point:** The primary file is `src/server/sessiond.ts`.
+- **Startup:** Invoked via Bun (`bun src/server/sessiond.ts`) or as a systemd user service (`omp-web-sessiond.service`).
+- **Isolation Rationale:** Keeps AI agent execution runtimes decoupled from the frontend HTTP server (`omp-web.service` / Vite UI). Browser reloads, network reconnects, or UI updates never disrupt background agent execution.
 
-## 2. Mecanismo de Comunicação IPC (Inter-process Communication)
-Como a interface web e o `sessiond` rodam em processos separados:
-- O processo Web/API atua como proxy para requisições em `/api/activity`, `/api/auth`, `/api/sessions`, `/api/terminals`, `/api/schedule-prompt` (e seus eventos WebSocket) via roteador em `src/server/sessiond/sessionProxyRoutes.ts`.
-- O repasse ocorre usando `SessionDaemonClient` (`src/sessiond/sessionDaemonClient.ts`).
-- A comunicação local padrão é feita via **Unix Domain Socket** (`~/.omp-web/sessiond.sock`) ou porta TCP se `OMP_WEB_SESSIOND_PORT` for definida.
+## 2. IPC Communication Mechanism
+Because the web interface and `sessiond` run in separate processes:
+- The Web/API process proxies requests for `/api/activity`, `/api/auth`, `/api/sessions`, `/api/terminals`, and `/api/schedule-prompt` (plus WebSocket streams) via router in `src/server/sessiond/sessionProxyRoutes.ts`.
+- Forwarding is handled by `SessionDaemonClient` (`src/sessiond/sessionDaemonClient.ts`).
+- Standard local communication uses a **Unix Domain Socket** (`~/.omp-web/sessiond.sock`) or TCP if `OMP_WEB_SESSIOND_PORT` is set.
 
-## 3. Hooks de Ciclo de Vida e Process Reaper
-Em `src/server/sessiond.ts`, o daemon escuta os sinais do sistema `SIGINT` e `SIGTERM`:
-- Invoca a função assíncrona de shutdown para realizar o encerramento ordenado dos serviços (`terminals`, `auth`, `sessions`, `workspaceActivity`, socket).
-- **Process Reaper (`src/server/sessions/processReaper.ts`):** Na inicialização e no ciclo de vida, o sessiond executa a limpeza de processos órfãos (`reapOrphanProcesses`), garantindo que processos filhos de ferramentas anteriores não permaneçam consumindo recursos da máquina.
+## 3. Lifecycle and Shutdown
+In `src/server/sessiond.ts`, the daemon listens for `SIGINT` and `SIGTERM` system signals:
+- Invokes orderly asynchronous shutdown for all subsystems (`terminals`, `auth`, `sessions`, `workspaceActivity`, sockets).
+- **Process Reaper (`src/server/sessions/processReaper.ts`):** On startup and during execution, sessiond reaps orphan processes (`reapOrphanProcesses`), ensuring child tool processes do not linger or leak host resources.
 
-## 4. Agendamento e Tarefas Periódicas (Scheduled Tasks)
-O `sessiond` conta com serviços periódicos e agendamento nativo:
-- **Schedule Prompt Service (`src/server/sessions/schedulePrompt/`):** Rotas e motor para agendamento de prompts em intervalos regulares ou cron expressions (alimentado pela lib `croner`), permitindo disparar comandos e tarefas recorrentes nos workspaces e sessões.
-- **Heartbeats:** No `PiSessionService` (`src/server/sessions/piSessionService.ts`), há um loop contínuo de `publishHeartbeats()` via WebSocket notificando o status das sessões ativas.
-- **TTL de Autenticação OAuth:** Em `oauthLoginFlowService.ts`, timeouts invalidam fluxos de login expirados ou abandonados.
-- **Drenagem de Prompts e Compactação:** Filas de compactação e drenagem de buffers operam com timers dedicados para evitar concorrência desordenada.
+## 4. Scheduled Tasks & Periodic Jobs
+- **Schedule Prompt Service (`src/server/sessions/schedulePrompt/`):** Routes and execution engine for prompt scheduling powered by `croner`.
+- **Heartbeats:** `publishHeartbeats()` loop in `PiSessionService` notifying active session statuses.
+- **OAuth TTL:** Expiration timers in `oauthLoginFlowService.ts` for stale authentication attempts.
+- **Compaction & Prompt Draining:** Dedicated FIFO queues prevent concurrent prompt collisions.
 
-## 5. Principais Caminhos (Key File Paths)
-* `src/server/sessiond.ts` (Core Runtime e Inicializador Hono do Daemon)
-* `src/server/sessiond/sessionProxyRoutes.ts` (Rotas proxy na API web para o sessiond)
-* `src/sessiond/sessionDaemonClient.ts` (Cliente RPC local via Unix socket / HTTP)
-* `src/server/sessions/piSessionService.ts` (Orquestrador do runtime e ciclo de vida de sessões)
-* `src/server/sessions/schedulePrompt/` (Serviço e rotas de agendamento cron de prompts)
-* `src/server/sessions/processReaper.ts` (Reaper para varredura e término de processos órfãos)
-* `src/cli.ts` (Gerenciamento de serviços systemd via CLI `omp-web`)
+## 5. Key File Paths
+* `src/server/sessiond.ts` (Core daemon runtime and Hono initializer)
+* `src/server/sessiond/sessionProxyRoutes.ts` (Web API proxy routes to sessiond)
+* `src/sessiond/sessionDaemonClient.ts` (Local RPC client via Unix socket / HTTP)
+* `src/server/sessions/piSessionService.ts` (Agent runtime and session orchestrator)
+* `src/server/sessions/schedulePrompt/` (Cron scheduling service and routes)
+* `src/server/sessions/processReaper.ts` (Process reaper for orphan cleanup)
+* `src/cli.ts` (CLI service management)

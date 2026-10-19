@@ -194,7 +194,7 @@ export class OmpSchedulesView extends LitElement {
       return;
     }
     if (!this.formContent.trim()) {
-      this.formError = this.formTarget === "command" ? "Comando é obrigatório" : "Prompt é obrigatório";
+      this.formError = this.formTarget === "command" ? "Command is required" : "Prompt is required";
       return;
     }
 
@@ -286,9 +286,9 @@ export class OmpSchedulesView extends LitElement {
         <!-- Top bar with actions -->
         <div class="flex items-center justify-between pb-2 border-b border-black/8 dark:border-white/8">
           <div>
-            <h1 class="text-xl sm:text-2xl font-bold text-[var(--omp-text-primary)] tracking-tight">Agendamentos de Tarefas</h1>
+            <h1 class="text-xl sm:text-2xl font-bold text-[var(--omp-text-primary)] tracking-tight">Task Schedules</h1>
             <p class="text-xs text-[var(--omp-text-muted)] mt-0.5">
-              ${cwd ? `Workspace: ${cwd}` : "Selecione um projeto para gerenciar tarefas agendadas"}
+              ${cwd ? `Workspace: ${cwd}` : "Select a project to manage scheduled tasks"}
             </p>
           </div>
 
@@ -312,7 +312,7 @@ export class OmpSchedulesView extends LitElement {
               @click=${() => this.handleOpenCreate()}
             >
               ${renderPlusIcon("size-3.5")}
-              <span>Nova Tarefa</span>
+              <span>New Task</span>
             </button>
           </div>
         </div>
@@ -333,15 +333,15 @@ export class OmpSchedulesView extends LitElement {
               <!-- KPI Grid -->
               <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
                 <div class="p-4 rounded-3xl omp-settings-card border-l-2 border-l-cyan-500/60 dark:border-l-cyan-400/60 flex flex-col shadow-xs" style="clip-path: var(--clip-path-squircle-28, none);">
-                  <span class="text-xs font-medium text-cyan-600 dark:text-cyan-400">Total de Tarefas</span>
+                  <span class="text-xs font-medium text-cyan-600 dark:text-cyan-400">Total Tasks</span>
                   <span class="text-2xl font-extrabold text-[var(--omp-text-primary)] mt-1">${totalJobs}</span>
-                  <span class="text-[11px] text-[var(--omp-text-muted)] mt-0.5 opacity-80">Configuradas</span>
+                  <span class="text-[11px] text-[var(--omp-text-muted)] mt-0.5 opacity-80">Configured</span>
                 </div>
 
                 <div class="p-4 rounded-3xl omp-settings-card border-l-2 border-l-emerald-500/60 dark:border-l-emerald-400/60 flex flex-col shadow-xs" style="clip-path: var(--clip-path-squircle-28, none);">
-                  <span class="text-xs font-medium text-emerald-600 dark:text-emerald-400">Ativas</span>
+                  <span class="text-xs font-medium text-emerald-600 dark:text-emerald-400">Active</span>
                   <span class="text-2xl font-extrabold text-[var(--omp-text-primary)] mt-1">${activeJobs}</span>
-                  <span class="text-[11px] text-[var(--omp-text-muted)] mt-0.5 opacity-80">Em execução periódica</span>
+                  <span class="text-[11px] text-[var(--omp-text-muted)] mt-0.5 opacity-80">Running periodically</span>
                 </div>
 
                 <div class="p-4 rounded-3xl omp-settings-card border-l-2 border-l-indigo-500/60 dark:border-l-indigo-400/60 flex flex-col shadow-xs" style="clip-path: var(--clip-path-squircle-28, none);">
@@ -371,15 +371,15 @@ export class OmpSchedulesView extends LitElement {
               <!-- Jobs List -->
               <div class="space-y-3">
                 <div class="flex items-center justify-between px-1">
-                  <h2 class="text-sm font-bold text-[var(--omp-text-primary)] uppercase tracking-wider">Tarefas Agendadas</h2>
-                  <span class="text-xs text-[var(--omp-text-muted)]">${totalJobs} tarefa(s)</span>
+                  <h2 class="text-sm font-bold text-[var(--omp-text-primary)] uppercase tracking-wider">Scheduled Tasks</h2>
+                  <span class="text-xs text-[var(--omp-text-muted)]">${totalJobs} task(s)</span>
                 </div>
 
                 ${this.jobs.length === 0 && !this.loading
             ? html`
                       <div class="p-8 rounded-3xl omp-settings-card text-center space-y-2" style="clip-path: var(--clip-path-squircle-28, none);">
                         <p class="text-xs text-[var(--omp-text-muted)]">
-                          Nenhum agendamento ativo neste workspace. Clique em <strong>"Nova Tarefa"</strong> ou use a ferramenta <code>schedule_prompt</code> no chat.
+                          No active schedules in this workspace. Click <strong>"New Task"</strong> or use the <code>schedule_prompt</code> tool in chat.
                         </p>
                       </div>
                     `
@@ -417,7 +417,7 @@ export class OmpSchedulesView extends LitElement {
             ${this.renderStatusBadge(job.lastStatus, job.enabled)}
 
             <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold ${isCommand ? "bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20" : "bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20"}">
-              ${isCommand ? "CLI Shell" : "Prompt IA"}
+              ${isCommand ? "CLI Shell" : "AI Prompt"}
             </span>
 
             <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-mono bg-black/5 dark:bg-white/5 text-[var(--omp-text-muted)] border border-black/10 dark:border-white/10">
@@ -451,7 +451,7 @@ export class OmpSchedulesView extends LitElement {
             title="Disparar execução agora"
             @click=${() => void this.handleRun(job)}
           >
-            ${isBusy ? "…" : "Executar"}
+            ${isBusy ? "…" : "Run"}
           </button>
 
           <button
@@ -533,8 +533,8 @@ export class OmpSchedulesView extends LitElement {
                   .value=${this.formTarget}
                   @change=${(e: Event) => (this.formTarget = (e.target as HTMLSelectElement).value as CronJobTarget)}
                 >
-                  <option value="prompt">Prompt de IA (Chat)</option>
-                  <option value="command">Comando CLI (Shell)</option>
+                  <option value="prompt">AI Prompt (Chat)</option>
+                  <option value="command">CLI Command (Shell)</option>
                 </select>
               </div>
             </div>
@@ -578,7 +578,7 @@ export class OmpSchedulesView extends LitElement {
 
             <div>
               <label class="block text-xs font-semibold text-[var(--omp-text-primary)] mb-1">
-                ${this.formTarget === "command" ? "Comando Shell" : "Texto do Prompt"}
+                ${this.formTarget === "command" ? "Shell Command" : "Prompt Text"}
               </label>
               <textarea
                 rows="4"

@@ -1567,7 +1567,7 @@ export class OmpApp extends LitElement {
       const errorMsg: ChatMessage = {
         id: "err-" + Date.now(),
         role: "assistant",
-        text: `<callout type="danger">\nFalha ao enviar mensagem para o daemon do Oh My Pi: ${String(err)}\n</callout>`,
+        text: `<callout type="danger">\nFailed to send message to Oh My Pi daemon: ${String(err)}\n</callout>`,
         hasAgentProcess: false,
         timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
       };
@@ -2054,8 +2054,8 @@ export class OmpApp extends LitElement {
         await this.loadWorkspaces(created.id);
       }
     } catch (err) {
-      console.error("[OMP] Falha ao adicionar projeto:", err);
-      window.alert("Não foi possível adicionar o projeto: " + String(err));
+      console.error("[OMP] Failed to add project:", err);
+      window.alert("Could not add project: " + String(err));
     }
   }
 
@@ -2070,7 +2070,7 @@ export class OmpApp extends LitElement {
         }
       }
     } catch (err) {
-      console.error("[OMP] Falha ao fechar projeto:", err);
+      console.error("[OMP] Failed to close project:", err);
     }
   }
 
@@ -2121,15 +2121,15 @@ Dica: você pode selecionar uma das opções abaixo para testar a injeção auto
       case "library":
         return "Library";
       case "projects":
-        return "Projetos";
+        return "Projects";
       case "project-detail":
-        return "Projeto";
+        return "Project";
       case "models":
-        return "Modelos de IA";
+        return "AI Models";
       case "settings":
-        return "Configurações";
+        return "Settings";
       case "schedules":
-        return "Agendamentos";
+        return "Schedules";
       default:
         return "";
     }

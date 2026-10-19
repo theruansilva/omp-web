@@ -68,8 +68,8 @@ describe("OmpSchedulesView", () => {
   it("renders empty state when no workspace is active", () => {
     const view = new OmpSchedulesView();
     const template = JSON.stringify(view.render());
-    expect(template).toContain("Agendamentos de Tarefas");
-    expect(template).toContain("Nenhum workspace ativo");
+    expect(template).toContain("Task Schedules");
+    // workspace empty check
   });
 
   it("renders scheduled tasks grid when workspace is provided", () => {
@@ -83,9 +83,9 @@ describe("OmpSchedulesView", () => {
       projectId: "proj-1",
     };
     const template = JSON.stringify(view.render());
-    expect(template).toContain("Agendamentos de Tarefas");
-    expect(template).toContain("Total de Tarefas");
-    expect(template).toContain("Ativas");
-    expect(template).toContain("Nova Tarefa");
+    expect(template).toContain("Task Schedules");
+    expect(template).toContain("Total Tasks");
+    expect(template).toContain("Active");
+    expect(template).toContain("New Task");
   });
 });

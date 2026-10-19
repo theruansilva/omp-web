@@ -122,12 +122,12 @@ components:
 
 O OMP Web expressa uma estética minimalista, orgânica e sóbria que rejeita brancos estéreis ou contrastes agressivos (#000/#fff) em favor de um sistema tonal dinâmico e perceptual baseado no modelo **OKLCH (UI Colors)**. A interface combina a suavidade matemática das superelipses (`@progmruansilva/squircles`) com a elegância de baixa emissão de luz, proporcionando profundidade tátil, acolhimento e clareza direta, sem ornamentos supérfluos.
 
-### Características Principais:
-1. **Paleta Dinâmica UI Colors (OKLCH)**: O usuário tem a liberdade de personalizar sua paleta nas configurações (Aparência & Tema -> UI Colors), ajustando **Matiz (Hue)** e **Saturação (Chroma)** com feedback em tempo real. A base padrão é o tom Slate/Muted no tema escuro e Cocoa/Warm Stone no tema claro.
-2. **Proibição Estrita de Preto e Branco Crus (Anti-Black / Anti-White)**: Nenhuma superfície, card ou container usa `#000000` (`bg-black`) ou `#ffffff` (`bg-white`). Superfícies utilizam tokens do tema (`var(--bg)`, `var(--omp-card-bg)`, `.omp-settings-card`).
-3. **Geometria Squircle Nativa**: Curvatura superelíptica orgânica via `clip-path: var(--clip-path-squircle-*)` (28px para cards, 16px para botões/inputs, 36px/60px para cabeçalhos e modais) combinada com `filter: drop-shadow(...)`.
-4. **Light DOM em Lit Components**: Todo componente visual desativa o Shadow DOM para permitir a estilização completa via classes utilitárias do Tailwind e tokens globais.
-5. **Altura Unificada de Controles**: Entradas de texto e botões de ação primária compartilham altura padrão de **44px** para ritmo visual coeso e toque ergonômico.
+### Core Characteristics:
+1. **Dynamic UI Colors Palette (OKLCH)**: Users can customize their palette under Settings (Appearance & Theme -> UI Colors), adjusting **Hue** and **Chroma** with real-time feedback. Default bases are Slate/Muted in dark mode and Cocoa/Warm Stone in light mode.
+2. **Strict Prohibition of Raw Black & White (Anti-Black / Anti-White)**: No surface, card, or container uses `#000000` (`bg-black`) or `#ffffff` (`bg-white`). Surfaces strictly utilize theme tokens (`var(--bg)`, `var(--omp-card-bg)`, `.omp-settings-card`).
+3. **Native Squircle Geometry**: Organic superellipse curvature via `clip-path: var(--clip-path-squircle-*)` (28px for cards, 16px for buttons/inputs, 36px/60px for headers/modals) paired with `filter: drop-shadow(...)`.
+4. **Light DOM in Lit Components**: All presentation components disable Shadow DOM to enable full styling via Tailwind utility classes and global theme tokens.
+5. **Unified Control Height**: Text inputs and primary action buttons share a standard **44px** height for visual rhythm and ergonomic touch targets.
 
 ---
 
@@ -152,11 +152,11 @@ A paleta é orientada por papéis semânticos no espaço de cor OKLCH:
   - Modo Escuro: `oklch(0.76 var(--chroma-text) var(--hue))`
 
 ### 2.3 Ações & Estados
-- **Ação Primária**: `var(--primary)` com texto branco (`#ffffff`)
-  - Adapta-se ao Hue do usuário com luminosidade e saturação calibradas para WCAG AA.
-- **Ação Secundária**: `var(--secondary)` com texto em alto contraste.
-- **Bordas Sutis**: `border-black/10 dark:border-white/10` ou `var(--border-muted)`.
-- **Bordas de Destaque / Luz**: `var(--highlight)` no topo dos cards para simular iluminação física.
+- **Primary Action**: `var(--primary)` with white text (`#ffffff`)
+  - Adapts to user Hue with lightness and chroma calibrated for WCAG AA.
+- **Secondary Action**: `var(--secondary)` with high-contrast text.
+- **Subtle Borders**: `border-black/10 dark:border-white/10` or `var(--border-muted)`.
+- **Highlight / Light Borders**: `var(--highlight)` on top of cards to simulate physical lighting.
 
 ### 2.4 Alertas & Semântica
 - **Danger**: `var(--danger)` (`oklch(... 30)`)
@@ -192,17 +192,17 @@ Todo elemento com superelipse usa:
 ## 5. Do's and Don'ts
 
 ### Do (O que SEMPRE fazer):
-- **Do** declarar `protected override createRenderRoot() { return this; }` (Light DOM) em todo componente Lit de tela ou apresentação.
-- **Do** usar os tokens semânticos (`var(--bg)`, `var(--omp-card-bg)`, `var(--text)`, `var(--text-muted)`, `var(--border-muted)`, `var(--primary)`) ou a classe `.omp-settings-card` / `.ui-colors-preview-card` para qualquer cartão.
-- **Do** utilizar as classes e variáveis de superelipse (`squircle-28`, `squircle-16`, `squircle-container`).
-- **Do** manter altura de **44px** em inputs e botões primários.
-- **Do** manter títulos diretos e objetivos, eliminando subtítulos prolixos.
-- **Do** usar `filter: drop-shadow(...)` no elemento pai de um squircle para preservar sombras fiéis à curvatura.
+- **Do** declare `protected override createRenderRoot() { return this; }` (Light DOM) in all presentation Lit components.
+- **Do** use semantic tokens (`var(--bg)`, `var(--omp-card-bg)`, `var(--text)`, `var(--text-muted)`, `var(--border-muted)`, `var(--primary)`) or `.omp-settings-card` / `.ui-colors-preview-card` classes for cards.
+- **Do** utilize superellipse classes and variables (`squircle-28`, `squircle-16`, `squircle-container`).
+- **Do** maintain a **44px** height for inputs and primary buttons.
+- **Do** keep headings direct and objective, eliminating verbose subtitles.
+- **Do** use `filter: drop-shadow(...)` on the parent container of a squircle to preserve accurate curved shadows.
 
-### Don't (O que NUNCA fazer):
-- **Don't** NUNCA usar `bg-black`, `#000000`, `bg-white` ou `#ffffff` hardcoded em cards e superfícies. No escuro, `bg-black` cria um buraco negro sem relevo; no claro, `bg-white` quebra a paleta Cocoa.
+### Don't (What NEVER to do):
+- **Don't** NEVER use hardcoded `bg-black`, `#000000`, `bg-white`, or `#ffffff` on cards and surfaces. In dark mode, `bg-black` creates an unreadable void; in light mode, `bg-white` breaks the warm Cocoa palette.
 - **Don't** NUNCA usar `text-black` ou `text-white` diretamente em cartões de conteúdo.
-- **Don't** criar componentes Lit visuais sem `createRenderRoot() { return this; }` (o Shadow DOM bloqueará o Tailwind e causará estilos quebrados).
-- **Don't** aplicar cores de destaque duras (`bg-blue-600`, `#2563eb`) em botões primários; use `bg-[var(--primary)]` para respeitar a paleta do usuário.
-- **Don't** usar `box-shadow` diretamente em nós com `clip-path` (ele é cortado pela máscara; use `filter: drop-shadow` no wrapper pai).
-- **Don't** adicionar subtítulos redundantes ou slogans genéricos abaixo de cabeçalhos simples.
+- **Don't** create presentation Lit components without `createRenderRoot() { return this; }` (Shadow DOM blocks Tailwind utility classes).
+- **Don't** apply hardcoded accent colors (`bg-blue-600`, `#2563eb`) to primary buttons; use `bg-[var(--primary)]` to respect the user's dynamic palette.
+- **Don't** use `box-shadow` directly on elements with `clip-path` (it gets clipped by the mask; use `filter: drop-shadow` on the parent).
+- **Don't** add redundant subtitles or generic slogans beneath clear headings.

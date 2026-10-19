@@ -45,8 +45,8 @@ describe("OmpArtifactPanel component", () => {
     const text = getAllTemplateText(rendered);
     expect(text).toContain("Refatorar Autenticação e Modelos");
     expect(text).toContain("local://plans/auth-refactor.md");
-    expect(text).toContain("Em Revisão");
-    expect(text).toContain("Aprovar & Iniciar Execução");
+    expect(text).toContain("Under Review");
+    expect(text).toContain("Approve & Start Execution");
   });
 
   it("dispatches approve event when approve button is triggered", () => {

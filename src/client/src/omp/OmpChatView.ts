@@ -147,41 +147,41 @@ export class OmpChatView extends LitElement {
     }
     const toolCount = processParts.reduce((acc, p) => acc + (p.type === "tool" ? p.tools.length : 0), 0);
     if (toolCount > 0) {
-      return `executou ${toolCount} ${toolCount === 1 ? "ação" : "ações"}`;
+      return `executed ${toolCount} ${toolCount === 1 ? "action" : "actions"}`;
     }
-    return "raciocínio do agente";
+    return "agent reasoning";
   }
 
   private getStreamingStatusText(msg?: ChatMessage): string {
-    let statusText = "Gerando resposta…";
+    let statusText = "Generating response…";
     if (msg?.tools && msg.tools.length > 0) {
       const runningTool = [...msg.tools].reverse().find((t) => t.status === "running" || t.status === "pending");
       if (runningTool) {
         const name = (runningTool.toolName || "").toLowerCase();
         if (name === "bash" || name === "terminal" || name === "sh") {
-          statusText = "Executando terminal…";
+          statusText = "Running terminal…";
         } else if (name === "read" || name === "cat") {
-          statusText = runningTool.target ? `Lendo ${runningTool.target.split("/").pop()}…` : "Lendo arquivos…";
+          statusText = runningTool.target ? `Reading ${runningTool.target.split("/").pop()}…` : "Reading files…";
         } else if (name === "edit" || name === "patch") {
-          statusText = runningTool.target ? `Editando ${runningTool.target.split("/").pop()}…` : "Editando arquivos…";
+          statusText = runningTool.target ? `Editing ${runningTool.target.split("/").pop()}…` : "Editing files…";
         } else if (name === "write") {
-          statusText = runningTool.target ? `Escrevendo ${runningTool.target.split("/").pop()}…` : "Escrevendo arquivo…";
+          statusText = runningTool.target ? `Writing ${runningTool.target.split("/").pop()}…` : "Writing file…";
         } else if (name === "grep" || name === "glob" || name.includes("search")) {
-          statusText = "Buscando no código…";
+          statusText = "Searching codebase…";
         } else if (name === "eval") {
-          statusText = "Executando no kernel…";
+          statusText = "Running in kernel…";
         } else if (name.startsWith("mcp__") || name.startsWith("mcp:")) {
-          statusText = `Chamando MCP ${name.replace(/^mcp__/, "").replace(/__/g, " · ")}…`;
+          statusText = `Calling MCP ${name.replace(/^mcp__/, "").replace(/__/g, " · ")}…`;
         } else {
-          statusText = `Executando ${runningTool.toolName}…`;
+          statusText = `Running ${runningTool.toolName}…`;
         }
       } else {
-        statusText = "Processando resultados…";
+        statusText = "Processing results…";
       }
     } else if (msg) {
       const lastPart = msg.parts?.[msg.parts.length - 1];
       if ((lastPart?.type === "thinking" || msg.thinking) && !msg.text) {
-        statusText = "Pensando…";
+        statusText = "Thinking…";
       }
     }
     return statusText;
@@ -427,7 +427,7 @@ export class OmpChatView extends LitElement {
     // 1. Error: console icon in red
     if (isError) {
       return html`
-        <span class="tool-icon error inline-flex items-center justify-center size-5 shrink-0 text-red-500" style="color: #ef4444;" title="Erro no console">
+        <span class="tool-icon error inline-flex items-center justify-center size-5 shrink-0 text-red-500" style="color: #ef4444;" title="Console error">
           <svg class="size-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
             <rect x="2" y="2.5" width="12" height="11" rx="2" />
             <path d="M5 6.5l2 2-2 2M9.5 10.5h2" />
@@ -439,7 +439,7 @@ export class OmpChatView extends LitElement {
     // 2. Running: white/light spinning animation
     if (isRunning) {
       return html`
-        <span class="tool-icon tool-spinner inline-flex items-center justify-center size-5 shrink-0 text-white dark:text-white" title="Executando…">
+        <span class="tool-icon tool-spinner inline-flex items-center justify-center size-5 shrink-0 text-white dark:text-white" title="Running…">
           <svg class="size-3.5 animate-spin text-white" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
             <circle cx="8" cy="8" r="6" stroke-dasharray="28" stroke-dashoffset="10" />
           </svg>
@@ -679,28 +679,28 @@ export class OmpChatView extends LitElement {
           <div class="tool-content px-2 pb-2.5 pt-1 space-y-2 text-xs font-sans select-text">
             ${t.errorText ? html`
               <div class="p-2.5 rounded-lg bg-red-500/15 border border-red-500/30 text-red-400 font-mono text-xs whitespace-pre-wrap break-all">
-                <span class="text-[10px] uppercase font-bold tracking-wider font-sans block mb-1 text-red-500">Erro no console</span>
+                <span class="text-[10px] uppercase font-bold tracking-wider font-sans block mb-1 text-red-500">Console error</span>
                 <pre class="font-mono text-xs whitespace-pre-wrap break-all leading-relaxed">${this.renderHighlightedCode(t.errorText, "typescript")}</pre>
               </div>
             ` : nothing}
 
             ${t.args ? html`
               <div>
-                <span class="text-[10px] uppercase font-bold text-foreground-700 tracking-wider font-sans block mb-1">Entrada / Argumentos</span>
+                <span class="text-[10px] uppercase font-bold text-foreground-700 tracking-wider font-sans block mb-1">Input / Arguments</span>
                 <pre class="font-mono text-xs p-2.5 rounded-lg border border-black/10 dark:border-white/10 bg-black/10 dark:bg-black/40 text-foreground-900 whitespace-pre-wrap break-all leading-relaxed">${this.renderHighlightedCode(typeof t.args === "string" ? t.args : JSON.stringify(t.args, null, 2), "json")}</pre>
               </div>
             ` : nothing}
 
             ${t.diff ? html`
               <div>
-                <span class="text-[10px] uppercase font-bold text-foreground-700 tracking-wider font-sans block mb-1">Alterações (Diff)</span>
+                <span class="text-[10px] uppercase font-bold text-foreground-700 tracking-wider font-sans block mb-1">Changes (Diff)</span>
                 <pre class="font-mono text-xs p-2.5 rounded-xl border border-black/10 dark:border-white/10 bg-black/10 dark:bg-black/40 overflow-x-auto max-h-72 leading-relaxed text-foreground-900">${this.renderFormattedDiff(t.diff)}</pre>
               </div>
             ` : nothing}
 
             ${t.resultText && !t.diff && !t.errorText ? html`
               <div>
-                <span class="text-[10px] uppercase font-bold text-foreground-700 tracking-wider font-sans block mb-1">Saída</span>
+                <span class="text-[10px] uppercase font-bold text-foreground-700 tracking-wider font-sans block mb-1">Output</span>
                 <pre class="font-mono text-xs p-2.5 rounded-lg border border-black/10 dark:border-white/10 bg-black/10 dark:bg-black/40 text-foreground-850 whitespace-pre-wrap break-all max-h-56 overflow-y-auto leading-relaxed">${this.renderHighlightedCode(t.resultText)}</pre>
               </div>
             ` : nothing}
@@ -817,11 +817,11 @@ export class OmpChatView extends LitElement {
                             <div class="flex gap-2 justify-end">
                               <div class="relative z-10 flex opacity-0 transition-opacity duration-200 ease-in-out group-hover/user-message:opacity-100 items-center gap-1">
                                 <button
-                                  aria-label="Editar mensagem"
+                                  aria-label="Edit message"
                                   type="button"
                                   class="min-w-10 min-h-10 sm:size-8 rounded-xl bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/15 flex items-center justify-center text-foreground-800 transition-colors cursor-pointer"
                                   @click=${() => this.handleRevertTurn(msg, index)}
-                                  title="Editar mensagem"
+                                  title="Edit message"
                                 >
                                   ${renderPencilIcon("size-3.5")}
                                 </button>
@@ -830,7 +830,7 @@ export class OmpChatView extends LitElement {
                                   type="button"
                                   class="min-w-10 min-h-10 sm:size-8 rounded-xl bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/15 flex items-center justify-center text-foreground-800 transition-colors cursor-pointer"
                                   @click=${() => this.handleCopyText(msg.text, msg.id)}
-                                  title="Copiar mensagem"
+                                  title="Copy message"
                                 >
                                   ${this.copiedMessageId === msg.id
                                     ? html`<svg class="size-4 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>`
@@ -906,7 +906,7 @@ export class OmpChatView extends LitElement {
                                         </svg>
                                       </span>
                                       <span class="font-semibold text-xs shrink-0" style="color: var(--omp-text-primary, #F8FAFC);">
-                                        pensou em
+                                        thought about
                                       </span>
                                       <span class="font-normal text-xs truncate max-w-[280px] sm:max-w-lg" style="color: var(--omp-text-primary, #F8FAFC); opacity: 0.9;">
                                         ${summaryText}
@@ -986,8 +986,8 @@ export class OmpChatView extends LitElement {
                                     <div class="flex items-center gap-1 opacity-0 group-hover/assistant-message:opacity-100 transition-opacity duration-150 mt-1">
                                       <button
                                         type="button"
-                                        aria-label="Copiar resposta"
-                                        title="Copiar resposta completa"
+                                        aria-label="Copy response"
+                                        title="Copy entire response"
                                         class="size-6 rounded-md hover:bg-black/5 dark:hover:bg-white/10 flex items-center justify-center text-foreground-500 hover:text-foreground-800 transition-colors cursor-pointer"
                                         @click=${() => this.handleCopyText(msg.text, msg.id)}
                                       >

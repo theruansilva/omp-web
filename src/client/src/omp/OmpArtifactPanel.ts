@@ -97,25 +97,25 @@ export class OmpArtifactPanel extends LitElement {
             <div class="flex flex-col min-w-0">
               <div class="flex items-center gap-2">
                 <span class="text-sm font-bold text-foreground-900 truncate" title="${title}">
-                  ${title || "Plano de Execução"}
+                  ${title || "Execution Plan"}
                 </span>
                 <!-- Status Badge -->
                 ${status === "proposed"
         ? html`
                       <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 shrink-0">
-                        Em Revisão
+                        Under Review
                       </span>
                     `
         : status === "approved"
           ? html`
                         <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 shrink-0 flex items-center gap-1">
                           ${renderCheckIcon("size-3")}
-                          Aprovado
+                          Approved
                         </span>
                       `
           : html`
                         <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20 shrink-0">
-                          Rejeitado
+                          Rejected
                         </span>
                       `}
               </div>
@@ -133,9 +133,9 @@ export class OmpArtifactPanel extends LitElement {
           <div class="flex items-center gap-1 shrink-0">
             <button
               type="button"
-              aria-label="Copiar conteúdo"
+              aria-label="Copy content"
               class="min-w-10 min-h-10 sm:size-8 rounded-xl hover:bg-black/5 dark:hover:bg-white/10 text-foreground-600 hover:text-foreground-900 flex items-center justify-center transition-colors cursor-pointer"
-              title="Copiar conteúdo"
+              title="Copy content"
               @click=${() => this.handleCopy()}
             >
               ${this.copied
@@ -144,9 +144,9 @@ export class OmpArtifactPanel extends LitElement {
             </button>
             <button
               type="button"
-              aria-label="Fechar painel de artefato"
+              aria-label="Close artifact panel"
               class="min-w-10 min-h-10 sm:size-8 rounded-xl hover:bg-black/5 dark:hover:bg-white/10 text-foreground-600 hover:text-foreground-900 flex items-center justify-center transition-colors cursor-pointer"
-              title="Fechar painel"
+              title="Close panel"
               @click=${() => this.handleClose()}
             >
               ${renderCloseIcon("size-4")}
@@ -166,7 +166,7 @@ export class OmpArtifactPanel extends LitElement {
                     @click=${() => this.handleApprove()}
                   >
                     ${renderCheckIcon("size-3.5")}
-                    <span>${this.isSubmitting ? "Aprovando..." : "Aprovar & Iniciar Execução"}</span>
+                    <span>${this.isSubmitting ? "Approving..." : "Approve & Start Execution"}</span>
                   </button>
 
                   <button

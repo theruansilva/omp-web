@@ -1,7 +1,17 @@
 import { LitElement, html, nothing, render } from "lit";
-import type { AskDialogQuestion, AskDialogResult, FileSuggestion, SlashCommand, Machine, MachineHealth } from "../api";
+import type {
+  AskDialogQuestion,
+  AskDialogResult,
+  FileSuggestion,
+  SlashCommand,
+  Machine,
+  MachineHealth,
+} from "../api";
 import { sessionsApi, filesApi } from "../api/clients";
-import { detectPromptCompletionTrigger, fileCompletionInsertText } from "../promptCompletions";
+import {
+  detectPromptCompletionTrigger,
+  fileCompletionInsertText,
+} from "../promptCompletions";
 import { isShellInput } from "../inputModes";
 import { customElement, property, state } from "lit/decorators.js";
 import {
@@ -38,7 +48,10 @@ import {
   capturePromptAttachments,
   type CapturedAttachment,
 } from "../promptAttachmentCapture";
-import type { PromptAttachment, PlanModeStatus } from "../../../shared/apiTypes";
+import type {
+  PromptAttachment,
+  PlanModeStatus,
+} from "../../../shared/apiTypes";
 import {
   createMobilePromptEnterMedia,
   readPromptEnterPreference,
@@ -56,7 +69,19 @@ function isInstantClientCommand(text: string): boolean {
   const match = trimmed.match(/^\/([a-zA-Z0-9_-]+)/);
   if (!match) return false;
   const cmd = match[1].toLowerCase();
-  return ["clear", "new", "terminal", "files", "usage", "settings", "theme", "hotkeys", "help", "login", "logout"].includes(cmd);
+  return [
+    "clear",
+    "new",
+    "terminal",
+    "files",
+    "usage",
+    "settings",
+    "theme",
+    "hotkeys",
+    "help",
+    "login",
+    "logout",
+  ].includes(cmd);
 }
 
 export interface SubmitPromptDetail {
@@ -185,8 +210,12 @@ export class OmpComposer extends LitElement {
   @property({ type: String }) askContext = "";
   @property({ attribute: false }) machines: Machine[] = [];
   @property({ attribute: false }) selectedMachine?: Machine;
-  @property({ attribute: false }) machineStatuses: Record<string, MachineHealth> = {};
-  @property({ type: String }) askMode: "options" | "projects" | "machines" = "machines";
+  @property({ attribute: false }) machineStatuses: Record<
+    string,
+    MachineHealth
+  > = {};
+  @property({ type: String }) askMode: "options" | "projects" | "machines" =
+    "machines";
   private readonly defaultMachines: Machine[] = [
     { id: "local", name: "Local", kind: "local" },
   ];
@@ -224,7 +253,8 @@ export class OmpComposer extends LitElement {
   @property({ type: Boolean }) isBtwMode = false;
   @property({ attribute: false }) onBranchBtw?: () => void | Promise<void>;
   @property({ attribute: false }) onCloseBtw?: () => void;
-  @property({ attribute: false }) promptEnterMedia?: PromptEnterMedia = createMobilePromptEnterMedia();
+  @property({ attribute: false }) promptEnterMedia?: PromptEnterMedia =
+    createMobilePromptEnterMedia();
   private explicitShiftKeyActive = false;
 
   @state() private attachments: PendingAttachment[] = [];
@@ -298,22 +328,22 @@ export class OmpComposer extends LitElement {
       name: "btw",
       label: "/btw",
       title: "Side Question",
-      desc: "Faça uma pergunta lateral efêmera usando o contexto atual",
-      badge: "Contexto",
+      desc: "Ask an ephemeral side question using session context",
+      badge: "Context",
     },
     {
       name: "plan",
       label: "/plan",
       title: "Plan Mode",
-      desc: "Ativa ou revisa o modo de planejamento da tarefa",
-      badge: "Tarefas",
+      desc: "Enable or review task planning mode",
+      badge: "Tasks",
     },
     {
       name: "plan-review",
       label: "/plan-review",
       title: "Review Plan",
-      desc: "Abre o painel lateral com o plano proposto",
-      badge: "Tarefas",
+      desc: "Open side panel with proposed plan",
+      badge: "Tasks",
     },
     {
       name: "model",
@@ -375,14 +405,14 @@ export class OmpComposer extends LitElement {
       name: "terminal",
       label: "/terminal",
       title: "Terminal",
-      desc: "Abre o terminal interativo no workspace ativo",
+      desc: "Open interactive terminal in active workspace",
       badge: "Workspace",
     },
     {
       name: "files",
       label: "/files",
       title: "Files Explorer",
-      desc: "Explora e visualiza arquivos do workspace ativo",
+      desc: "Explore and view active workspace files",
       badge: "Workspace",
     },
     {
@@ -403,8 +433,8 @@ export class OmpComposer extends LitElement {
       name: "settings",
       label: "/settings",
       title: "Settings",
-      desc: "Abre as configurações gerais e de plugins",
-      badge: "Sistema",
+      desc: "Open general and plugin settings",
+      badge: "System",
     },
     {
       name: "theme",
@@ -431,8 +461,8 @@ export class OmpComposer extends LitElement {
       name: "advisor",
       label: "/advisor",
       title: "Toggle Advisor",
-      desc: "Ativa ou desativa o consultor autônomo",
-      badge: "Agente",
+      desc: "Toggle autonomous advisor",
+      badge: "Agent",
     },
     {
       name: "login",
@@ -475,11 +505,15 @@ export class OmpComposer extends LitElement {
 
   private async fetchDynamicCommands() {
     const now = Date.now();
-    if (now - this.commandsFetchTime < 15000 && this.dynamicCommands.length > 0) return;
+    if (now - this.commandsFetchTime < 15000 && this.dynamicCommands.length > 0)
+      return;
     if (!this.sessionId || !this.cwd) return;
     try {
       this.commandsFetchTime = now;
-      const cmds = await sessionsApi.commands({ id: this.sessionId, cwd: this.cwd }, this.machineId);
+      const cmds = await sessionsApi.commands(
+        { id: this.sessionId, cwd: this.cwd },
+        this.machineId,
+      );
       if (Array.isArray(cmds) && cmds.length > 0) {
         this.dynamicCommands = cmds;
         this.requestUpdate();
@@ -637,7 +671,9 @@ export class OmpComposer extends LitElement {
         ? `${this.value}\n${custom.detail.text}`
         : custom.detail.text;
     this.value = newText;
-    const textarea = (this.querySelector?.("textarea") as HTMLTextAreaElement | null);
+    const textarea = this.querySelector?.(
+      "textarea",
+    ) as HTMLTextAreaElement | null;
     if (textarea) {
       textarea.value = this.value;
     }
@@ -663,7 +699,10 @@ export class OmpComposer extends LitElement {
     if (typeof document !== "undefined") {
       this.updatePortal();
     }
-    if (changedProperties.has("pendingCommand") || changedProperties.has("pendingAsk")) {
+    if (
+      changedProperties.has("pendingCommand") ||
+      changedProperties.has("pendingAsk")
+    ) {
       if (this.pendingCommand && this.pendingCommand.options.length > 0) {
         this.isAskOpen = true;
         this.askMode = "options";
@@ -696,7 +735,11 @@ export class OmpComposer extends LitElement {
             this.querySelector("textarea")?.focus();
           });
         }
-      } else if (!this.pendingAsk && !this.pendingCommand && this.askMode === "options") {
+      } else if (
+        !this.pendingAsk &&
+        !this.pendingCommand &&
+        this.askMode === "options"
+      ) {
         this.isAskOpen = false;
         this.askOptions = [];
       }
@@ -860,7 +903,9 @@ export class OmpComposer extends LitElement {
 
   public setText(val: string, focus = true): void {
     this.value = val;
-    const textarea = this.querySelector?.("textarea") as HTMLTextAreaElement | null;
+    const textarea = this.querySelector?.(
+      "textarea",
+    ) as HTMLTextAreaElement | null;
     if (textarea) {
       textarea.value = val;
       if (focus) {
@@ -872,7 +917,9 @@ export class OmpComposer extends LitElement {
     this.requestUpdate();
   }
   public adjustTextareaHeight(): void {
-    const textarea = (this.querySelector?.("textarea") as HTMLTextAreaElement | null);
+    const textarea = this.querySelector?.(
+      "textarea",
+    ) as HTMLTextAreaElement | null;
     if (!textarea) return;
 
     if (!textarea.value) {
@@ -1276,7 +1323,11 @@ export class OmpComposer extends LitElement {
   }
 
   private async handleDrop(e: DragEvent) {
-    if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+    if (
+      e.dataTransfer &&
+      e.dataTransfer.files &&
+      e.dataTransfer.files.length > 0
+    ) {
       e.preventDefault();
       this.isDragOver = false;
       await this.addFiles(Array.from(e.dataTransfer.files));
@@ -1594,7 +1645,9 @@ export class OmpComposer extends LitElement {
     this.value = `${before}${insertText} ${after}`;
     this.closeFileMenu();
 
-    const textarea = this.querySelector?.("textarea") as HTMLTextAreaElement | null;
+    const textarea = this.querySelector?.(
+      "textarea",
+    ) as HTMLTextAreaElement | null;
     if (textarea) {
       textarea.value = this.value;
       const cursorPos = (before + insertText + " ").length;
@@ -1609,7 +1662,10 @@ export class OmpComposer extends LitElement {
     this.isShellMode = false;
     if (this.value.trim().startsWith("!")) {
       this.value = this.value.replace(/^!+ */, "");
-      const textarea = typeof this.querySelector === "function" ? (this.querySelector("textarea") as HTMLTextAreaElement | null) : null;
+      const textarea =
+        typeof this.querySelector === "function"
+          ? (this.querySelector("textarea") as HTMLTextAreaElement | null)
+          : null;
       if (textarea) textarea.value = this.value;
       this.adjustTextareaHeight();
     }
@@ -1671,7 +1727,16 @@ export class OmpComposer extends LitElement {
       return;
     }
 
-    if (name === "settings" || name === "theme" || name === "clear" || name === "new" || name === "plan-review" || name === "terminal" || name === "files" || name === "usage") {
+    if (
+      name === "settings" ||
+      name === "theme" ||
+      name === "clear" ||
+      name === "new" ||
+      name === "plan-review" ||
+      name === "terminal" ||
+      name === "files" ||
+      name === "usage"
+    ) {
       this.value = `/${name}`;
       this.closeSlashMenu();
       this.submit();
@@ -1844,14 +1909,17 @@ export class OmpComposer extends LitElement {
     if (this.fileMenuOpen && this.fileSuggestions.length > 0) {
       if (e.key === "ArrowDown") {
         e.preventDefault();
-        this.selectedFileIndex = (this.selectedFileIndex + 1) % this.fileSuggestions.length;
+        this.selectedFileIndex =
+          (this.selectedFileIndex + 1) % this.fileSuggestions.length;
         this.scrollSelectedFileItemIntoView();
         this.requestUpdate();
         return;
       }
       if (e.key === "ArrowUp") {
         e.preventDefault();
-        this.selectedFileIndex = (this.selectedFileIndex - 1 + this.fileSuggestions.length) % this.fileSuggestions.length;
+        this.selectedFileIndex =
+          (this.selectedFileIndex - 1 + this.fileSuggestions.length) %
+          this.fileSuggestions.length;
         this.scrollSelectedFileItemIntoView();
         this.requestUpdate();
         return;
@@ -1926,8 +1994,10 @@ export class OmpComposer extends LitElement {
   private submit(streamingBehavior?: "steer" | "followUp") {
     const rawText = this.value.trim();
     if (!rawText && this.attachments.length === 0) return;
-    const behavior = streamingBehavior ?? (this.isWorking ? "followUp" : undefined);
-    if (this.isWorking && !this.pendingAsk && !this.pendingCommand && !behavior) return;
+    const behavior =
+      streamingBehavior ?? (this.isWorking ? "followUp" : undefined);
+    if (this.isWorking && !this.pendingAsk && !this.pendingCommand && !behavior)
+      return;
     this.closeMenu();
     this.closeSlashMenu();
 
@@ -1939,11 +2009,14 @@ export class OmpComposer extends LitElement {
           o.id === rawText ||
           o.value === rawText,
       );
-      const chosenValue = matched ? (matched.value || matched.title) : rawText;
+      const chosenValue = matched ? matched.value || matched.title : rawText;
 
       this.dispatchEvent(
         new CustomEvent("submit-command", {
-          detail: { requestId: this.pendingCommand.requestId, value: chosenValue },
+          detail: {
+            requestId: this.pendingCommand.requestId,
+            value: chosenValue,
+          },
           bubbles: true,
           composed: true,
         }),
@@ -1951,7 +2024,9 @@ export class OmpComposer extends LitElement {
 
       this.value = "";
       this.isAskOpen = false;
-      const textarea = (this.querySelector?.("textarea") as HTMLTextAreaElement | null);
+      const textarea = this.querySelector?.(
+        "textarea",
+      ) as HTMLTextAreaElement | null;
       if (textarea) textarea.value = "";
       this.adjustTextareaHeight();
       this.requestUpdate();
@@ -2016,7 +2091,9 @@ export class OmpComposer extends LitElement {
 
       this.value = "";
       this.isAskOpen = false;
-      const textarea = (this.querySelector?.("textarea") as HTMLTextAreaElement | null);
+      const textarea = this.querySelector?.(
+        "textarea",
+      ) as HTMLTextAreaElement | null;
       if (textarea) textarea.value = "";
       this.adjustTextareaHeight();
       this.requestUpdate();
@@ -2067,7 +2144,9 @@ export class OmpComposer extends LitElement {
       this.attachmentError = undefined;
       this.isBtwMode = false;
       this.isWorking = true;
-      const textarea = (this.querySelector?.("textarea") as HTMLTextAreaElement | null);
+      const textarea = this.querySelector?.(
+        "textarea",
+      ) as HTMLTextAreaElement | null;
       if (textarea) textarea.value = "";
       this.adjustTextareaHeight();
       this.requestUpdate();
@@ -2093,7 +2172,9 @@ export class OmpComposer extends LitElement {
     if (!isInstantClientCommand(rawText)) {
       this.isWorking = true;
     }
-    const textarea = (this.querySelector?.("textarea") as HTMLTextAreaElement | null);
+    const textarea = this.querySelector?.(
+      "textarea",
+    ) as HTMLTextAreaElement | null;
     if (textarea) textarea.value = "";
     this.adjustTextareaHeight();
     this.requestUpdate();
@@ -2292,19 +2373,26 @@ export class OmpComposer extends LitElement {
 
   private renderCommandBadge(badge: string) {
     const b = (badge || "").toLowerCase();
-    let colorClass = "bg-white/8 text-zinc-300 dark:text-zinc-200 border-white/10";
+    let colorClass =
+      "bg-white/8 text-zinc-300 dark:text-zinc-200 border-white/10";
     if (b === "contexto") {
-      colorClass = "bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/25";
+      colorClass =
+        "bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/25";
     } else if (b === "tarefas" || b === "plan") {
-      colorClass = "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/25";
+      colorClass =
+        "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/25";
     } else if (b === "modelo" || b === "model") {
-      colorClass = "bg-blue-500/15 text-blue-600 dark:text-blue-400 border-blue-500/25";
+      colorClass =
+        "bg-blue-500/15 text-blue-600 dark:text-blue-400 border-blue-500/25";
     } else if (b === "skill") {
-      colorClass = "bg-purple-500/15 text-purple-600 dark:text-purple-400 border-purple-500/25";
+      colorClass =
+        "bg-purple-500/15 text-purple-600 dark:text-purple-400 border-purple-500/25";
     } else if (b === "workspace") {
-      colorClass = "bg-cyan-500/15 text-cyan-600 dark:text-cyan-400 border-cyan-500/25";
+      colorClass =
+        "bg-cyan-500/15 text-cyan-600 dark:text-cyan-400 border-cyan-500/25";
     } else if (b === "métricas" || b === "runtime") {
-      colorClass = "bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 border-indigo-500/25";
+      colorClass =
+        "bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 border-indigo-500/25";
     }
 
     return html`
@@ -2367,7 +2455,8 @@ export class OmpComposer extends LitElement {
         >
           ${this.activeSlashCommands.map((cmd, idx) => {
             const isSelected = idx === this.selectedSlashIndex;
-            const isSkill = cmd.badge === "Skill" || cmd.name.startsWith("skill:");
+            const isSkill =
+              cmd.badge === "Skill" || cmd.name.startsWith("skill:");
             const isBtw = cmd.name === "btw";
 
             return html`
@@ -2449,7 +2538,7 @@ export class OmpComposer extends LitElement {
           <div class="flex items-center justify-between">
             <div class="text-sm font-bold text-foreground-900 dark:text-white leading-snug flex items-center gap-2 flex-wrap">
               <span class="size-5 rounded-lg flex items-center justify-center font-mono font-bold text-xs bg-black/5 dark:bg-white/10 text-foreground-800 dark:text-zinc-200 border border-black/8 dark:border-white/15">@</span>
-              <span>Arquivos do Workspace</span>
+              <span>Workspace Files</span>
               <span class="font-mono text-xs px-1.5 py-0.5 rounded bg-black/5 dark:bg-white/10 text-foreground-700 dark:text-zinc-300 border border-black/8 dark:border-white/15">
                 ${this.activeFileSuggestions.length}
               </span>
@@ -2477,7 +2566,7 @@ export class OmpComposer extends LitElement {
           data-testid="composer-file-menu"
           class="flex flex-col gap-1.5 max-h-[260px] overflow-y-auto omp-composer-textarea pr-1 scroll-smooth"
           role="listbox"
-          aria-label="Arquivos disponíveis"
+          aria-label="Available files"
         >
           ${this.activeFileSuggestions.map((file, idx) => {
             const isSelected = idx === this.selectedFileIndex;
@@ -2580,18 +2669,24 @@ export class OmpComposer extends LitElement {
               <span>
                 ${this.askMode === "machines" ? "Selecione a máquina para esta sessão" : this.askMode === "projects" ? "Selecione o projeto para esta sessão" : this.askTitle}
               </span>
-              ${this.askMode === "machines" ? html`
+              ${
+                this.askMode === "machines"
+                  ? html`
                 <span class="font-mono text-xs px-1.5 py-0.5 rounded bg-black/5 dark:bg-white/10 text-foreground-600">
                   ${(this.machines.length > 0 ? this.machines : this.defaultMachines).length}
                 </span>
-              ` : nothing}
+              `
+                  : nothing
+              }
               ${
-                this.pendingAsk?.questions[0]?.header && this.askMode === "options"
+                this.pendingAsk?.questions[0]?.header &&
+                this.askMode === "options"
                   ? html`<span class="text-[11px] px-2 py-0.5 rounded-full font-medium bg-black/5 dark:bg-white/10 text-foreground-700 font-mono">${this.pendingAsk.questions[0].header}</span>`
                   : nothing
               }
               ${
-                this.pendingAsk?.questions[0]?.multi && this.askMode === "options"
+                this.pendingAsk?.questions[0]?.multi &&
+                this.askMode === "options"
                   ? html`<span class="text-[10px] px-2 py-0.5 rounded-full font-medium bg-blue-500/10 text-blue-600 dark:text-blue-400">Múltipla escolha</span>`
                   : nothing
               }
@@ -2631,27 +2726,38 @@ export class OmpComposer extends LitElement {
           </div>
         </div>
 
-        ${this.askContext && this.askMode === "options" ? html`
+        ${
+          this.askContext && this.askMode === "options"
+            ? html`
           <div class="mb-2.5 px-3 py-2 rounded-xl bg-blue-500/10 dark:bg-blue-400/10 border border-blue-500/20 text-xs text-foreground-800 dark:text-foreground-200 flex items-start gap-2.5">
             <span class="shrink-0 text-blue-500 dark:text-blue-400 mt-0.5">${renderLightbulbIcon("size-3.5")}</span>
             <div class="flex-1 min-w-0">
-              <div class="text-[10px] font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400 mb-0.5">Contexto</div>
+              <div class="text-[10px] font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400 mb-0.5">Context</div>
               <div class="text-xs text-foreground-700 dark:text-foreground-300 leading-relaxed whitespace-pre-wrap line-clamp-3">${this.askContext}</div>
             </div>
           </div>
-        ` : nothing}
+        `
+            : nothing
+        }
 
         ${
           this.askMode === "machines"
             ? html`
             <!-- Lista de Máquinas Estilo Ask Tool -->
             <div class="flex flex-col gap-1.5" role="radiogroup" aria-label="Máquinas disponíveis">
-              ${(this.machines.length > 0 ? this.machines : this.defaultMachines).map((m, idx) => {
-                const currentId = this.selectedMachine?.id || this.machineId || "local";
+              ${(
+                this.machines.length > 0 ? this.machines : this.defaultMachines
+              ).map((m, idx) => {
+                const currentId =
+                  this.selectedMachine?.id || this.machineId || "local";
                 const isSelected = currentId === m.id;
                 const health = this.machineStatuses[m.id];
-                const mOnline = m.kind === "local" ? true : (health?.status === "online" || (health?.ok ?? true));
-                const mError = health?.status === "error" || health?.status === "offline";
+                const mOnline =
+                  m.kind === "local"
+                    ? true
+                    : health?.status === "online" || (health?.ok ?? true);
+                const mError =
+                  health?.status === "error" || health?.status === "offline";
                 const canRemove = m.kind === "remote";
 
                 return html`
@@ -2689,7 +2795,9 @@ export class OmpComposer extends LitElement {
                       </div>
                     </div>
                     <div class="flex items-center gap-2 shrink-0 ps-2">
-                      ${canRemove ? html`
+                      ${
+                        canRemove
+                          ? html`
                         <span
                           role="button"
                           class="p-1 rounded-md hover:bg-red-500/15 text-foreground-450 hover:text-red-500 transition-colors text-sm font-bold leading-none cursor-pointer"
@@ -2701,7 +2809,9 @@ export class OmpComposer extends LitElement {
                         >
                           ×
                         </span>
-                      ` : nothing}
+                      `
+                          : nothing
+                      }
                       ${isSelected ? renderCheckIcon("size-4 text-blue-600 dark:text-blue-400") : html`<span class="text-xs font-semibold text-foreground-400 opacity-0 group-hover:opacity-100 transition-opacity">Selecionar</span>`}
                     </div>
                   </button>
@@ -2721,10 +2831,10 @@ export class OmpComposer extends LitElement {
               </button>
             </div>
           `
-          : this.askMode === "projects"
-            ? html`
+            : this.askMode === "projects"
+              ? html`
             <!-- Lista de Projetos Estilo Ask Tool (1, 2, 3...) -->
-            <div class="flex flex-col gap-1.5" role="radiogroup" aria-label="Projetos disponíveis">
+            <div class="flex flex-col gap-1.5" role="radiogroup" aria-label="Available projects">
               ${projectsList.map((proj, idx) => {
                 const isSelected = this.selectedProjectId === proj.id;
                 return html`
@@ -2767,7 +2877,7 @@ export class OmpComposer extends LitElement {
               })}
             </div>
           `
-            : html`
+              : html`
             <!-- Lista de Opções Tradicionais Ask Tool -->
             <div class="flex flex-col gap-1.5" role="radiogroup" aria-label="Opções do OMP">
               ${optionsToUse.map((opt, idx) => {
@@ -2807,9 +2917,13 @@ export class OmpComposer extends LitElement {
                           }
                         </div>
                         ${opt.desc ? html`<div class="text-xs opacity-75 leading-relaxed mt-1 font-normal break-words">${opt.desc}</div>` : nothing}
-                        ${opt.preview ? html`
+                        ${
+                          opt.preview
+                            ? html`
                           <pre class="mt-2 p-2 rounded-xl bg-black/5 dark:bg-white/5 border border-black/8 dark:border-white/10 font-mono text-[11px] leading-relaxed text-foreground-800 dark:text-foreground-200 overflow-x-auto whitespace-pre-wrap">${opt.preview}</pre>
-                        ` : nothing}
+                        `
+                            : nothing
+                        }
                       </div>
                     </div>
                     <div class="flex items-center gap-2 shrink-0 ps-2">
@@ -2882,9 +2996,11 @@ export class OmpComposer extends LitElement {
             </div>
           `;
         })}
-        ${this.attachmentError
-          ? html`<div class="text-xs text-red-500 font-medium py-1">${this.attachmentError}</div>`
-          : nothing}
+        ${
+          this.attachmentError
+            ? html`<div class="text-xs text-red-500 font-medium py-1">${this.attachmentError}</div>`
+            : nothing
+        }
       </div>
     `;
   }
@@ -3078,7 +3194,7 @@ export class OmpComposer extends LitElement {
                   }
                   <textarea
                     rows="${this.compact ? "1" : "2"}"
-                    placeholder="${this.isBtwActive ? "Faça uma pergunta lateral com o contexto da sessão (/btw)..." : this.isAskOpen ? (this.askMode === "projects" ? "Digite para filtrar ou criar projeto..." : "Digite outra opção...") : this.placeholder}"
+                    placeholder="${this.isBtwActive ? "Ask a side question with session context (/btw)..." : this.isAskOpen ? (this.askMode === "projects" ? "Type to filter or create project..." : "Type another option...") : this.placeholder}"
                     class="omp-composer-textarea font-ligatures-none inline-block w-full resize-none overflow-y-hidden whitespace-pre-wrap bg-transparent align-top text-black outline-none placeholder:text-foreground-450 dark:text-white dark:placeholder:text-foreground-600/90 text-base-dense font-sans"
                     style="field-sizing: content; max-height: 280px;"
                     .value=${this.value}
@@ -3136,14 +3252,28 @@ export class OmpComposer extends LitElement {
                     <!-- Machine Selector Pill -->
                     <div class="relative">
                       ${(() => {
-                        const machinesList = this.machines.length > 0 ? this.machines : this.defaultMachines;
+                        const machinesList =
+                          this.machines.length > 0
+                            ? this.machines
+                            : this.defaultMachines;
                         const currentMachine = this.selectedMachine ||
                           machinesList.find((m) => m.id === this.machineId) ||
                           machinesList.find((m) => m.id === "local") ||
-                          machinesList[0] || { id: "local", name: "Local", kind: "local" as const };
-                        const currentHealth = this.machineStatuses[currentMachine.id];
-                        const isOnline = currentMachine.kind === "local" ? true : (currentHealth?.status === "online" || (currentHealth?.ok ?? true));
-                        const isError = currentHealth?.status === "error" || currentHealth?.status === "offline";
+                          machinesList[0] || {
+                            id: "local",
+                            name: "Local",
+                            kind: "local" as const,
+                          };
+                        const currentHealth =
+                          this.machineStatuses[currentMachine.id];
+                        const isOnline =
+                          currentMachine.kind === "local"
+                            ? true
+                            : currentHealth?.status === "online" ||
+                              (currentHealth?.ok ?? true);
+                        const isError =
+                          currentHealth?.status === "error" ||
+                          currentHealth?.status === "offline";
 
                         return html`
                           <button
@@ -3175,7 +3305,9 @@ export class OmpComposer extends LitElement {
                     </div>
 
                     <!-- Status badges: plan-mode & extension statuses matching toolbar pill style -->
-                    ${this.planMode?.enabled ? html`
+                    ${
+                      this.planMode?.enabled
+                        ? html`
                       <button
                         type="button"
                         class="extension-status-chip plan-mode-chip inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border border-blue-500/25 bg-blue-500/10 text-blue-600 dark:text-blue-400 select-none cursor-pointer transition-colors hover:bg-blue-500/20 active:scale-95 ${this.planMode.proposedPlan ? "!bg-blue-500/20 !border-blue-500/40 animate-pulse font-semibold" : ""}"
@@ -3185,13 +3317,17 @@ export class OmpComposer extends LitElement {
                         <span>📋</span>
                         <span>${this.planMode.proposedPlan ? "Review Plan" : "Plan Mode"}</span>
                       </button>
-                    ` : nothing}
-                    ${Object.entries(this.extensionStatuses ?? {}).map(([key, text]) => html`
+                    `
+                        : nothing
+                    }
+                    ${Object.entries(this.extensionStatuses ?? {}).map(
+                      ([key, text]) => html`
                       <span
                         class="extension-status-chip hidden sm:inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium border border-black/10 dark:border-white/10 bg-black/[0.04] dark:bg-white/[0.06] text-foreground-700 select-none"
                         title=${key + ": " + text}
                       >${text}</span>
-                    `)}
+                    `,
+                    )}
                     <!-- Extensible Custom Pills Slot -->
                     ${this.customPills}
                   </div>

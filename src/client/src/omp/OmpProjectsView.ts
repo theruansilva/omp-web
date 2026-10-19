@@ -140,7 +140,7 @@ export class OmpProjectsView extends LitElement {
                 @click=${() => this.dispatchEvent(new CustomEvent("project-add", { bubbles: true, composed: true }))}
               >
                 ${renderPlusIcon("size-4")}
-                <span>Novo Projeto</span>
+                <span>New Project</span>
               </button>
             </div>
 
@@ -270,7 +270,7 @@ export class OmpProjectsView extends LitElement {
             this.handleOpenProject(project.id);
           }}
                         >
-                          ${isSelected ? "Continuar Sessão →" : "Abrir Projeto →"}
+                          ${isSelected ? "Continue Session →" : "Open Project →"}
                         </button>
                         <button
                           type="button"
@@ -282,7 +282,7 @@ export class OmpProjectsView extends LitElement {
           }}
                         >
                           <span class="text-sm font-light leading-none">+</span>
-                          <span>Nova sessão</span>
+                          <span>New session</span>
                         </button>
                       </div>
                     </div>

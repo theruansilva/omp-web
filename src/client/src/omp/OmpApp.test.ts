@@ -211,7 +211,7 @@ describe("OmpApp integration", () => {
     app.connectedCallback();
 
     expect((app as any).activeTab).toBe("settings");
-    expect((app as any).getHeaderTitle()).toBe("Configurações");
+    expect((app as any).getHeaderTitle()).toBe("Settings");
     const str = JSON.stringify(app.render());
     expect(str).toContain("omp-settings-view");
   });

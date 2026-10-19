@@ -102,7 +102,7 @@ export class OmpProjectDetailView extends LitElement {
     const pool = this.projects.length > 0 ? this.projects : this.fallbackProjects;
     return pool.find((p) => p.id === this.projectId) ?? pool[0] ?? {
       id: this.projectId,
-      name: "Projeto",
+      name: "Project",
       path: "~/code/" + this.projectId,
       image: "/static/omplabs/omp-appearance-cover-image-small--2.jpg",
     };
@@ -227,7 +227,7 @@ export class OmpProjectDetailView extends LitElement {
                 <div class="size-6 rounded-lg bg-black/5 dark:bg-white/10 flex items-center justify-center group-hover:-translate-x-0.5 transition-transform">
                   ${renderArrowLeftIcon("size-3.5")}
                 </div>
-                <span>Todos os Projetos</span>
+                <span>All Projects</span>
               </button>
 
               <span class="text-xs font-mono text-foreground-400">
@@ -450,7 +450,7 @@ export class OmpProjectDetailView extends LitElement {
                   @click=${() => this.dispatchEvent(new CustomEvent("start-new-session", { detail: { projectId: this.projectId }, bubbles: true, composed: true }))}
                 >
                   <span class="text-sm font-light leading-none">+</span>
-                  <span>Nova sessão</span>
+                  <span>New session</span>
                 </button>
               </div>
 

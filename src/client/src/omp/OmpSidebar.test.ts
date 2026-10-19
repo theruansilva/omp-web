@@ -55,8 +55,8 @@ describe("OmpSidebar", () => {
     expect(rendered).toBeDefined();
     const str = JSON.stringify(rendered);
     expect(str).toContain("Session 6 Unread");
-    expect(str).toContain("Aguardando visualização");
-    expect(str).toContain("Nova sessão");
+    expect(str).toContain("Awaiting review");
+    expect(str).toContain("New session");
   });
 
   it("does not render 3-dots button and opens archive menu via contextmenu / hold", () => {
@@ -100,20 +100,20 @@ describe("OmpSidebar", () => {
     const str = JSON.stringify(rendered);
 
     // Header & divider (no project count badge)
-    expect(str).toContain("Projetos");
+    expect(str).toContain("Projects");
     expect(str).toContain("group/proj-card");
 
     // Project card header
     expect(str).toContain("omp-web");
     expect(str).toContain("empty-proj");
-    expect(str).toContain("Nova sessão em ");
+    expect(str).toContain("New session in ");
 
     // Sessions render when present
     expect(str).toContain("role=");
     expect(str).toContain("Active Working");
-    expect(str).toContain("Trabalhando");
+    expect(str).toContain("Working");
     expect(str).toContain("Unread Session");
-    expect(str).toContain("Aguardando visualização");
+    expect(str).toContain("Awaiting review");
 
     // Outer border preserved, no empty state message, no path description
     expect(str).toContain("border-black/8");
@@ -131,16 +131,16 @@ describe("OmpSidebar", () => {
     let str = JSON.stringify(rendered);
 
     // Initial render shows 4 items: Terminal, Arquivos, Projetos, Modelos and "Ver mais"
-    expect(str).toContain("Ver mais");
+    expect(str).toContain("Show more");
     expect(str).toContain("+3");
     expect(str).toContain("Terminal");
-    expect(str).toContain("Arquivos");
-    expect(str).toContain("Projetos");
-    expect(str).toContain("Modelos");
+    expect(str).toContain("Files");
+    expect(str).toContain("Projects");
+    expect(str).toContain("Models");
     // Uso & Métricas, Agendamentos, Configurações are in "Ver mais"
-    expect(str).not.toContain("Uso & Métricas");
-    expect(str).not.toContain("Agendamentos");
-    expect(str).not.toContain("Configurações");
+    expect(str).not.toContain("Usage & Metrics");
+    expect(str).not.toContain("Schedules");
+    expect(str).not.toContain("Settings");
     // Library is hidden from sidebar
     expect(str).not.toContain("Library");
 
@@ -148,10 +148,10 @@ describe("OmpSidebar", () => {
     (sidebar as any).isNavExpanded = true;
     rendered = sidebar.render();
     str = JSON.stringify(rendered);
-    expect(str).toContain("Ver menos");
-    expect(str).toContain("Uso & Métricas");
-    expect(str).toContain("Agendamentos");
-    expect(str).toContain("Configurações");
+    expect(str).toContain("Show less");
+    expect(str).toContain("Usage & Metrics");
+    expect(str).toContain("Schedules");
+    expect(str).toContain("Settings");
     expect(str).not.toContain("Library");
   });
 });

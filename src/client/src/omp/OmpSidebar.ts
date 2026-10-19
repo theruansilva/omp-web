@@ -161,12 +161,12 @@ export class OmpSidebar extends LitElement {
 
   private readonly primaryNav: NavItem[] = [
     { id: "terminal", label: "Terminal" },
-    { id: "files", label: "Arquivos" },
-    { id: "projects", label: "Projetos" },
-    { id: "models", label: "Modelos" },
-    { id: "usage", label: "Uso & Métricas" },
-    { id: "schedules", label: "Agendamentos" },
-    { id: "settings", label: "Configurações" },
+    { id: "files", label: "Files" },
+    { id: "projects", label: "Projects" },
+    { id: "models", label: "Models" },
+    { id: "usage", label: "Usage & Metrics" },
+    { id: "schedules", label: "Schedules" },
+    { id: "settings", label: "Settings" },
     { id: "library", label: "Library" },
   ];
 
@@ -213,13 +213,13 @@ export class OmpSidebar extends LitElement {
     { id: "sess-2", title: "Ajustar streaming de tokens", projectId: "proj-1" },
     {
       id: "sess-3",
-      title: "Arquitetura do sessiond",
+      title: "Sessiond architecture",
       projectId: "proj-1",
       isLoggedOut: true,
     },
     {
       id: "sess-4",
-      title: "Configurações de modelo e chaves",
+      title: "Model and key configurations",
       projectId: "proj-1",
       isLoggedOut: true,
     },
@@ -427,7 +427,7 @@ export class OmpSidebar extends LitElement {
                     >
                       <div class="flex items-center gap-2">
                         ${isExpanded ? renderChevronUpIcon("size-3.5 text-foreground-500") : renderChevronDownIcon("size-3.5 text-foreground-500")}
-                        <span>${isExpanded ? "Ver menos" : "Ver mais"}</span>
+                        <span>${isExpanded ? "Show less" : "Show more"}</span>
                       </div>
                       <span class="text-[10px] font-mono opacity-70 px-1.5 py-0.5 rounded bg-black/5 dark:bg-white/10">
                         ${isExpanded ? allNav.length : "+" + (allNav.length - this.navLimit)}
@@ -469,7 +469,7 @@ export class OmpSidebar extends LitElement {
                         type="button"
                         class="group/proj flex items-center gap-2 min-w-0 flex-1 text-left cursor-pointer pointer-events-auto"
                         @click=${() => this.handleProjectClick(project.id)}
-                        title="Abrir projeto ${project.name}"
+                        title="Open project ${project.name}"
                       >
                         <span class="shrink-0 text-[var(--omp-primary)] opacity-90 group-hover/proj:opacity-100 transition-opacity">
                           ${renderFolderIcon("size-3.5")}
@@ -482,8 +482,8 @@ export class OmpSidebar extends LitElement {
                       <button
                         type="button"
                         class="flex items-center justify-center size-5 rounded-md text-foreground-450 hover:text-foreground-900 hover:bg-black/8 dark:hover:bg-white/10 transition-colors cursor-pointer pointer-events-auto shrink-0"
-                        title="Nova sessão em ${project.name}"
-                        aria-label="Nova sessão em ${project.name}"
+                        title="New session in ${project.name}"
+                        aria-label="New session in ${project.name}"
                         @click=${(e: Event) => {
                           e.stopPropagation();
                           this.handleNewSession(project.id);
@@ -525,9 +525,9 @@ export class OmpSidebar extends LitElement {
 
                                     ${
                                       session.isWorking
-                                        ? html`<span class="size-2 rounded-full bg-emerald-500 animate-pulse shrink-0 ml-1.5" title="Trabalhando"></span>`
+                                        ? html`<span class="size-2 rounded-full bg-emerald-500 animate-pulse shrink-0 ml-1.5" title="Working"></span>`
                                         : session.isUnread
-                                          ? html`<span class="size-2 rounded-full bg-[var(--omp-primary)] ring-2 ring-[var(--omp-primary)]/30 shrink-0 ml-1.5" title="Aguardando visualização"></span>`
+                                          ? html`<span class="size-2 rounded-full bg-[var(--omp-primary)] ring-2 ring-[var(--omp-primary)]/30 shrink-0 ml-1.5" title="Awaiting review"></span>`
                                           : nothing
                                     }
                                   </button>

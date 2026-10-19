@@ -566,7 +566,7 @@ describe("OmpComposer Ask Context and Preview", () => {
     const str = JSON.stringify(rendered);
 
     // Context banner
-    expect(str).toContain("Contexto");
+    expect(str).toContain("Context");
     expect(str).toContain("Analisando abordagem para autenticação JWT vs Sessões");
 
     // Option title, full description without truncate, and preview
@@ -612,7 +612,7 @@ describe("OmpComposer In-Composer Autocomplete (Skills & Files)", () => {
     expect(str).toContain("composer-ask-expander");
     expect(str).toContain("composer-file-menu");
     expect(str).toContain("max-h-[260px]");
-    expect(str).toContain("Arquivos do Workspace");
+    expect(str).toContain("Workspace Files");
     expect(str).toContain("src/main.ts");
     expect(str).toContain("src/omp/");
   });

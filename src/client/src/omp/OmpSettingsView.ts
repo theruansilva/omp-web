@@ -118,7 +118,7 @@ export class OmpSettingsView extends LitElement {
     const next = { ...this.uiColors, enabled: !this.uiColors.enabled };
     this.uiColors = next;
     saveUiColors(next, this.theme === "light");
-    this.showNotification("success", next.enabled ? "Paleta UI Colors ativada na interface!" : "Paleta UI Colors desativada (cores padrão)");
+    this.showNotification("success", next.enabled ? "UI Colors palette activated!" : "UI Colors palette disabled (default colors)");
   }
 
   private handlePresetClick(preset: UiColorPreset): void {
@@ -130,7 +130,7 @@ export class OmpSettingsView extends LitElement {
 
   private handleResetColors(): void {
     this.uiColors = resetUiColors(this.theme === "light");
-    this.showNotification("success", "Cores restauradas para o padrão do UI Colors");
+    this.showNotification("success", "Colors restored to UI Colors default");
   }
 
   private async handleCopyCode(): Promise<void> {
@@ -324,9 +324,9 @@ export class OmpSettingsView extends LitElement {
 
       const updated = await configApi.saveConfig(patch);
       this.configResponse = updated;
-      this.showNotification("success", "Configurações do Gateway salvas com sucesso!");
+      this.showNotification("success", "Gateway settings saved successfully!");
     } catch (err) {
-      this.showNotification("error", `Falha ao salvar Gateway: ${(err as Error).message}`);
+      this.showNotification("error", `Failed to save Gateway: ${(err as Error).message}`);
     } finally {
       this.saving = false;
     }
@@ -352,9 +352,9 @@ export class OmpSettingsView extends LitElement {
 
       const updated = await configApi.saveConfig(patch);
       this.configResponse = updated;
-      this.showNotification("success", "Configurações de Sessões salvas com sucesso!");
+      this.showNotification("success", "Session settings saved successfully!");
     } catch (err) {
-      this.showNotification("error", `Falha ao salvar Sessões: ${(err as Error).message}`);
+      this.showNotification("error", `Failed to save Sessions: ${(err as Error).message}`);
     } finally {
       this.saving = false;
     }
@@ -496,11 +496,11 @@ export class OmpSettingsView extends LitElement {
 
   private renderNavPills() {
     const items: { id: SettingsSection; label: string; icon: unknown }[] = [
-      { id: "general", label: "Geral", icon: renderSettingsIcon("size-4") },
-      { id: "sessiond", label: "Sessões & Daemon", icon: renderWaveformIcon("size-4") },
+      { id: "general", label: "General", icon: renderSettingsIcon("size-4") },
+      { id: "sessiond", label: "Sessions & Daemon", icon: renderWaveformIcon("size-4") },
       { id: "plugins", label: "Plugins", icon: renderPluginsIcon("size-4") },
-      { id: "packages", label: "Pacotes Pi", icon: renderPackageIcon("size-4") },
-      { id: "shortcuts", label: "Atalhos", icon: renderKeyboardIcon("size-4") },
+      { id: "packages", label: "Pi Packages", icon: renderPackageIcon("size-4") },
+      { id: "shortcuts", label: "Shortcuts", icon: renderKeyboardIcon("size-4") },
     ];
 
     return html`
@@ -663,12 +663,12 @@ export class OmpSettingsView extends LitElement {
               </div>
               <div class="flex flex-col gap-0.5">
                 <div class="flex items-center gap-2">
-                  <h3 class="text-base font-bold text-foreground-900">Aparência & Tema</h3>
+                  <h3 class="text-base font-bold text-foreground-900">Appearance & Theme</h3>
                   <span class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-[var(--primary)]/15 text-[var(--primary)] border border-[var(--primary)]/20">
                     UI Colors
                   </span>
                 </div>
-                <p class="text-xs text-foreground-600">Personalize o tema e as cores da interface baseadas no template "UI Colors" (OKLCH)</p>
+                <p class="text-xs text-foreground-600">Customize the interface theme and colors based on the "UI Colors" template (OKLCH)</p>
               </div>
             </div>
             <div class="flex items-center gap-2">
@@ -688,18 +688,18 @@ export class OmpSettingsView extends LitElement {
             <div class="flex items-center gap-3">
               ${this.renderToggleSwitch(this.uiColors.enabled, () => { this.handleUiColorsToggle(); })}
               <div class="flex flex-col">
-                <span class="text-xs font-bold text-foreground-900">Ativar paleta dinâmica UI Colors</span>
-                <span class="text-[11px] text-foreground-500">Aplica tons harmônicos de fundo, texto, bordas e botões em todo o OMP Web</span>
+                <span class="text-xs font-bold text-foreground-900">Enable dynamic UI Colors palette</span>
+                <span class="text-[11px] text-foreground-500">Applies harmonic background, text, border, and button tones across OMP Web</span>
               </div>
             </div>
             <button
               type="button"
               class="px-2.5 py-1.5 rounded-xl text-xs font-semibold text-foreground-600 hover:text-foreground-900 bg-black/5 hover:bg-black/10 dark:bg-white/5 dark:hover:bg-white/10 flex items-center gap-1.5 transition-colors cursor-pointer"
               @click=${() => { this.handleResetColors(); }}
-              title="Restaurar valores padrão do UI Colors"
+              title="Restore default UI Colors values"
             >
               ${renderRefreshIcon("size-3.5")}
-              <span>Restaurar Padrão</span>
+              <span>Reset Defaults</span>
             </button>
           </div>
 
@@ -708,7 +708,7 @@ export class OmpSettingsView extends LitElement {
             <!-- Chroma Slider Row -->
             <div class="flex flex-col gap-1.5">
               <div class="flex items-center justify-between text-xs font-semibold text-foreground-800">
-                <span>Saturação (Chroma)</span>
+                <span>Saturation (Chroma)</span>
                 <span class="text-foreground-500 font-mono text-[11px]">Valor: ${this.uiColors.chroma.toFixed(2)}</span>
               </div>
               <div class="grid grid-cols-[auto_1fr_auto_auto] items-center gap-2 sm:gap-3">
@@ -744,7 +744,7 @@ export class OmpSettingsView extends LitElement {
             <!-- Hue Slider Row -->
             <div class="flex flex-col gap-1.5">
               <div class="flex items-center justify-between text-xs font-semibold text-foreground-800">
-                <span>Matiz da Cor (Hue)</span>
+                <span>Color Hue</span>
                 <span class="text-foreground-500 font-mono text-[11px]">Ângulo: ${this.uiColors.hue}°</span>
               </div>
               <div class="grid grid-cols-[auto_1fr_auto_auto] items-center gap-2 sm:gap-3">
@@ -869,7 +869,7 @@ export class OmpSettingsView extends LitElement {
 
               <!-- Action -->
               <div class="flex flex-col justify-between gap-1.5 p-2.5 rounded-2xl bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/5 h-full">
-                <span class="text-[10px] font-bold text-foreground-500 uppercase tracking-wider">Ações</span>
+                <span class="text-[10px] font-bold text-foreground-500 uppercase tracking-wider">Actions</span>
                 <div class="flex flex-col gap-1.5">
                   <div class="flex items-center gap-2">
                     <span class="w-8 h-6 rounded-lg shadow-xs border border-black/10 dark:border-white/15 shrink-0" style="background-color: var(--primary);"></span>
@@ -1055,16 +1055,16 @@ export class OmpSettingsView extends LitElement {
           style="clip-path: var(--clip-path-squircle-28, none);"
         >
           <div class="flex flex-col gap-0.5">
-            <h3 class="text-base font-bold text-foreground-900">Exibição do Chat</h3>
-            <p class="text-xs text-foreground-600">Personalize o que é renderizado nas respostas e status do agente</p>
+            <h3 class="text-base font-bold text-foreground-900">Chat Display</h3>
+            <p class="text-xs text-foreground-600">Customize what is rendered in responses and agent status</p>
           </div>
 
           <div class="flex flex-col omp-settings-divide">
             <!-- Show Thinking -->
             <div class="flex items-center justify-between py-3">
               <div class="flex flex-col pr-4">
-                <span class="text-sm font-semibold text-foreground-800">Raciocínio do Modelo</span>
-                <span class="text-xs text-foreground-500">Exibir bloco expansível de raciocínio (thinking)</span>
+                <span class="text-sm font-semibold text-foreground-800">Model Reasoning</span>
+                <span class="text-xs text-foreground-500">Display expandable model reasoning block (thinking)</span>
               </div>
               ${this.renderToggleSwitch(this.chatPrefs.showThinking, () => { this.updateChatPref("showThinking"); })}
             </div>
@@ -1072,8 +1072,8 @@ export class OmpSettingsView extends LitElement {
             <!-- Show Tool Executions -->
             <div class="flex items-center justify-between py-3">
               <div class="flex flex-col pr-4">
-                <span class="text-sm font-semibold text-foreground-800">Execuções de Ferramentas</span>
-                <span class="text-xs text-foreground-500">Mostrar detalhes e retornos das tool calls acionadas</span>
+                <span class="text-sm font-semibold text-foreground-800">Tool Executions</span>
+                <span class="text-xs text-foreground-500">Show details and outputs of executed tool calls</span>
               </div>
               ${this.renderToggleSwitch(this.chatPrefs.showToolExecutions, () => { this.updateChatPref("showToolExecutions"); })}
             </div>
@@ -1105,8 +1105,8 @@ export class OmpSettingsView extends LitElement {
             <!-- Show Events -->
             <div class="flex items-center justify-between py-3">
               <div class="flex flex-col pr-4">
-                <span class="text-sm font-semibold text-foreground-800">Eventos de Sessão</span>
-                <span class="text-xs text-foreground-500">Mostrar logs de ciclo de vida e eventos de grupo</span>
+                <span class="text-sm font-semibold text-foreground-800">Session Events</span>
+                <span class="text-xs text-foreground-500">Show lifecycle logs and group events</span>
               </div>
               ${this.renderToggleSwitch(this.chatPrefs.showEvents, () => { this.updateChatPref("showEvents"); })}
             </div>
@@ -1123,8 +1123,8 @@ export class OmpSettingsView extends LitElement {
             <!-- Vim Mode -->
             <div class="flex items-center justify-between py-3">
               <div class="flex flex-col pr-4">
-                <span class="text-sm font-semibold text-foreground-800">Modo Vim</span>
-                <span class="text-xs text-foreground-500">Habilitar atalhos e keybindings Vim no editor de código</span>
+                <span class="text-sm font-semibold text-foreground-800">Vim Mode</span>
+                <span class="text-xs text-foreground-500">Enable Vim keybindings in code editor</span>
               </div>
               ${this.renderToggleSwitch(this.chatPrefs.vimMode, () => { this.updateChatPref("vimMode"); })}
             </div>
@@ -1138,8 +1138,8 @@ export class OmpSettingsView extends LitElement {
         >
           <div class="flex items-center justify-between">
             <div class="flex flex-col gap-0.5">
-              <h3 class="text-base font-bold text-foreground-900">Servidor Gateway</h3>
-              <p class="text-xs text-foreground-600">Configurações de rede, portas e hosts autorizados</p>
+              <h3 class="text-base font-bold text-foreground-900">Gateway Server</h3>
+              <p class="text-xs text-foreground-600">Network settings, ports, and authorized hosts</p>
             </div>
             ${this.configResponse?.path
         ? html`<span class="text-[11px] font-mono text-foreground-400 bg-black/5 dark:bg-white/5 px-2.5 py-1 rounded-lg truncate max-w-xs" title="${this.configResponse.path}">
@@ -1229,7 +1229,7 @@ export class OmpSettingsView extends LitElement {
                 ?disabled=${this.saving}
                 class="omp-settings-btn-primary"
               >
-                ${this.saving ? "Salvando…" : "Salvar Configurações do Gateway"}
+                ${this.saving ? "Saving…" : "Save Gateway Settings"}
               </button>
             </div>
           </form>
@@ -1240,9 +1240,9 @@ export class OmpSettingsView extends LitElement {
           class="p-5 md:p-6 rounded-3xl omp-settings-card flex flex-col gap-3"
           style="clip-path: var(--clip-path-squircle-28, none);"
         >
-          <h3 class="text-base font-bold text-foreground-900">Autenticação & Segurança</h3>
+          <h3 class="text-base font-bold text-foreground-900">Authentication & Security</h3>
           <div class="flex items-center justify-between text-xs text-foreground-700">
-            <span>Status da Autenticação</span>
+            <span>Authentication Status</span>
             <span class="font-bold px-2 py-0.5 rounded-md ${this.configResponse?.config.authRequired
         ? "bg-emerald-500/20 text-emerald-600 dark:text-emerald-400"
         : "bg-amber-500/20 text-amber-600 dark:text-amber-400"
@@ -1348,7 +1348,7 @@ export class OmpSettingsView extends LitElement {
                 ?disabled=${this.saving}
                 class="omp-settings-btn-primary"
               >
-                ${this.saving ? "Salvando…" : "Salvar Configurações de Sessão"}
+                ${this.saving ? "Saving…" : "Save Session Settings"}
               </button>
             </div>
           </form>
@@ -1534,8 +1534,8 @@ export class OmpSettingsView extends LitElement {
           style="clip-path: var(--clip-path-squircle-28, none);"
         >
           <div class="flex flex-col gap-0.5">
-            <h3 class="text-base font-bold text-foreground-900">Atalhos de Teclado</h3>
-            <p class="text-xs text-foreground-600">Comandos rápidos para aumentar sua produtividade no OMP Web</p>
+            <h3 class="text-base font-bold text-foreground-900">Keyboard Shortcuts</h3>
+            <p class="text-xs text-foreground-600">Quick commands to boost your productivity in OMP Web</p>
           </div>
 
           <div class="flex flex-col omp-settings-divide mt-2">

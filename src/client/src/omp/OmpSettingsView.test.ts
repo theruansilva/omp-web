@@ -10,12 +10,12 @@ describe("OmpSettingsView", () => {
     expect(rendered).toBeDefined();
 
     const str = JSON.stringify(rendered);
-    expect(str).toContain("Configurações");
-    expect(str).toContain("Geral");
-    expect(str).toContain("Sessões & Daemon");
+    expect(str).toContain("Settings");
+    expect(str).toContain("General");
+    expect(str).toContain("Sessions & Daemon");
     expect(str).toContain("Plugins");
-    expect(str).toContain("Pacotes Pi");
-    expect(str).toContain("Atalhos");
+    expect(str).toContain("Pi Packages");
+    expect(str).toContain("Shortcuts");
   });
 
   it("renders account card with active user and sign-out button when authenticated", () => {
@@ -44,10 +44,10 @@ describe("OmpSettingsView", () => {
     const view = new OmpSettingsView();
     view.activeSection = "general";
     const str = JSON.stringify(view.render());
-    expect(str).toContain("Aparência & Tema");
+    expect(str).toContain("Appearance & Theme");
     expect(str).toContain("UI Colors");
-    expect(str).toContain("Saturação (Chroma)");
-    expect(str).toContain("Matiz da Cor (Hue)");
+    expect(str).toContain("Saturation (Chroma)");
+    expect(str).toContain("Color Hue");
     expect(str).toContain("Paletas Prontas (Presets)");
     expect(str).toContain("Paleta de Cores Calculada (OKLCH)");
     expect(str).toContain("Amostras de Componentes");
@@ -63,14 +63,14 @@ describe("OmpSettingsView", () => {
     const view = new OmpSettingsView();
     view.activeSection = "general";
     const str = JSON.stringify(view.render());
-    expect(str).toContain("Aparência & Tema");
-    expect(str).toContain("Exibição do Chat");
-    expect(str).toContain("Raciocínio do Modelo");
-    expect(str).toContain("Execuções de Ferramentas");
-    expect(str).toContain("Eventos de Sessão");
-    expect(str).toContain("Modo Vim");
-    expect(str).toContain("Servidor Gateway");
-    expect(str).toContain("Autenticação & Segurança");
+    expect(str).toContain("Appearance & Theme");
+    expect(str).toContain("Chat Display");
+    expect(str).toContain("Model Reasoning");
+    expect(str).toContain("Tool Executions");
+    expect(str).toContain("Session Events");
+    expect(str).toContain("Vim Mode");
+    expect(str).toContain("Gateway Server");
+    expect(str).toContain("Authentication & Security");
   });
 
   it("renders sessiond section with spawn sessions and uploads config", () => {
@@ -81,7 +81,7 @@ describe("OmpSettingsView", () => {
     expect(str).toContain("Spawn Sessions");
     expect(str).toContain("Subsessões Rastreadas (Beta)");
     expect(str).toContain("Uploads & Limites de Arquivo");
-    expect(str).toContain("Salvar Configurações de Sessão");
+    expect(str).toContain("Save Session Settings");
   });
 
   it("renders plugins section", () => {
@@ -105,7 +105,7 @@ describe("OmpSettingsView", () => {
     const view = new OmpSettingsView();
     view.activeSection = "shortcuts";
     const str = JSON.stringify(view.render());
-    expect(str).toContain("Atalhos de Teclado");
+    expect(str).toContain("Keyboard Shortcuts");
     expect(str).toContain("Shift + Enter");
     expect(str).toContain("Ctrl + B / Cmd + B");
     expect(str).toContain("/btw <pergunta>");

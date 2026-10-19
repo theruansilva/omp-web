@@ -293,7 +293,7 @@ describe("OmpChatView rendering", () => {
     const rendered = chatView.render();
     const text = getAllTemplateText(rendered);
     expect(text).toContain("bash");
-    expect(text).toContain("Erro");
+    expect(text).toContain("Console error");
     expect(text).toContain("Command");
     expect(text).toContain("failed");
     expect(text).toContain("exit");
@@ -322,7 +322,7 @@ describe("OmpChatView rendering", () => {
 
     let rendered = chatView.render();
     let text = getAllTemplateText(rendered);
-    expect(text).toContain("Buscando no código…"); // statusText from running grep
+    expect(text).toContain("Searching codebase…"); // statusText from running grep
     expect((chatView as any).isProcessBlockOpen("msg-2", true)).toBe(true);
 
     // 2. Once response is ready: auto-collapses to 'pensou em...'
@@ -344,7 +344,7 @@ describe("OmpChatView rendering", () => {
 
     rendered = chatView.render();
     text = getAllTemplateText(rendered);
-    expect(text).toContain("pensou em");
+    expect(text).toContain("thought about");
     expect(text).toContain("Analisando estrutura de pastas");
     expect(text).toContain("Encontrei 5 arquivos correspondentes.");
     expect((chatView as any).isProcessBlockOpen("msg-2", false)).toBe(false);
@@ -449,7 +449,7 @@ describe("OmpChatView Conditional Tool Icons and High Contrast", () => {
     const text = getAllTemplateText(rendered);
 
     // Error icon
-    expect(text).toContain("Erro no console");
+    expect(text).toContain("Console error");
     expect(text).toContain("bash");
 
     // Completed: only tool icon, no checkmark
@@ -457,7 +457,7 @@ describe("OmpChatView Conditional Tool Icons and High Contrast", () => {
     expect(text).not.toContain("Concluído com sucesso");
 
     // Running animation
-    expect(text).toContain("Executando");
+    expect(text).toContain("Running");
     expect(text).toContain("eval");
   });
 });
