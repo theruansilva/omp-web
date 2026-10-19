@@ -3,10 +3,12 @@
 ## v3.0.1
 
 - 🛠️ **AskTool & Interactive Composer**: Natively integrated `ask` tool drawer into composer for keyboard-first interactive choices, deprecating legacy markdown options.
+- ⚡ **Composer Dock Autocomplete**: Integrated compact autocomplete dropdown directly into the composer dock for commands (`/`), skills, and files (`@`) with keyboard navigation and dark-mode contrast tokens.
+- 💬 **Message Editing & Process Body**: Added in-place editing for sent user messages and a unified collapsible process block grouping interleaved thinking blocks and tool execution steps cleanly.
 - 🔒 **Process Reaper & Execution Safeguards**: Automated cleanup of orphan processes on startup and loop/deadlock detection guards in prompt execution.
 - 🎨 **Design System & Contrast Tokens**: Refined sidebar hierarchy, contrasted project cards, calibrated OKLCH surface tokens (anti-black/anti-white compliance), and polished monospace fonts.
 - ♿ **Accessibility & Motion**: Implemented focus trap, ARIA dialog roles, settings tablist navigation, expanded touch targets, and `prefers-reduced-motion` calibration.
-- ⚡ **Performance & Bundle Pruning**: Removed `@material/web` dependency and eliminated textarea layout reflows.
+- ⚡ **Performance & Bundle Pruning**: Removed `@material/web` dependency, optimized chat expanders with on-demand content rendering, and eliminated textarea layout reflows.
 
 ## v3.0.0
 

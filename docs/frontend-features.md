@@ -28,6 +28,7 @@ This document details the frontend features, components, and capabilities implem
 - **Composer Hub Input**:
   - Context triggers: `/` (slash commands), `@` (file and directory picker), and `!` / `#` (workspace context hubs).
   - Multi-line autosizing editor, markdown preview, image upload, and attachment badges.
+  - **Dock Context & Autocomplete**: Autocomplete dropdown directly in the dock for slash commands (`/`), skills, and files (`@`) with keyboard navigation and strict 5-item limit.
   - Immediate generation cancellation via `Escape` key or prioritized Stop button.
 - **Interactive AskTool Drawer (`OmpAskDialog` / Composer Ask Mode)**:
   - Natively integrated interactive drawer in `OmpComposer` replacing legacy static options.
@@ -57,7 +58,8 @@ This document details the frontend features, components, and capabilities implem
 ## 6. Chat Stream & Session Lifecycle
 - **Real-Time Streaming Chat**: WebSockets connected directly to `omp-web-sessiond`.
 - **Monolithic Code Blocks**: Styled code cards with language badges, copy-to-clipboard buttons, and syntax highlighting.
-- **Collapsible Tool Callouts**: Dynamic execution cards for agent tools (`bash`, `read`, `write`, `edit`, `ast_edit`, `skill`, etc.) streaming stdout/stderr live.
+- **Collapsible Tool Callouts & Interleaved Process Block**: Dynamic execution cards and unified collapsible process body grouping interleaved thinking blocks, execution traces, and tool steps cleanly separated from assistant prose.
+- **Message Editing**: In-place edit action on sent user messages to re-prompt or branch sessions from previous conversation turns.
 - **Thinking Budget Indicator**: Real-time gauge for model reasoning levels.
 - **Archive & Bulk Cleanup**: Full lifecycle control to archive, restore, or bulk clean old sessions.
 
