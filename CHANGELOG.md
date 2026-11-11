@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- 🐛 **Duplicated sessions**: Opening a session that is live in another omp process (e.g. the terminal) no longer forks it into a new copy on every request; the web shows its history read-only and refuses prompts until it is closed there. The first messages/status requests for a session also share one runtime instead of opening it twice.
+- 🐛 **Duplicated sessions**: Opening a session that is live in another omp process (e.g. the terminal) no longer forks it into a new copy on every request; the web shows its history read-only and refuses prompts until it is closed there. The first messages/status requests for a session also share one runtime instead of opening it twice, and bulk archive closes a loaded runtime first so it cannot recreate the archived file.
 
 ## v3.2.0
 

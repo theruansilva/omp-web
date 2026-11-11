@@ -1244,7 +1244,8 @@ export class PiSessionService {
 
    try {
     if (listed !== undefined) {
-     planItems.push({ input: archiveInputFromListEntry(listed) });
+     // A loaded runtime must be closed first or it rewrites the moved file on its next write or exit.
+     planItems.push({ input: archiveInputFromListEntry(listed), ...(active === undefined ? {} : { activeSession: active.runtime.session }) });
     } else if (active !== undefined) {
      planItems.push({ input: archiveInputFromActiveSession(active.runtime.session), activeSession: active.runtime.session });
     } else {

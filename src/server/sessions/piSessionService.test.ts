@@ -704,6 +704,24 @@ describe("PiSessionService", () => {
     await service.dispose();
   });
 
+  it("bulk archive closes a loaded idle runtime so it cannot rewrite the archived file", async () => {
+    const idle = fakeRuntime("idle");
+    const service = new PiSessionService(new CapturingSessionEventHub(), {
+      createAgentRuntime: runtimeCreator(idle.runtime),
+      archiveStore: { ...emptyArchiveStore(), archiveMany: (inputs) => Promise.resolve(inputs.map((input) => ({ sessionId: input.sessionId, cwd: input.cwd, archivedAt: "2026-01-03T00:00:00.000Z" }))) },
+      sessionManager: sessionGateway([sessionRecord("idle")]),
+      heartbeatIntervalMs: 60_000,
+    });
+
+    await service.status(sessionRef("idle"));
+    const result = await service.archiveMany([{ id: "idle", cwd: "/workspace" }]);
+
+    expect(result.archivedSessionIds).toEqual(["idle"]);
+    expect(idle.calls.dispose).toBe(1);
+    expect(service.activeCount()).toBe(0);
+    await service.dispose();
+  });
+
   it("bulk deletes only archived sessions and skips busy active archived runtimes", async () => {
     const busyRecord = { sessionId: "busy-archived", cwd: "/workspace", archivedAt: "2026-01-02T00:00:00.000Z", archivePath: "/archive/busy.jsonl" };
     const idleRecord = { sessionId: "idle-archived", cwd: "/workspace", archivedAt: "2026-01-02T00:00:00.000Z", archivePath: "/archive/idle.jsonl" };
