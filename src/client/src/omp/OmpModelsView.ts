@@ -4,11 +4,9 @@ import type { SessionModel } from "../../../shared/apiTypes";
 import { normalizeModelName, classifyModelSource } from "../modelCategories";
 import {
   renderModelProviderIcon,
-  renderArrowLeftIcon,
   renderCheckIcon,
   renderBoltIcon,
   renderBrainIcon,
-  renderFeatherIcon,
   renderSparklesIcon,
   renderChevronDownIcon,
 } from "./icons";
@@ -47,6 +45,7 @@ export const TUI_ROLES: ModelRoleItem[] = [
 export class OmpModelsView extends LitElement {
   @property({ attribute: false }) models: SessionModel[] = [];
   @property({ attribute: false }) currentModel?: SessionModel;
+  @property({ attribute: false }) roleModels: Record<string, SessionModel> = {};
   @property({ type: String }) thinkingLevel = "medium";
   @property({ type: Boolean }) isWorking = false;
 
@@ -144,340 +143,251 @@ export class OmpModelsView extends LitElement {
     return [{ id: "all", label: "Todos os Provedores" }, ...categories];
   }
 
+  /**
+   * Squircle surface. clip-path lives on a background layer (not the container) so
+   * popovers can overflow, and the hairline outline is a drop-shadow on the wrapper,
+   * which follows the clipped curve exactly (a CSS border gets cut at the corners).
+   */
+  private surface(content: unknown, opts: { radius?: number; className?: string; tint?: boolean } = {}) {
+    const radius = opts.radius ?? 28;
+    return html`
+      <div class="omp-squircle-surface ${opts.tint ? "is-active" : ""} ${opts.className ?? ""}">
+        <div class="omp-squircle-fill" style="--surf-clip: var(--clip-path-squircle-${radius}, none);"></div>
+        <div class="relative h-full">${content}</div>
+      </div>
+    `;
+  }
+
+  private assignedRoles(model: SessionModel): ModelRoleItem[] {
+    return TUI_ROLES.filter((r) => {
+      const m = this.roleModels[r.id];
+      return m && m.provider === model.provider && m.id === model.id;
+    });
+  }
+
+  private renderRoleSummary() {
+    const roles = [
+      { id: "default", label: "Padrão", icon: renderSparklesIcon, color: "text-emerald-500" },
+      { id: "slow", label: "Slow", icon: renderBrainIcon, color: "text-blue-500" },
+      { id: "smol", label: "Smol", icon: renderBoltIcon, color: "text-amber-500" },
+    ];
+    return html`
+      <section class="flex flex-col gap-3" aria-label="Modelos por papel">
+        <div class="flex items-center justify-between gap-3 flex-wrap">
+          <h2 class="text-sm font-semibold text-foreground-900">Em uso</h2>
+          <div class="flex items-center gap-2">
+            <span class="text-xs text-foreground-600">Raciocínio</span>
+            <div class="flex items-center gap-0.5 p-0.5 rounded-xl bg-black/5 dark:bg-white/5" role="group" aria-label="Nível de raciocínio">
+              ${["off", "low", "medium", "high"].map(
+                (lvl) => html`
+                  <button
+                    type="button"
+                    class="px-3 h-7 rounded-[10px] text-xs font-semibold transition-colors cursor-pointer ${this.thinkingLevel === lvl
+                      ? "bg-black/10 dark:bg-white/15 text-foreground-900"
+                      : "text-foreground-600 hover:text-foreground-900"}"
+                    @click=${() => this.handleSetThinking(lvl)}
+                  >
+                    ${lvl}
+                  </button>
+                `,
+              )}
+            </div>
+          </div>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+          ${roles.map((r) => {
+            const m = this.roleModels[r.id] ?? (r.id === "default" ? this.currentModel : undefined);
+            const name = m?.id ? normalizeModelName(m.provider || "", m.id, m.name) : undefined;
+            return this.surface(
+              html`
+                <div class="p-4 flex flex-col gap-3 min-w-0">
+                  <div class="flex items-center justify-between gap-2">
+                    <span class="flex items-center gap-1.5 text-xs font-semibold text-foreground-600">
+                      <span class="${r.color}">${r.icon("size-4")}</span>
+                      ${r.label}
+                    </span>
+                    <span class="font-mono text-[11px] text-foreground-600">@${r.id}</span>
+                  </div>
+                  ${name
+                    ? html`
+                        <div class="flex items-center gap-3 min-w-0">
+                          <div class="size-10 rounded-xl bg-black/5 dark:bg-white/10 flex items-center justify-center shrink-0">
+                            ${renderModelProviderIcon(m?.provider, "size-5 text-foreground-900")}
+                          </div>
+                          <div class="flex flex-col min-w-0">
+                            <span class="text-base font-semibold text-foreground-900 truncate" title="${name}">${name}</span>
+                            <span class="text-xs text-foreground-600 font-mono truncate">${m?.provider}/${m?.id}</span>
+                          </div>
+                        </div>
+                      `
+                    : html`<span class="text-sm text-foreground-600">Não configurado</span>`}
+                </div>
+              `,
+              { radius: 28 },
+            );
+          })}
+        </div>
+      </section>
+    `;
+  }
+
+  private renderModelCard(m: SessionModel) {
+    const provider = m.provider || "";
+    const id = m.id || "";
+    const key = `${provider}/${id}`;
+    const normalized = normalizeModelName(provider, id, m.name);
+    const isActive = provider === this.currentModel?.provider && id === this.currentModel?.id;
+    const menuOpen = this.activeRoleMenuModelKey === key;
+    const assigned = this.assignedRoles(m);
+    const badge = "text-[11px] px-2 py-0.5 rounded-lg bg-black/5 dark:bg-white/10 text-foreground-600";
+
+    return this.surface(
+      html`
+        <div class="p-4 flex flex-col gap-4 h-full">
+          <div class="flex items-start gap-3 min-w-0">
+            <div class="size-11 rounded-xl bg-black/5 dark:bg-white/10 flex items-center justify-center shrink-0">
+              ${renderModelProviderIcon(provider, "size-6 text-foreground-900")}
+            </div>
+            <div class="flex flex-col min-w-0 flex-1">
+              <span class="text-base font-semibold text-foreground-900 leading-tight truncate" title="${normalized}">${normalized}</span>
+              <span class="text-xs text-foreground-600 font-mono truncate mt-1" title="${key}">${key}</span>
+            </div>
+            ${isActive
+              ? html`<span class="shrink-0 flex items-center gap-1 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">${renderCheckIcon("size-3.5")} Ativo</span>`
+              : nothing}
+          </div>
+
+          <div class="flex items-center gap-1.5 flex-wrap min-h-[22px]">
+            ${m.contextWindow ? html`<span class="${badge} font-mono">${Math.round(m.contextWindow / 1000)}k</span>` : nothing}
+            ${m.reasoning ? html`<span class="${badge}" title="Suporta raciocínio profundo">Thinking</span>` : nothing}
+            ${assigned.map((r) => html`<span class="text-[11px] px-2 py-0.5 rounded-lg bg-black/5 dark:bg-white/10 font-mono font-semibold text-foreground-900">${r.tag}</span>`)}
+          </div>
+
+          <div class="flex items-center gap-2 mt-auto">
+            <button
+              type="button"
+              class="flex-1 h-9 rounded-xl text-sm font-semibold transition-colors ${isActive
+                ? "bg-black/5 dark:bg-white/10 text-foreground-600 cursor-default"
+                : "bg-black/5 dark:bg-white/10 text-foreground-900 hover:bg-black/10 dark:hover:bg-white/15 cursor-pointer"}"
+              ?disabled=${isActive}
+              @click=${() => this.handleSelectModel(m, false, "default")}
+            >
+              ${isActive ? "Em uso na sessão" : "Usar na sessão"}
+            </button>
+            <div class="relative">
+              <button
+                type="button"
+                class="h-9 px-3 flex items-center gap-1.5 rounded-xl text-sm font-semibold bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/15 text-foreground-900 transition-colors cursor-pointer"
+                aria-haspopup="menu"
+                aria-expanded=${menuOpen ? "true" : "false"}
+                @click=${(e: Event) => {
+                  e.stopPropagation();
+                  this.activeRoleMenuModelKey = menuOpen ? null : key;
+                }}
+              >
+                Papéis ${renderChevronDownIcon("size-3")}
+              </button>
+              ${menuOpen
+                ? html`
+                    <div
+                      class="absolute right-0 top-full mt-2 z-50 w-56 max-h-72 overflow-y-auto p-1.5 rounded-2xl flex flex-col gap-0.5 text-sm select-none"
+                      role="menu"
+                      style="background: var(--surf-popover, var(--omp-surface-elevated)); border: 1px solid var(--omp-popover-border); backdrop-filter: blur(24px) saturate(180%); -webkit-backdrop-filter: blur(24px) saturate(180%); box-shadow: 0 16px 36px -8px rgba(0, 0, 0, 0.4);"
+                      @click=${(e: Event) => e.stopPropagation()}
+                    >
+                      <span class="px-2.5 py-1 text-[11px] font-semibold text-foreground-600">Definir como</span>
+                      ${TUI_ROLES.map(
+                        (r) => html`
+                          <button
+                            type="button"
+                            role="menuitem"
+                            class="flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-xl hover:bg-black/5 dark:hover:bg-white/10 text-left transition-colors cursor-pointer"
+                            @click=${() => this.handleSelectModel(m, true, r.id)}
+                          >
+                            <span class="font-medium text-foreground-900">${r.name}</span>
+                            <span class="font-mono text-[11px] text-foreground-600">${r.tag}</span>
+                          </button>
+                        `,
+                      )}
+                    </div>
+                  `
+                : nothing}
+            </div>
+          </div>
+        </div>
+      `,
+      { radius: 28, tint: isActive, className: menuOpen ? "z-30" : "" },
+    );
+  }
+
   override render() {
     const filtered = this.getFilteredModels();
     const categories = this.getAvailableCategories();
-    const activeProvider = this.currentModel?.provider;
-    const activeId = this.currentModel?.id;
-    const activeNormalized = activeId
-      ? normalizeModelName(activeProvider || "", activeId, this.currentModel?.name)
-      : "Padrão (@default)";
 
     return html`
       <div
-        class="h-full flex flex-col overflow-y-auto font-sans select-text p-4 md:p-8 space-y-6 max-w-6xl mx-auto"
+        class="h-full overflow-y-auto font-sans select-text px-4 md:px-8 pb-16 max-w-5xl mx-auto flex flex-col gap-8"
+        style="padding-top: 4.5rem;"
         @click=${() => { if (this.activeRoleMenuModelKey) this.activeRoleMenuModelKey = null; }}
       >
-        <!-- Top Navigation & Header -->
-        <div class="flex items-center justify-between flex-wrap gap-4 pb-2 border-b border-black/10 dark:border-white/10">
-          <div class="flex items-center gap-3.5">
-            <button
-              type="button"
-              class="flex items-center gap-2 px-3.5 py-2 rounded-2xl bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/15 text-sm font-semibold text-foreground-800 transition-colors cursor-pointer border border-black/10 dark:border-white/10 shadow-xs"
-              @click=${() => this.dispatchEvent(new CustomEvent("close", { bubbles: true, composed: true }))}
-            >
-              ${renderArrowLeftIcon("size-4")}
-              <span>Voltar ao Chat</span>
-            </button>
-            <div class="flex flex-col">
-              <h1 class="text-xl md:text-2xl font-black text-foreground-900 tracking-tight flex items-center gap-2">
-                <span>AI Models Catalog</span>
-                <span class="text-xs px-2.5 py-0.5 rounded-full bg-blue-500/15 text-blue-600 dark:text-blue-400 font-bold">
-                  ${this.models.length} models
-                </span>
-              </h1>
-              <p class="text-xs text-foreground-500 mt-0.5">
-                Selecione o modelo ativo ou associe modelos específicos a cada papel da TUI (@default, @smol, @slow, @tiny, etc.)
-              </p>
-            </div>
-          </div>
-
+        <header class="flex items-center justify-between gap-3 flex-wrap">
+          <p class="text-sm text-foreground-600">${this.models.length} modelos disponíveis</p>
           ${this.feedbackMessage
-        ? html`
-                <div class="px-3.5 py-1.5 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 text-xs font-bold animate-fade-in shadow-xs flex items-center gap-1.5">
-                  <span class="size-1.5 rounded-full bg-emerald-500"></span>
-                  ${this.feedbackMessage}
+            ? html`
+                <div class="flex items-center gap-2 px-3 h-8 rounded-xl bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 text-xs font-semibold" role="status">
+                  ${renderCheckIcon("size-3.5")} ${this.feedbackMessage}
                 </div>
               `
-        : nothing}
-        </div>
+            : nothing}
+        </header>
 
-        <!-- TUI Roles & Current Active Model Banner (Acrylic Squircles) -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
-          <!-- 1. Default Role -->
-          <div
-            class="p-5 rounded-3xl omp-settings-card flex flex-col justify-between gap-3 shadow-xs"
-            style="clip-path: var(--clip-path-squircle-28, none);"
-          >
-            <div class="flex items-center justify-between">
-              <span class="text-xs font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
-                ${renderSparklesIcon("size-3.5")}
-                Modelo Ativo
-              </span>
-              <span class="text-[10px] px-2 py-0.5 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-mono font-bold border border-emerald-500/20">
-                @default
-              </span>
-            </div>
-            <div class="flex items-center gap-3">
-              <div class="size-10 rounded-2xl bg-black/5 dark:bg-white/10 flex items-center justify-center shrink-0 border border-black/5 dark:border-white/10 shadow-xs">
-                ${renderModelProviderIcon(activeProvider, "size-5 text-foreground-800")}
-              </div>
-              <div class="flex flex-col min-w-0">
-                <span class="text-base font-bold text-foreground-900 truncate" title="${activeNormalized}">
-                  ${activeNormalized}
-                </span>
-                <span class="text-xs text-foreground-500 font-mono truncate">
-                  ${activeProvider ? `${activeProvider}/${activeId}` : "automático"}
-                </span>
-              </div>
-            </div>
-          </div>
+        ${this.renderRoleSummary()}
 
-          <!-- 2. Fast / Smol Role -->
-          <div
-            class="p-5 rounded-3xl omp-settings-card flex flex-col justify-between gap-3 shadow-xs"
-            style="clip-path: var(--clip-path-squircle-28, none);"
-          >
-            <div class="flex items-center justify-between">
-              <span class="text-xs font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400 flex items-center gap-1.5">
-                ${renderBoltIcon("size-3.5")}
-                Fast / Smol
-              </span>
-              <span class="text-[10px] px-2 py-0.5 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 font-mono font-bold border border-amber-500/20">
-                @smol
-              </span>
-            </div>
-            <p class="text-xs text-foreground-600 leading-relaxed">
-              Execução com baixa latência e custo reduzido para tarefas leves, commits e reparo automático de sintaxe.
-            </p>
-          </div>
-
-          <!-- 3. Thinking / Slow Role + Reasoning Level -->
-          <div
-            class="p-5 rounded-3xl omp-settings-card flex flex-col justify-between gap-3 shadow-xs sm:col-span-2 lg:col-span-1"
-            style="clip-path: var(--clip-path-squircle-28, none);"
-          >
-            <div class="flex items-center justify-between">
-              <span class="text-xs font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400 flex items-center gap-1.5">
-                ${renderBrainIcon("size-3.5")}
-                Thinking / Slow
-              </span>
-              <span class="text-[10px] px-2 py-0.5 rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400 font-mono font-bold border border-blue-500/20">
-                @slow
-              </span>
-            </div>
-            <div class="flex items-center justify-between gap-2 flex-wrap">
-              <span class="text-xs font-semibold text-foreground-700">Reasoning Level:</span>
-              <div class="flex items-center gap-1 p-0.5 rounded-xl bg-black/5 dark:bg-white/10 border border-black/5 dark:border-white/10">
-                ${["off", "low", "medium", "high"].map(
-          (lvl) => html`
-                    <button
-                      type="button"
-                      class="px-2 py-0.5 rounded-lg text-[10px] font-bold transition-all cursor-pointer ${this.thinkingLevel === lvl
-              ? "bg-[var(--omp-primary)] text-white shadow-xs"
-              : "text-foreground-600 hover:text-foreground-900"
-            }"
-                      @click=${() => this.handleSetThinking(lvl)}
-                    >
-                      ${lvl.toUpperCase()}
-                    </button>
-                  `,
-        )}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- TUI Roles Quick Strip -->
-        <div class="flex flex-col gap-2">
-          <div class="flex items-center justify-between">
-            <span class="text-xs font-bold text-foreground-700 uppercase tracking-wider">Papéis Disponíveis na TUI:</span>
-          </div>
-          <div class="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar">
-            ${TUI_ROLES.map(
-          (role) => html`
-                <div
-                  class="flex items-center gap-1.5 px-3 py-1.5 rounded-2xl omp-settings-card shrink-0 text-xs shadow-xs"
-                  style="clip-path: var(--clip-path-squircle-20, none);"
-                >
-                  <span class="font-bold ${role.color}">${role.tag}</span>
-                  <span class="text-foreground-600 font-medium">${role.name}</span>
-                </div>
+        <section class="flex flex-col gap-4" aria-label="Catálogo">
+          <div class="flex flex-col gap-3">
+            ${this.surface(
+              html`
+                <label class="flex items-center gap-3 px-4 h-11 text-foreground-600">
+                  <svg class="size-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                  </svg>
+                  <input
+                    type="text"
+                    class="flex-1 min-w-0 bg-transparent text-sm text-foreground-900 placeholder:text-foreground-600 outline-none"
+                    placeholder="Buscar modelo ou provedor"
+                    .value=${this.searchQuery}
+                    @input=${(e: Event) => { this.searchQuery = (e.target as HTMLInputElement).value; }}
+                  />
+                </label>
               `,
-        )}
-          </div>
-        </div>
-
-        <!-- Search Bar and Category Filters -->
-        <div class="flex flex-col gap-3">
-          <div class="relative w-full">
-            <input
-              type="text"
-              class="w-full px-4 py-3 pl-11 rounded-2xl omp-settings-card text-sm text-foreground-900 placeholder:text-foreground-400 outline-none focus:outline-none focus:border-black/20 dark:focus:border-white/20 transition-all shadow-xs"
-              placeholder="Pesquisar por modelo ou provedor (ex: claude, gpt-4o, gemini, deepseek, ollama)..."
-              .value=${this.searchQuery}
-              @input=${(e: Event) => {
-        this.searchQuery = (e.target as HTMLInputElement).value;
-      }}
-            />
-            <div class="absolute left-4 top-1/2 -translate-y-1/2 text-foreground-400 pointer-events-none">
-              <svg class="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                <circle cx="11" cy="11" r="8"></circle>
-                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-              </svg>
-            </div>
-          </div>
-
-          <!-- Provider Filter Chips -->
-          <div class="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar">
-            ${categories.map(
-        (cat) => html`
-                <button
-                  type="button"
-                  class="px-3.5 py-1.5 rounded-2xl text-xs font-semibold whitespace-nowrap transition-all cursor-pointer border shadow-xs ${this.selectedCategory === cat.id
-            ? "bg-[var(--omp-primary)] text-white border-transparent font-bold shadow-xs"
-            : "omp-settings-card text-foreground-700 hover:text-foreground-900"
-          }"
-                  @click=${() => {
-            this.selectedCategory = cat.id;
-          }}
-                >
-                  ${cat.label}
-                </button>
-              `,
-      )}
-          </div>
-        </div>
-
-        <!-- Models Grid (Acrylic Squircles with Provider Logos & Role Assignment) -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pb-12">
-          ${filtered.length === 0
-        ? html`
-                <div class="col-span-full py-16 text-center text-foreground-400 text-sm">
-                  Nenhum modelo encontrado correspondente ao filtro "${this.searchQuery}".
-                </div>
-              `
-        : filtered.map((m) => {
-          const provider = m.provider || "";
-          const id = m.id || "";
-          const key = `${provider}/${id}`;
-          const normalized = normalizeModelName(provider, id, m.name);
-          const isSelected = provider === activeProvider && id === activeId;
-          const isRoleMenuOpen = this.activeRoleMenuModelKey === key;
-          const contextStr = m.contextWindow
-            ? `${Math.round(m.contextWindow / 1000)}k contexto`
-            : undefined;
-          const hasReasoning = Boolean(m.reasoning);
-
-          return html`
-                  <div
-                    class="p-5 rounded-3xl omp-settings-card flex flex-col justify-between gap-4 transition-all duration-200 hover:scale-[1.01] shadow-xs relative ${isSelected ? "ring-2 ring-blue-500/60" : ""
-            }"
-                    style="clip-path: var(--clip-path-squircle-28, none);"
+              { radius: 16 },
+            )}
+            <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+              ${categories.map(
+                (cat) => html`
+                  <button
+                    type="button"
+                    class="px-3.5 h-8 rounded-xl text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer ${this.selectedCategory === cat.id
+                      ? "bg-black/10 dark:bg-white/15 text-foreground-900"
+                      : "text-foreground-600 hover:bg-black/5 dark:hover:bg-white/8"}"
+                    @click=${() => { this.selectedCategory = cat.id; }}
                   >
-                    <!-- Header with Provider Icon, Normalized Title and Badges -->
-                    <div class="flex items-start justify-between gap-3">
-                      <div class="flex items-start gap-3.5 min-w-0">
-                        <div class="size-11 rounded-2xl bg-black/5 dark:bg-white/10 flex items-center justify-center shrink-0 border border-black/5 dark:border-white/10 shadow-xs mt-0.5">
-                          ${renderModelProviderIcon(provider, "size-6 text-foreground-900")}
-                        </div>
-                        <div class="flex flex-col min-w-0">
-                          <div class="flex items-center gap-2 flex-wrap">
-                            <span class="text-base font-bold text-foreground-900 leading-tight">
-                              ${normalized}
-                            </span>
-                            ${isSelected
-              ? html`
-                                  <span class="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
-                                    <span class="size-1.5 rounded-full bg-emerald-500"></span>
-                                    Ativo
-                                  </span>
-                                `
-              : nothing}
-                          </div>
-                          <span class="text-xs text-foreground-500 font-mono truncate mt-1" title="${provider}/${id}">
-                            ${provider}/${id}
-                          </span>
-                        </div>
-                      </div>
-
-                      <!-- Context Window & Thinking Badges -->
-                      <div class="flex items-center gap-1.5 shrink-0 flex-wrap justify-end">
-                        ${contextStr
-              ? html`
-                              <span class="text-[10px] px-2 py-0.5 rounded-lg bg-black/5 dark:bg-white/10 text-foreground-600 font-mono border border-black/5 dark:border-white/10">
-                                ${contextStr}
-                              </span>
-                            `
-              : nothing}
-                        ${hasReasoning
-              ? html`
-                              <span class="text-[10px] px-2 py-0.5 rounded-lg bg-purple-500/15 text-purple-600 dark:text-purple-400 font-bold border border-purple-500/20" title="Suporta raciocínio profundo">
-                                🧠 Think
-                              </span>
-                            `
-              : nothing}
-                      </div>
-                    </div>
-
-                    <!-- Action Buttons: Usar na Sessão, Definir Padrão, Atribuir a Papel -->
-                    <div class="flex items-center justify-between gap-2 pt-3 border-t border-black/5 dark:border-white/5 relative">
-                      <!-- Dropdown to assign this model to ANY TUI role -->
-                      <div class="relative">
-                        <button
-                          type="button"
-                          class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/15 text-foreground-700 transition-colors cursor-pointer border border-black/5 dark:border-white/10"
-                          @click=${(e: Event) => {
-              e.stopPropagation();
-              this.activeRoleMenuModelKey = isRoleMenuOpen ? null : key;
-            }}
-                        >
-                          <span>Papéis TUI</span>
-                          ${renderChevronDownIcon("size-3")}
-                        </button>
-
-                        ${isRoleMenuOpen
-              ? html`
-                              <div
-                                class="absolute left-0 bottom-full mb-2 z-50 min-w-[200px] max-h-[280px] overflow-y-auto p-1.5 rounded-2xl shadow-2xl flex flex-col gap-0.5 text-xs font-sans pointer-events-auto select-none"
-                                style="background: var(--omp-surface-popover, #1e2330); color: var(--omp-text-primary, #fff); border: 1px solid var(--omp-popover-border, rgba(255, 255, 255, 0.15)); backdrop-filter: blur(24px) saturate(180%); -webkit-backdrop-filter: blur(24px) saturate(180%); box-shadow: 0 16px 36px -4px rgba(0, 0, 0, 0.5);"
-                                @click=${(e: Event) => e.stopPropagation()}
-                              >
-                                <span class="px-2.5 py-1 text-[10px] font-bold text-foreground-400 uppercase tracking-wider">
-                                  Atribuir a papel:
-                                </span>
-                                ${TUI_ROLES.map(
-                (r) => html`
-                                    <button
-                                      type="button"
-                                      class="flex items-center justify-between px-2.5 py-1.5 rounded-xl hover:bg-black/5 dark:hover:bg-white/10 text-left transition-colors cursor-pointer"
-                                      @click=${() => this.handleSelectModel(m, true, r.id)}
-                                    >
-                                      <span class="font-bold ${r.color}">${r.tag}</span>
-                                      <span class="text-foreground-500 text-[11px]">${r.name}</span>
-                                    </button>
-                                  `,
+                    ${cat.label}
+                  </button>
+                `,
               )}
-                              </div>
-                            `
-              : nothing}
-                      </div>
+            </div>
+          </div>
 
-                      <div class="flex items-center gap-2">
-                        <button
-                          type="button"
-                          class="px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${isSelected
-              ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 cursor-default font-bold"
-              : "bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/15 text-foreground-800 border border-black/5 dark:border-white/10"
-            }"
-                          @click=${() => this.handleSelectModel(m, false, "default")}
-                        >
-                          ${isSelected ? "✓ Ativo" : "Usar na Sessão"}
-                        </button>
-                        <button
-                          type="button"
-                          class="px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-[var(--primary)] hover:opacity-90 active:scale-95 text-white transition-all cursor-pointer shadow-xs font-bold"
-                          @click=${() => this.handleSelectModel(m, true, "default")}
-                          title="Definir como modelo padrão global (@default)"
-                        >
-                          Definir Padrão
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                `;
-        })}
-        </div>
+          ${filtered.length === 0
+            ? html`
+                <div class="py-16 text-center text-foreground-600 text-sm">
+                  ${this.models.length === 0 ? "Nenhum modelo disponível." : "Nenhum modelo corresponde à busca."}
+                </div>
+              `
+            : html`<div class="grid grid-cols-1 md:grid-cols-2 gap-4">${filtered.map((m) => this.renderModelCard(m))}</div>`}
+        </section>
       </div>
     `;
   }

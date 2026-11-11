@@ -2356,3 +2356,41 @@ html[data-theme="dark"] .composer-dropdown-popover .composer-dropdown-icon {
      filter: none !important;
    }
  }
+
+/* Squircle surface: clip-path on the fill layer, outline + lift as drop-shadow on the wrapper
+   (a CSS border/box-shadow gets cut by clip-path). Light and dark are tuned separately because
+   the dark canvas is too close to the card alpha for a single token to separate them. */
+.omp-squircle-surface {
+  --surf-bg: oklch(100% 0 0 / 0.72);
+  --surf-bg-active: color-mix(in oklab, var(--primary) 10%, oklch(100% 0 0 / 0.8));
+  --surf-line: oklch(0% 0 0 / 0.10);
+  --surf-line-active: var(--primary);
+  --surf-lift: oklch(0% 0 0 / 0.08);
+  position: relative;
+  filter: drop-shadow(0 0 0.75px var(--surf-line)) drop-shadow(0 6px 16px var(--surf-lift));
+}
+.dark .omp-squircle-surface,
+[data-theme="dark"] .omp-squircle-surface {
+  --surf-bg: oklch(23% 0.022 260 / 0.92);
+  --surf-bg-active: color-mix(in oklab, var(--primary) 16%, oklch(23% 0.022 260));
+  --surf-line: oklch(100% 0 0 / 0.16);
+  --surf-lift: oklch(0% 0 0 / 0.40);
+}
+.omp-squircle-surface.is-active { --surf-bg: var(--surf-bg-active); --surf-line: var(--surf-line-active); }
+.omp-squircle-fill {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  clip-path: var(--surf-clip, none);
+  background: var(--surf-bg);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+}
+
+/* Placeholder for the contenteditable prompt input (a div has no native placeholder). */
+omp-prompt-input[data-empty]::before {
+  content: attr(placeholder);
+  color: var(--omp-text-secondary);
+  opacity: 0.7;
+  pointer-events: none;
+}
