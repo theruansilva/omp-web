@@ -67,6 +67,15 @@ function applyFinalMessage(messages: ChatLine[], rawMessage: unknown): ChatLine[
 function applyFinalLine(messages: ChatLine[], displayEnded: ChatLine): ChatLine[] {
   const skillReadIndexes = findMatchingSkillReadIndexes(messages, displayEnded);
   if (skillReadIndexes.length > 0) return replaceSkillReadLines(messages, skillReadIndexes, displayEnded);
+  if (displayEnded.role === "user") {
+    // Hook-injected system lines (notices, handoffs) can land between the optimistic user line and its server echo.
+    let index = messages.length - 1;
+    while (index >= 0 && messages[index]?.role === "system") index--;
+    const echoed = messages[index];
+    if (echoed?.role === "user" && index < messages.length - 1 && sameMessageText(echoed, displayEnded)) {
+      return [...messages.slice(0, index), displayEnded, ...messages.slice(index + 1)];
+    }
+  }
   const last = messages.at(-1);
   if (last?.role !== displayEnded.role) return [...messages, displayEnded];
   if (displayEnded.role === "assistant" || sameMessageText(last, displayEnded)) return [...messages.slice(0, -1), displayEnded];

@@ -357,3 +357,18 @@ describe("applyTranscriptEvent", () => {
     expect(messages).toEqual([{ role: "assistant", parts: [{ type: "thinking", text: "thinking more" }] }]);
   });
 });
+
+describe("user message echo behind hook-injected system lines", () => {
+  const echo = { type: "message.end" as const, message: { role: "user", content: [{ type: "text", text: "alow, teste" }] } };
+
+  it("replaces the optimistic user line instead of duplicating it", () => {
+    const optimistic: ChatLine[] = [textMessage("user", "alow, teste"), textMessage("system", "<system-notice>")];
+    const result = applyTranscriptEvent(optimistic, echo);
+    expect(result.map((l) => l.role)).toEqual(["user", "system"]);
+  });
+
+  it("still appends a genuinely repeated user message after an assistant reply", () => {
+    const lines: ChatLine[] = [textMessage("user", "alow, teste"), textMessage("assistant", "oi"), textMessage("system", "notice")];
+    expect(applyTranscriptEvent(lines, echo).map((l) => l.role)).toEqual(["user", "assistant", "system", "user"]);
+  });
+});
