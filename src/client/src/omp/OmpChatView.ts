@@ -3,7 +3,7 @@ import { unsafeHTML } from "lit/directives/unsafe-html.js";
 import { highlightCodeBlock } from "../formatting/syntaxHighlight";
 import { customElement, property, state } from "lit/decorators.js";
 import { renderOmpLogo, renderLoadingDots, renderPaperclipIcon, renderBranchIcon, renderPencilIcon, renderDotMatrixIcon } from "./icons";
-import type { PromptAttachment, PlanModeStatus } from "../../../shared/apiTypes";
+import type { PromptAttachment, PlanModeStatus, SessionModel } from "../../../shared/apiTypes";
 import "../components/ai";
 import "./OmpComposer";
 import type { BtwState, ComposerProject, PendingCommandDialog } from "./OmpComposer";
@@ -69,6 +69,7 @@ export class OmpChatView extends LitElement {
   @property({ type: String }) selectedProjectId = "proj-1";
   @property({ type: String }) selectedModel = "Default";
   @property({ type: String }) selectedProvider = "";
+  @property({ attribute: false }) roleModels: Record<string, SessionModel> = {};
   @property({ attribute: false }) btwState?: BtwState;
   @property({ attribute: false }) pendingAsk?: { requestId: string; questions: AskDialogQuestion[] };
   @property({ attribute: false }) pendingCommand?: PendingCommandDialog;
@@ -832,6 +833,7 @@ export class OmpChatView extends LitElement {
               .selectedProjectId=${this.selectedProjectId}
               .selectedModel=${this.selectedModel}
               .selectedProvider=${this.selectedProvider}
+              .roleModels=${this.roleModels}
               .btwState=${this.btwState}
               .pendingAsk=${this.pendingAsk}
               .pendingCommand=${this.pendingCommand}
@@ -851,7 +853,6 @@ export class OmpChatView extends LitElement {
               @cancel-command=${(e: CustomEvent) => this.dispatchEvent(new CustomEvent("cancel-command", { detail: e.detail, bubbles: true, composed: true }))}
               @open-models=${() => this.dispatchEvent(new CustomEvent("open-models", { bubbles: true, composed: true }))}
               @model-change=${(e: CustomEvent) => this.dispatchEvent(new CustomEvent("model-change", { detail: e.detail, bubbles: true, composed: true }))}
-              @model-tier-change=${(e: CustomEvent) => this.dispatchEvent(new CustomEvent("model-tier-change", { detail: e.detail, bubbles: true, composed: true }))}
               @submit-ask=${(e: CustomEvent) => {
                 this.dispatchEvent(new CustomEvent("submit-ask", { detail: e.detail, bubbles: true, composed: true }));
               }}

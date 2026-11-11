@@ -24,7 +24,7 @@ import type { ModelSelectDetail } from "./OmpModelsView";
 import type { PendingCommandDialog } from "./OmpComposer";
 import type { CommandResult } from "../../../shared/apiTypes";
 import { normalizeModelName } from "../modelCategories";
-import type { SessionModel, PlanModeStatus } from "../../../shared/apiTypes";
+import type { SessionModel, PlanModeStatus, ModelSelectionResponse } from "../../../shared/apiTypes";
 import "../components/MachineDialog";
 import type { MachineDialogSubmit } from "../components/MachineDialog";
 import "../components/AuthDialog";
@@ -283,6 +283,7 @@ export class OmpApp extends LitElement {
   @state() private authDialog?: AuthDialogState;
   @state() private availableModels: SessionModel[] = [];
   @state() private currentSessionModel?: SessionModel;
+  @state() private roleModels: Record<string, SessionModel> = {};
   @state() private currentThinkingLevel = "medium";
   @state() private pendingSelectedModel?: { provider: string; modelId: string; persist?: boolean; role?: string };
 
@@ -568,6 +569,13 @@ export class OmpApp extends LitElement {
     void this.refreshActiveSessions();
     void this.checkAuthStatus();
     void this.loadSessionModels();
+  }
+
+  override updated(changed: Map<PropertyKey, unknown>) {
+    // Home screen has no session yet; roles come from the workspace config instead.
+    if (!this.selectedSessionId && (changed.has("selectedProjectId") || changed.has("workspacesByProject") || changed.has("selectedWorkspaceId"))) {
+      void this.loadSessionModels();
+    }
   }
 
   override disconnectedCallback() {
@@ -1706,7 +1714,10 @@ export class OmpApp extends LitElement {
     try {
       const sessionRef = { id: targetSessionId || "", cwd: effectiveCwd };
       const [modelsRes, statusRes] = await Promise.all([
-        sessionsApi.models(sessionRef, this.currentMachineId).catch(() => ({ models: [] })),
+        (targetSessionId
+          ? sessionsApi.models(sessionRef, this.currentMachineId)
+          : sessionsApi.roleModels(effectiveCwd, this.currentMachineId)
+        ).catch((): ModelSelectionResponse => ({ models: [] })),
         targetSessionId
           ? sessionsApi.status(sessionRef, this.currentMachineId).catch(() => undefined)
           : undefined,
@@ -1714,6 +1725,9 @@ export class OmpApp extends LitElement {
 
       if (Array.isArray(modelsRes?.models) && modelsRes.models.length > 0) {
         this.availableModels = modelsRes.models;
+      }
+      if (modelsRes?.roles) {
+        this.roleModels = modelsRes.roles;
       }
       if (statusRes?.model) {
         this.currentSessionModel = statusRes.model;
@@ -1802,30 +1816,8 @@ export class OmpApp extends LitElement {
     }
   }
 
-  private async handleModelTierChange(tier: "fast" | "thinking" | "smol") {
-    const ws = this.getActiveWorkspace();
-    if (!ws) return;
-    const role = tier === "fast" ? "smol" : tier === "thinking" ? "slow" : "tiny";
-    try {
-      const sessionId = await this.ensureSession();
-      if (sessionId) {
-        await sessionsApi.runCommand(
-          { id: sessionId, cwd: ws.path },
-          `/model @${role}`,
-          this.currentMachineId,
-        );
-        void this.loadSessionModels(ws.path, sessionId);
-      }
-    } catch (err) {
-      console.error("[OMP] Failed to change model tier:", err);
-    }
-  }
-
-  private async handleModelChange(detail: { model: string; role?: string }) {
-    if (detail.role) {
-      const tier = detail.role === "smol" ? "fast" : detail.role === "slow" ? "thinking" : "smol";
-      await this.handleModelTierChange(tier);
-    }
+  private handleModelChange(detail: { provider?: string; modelId?: string }) {
+    if (detail.provider && detail.modelId) void this.handleModelSelect(detail.provider, detail.modelId);
   }
 
   private getActiveModelDisplayName(): string {
@@ -2254,6 +2246,7 @@ Dica: você pode selecionar uma das opções abaixo para testar a injeção auto
                 .selectedProjectId=${this.selectedProjectId}
                 .selectedModel=${this.getActiveModelDisplayName()}
                 .selectedProvider=${this.currentSessionModel?.provider || ""}
+                .roleModels=${this.roleModels}
                 .username=${this.currentUser}
                 .planMode=${this.currentPlanMode}
                 .extensionStatuses=${this.currentExtensionStatuses}
@@ -2269,8 +2262,7 @@ Dica: você pode selecionar uma das opções abaixo para testar a injeção auto
                 @open-plan-review=${() => { if (this.currentPlanMode?.proposedPlan) { this.artifact = { type: "plan", ...this.currentPlanMode.proposedPlan } as any; this.isArtifactOpen = true; } }}
                 @project-select=${(e: CustomEvent<{ projectId: string }>) => void this.handleProjectSelect(e.detail.projectId)}
                 @open-models=${() => { this.activeTab = "models"; this.syncUrl(); }}
-                @model-change=${(e: CustomEvent<{ model: string; role?: string }>) => void this.handleModelChange(e.detail)}
-                @model-tier-change=${(e: CustomEvent<{ tier: "fast" | "thinking" | "smol" }>) => void this.handleModelTierChange(e.detail.tier)}
+                @model-change=${(e: CustomEvent<{ provider?: string; modelId?: string }>) => { this.handleModelChange(e.detail); }}
                 @submit-prompt=${(e: CustomEvent<SubmitPromptDetail>) => this.handlePromptSubmit(e.detail)}
                 @stop-generation=${() => void this.handleStopGeneration()}
               ></omp-home-view>
@@ -2284,6 +2276,7 @@ Dica: você pode selecionar uma das opções abaixo para testar a injeção auto
                 .selectedProjectId=${this.selectedProjectId}
                 .selectedModel=${this.getActiveModelDisplayName()}
                 .selectedProvider=${this.currentSessionModel?.provider || ""}
+                .roleModels=${this.roleModels}
                 .btwState=${this.btwState}
                 .pendingAsk=${this.pendingAsk}
                 .pendingCommand=${this.pendingCommand}
@@ -2309,8 +2302,7 @@ Dica: você pode selecionar uma das opções abaixo para testar a injeção auto
             }}
                 @project-select=${(e: CustomEvent<{ projectId: string }>) => void this.handleProjectSelect(e.detail.projectId)}
                 @open-models=${() => { this.activeTab = "models"; this.syncUrl(); }}
-                @model-change=${(e: CustomEvent<{ model: string; role?: string }>) => void this.handleModelChange(e.detail)}
-                @model-tier-change=${(e: CustomEvent<{ tier: "fast" | "thinking" | "smol" }>) => void this.handleModelTierChange(e.detail.tier)}
+                @model-change=${(e: CustomEvent<{ provider?: string; modelId?: string }>) => { this.handleModelChange(e.detail); }}
                 @submit-btw=${(e: CustomEvent<{ question: string }>) => this.handleBtwSubmit(e.detail.question)}
                 @branch-btw=${(e: CustomEvent<{ state?: BtwState }>) => this.handleBranchBtw(e.detail?.state)}
                 @close-btw=${() => { this.btwState = undefined; }}
@@ -2357,14 +2349,11 @@ Dica: você pode selecionar uma das opções abaixo para testar a injeção auto
           <omp-models-view
             .models=${this.availableModels}
             .currentModel=${this.currentSessionModel}
+            .roleModels=${this.roleModels}
             .thinkingLevel=${this.currentThinkingLevel}
             .isWorking=${this.isStreaming}
             @select-model=${(e: CustomEvent<ModelSelectDetail>) => void this.handleModelSelect(e.detail.provider, e.detail.modelId, e.detail.persist, e.detail.role)}
             @set-thinking-level=${(e: CustomEvent<{ level: string }>) => void this.handleSetThinkingLevel(e.detail.level)}
-            @close=${() => {
-              this.activeTab = "new-chat";
-              this.syncUrl();
-            }}
           ></omp-models-view>
         `;
 

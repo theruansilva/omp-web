@@ -3,7 +3,7 @@ import type { Machine, MachineHealth } from "../api";
 import { customElement, property } from "lit/decorators.js";
 import "./OmpComposer";
 import type { ComposerProject } from "./OmpComposer";
-import type { PlanModeStatus } from "../../../shared/apiTypes";
+import type { PlanModeStatus, SessionModel } from "../../../shared/apiTypes";
 
 @customElement("omp-home-view")
 export class OmpHomeView extends LitElement {
@@ -14,6 +14,7 @@ export class OmpHomeView extends LitElement {
   @property({ type: String }) selectedProjectId = "proj-1";
   @property({ type: String }) selectedModel = "Default";
   @property({ type: String }) selectedProvider = "";
+  @property({ attribute: false }) roleModels: Record<string, SessionModel> = {};
   @property({ attribute: false }) planMode?: PlanModeStatus;
   @property({ attribute: false }) extensionStatuses?: Record<string, string>;
   @property({ type: String }) sessionId?: string;
@@ -54,6 +55,7 @@ export class OmpHomeView extends LitElement {
               .selectedProjectId=${this.selectedProjectId}
               .selectedModel=${this.selectedModel}
               .selectedProvider=${this.selectedProvider}
+              .roleModels=${this.roleModels}
               .planMode=${this.planMode}
               .extensionStatuses=${this.extensionStatuses}
               .sessionId=${this.sessionId}
@@ -67,7 +69,6 @@ export class OmpHomeView extends LitElement {
               @remove-machine=${(e: CustomEvent) => this.dispatchEvent(new CustomEvent("remove-machine", { detail: e.detail, bubbles: true, composed: true }))}
               @open-models=${() => this.dispatchEvent(new CustomEvent("open-models", { bubbles: true, composed: true }))}
               @model-change=${(e: CustomEvent) => this.dispatchEvent(new CustomEvent("model-change", { detail: e.detail, bubbles: true, composed: true }))}
-              @model-tier-change=${(e: CustomEvent) => this.dispatchEvent(new CustomEvent("model-tier-change", { detail: e.detail, bubbles: true, composed: true }))}
               @project-select=${(e: CustomEvent<{ projectId: string }>) => {
         this.selectedProjectId = e.detail.projectId;
         this.dispatchEvent(

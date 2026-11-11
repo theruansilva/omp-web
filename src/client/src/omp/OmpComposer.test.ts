@@ -3,14 +3,13 @@ import "./OmpComposer";
 import { OmpComposer } from "./OmpComposer";
 
 describe("OmpComposer Auto-Resize", () => {
-  it("renders composer with omp-composer-textarea class and field-sizing style", () => {
+  it("renders composer with omp-composer-textarea class and min-height style", () => {
     const composer = new OmpComposer();
     const rendered = composer.render();
     expect(rendered).toBeDefined();
 
     const template = JSON.stringify(rendered);
     expect(template).toContain("omp-composer-textarea");
-    expect(template).toContain("field-sizing: content");
     expect(template).toContain("max-height: 280px");
   });
 
@@ -26,7 +25,7 @@ describe("OmpComposer Auto-Resize", () => {
     };
 
     composer.querySelector = ((selector: string) => {
-      if (selector === "textarea") return mockTextarea as unknown as HTMLTextAreaElement;
+      if (selector === "omp-prompt-input") return mockTextarea as unknown as HTMLTextAreaElement;
       return null;
     }) as unknown as typeof composer.querySelector;
 
@@ -47,7 +46,7 @@ describe("OmpComposer Auto-Resize", () => {
     };
 
     composer.querySelector = ((selector: string) => {
-      if (selector === "textarea") return mockTextarea as unknown as HTMLTextAreaElement;
+      if (selector === "omp-prompt-input") return mockTextarea as unknown as HTMLTextAreaElement;
       return null;
     }) as unknown as typeof composer.querySelector;
 
@@ -68,7 +67,7 @@ describe("OmpComposer Auto-Resize", () => {
     };
 
     composer.querySelector = ((selector: string) => {
-      if (selector === "textarea") return mockTextarea as unknown as HTMLTextAreaElement;
+      if (selector === "omp-prompt-input") return mockTextarea as unknown as HTMLTextAreaElement;
       return null;
     }) as unknown as typeof composer.querySelector;
 

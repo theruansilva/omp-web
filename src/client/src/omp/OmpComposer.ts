@@ -13,6 +13,8 @@ import {
   fileCompletionInsertText,
 } from "../promptCompletions";
 import { isShellInput } from "../inputModes";
+import "./OmpPromptInput";
+import type { OmpPromptInput } from "./OmpPromptInput";
 import { customElement, property, state } from "lit/decorators.js";
 import {
   renderPlusIcon,
@@ -38,7 +40,6 @@ import {
   renderCloseIcon,
   renderBoltIcon,
   renderBrainIcon,
-  renderFeatherIcon,
   renderModelsIcon,
   renderTasksIcon,
   renderModelProviderIcon,
@@ -51,7 +52,9 @@ import {
 import type {
   PromptAttachment,
   PlanModeStatus,
+  SessionModel,
 } from "../../../shared/apiTypes";
+import { normalizeModelName } from "../modelCategories";
 import {
   createMobilePromptEnterMedia,
   readPromptEnterPreference,
@@ -59,6 +62,12 @@ import {
   shouldUsePromptEnterShiftShortcut,
   type PromptEnterMedia,
 } from "../promptEnterBehavior";
+
+const MODEL_ROLE_OPTIONS = [
+  { role: "default", label: "Default", color: "text-emerald-500", icon: () => renderSparklesIcon() },
+  { role: "slow", label: "Slow", color: "text-blue-500", icon: () => renderBrainIcon() },
+  { role: "smol", label: "Smol", color: "text-amber-500", icon: () => renderBoltIcon() },
+] as const;
 
 export interface PendingAttachment extends CapturedAttachment {
   readonly id: string;
@@ -196,6 +205,7 @@ export class OmpComposer extends LitElement {
     "Message to omp, use @ to mention a file or / to start a command";
   @property({ type: String }) selectedModel = "Default";
   @property({ type: String }) selectedProvider = "";
+  @property({ attribute: false }) roleModels: Record<string, SessionModel> = {};
   @property({ type: Boolean }) isWorking = false;
   @property({ type: Boolean }) compact = false;
   @property({ type: Boolean }) isAskOpen = false;
@@ -672,8 +682,8 @@ export class OmpComposer extends LitElement {
         : custom.detail.text;
     this.value = newText;
     const textarea = this.querySelector?.(
-      "textarea",
-    ) as HTMLTextAreaElement | null;
+      "omp-prompt-input",
+    ) as OmpPromptInput | null;
     if (textarea) {
       textarea.value = this.value;
     }
@@ -715,7 +725,7 @@ export class OmpComposer extends LitElement {
         }));
         if (typeof requestAnimationFrame !== "undefined") {
           requestAnimationFrame(() => {
-            this.querySelector("textarea")?.focus();
+            this.querySelector("omp-prompt-input")?.focus();
           });
         }
       } else if (this.pendingAsk && this.pendingAsk.questions.length > 0) {
@@ -732,7 +742,7 @@ export class OmpComposer extends LitElement {
         }));
         if (typeof requestAnimationFrame !== "undefined") {
           requestAnimationFrame(() => {
-            this.querySelector("textarea")?.focus();
+            this.querySelector("omp-prompt-input")?.focus();
           });
         }
       } else if (
@@ -800,8 +810,8 @@ export class OmpComposer extends LitElement {
 
       if (e.key === "1" || e.key === "2" || e.key === "3") {
         const textarea = this.querySelector(
-          "textarea",
-        ) as HTMLTextAreaElement | null;
+          "omp-prompt-input",
+        ) as OmpPromptInput | null;
         const isTextarea = document.activeElement === textarea;
         if (!isTextarea || this.value.trim() === "") {
           e.preventDefault();
@@ -904,8 +914,8 @@ export class OmpComposer extends LitElement {
   public setText(val: string, focus = true): void {
     this.value = val;
     const textarea = this.querySelector?.(
-      "textarea",
-    ) as HTMLTextAreaElement | null;
+      "omp-prompt-input",
+    ) as OmpPromptInput | null;
     if (textarea) {
       textarea.value = val;
       if (focus) {
@@ -918,8 +928,8 @@ export class OmpComposer extends LitElement {
   }
   public adjustTextareaHeight(): void {
     const textarea = this.querySelector?.(
-      "textarea",
-    ) as HTMLTextAreaElement | null;
+      "omp-prompt-input",
+    ) as OmpPromptInput | null;
     if (!textarea) return;
 
     if (!textarea.value) {
@@ -1054,8 +1064,8 @@ export class OmpComposer extends LitElement {
     this.value = `[${opt.id}] ${opt.title}`;
 
     const textarea = this.querySelector?.(
-      "textarea",
-    ) as HTMLTextAreaElement | null;
+      "omp-prompt-input",
+    ) as OmpPromptInput | null;
     if (textarea) {
       textarea.value = this.value;
     }
@@ -1200,12 +1210,11 @@ export class OmpComposer extends LitElement {
     return portal;
   }
 
-  private selectModel(model: string, role?: string) {
-    this.selectedModel = model;
+  private selectModel(model: SessionModel) {
     this.closeMenu();
     this.dispatchEvent(
       new CustomEvent("model-change", {
-        detail: { model, role },
+        detail: { provider: model.provider, modelId: model.id },
         bubbles: true,
         composed: true,
       }),
@@ -1475,59 +1484,31 @@ export class OmpComposer extends LitElement {
             data-testid="composer-dropdown-button-menu-contents"
             class="flex flex-col gap-0.5"
           >
-            <button
-              type="button"
-              role="menuitem"
-              tabindex="0"
-              data-selected=${this.selectedModel === "Fast" ? "true" : "false"}
-              class="group flex w-full items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium transition-colors hover:bg-black/5 dark:hover:bg-white/10 focus:bg-black/5 dark:focus:bg-white/10 focus:outline-none focus:outline-none active:bg-black/8 dark:active:bg-white/15 cursor-pointer select-none text-left ${this.selectedModel === "Fast" ? "bg-black/5 dark:bg-white/10" : ""}"
-              @click=${() => this.selectModel("Fast", "smol")}
-            >
-              <div class="composer-dropdown-icon size-5 shrink-0 flex items-center justify-center ${this.selectedModel === "Fast" ? "!text-amber-500" : "text-amber-500"}">
-                ${renderBoltIcon()}
-              </div>
-              <div class="grow flex flex-col min-w-0">
-                <span class="composer-dropdown-item text-sm font-medium leading-tight ${this.selectedModel === "Fast" ? "!text-amber-600 dark:!text-amber-400 font-semibold" : ""}">Fast</span>
-                <span class="composer-dropdown-desc text-xs font-normal leading-4 mt-0.5">Execução rápida para tarefas do dia a dia</span>
-              </div>
-              ${this.selectedModel === "Fast" ? renderCheckIcon("size-4 text-amber-500 shrink-0") : nothing}
-            </button>
-
-            <button
-              type="button"
-              role="menuitem"
-              tabindex="0"
-              data-selected=${this.selectedModel === "Thinking" ? "true" : "false"}
-              class="group flex w-full items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium transition-colors hover:bg-black/5 dark:hover:bg-white/10 focus:bg-black/5 dark:focus:bg-white/10 focus:outline-none focus:outline-none active:bg-black/8 dark:active:bg-white/15 cursor-pointer select-none text-left ${this.selectedModel === "Thinking" ? "bg-black/5 dark:bg-white/10" : ""}"
-              @click=${() => this.selectModel("Thinking", "slow")}
-            >
-              <div class="composer-dropdown-icon size-5 shrink-0 flex items-center justify-center ${this.selectedModel === "Thinking" ? "!text-blue-500" : "text-blue-500"}">
-                ${renderBrainIcon()}
-              </div>
-              <div class="grow flex flex-col min-w-0">
-                <span class="composer-dropdown-item text-sm font-medium leading-tight ${this.selectedModel === "Thinking" ? "!text-blue-600 dark:!text-blue-400 font-semibold" : ""}">Thinking</span>
-                <span class="composer-dropdown-desc text-xs font-normal leading-4 mt-0.5">Raciocínio profundo e arquitetura</span>
-              </div>
-              ${this.selectedModel === "Thinking" ? renderCheckIcon("size-4 text-blue-500 shrink-0") : nothing}
-            </button>
-
-            <button
-              type="button"
-              role="menuitem"
-              tabindex="0"
-              data-selected=${this.selectedModel === "Smol" ? "true" : "false"}
-              class="group flex w-full items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium transition-colors hover:bg-black/5 dark:hover:bg-white/10 focus:bg-black/5 dark:focus:bg-white/10 focus:outline-none focus:outline-none active:bg-black/8 dark:active:bg-white/15 cursor-pointer select-none text-left ${this.selectedModel === "Smol" ? "bg-black/5 dark:bg-white/10" : ""}"
-              @click=${() => this.selectModel("Smol", "tiny")}
-            >
-              <div class="composer-dropdown-icon size-5 shrink-0 flex items-center justify-center ${this.selectedModel === "Smol" ? "!text-purple-500" : "text-purple-500"}">
-                ${renderFeatherIcon()}
-              </div>
-              <div class="grow flex flex-col min-w-0">
-                <span class="composer-dropdown-item text-sm font-medium leading-tight ${this.selectedModel === "Smol" ? "!text-purple-600 dark:!text-purple-400 font-semibold" : ""}">Smol</span>
-                <span class="composer-dropdown-desc text-xs font-normal leading-4 mt-0.5">Modelo leve e compacto</span>
-              </div>
-              ${this.selectedModel === "Smol" ? renderCheckIcon("size-4 text-purple-500 shrink-0") : nothing}
-            </button>
+            ${MODEL_ROLE_OPTIONS.map(({ role, label, color, icon }) => {
+              const model = this.roleModels[role];
+              const name = model ? normalizeModelName(model.provider, model.id, model.name) : undefined;
+              const selected = !!model && name === this.selectedModel && (model.provider || "") === this.selectedProvider;
+              return html`
+                <button
+                  type="button"
+                  role="menuitem"
+                  tabindex="0"
+                  ?disabled=${!model}
+                  data-selected=${selected ? "true" : "false"}
+                  class="group flex w-full items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium transition-colors hover:bg-black/5 dark:hover:bg-white/10 focus:bg-black/5 dark:focus:bg-white/10 focus:outline-none active:bg-black/8 dark:active:bg-white/15 cursor-pointer select-none text-left disabled:opacity-50 disabled:cursor-not-allowed ${selected ? "bg-black/5 dark:bg-white/10" : ""}"
+                  @click=${() => { if (model) this.selectModel(model); }}
+                >
+                  <div class="composer-dropdown-icon size-5 shrink-0 flex items-center justify-center ${color}">
+                    ${icon()}
+                  </div>
+                  <div class="grow flex flex-col min-w-0">
+                    <span class="composer-dropdown-item text-sm font-medium leading-tight ${selected ? "font-semibold" : ""}">${label} <span class="font-mono text-xs text-foreground-500">@${role}</span></span>
+                    <span class="composer-dropdown-desc text-xs font-normal leading-4 mt-0.5 truncate">${name ?? "Não configurado"}</span>
+                  </div>
+                  ${selected ? renderCheckIcon(`size-4 shrink-0 ${color}`) : nothing}
+                </button>
+              `;
+            })}
 
             <div class="my-1 h-px bg-black/10 dark:bg-white/10"></div>
 
@@ -1572,8 +1553,8 @@ export class OmpComposer extends LitElement {
       if (typeof requestAnimationFrame !== "undefined") {
         requestAnimationFrame(() => {
           const textarea = this.querySelector?.(
-            "textarea",
-          ) as HTMLTextAreaElement | null;
+            "omp-prompt-input",
+          ) as OmpPromptInput | null;
           textarea?.focus();
         });
       }
@@ -1585,8 +1566,8 @@ export class OmpComposer extends LitElement {
     if (this.value.toLowerCase().startsWith("/btw")) {
       this.value = this.value.replace(/^\/btw\s*/i, "");
       const textarea = this.querySelector?.(
-        "textarea",
-      ) as HTMLTextAreaElement | null;
+        "omp-prompt-input",
+      ) as OmpPromptInput | null;
       if (textarea) textarea.value = this.value;
     }
     this.adjustTextareaHeight();
@@ -1646,8 +1627,8 @@ export class OmpComposer extends LitElement {
     this.closeFileMenu();
 
     const textarea = this.querySelector?.(
-      "textarea",
-    ) as HTMLTextAreaElement | null;
+      "omp-prompt-input",
+    ) as OmpPromptInput | null;
     if (textarea) {
       textarea.value = this.value;
       const cursorPos = (before + insertText + " ").length;
@@ -1664,7 +1645,7 @@ export class OmpComposer extends LitElement {
       this.value = this.value.replace(/^!+ */, "");
       const textarea =
         typeof this.querySelector === "function"
-          ? (this.querySelector("textarea") as HTMLTextAreaElement | null)
+          ? (this.querySelector("omp-prompt-input") as OmpPromptInput | null)
           : null;
       if (textarea) textarea.value = this.value;
       this.adjustTextareaHeight();
@@ -1704,8 +1685,8 @@ export class OmpComposer extends LitElement {
       this.isBtwMode = true;
       this.closeSlashMenu();
       const textarea = this.querySelector?.(
-        "textarea",
-      ) as HTMLTextAreaElement | null;
+        "omp-prompt-input",
+      ) as OmpPromptInput | null;
       if (textarea) {
         textarea.value = this.value;
         textarea.focus?.();
@@ -1720,8 +1701,8 @@ export class OmpComposer extends LitElement {
       this.value = "";
       this.closeSlashMenu();
       const textarea = this.querySelector?.(
-        "textarea",
-      ) as HTMLTextAreaElement | null;
+        "omp-prompt-input",
+      ) as OmpPromptInput | null;
       if (textarea) textarea.value = "";
       this.toggleMenu("model", "#composer-chat-mode-smart-button");
       return;
@@ -1746,8 +1727,8 @@ export class OmpComposer extends LitElement {
     this.value = `/${name} `;
     this.closeSlashMenu();
     const textarea = this.querySelector(
-      "textarea",
-    ) as HTMLTextAreaElement | null;
+      "omp-prompt-input",
+    ) as OmpPromptInput | null;
     if (textarea) {
       textarea.value = this.value;
       textarea.focus();
@@ -1830,15 +1811,15 @@ export class OmpComposer extends LitElement {
     if (typeof requestAnimationFrame !== "undefined") {
       requestAnimationFrame(() => {
         const textarea = this.querySelector?.(
-          "textarea",
-        ) as HTMLTextAreaElement | null;
+          "omp-prompt-input",
+        ) as OmpPromptInput | null;
         textarea?.focus();
       });
     }
   }
 
   private handleInput(e: Event) {
-    const val = (e.target as HTMLTextAreaElement).value;
+    const val = (e.target as OmpPromptInput).value;
     this.value = val;
     this.adjustTextareaHeight();
 
@@ -2025,8 +2006,8 @@ export class OmpComposer extends LitElement {
       this.value = "";
       this.isAskOpen = false;
       const textarea = this.querySelector?.(
-        "textarea",
-      ) as HTMLTextAreaElement | null;
+        "omp-prompt-input",
+      ) as OmpPromptInput | null;
       if (textarea) textarea.value = "";
       this.adjustTextareaHeight();
       this.requestUpdate();
@@ -2092,8 +2073,8 @@ export class OmpComposer extends LitElement {
       this.value = "";
       this.isAskOpen = false;
       const textarea = this.querySelector?.(
-        "textarea",
-      ) as HTMLTextAreaElement | null;
+        "omp-prompt-input",
+      ) as OmpPromptInput | null;
       if (textarea) textarea.value = "";
       this.adjustTextareaHeight();
       this.requestUpdate();
@@ -2145,8 +2126,8 @@ export class OmpComposer extends LitElement {
       this.isBtwMode = false;
       this.isWorking = true;
       const textarea = this.querySelector?.(
-        "textarea",
-      ) as HTMLTextAreaElement | null;
+        "omp-prompt-input",
+      ) as OmpPromptInput | null;
       if (textarea) textarea.value = "";
       this.adjustTextareaHeight();
       this.requestUpdate();
@@ -2173,8 +2154,8 @@ export class OmpComposer extends LitElement {
       this.isWorking = true;
     }
     const textarea = this.querySelector?.(
-      "textarea",
-    ) as HTMLTextAreaElement | null;
+      "omp-prompt-input",
+    ) as OmpPromptInput | null;
     if (textarea) textarea.value = "";
     this.adjustTextareaHeight();
     this.requestUpdate();
@@ -3028,7 +3009,7 @@ export class OmpComposer extends LitElement {
           type="button"
           title="Queue message (agent is working)"
           aria-label="Queue message"
-          class="relative flex items-center justify-center min-w-10 min-h-10 sm:size-9 rounded-2xl bg-[var(--primary)] text-[var(--omp-on-primary,#fff)] hover:opacity-90 active:scale-95 transition-all shadow-sm cursor-pointer select-none"
+          class="relative flex items-center justify-center min-w-10 min-h-10 sm:size-9 rounded-2xl border border-black/8 dark:border-white/10 bg-[var(--primary)] text-[var(--omp-on-primary,#fff)] hover:opacity-90 active:scale-95 transition-all shadow-sm cursor-pointer select-none"
           @click=${() => this.submit("followUp")}
         >
           ${renderQueueIcon("size-4")}
@@ -3044,7 +3025,7 @@ export class OmpComposer extends LitElement {
           type="button"
           title="Stop generating"
           aria-label="Stop generating"
-          class="relative flex items-center justify-center min-w-10 min-h-10 sm:size-9 rounded-2xl bg-[var(--primary)] text-[var(--omp-on-primary,#fff)] hover:opacity-90 active:scale-95 transition-all shadow-sm cursor-pointer select-none"
+          class="relative flex items-center justify-center min-w-10 min-h-10 sm:size-9 rounded-2xl border border-black/8 dark:border-white/10 bg-[var(--primary)] text-[var(--omp-on-primary,#fff)] hover:opacity-90 active:scale-95 transition-all shadow-sm cursor-pointer select-none"
           @click=${() => this.stopGeneration()}
         >
           ${renderStopIcon("size-4")}
@@ -3061,7 +3042,7 @@ export class OmpComposer extends LitElement {
           disabled
           title="Type a message to send"
           aria-label="Send message (empty input)"
-          class="relative flex items-center justify-center min-w-10 min-h-10 sm:size-9 rounded-2xl bg-[var(--primary)] text-[var(--omp-on-primary,#fff)] opacity-35 cursor-not-allowed select-none transition-all shadow-none"
+          class="relative flex items-center justify-center min-w-10 min-h-10 sm:size-9 rounded-2xl border border-black/8 dark:border-white/10 bg-[var(--primary)] text-[var(--omp-on-primary,#fff)] opacity-35 cursor-not-allowed select-none transition-all shadow-none"
         >
           ${renderSendIcon("size-5")}
         </button>
@@ -3075,7 +3056,7 @@ export class OmpComposer extends LitElement {
         type="button"
         title="Submit"
         aria-label="Submit"
-        class="relative flex items-center justify-center min-w-10 min-h-10 sm:size-9 rounded-2xl bg-[var(--primary)] text-[var(--omp-on-primary,#fff)] hover:opacity-90 active:scale-95 transition-all shadow-sm cursor-pointer select-none"
+        class="relative flex items-center justify-center min-w-10 min-h-10 sm:size-9 rounded-2xl border border-black/8 dark:border-white/10 bg-[var(--primary)] text-[var(--omp-on-primary,#fff)] hover:opacity-90 active:scale-95 transition-all shadow-sm cursor-pointer select-none"
         @click=${() => this.submit()}
       >
         ${renderSendIcon("size-5")}
@@ -3147,7 +3128,7 @@ export class OmpComposer extends LitElement {
                 }
 
                 <!-- Textarea container -->
-                <div class="pt-3 px-4 pb-0">
+                <div class="pt-3 px-4 pb-1.5">
                   <!-- Pending Attachments Section -->
                   ${this.renderPendingAttachments()}
 
@@ -3192,18 +3173,17 @@ export class OmpComposer extends LitElement {
                     `
                       : nothing
                   }
-                  <textarea
-                    rows="${this.compact ? "1" : "2"}"
+                  <omp-prompt-input
                     placeholder="${this.isBtwActive ? "Ask a side question with session context (/btw)..." : this.isAskOpen ? (this.askMode === "projects" ? "Type to filter or create project..." : "Type another option...") : this.placeholder}"
-                    class="omp-composer-textarea font-ligatures-none inline-block w-full resize-none overflow-y-hidden whitespace-pre-wrap bg-transparent align-top text-black outline-none placeholder:text-foreground-450 dark:text-white dark:placeholder:text-foreground-600/90 text-base-dense font-sans"
-                    style="field-sizing: content; max-height: 280px;"
+                    class="omp-composer-textarea select-text font-ligatures-none block w-full overflow-y-auto whitespace-pre-wrap break-words bg-transparent align-top text-black outline-none dark:text-white text-base-dense font-sans"
+                    style="min-height: 1lh; max-height: 280px;"
                     .value=${this.value}
                     @input=${(e: Event) => this.handleInput(e)}
                     @keydown=${(e: KeyboardEvent) => this.handleKeyDown(e)}
                     @keyup=${(e: KeyboardEvent) => this.handleKeyUp(e)}
                     @blur=${() => this.handleBlur()}
                     @paste=${(e: ClipboardEvent) => this.handlePaste(e)}
-                  ></textarea>
+                  ></omp-prompt-input>
                 </div>
 
                 <!-- Bottom Toolbar Row -->
