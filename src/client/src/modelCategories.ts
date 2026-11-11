@@ -116,7 +116,9 @@ export function normalizeModelName(provider = "", id = "", name?: string): strin
       if (/^\d+[bkm]$/i.test(word)) return word.toUpperCase();
       return word.charAt(0).toUpperCase() + word.slice(1);
     })
-    .join(" ");
+    .join(" ")
+    // "claude-opus-5-5" slugs encode "5.5" as two single-digit tokens
+    .replace(/\b(\d) (\d)\b/g, "$1.$2");
 
   return formatted || cleanId;
 }
