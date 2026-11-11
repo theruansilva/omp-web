@@ -1,5 +1,12 @@
 # Changelog
 
+## v3.2.0
+
+- 🧠 **Model menu**: The composer lists the real models behind `@default`, `@slow` and `@smol`, and selecting one actually switches the session model. Roles and the model list now load before a session exists, without the 1-2s provider refresh.
+- 💄 **Models page**: Redesigned with an "in use" row per role, leaner cards and a shared light/dark squircle surface (`.omp-squircle-surface`) that no longer clips borders or role menus.
+- ⌨️ **Prompt input**: The composer uses a `contenteditable` field so word-wise editing from extensions like Vimium C works in Firefox-based browsers; the send/stop buttons share the toolbar outline.
+- 🐛 **Model names**: Slugs such as `claude-opus-5-5` display as "Claude Opus 5.5".
+
 ## v3.1.0
 
 - 🗄️ **Native session lifecycle**: Archives now use the OMP CLI location and `.jsonl.gz` format, auto-archive is disabled by default, and idle sessions only unload from memory (see ADR 0001).
