@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- 🐛 **Duplicated sessions**: Opening a session that is live in another omp process (e.g. the terminal) no longer forks it into a new copy on every request; the web shows its history read-only and refuses prompts until it is closed there. The first messages/status requests for a session also share one runtime instead of opening it twice.
+
 ## v3.2.0
 
 - 🧠 **Model menu**: The composer lists the real models behind `@default`, `@slow` and `@smol`, and selecting one actually switches the session model. Roles and the model list now load before a session exists, without the 1-2s provider refresh.

@@ -157,6 +157,27 @@ function sessionIdFromLookup(ref: PiSessionLookup): string {
  return typeof ref === "string" ? ref : ref.id;
 }
 
+/** The session is live in another omp process: opening a runtime here would fork it into a new file. */
+class SessionOpenElsewhereError extends Error {
+ constructor(readonly sessionId: string, readonly path: string) {
+  super("Session is open in another omp process. Close it there to continue here.");
+  this.name = "SessionOpenElsewhereError";
+ }
+}
+
+function idleStatus(sessionId: string): ClientSessionStatus {
+ return {
+  sessionId,
+  isStreaming: false,
+  isCompacting: false,
+  isBashRunning: false,
+  pendingMessageCount: 0,
+  queuedMessages: [],
+  tokens: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, total: 0 },
+  cost: 0,
+ };
+}
+
 function isPiSessionRef(ref: PiSessionLookup): ref is PiSessionRef {
  return typeof ref !== "string";
 }
@@ -298,6 +319,7 @@ export class PiSessionService {
  private lastAutoArchiveSweepAt = 0;
  private readonly sessionLastActivity = new Map<string, number>();
  private readonly closingSessions = new Map<string, Promise<void>>();
+ private readonly openingSessions = new Map<string, Promise<ActiveSession<PiSessionRuntime>>>();
  private readonly commandService: SessionCommandService<PiAgentSession>;
  private readonly compactionPromptQueues = new Map<string, QueuedPrompt[]>();
  private readonly schedulePromptService = new SchedulePromptService();
@@ -939,12 +961,21 @@ export class PiSessionService {
  }
 
  async messages(ref: PiSessionLookup, page?: { before?: number; limit?: number }): Promise<unknown[] | ClientMessagePage> {
-  const session = await this.getOrOpen(ref);
-  return pageMessagesAtSafeBoundary(historyMessages(session), page);
+  try {
+   return pageMessagesAtSafeBoundary(historyMessages(await this.getOrOpen(ref)), page);
+  } catch (error) {
+   if (!(error instanceof SessionOpenElsewhereError)) throw error;
+   return pageMessagesAtSafeBoundary(historyMessages({ sessionManager: await this.sessionManager.open(error.path) }), page);
+  }
  }
 
  async status(ref: PiSessionLookup): Promise<ClientSessionStatus> {
-  return this.statusFromSession(await this.getOrOpen(ref));
+  try {
+   return this.statusFromSession(await this.getOrOpen(ref));
+  } catch (error) {
+   if (!(error instanceof SessionOpenElsewhereError)) throw error;
+   return idleStatus(error.sessionId);
+  }
  }
 
  async availableModels(ref: PiSessionLookup): Promise<ClientSessionModel[]> {
@@ -1281,17 +1312,7 @@ export class PiSessionService {
   if (archived === undefined) throw new Error("Session not found");
   await this.closeActive(archived.sessionId);
   await this.archiveStore.restore(archived.sessionId);
-  const restoredStatus: ClientSessionStatus = {
-   sessionId: archived.sessionId,
-   isStreaming: false,
-   isCompacting: false,
-   isBashRunning: false,
-   pendingMessageCount: 0,
-   queuedMessages: [],
-   tokens: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, total: 0 },
-   cost: 0,
-   archived: false,
-  };
+  const restoredStatus: ClientSessionStatus = { ...idleStatus(archived.sessionId), archived: false };
   this.events.publish(archived.sessionId, { type: "status.update", status: restoredStatus });
   this.events.publishGlobal({ type: "status.update", status: restoredStatus });
  }
@@ -1668,7 +1689,15 @@ export class PiSessionService {
    this.touchSessionActivity(active.runtime.session.sessionId);
    return active;
   }
+  // Concurrent first requests (messages + status) must share one runtime, not race to open the file twice.
+  const pending = this.openingSessions.get(sessionId);
+  if (pending !== undefined) return pending;
+  const opening = this.openInactive(ref).finally(() => this.openingSessions.delete(sessionId));
+  this.openingSessions.set(sessionId, opening);
+  return opening;
+ }
 
+ private async openInactive(ref: PiSessionLookup): Promise<ActiveSession<PiSessionRuntime>> {
   const archived = await this.getArchived(ref);
   if (archived?.archivePath !== undefined) {
    const openPath = await this.ensureReadableSessionFile(archived.archivePath, archived.sessionId);
@@ -1678,6 +1707,7 @@ export class PiSessionService {
    ? (await this.sessionManager.list(ref.cwd)).find((s) => s.id === ref.id || s.id.startsWith(ref.id))
    : (await this.sessionManager.listAll?.() ?? []).find((s) => s.id === ref || s.id.startsWith(ref));
   if (!match) throw new Error("Session not found");
+  if (this.sessionManager.isOpenElsewhere?.(match.id, match.path) === true) throw new SessionOpenElsewhereError(match.id, match.path);
   return this.create(await this.sessionManager.open(match.path), match.cwd);
  }
 
@@ -2197,7 +2227,7 @@ function stringValue(value: unknown): string {
  return typeof value === "string" ? value : "";
 }
 
-function historyMessages(session: PiAgentSession): unknown[] {
+function historyMessages(session: Pick<PiAgentSession, "sessionManager"> & Partial<Pick<PiAgentSession, "isStreaming" | "streamMessage">>): unknown[] {
  const messages: unknown[] = [];
  for (const entry of session.sessionManager.getBranch()) {
   if (!isRecord(entry)) continue;

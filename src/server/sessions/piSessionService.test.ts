@@ -219,6 +219,44 @@ describe("PiSessionService", () => {
       { role: "assistant", content: [{ type: "text", text: "in-flight partial" }] },
     ]);
   });
+  it("reads a session live in another omp process without opening a runtime that would fork it", async () => {
+    let createCalls = 0;
+    const createAgentRuntime: RuntimeCreator = () => {
+      createCalls += 1;
+      return Promise.resolve(fakeRuntime("terminal-session").runtime);
+    };
+    const service = new PiSessionService(new CapturingSessionEventHub(), {
+      createAgentRuntime,
+      sessionManager: {
+        ...sessionGateway([sessionRecord("terminal-session")]),
+        open: () => Promise.resolve(fakeSessionManager("/workspace", { getBranch: () => [{ type: "message", id: "e1", message: { role: "user", content: "from terminal" } }] })),
+        isOpenElsewhere: () => true,
+      },
+    });
+
+    expect(await service.messages(sessionRef("terminal-session"))).toEqual([{ role: "user", content: "from terminal", entryId: "e1", id: "e1" }]);
+    expect(await service.status(sessionRef("terminal-session"))).toMatchObject({ sessionId: "terminal-session", isStreaming: false });
+    await expect(service.prompt(sessionRef("terminal-session"), "hi from web")).rejects.toThrow("open in another omp process");
+    expect(createCalls).toBe(0);
+  });
+
+  it("opens one runtime when the first messages and status requests race", async () => {
+    let createCalls = 0;
+    const fake = fakeRuntime("dormant-session");
+    const createAgentRuntime: RuntimeCreator = async () => {
+      createCalls += 1;
+      await Promise.resolve();
+      return fake.runtime;
+    };
+    const service = new PiSessionService(new CapturingSessionEventHub(), {
+      createAgentRuntime,
+      sessionManager: sessionGateway([sessionRecord("dormant-session")]),
+    });
+
+    await Promise.all([service.messages(sessionRef("dormant-session")), service.status(sessionRef("dormant-session"))]);
+    expect(createCalls).toBe(1);
+  });
+
   it("starts sessions through an injected runtime creator", async () => {
     const hub = new CapturingSessionEventHub();
     const fake = fakeRuntime();

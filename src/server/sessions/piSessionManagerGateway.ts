@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import { readdir } from "node:fs/promises";
 import { homedir } from "node:os";
 import { dirname, isAbsolute, join, resolve } from "node:path";
-import { getAgentDir, SessionManager } from "@oh-my-pi/pi-coding-agent";
+import { FileSessionStorage, getAgentDir, SessionManager } from "@oh-my-pi/pi-coding-agent";
 import { canonicalizeStoredCwd, cwdPathsEqual } from "../workingDirectory.js";
 import type { PiSessionListEntry, PiSessionManager } from "./piSessionService.js";
 
@@ -81,6 +81,8 @@ export interface PiSessionManagerGateway {
  create(cwd: string, _options?: { parentSession?: string }): PiSessionManager;
  listAll?(): Promise<PiSessionListEntry[]>;
  open(path: string): Promise<PiSessionManager>;
+ /** Whether another live omp process writes this session; any write from here would fork it into a new file. */
+ isOpenElsewhere?(sessionId: string, path: string): boolean;
 }
 
 export type PiSessionManagerGatewayOptions = SessionDirResolverOptions;
@@ -130,6 +132,14 @@ export class DefaultPiSessionManagerGateway implements PiSessionManagerGateway {
 
  async open(path: string): Promise<PiSessionManager> {
   return SessionManager.open(path, dirname(path));
+ }
+
+ isOpenElsewhere(sessionId: string, path: string): boolean {
+  // omp >=18.12 leases a session to the process that writes it (null = held elsewhere); older omp has no lease and never forks.
+  const storage: FileSessionStorage & { claimSession?: (id: string, path: string) => (() => void) | null } = new FileSessionStorage();
+  const release = storage.claimSession?.(sessionId, path);
+  release?.();
+  return release === null;
  }
 }
 
