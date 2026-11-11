@@ -1,6 +1,9 @@
 # Changelog
 
-## Unreleased
+## v3.1.0
+
+- 🗄️ **Native session lifecycle**: Archives now use the OMP CLI location and `.jsonl.gz` format, auto-archive is disabled by default, and idle sessions only unload from memory (see ADR 0001).
+- 🐛 **Chat fixes**: The first user message is no longer duplicated when hooks inject system notices before its echo.
 
 - 🧩 **AI Elements (Lit)**: Ported shadcn AI Elements for the chat thread as light-DOM `ai-*` components (reasoning, chain of thought, tool, terminal, stack trace, subagent, confirmation, task, plan, queue, message, chat, suggestion, checkpoint). Chat thinking blocks and tool calls now render through `ai-reasoning`, `ai-tool` and `ai-terminal`. Catalogue at `?tab=ai-elements`.
 
