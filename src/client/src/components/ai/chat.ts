@@ -1,7 +1,5 @@
 import { html, type TemplateResult } from "lit";
-
 import { isNearScrollBottom } from "../../chatScrollPosition";
-import "./message";
 
 const BUTTON_CLASS =
   "absolute bottom-3 left-1/2 inline-flex -translate-x-1/2 cursor-pointer items-center gap-1.5 rounded-full border border-black/10 bg-background px-3 py-1.5 text-xs font-medium text-foreground-900 transition-colors hover:bg-black/5 dark:border-white/10 dark:hover:bg-white/10";
@@ -85,10 +83,10 @@ if (typeof customElements !== "undefined") customElements.define("ai-chat", AiCh
 export const chatDemo = (): TemplateResult => html`
   <ai-chat class="mx-auto h-72 w-full max-w-md">
     <div class="flex flex-col gap-6 p-4">
-      <ai-message sender="user" text="How do I add a settings dialog?"></ai-message>
-      <ai-message sender="assistant" text="Install Dialog, then open it from the gear button in the header. Focus moves into the dialog when it opens, and **Esc** closes it."></ai-message>
-      <ai-message sender="user" text="Can it close on outside click too?"></ai-message>
-      <ai-message sender="assistant" text="Yes. Dialog closes on outside click by default."></ai-message>
+      <p class="ml-auto max-w-[85%] rounded-2xl bg-black/5 px-3 py-2 text-sm dark:bg-white/10">How do I add a settings dialog?</p>
+      <p class="text-sm">Install Dialog, then open it from the gear button in the header. Focus moves into the dialog when it opens.</p>
+      <p class="ml-auto max-w-[85%] rounded-2xl bg-black/5 px-3 py-2 text-sm dark:bg-white/10">Can it close on outside click too?</p>
+      <p class="text-sm">Yes. Dialog closes on outside click by default.</p>
     </div>
   </ai-chat>
 `;

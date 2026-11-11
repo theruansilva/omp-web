@@ -1,4 +1,6 @@
 import { LitElement, html, nothing, type TemplateResult } from "lit";
+import { unsafeHTML } from "lit/directives/unsafe-html.js";
+import { highlightCodeBlock } from "../../formatting/syntaxHighlight";
 
 /** Shared step status for every AI element built on a trace line. */
 export type AiStatus = "pending" | "running" | "done" | "error";
@@ -79,4 +81,43 @@ export function formatDuration(ms: number): string {
   const s = Math.round(ms / 1000);
   if (s < 60) return `${s}s`;
   return `${Math.floor(s / 60)}m ${String(s % 60).padStart(2, "0")}s`;
+}
+
+/** Syntax-highlighted code (same tokenizer and `.tok-*` theme as the markdown renderer). */
+export function aiCode(text: string, lang?: string): TemplateResult {
+  const t = text.trim();
+  const language = lang ?? ((t.startsWith("{") && t.endsWith("}")) || (t.startsWith("[") && t.endsWith("]")) ? "json" : undefined);
+  const body = language === undefined ? escapeHtml(text) : highlightCodeBlock(text, language);
+  return html`<code class="tok-code block font-mono text-[11px] leading-relaxed">${unsafeHTML(body)}</code>`;
+}
+
+function escapeHtml(s: string): string {
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+/** Unified diff with added/removed/hunk line colors. */
+export function aiDiff(diff: string): TemplateResult[] {
+  return diff.split("\n").map((line) => {
+    const style = line.startsWith("+") && !line.startsWith("+++")
+      ? "color:#34d399;background:rgba(16,185,129,.12)"
+      : line.startsWith("-") && !line.startsWith("---")
+        ? "color:#f87171;background:rgba(239,68,68,.12)"
+        : line.startsWith("@@")
+          ? "color:#38bdf8;font-weight:700"
+          : "opacity:.8";
+    return html`<span class="block rounded-xs px-1.5 font-mono text-[11px] leading-relaxed" style=${style}>${line}</span>`;
+  });
+}
+
+/** Accent color per tool kind, matching the previous chat tool icons (inline: the theme remaps Tailwind palette classes). */
+export function toolColor(name: string): string {
+  const n = name.toLowerCase();
+  if (n === "bash" || n === "sh" || n === "terminal") return "#10b981";
+  if (n === "eval") return "#f59e0b";
+  if (n === "read" || n === "cat") return "#38bdf8";
+  if (n === "edit" || n === "patch") return "#818cf8";
+  if (n === "write") return "#14b8a6";
+  if (n === "task" || n === "todo") return "#f97316";
+  if (n.startsWith("mcp")) return "#a855f7";
+  return "#ec4899";
 }

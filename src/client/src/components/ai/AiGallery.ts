@@ -5,7 +5,6 @@ import { chainOfThoughtDemo } from "./chain-of-thought";
 import { chatDemo } from "./chat";
 import { checkpointDemo } from "./checkpoint";
 import { confirmationDemo } from "./confirmation";
-import { messageDemo } from "./message";
 import { planDemo } from "./plan";
 import { queueDemo } from "./queue";
 import { reasoningDemo } from "./reasoning";
@@ -17,7 +16,6 @@ import { terminalDemo } from "./terminal";
 import { toolDemo } from "./tool";
 
 const SECTIONS: readonly [title: string, demo: () => TemplateResult][] = [
-  ["Message", messageDemo],
   ["Chat", chatDemo],
   ["Reasoning", reasoningDemo],
   ["Chain of Thought", chainOfThoughtDemo],

@@ -1,5 +1,7 @@
 import { html, nothing, type TemplateResult } from "lit";
 import { customElement, property, query } from "lit/decorators.js";
+import { unsafeHTML } from "lit/directives/unsafe-html.js";
+import { highlightCodeBlock } from "../../formatting/syntaxHighlight";
 import { AI_CARD_CLASS, AiElement, aiStatusIcon, emit, formatDuration, type AiStatus } from "./trace";
 
 // ESC [ ... final-byte (CSI) and OSC sequences.
@@ -10,6 +12,33 @@ export function stripAnsi(text: string): string {
   return text.replace(ANSI_RE, "");
 }
 
+// SGR foreground codes -> theme tokens (no raw black/white).
+const ANSI_COLORS: Record<number, string> = {
+  31: "#f87171", 32: "#34d399", 33: "#fbbf24", 34: "#60a5fa", 35: "#c084fc", 36: "#22d3ee",
+  91: "#f87171", 92: "#34d399", 93: "#fbbf24", 94: "#60a5fa", 95: "#c084fc", 96: "#22d3ee",
+  90: "var(--text-muted)",
+};
+
+/** Splits ANSI-colored text into runs; only foreground colors are kept. */
+export function parseAnsi(text: string): { text: string; color?: string }[] {
+  const out: { text: string; color?: string }[] = [];
+  let color: string | undefined;
+  let last = 0;
+  const push = (chunk: string) => {
+    const t = stripAnsi(chunk);
+    if (t) out.push(color === undefined ? { text: t } : { text: t, color });
+  };
+  for (const m of text.matchAll(/\u001b\[([0-9;]*)m/g)) {
+    push(text.slice(last, m.index));
+    last = m.index + m[0].length;
+    for (const code of m[1]!.split(";").map(Number)) {
+      if (code === 0 || code === 39) color = undefined;
+      else if (ANSI_COLORS[code] !== undefined) color = ANSI_COLORS[code];
+    }
+  }
+  push(text.slice(last));
+  return out;
+}
 @customElement("ai-terminal")
 export class AiTerminal extends AiElement {
   @property() command = "";
@@ -35,13 +64,13 @@ export class AiTerminal extends AiElement {
     return html`<div class="${AI_CARD_CLASS} overflow-hidden">
       <div class="flex items-center gap-2 px-3 py-2">
         ${aiStatusIcon(status)}
-        <code class="min-w-0 flex-1 truncate font-mono text-xs text-foreground-900"><span class="text-foreground-600">$</span> ${this.command}</code>
+        <span class="tok-code min-w-0 flex-1 truncate font-mono text-xs text-foreground-900"><span class="text-foreground-600">$</span> ${unsafeHTML(highlightCodeBlock(this.command, "bash"))}</span>
         ${this.exitCode !== undefined ? html`<span class="text-[10px] ${failed ? "text-[var(--danger)]" : "text-foreground-600"}">exit ${this.exitCode}</span>` : nothing}
         ${this.durationMs !== undefined ? html`<span class="text-[10px] text-foreground-600">${formatDuration(this.durationMs)}</span>` : nothing}
         <button type="button" class="rounded-lg px-2 py-0.5 text-[10px] text-foreground-600 hover:bg-black/5 dark:hover:bg-white/10" aria-label="Copy output" @click=${this.copy}>Copy</button>
       </div>
       ${this.output
-        ? html`<pre class="m-2 mt-0 max-h-64 overflow-auto whitespace-pre-wrap break-words rounded-lg bg-black/5 p-2 font-mono text-[11px] leading-relaxed text-foreground-800 dark:bg-white/[0.06]">${stripAnsi(this.output)}</pre>`
+        ? html`<pre class="m-2 mt-0 max-h-64 overflow-auto whitespace-pre-wrap break-words rounded-lg bg-black/5 p-2 font-mono text-[11px] leading-relaxed dark:bg-white/[0.06] text-foreground-800" style=${failed || this.status === "error" ? "color:#f87171" : ""}>${parseAnsi(this.output).map((s) => (s.color === undefined ? s.text : html`<span style="color:${s.color}">${s.text}</span>`))}</pre>`
         : nothing}
     </div>`;
   }

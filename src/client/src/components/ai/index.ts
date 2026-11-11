@@ -3,7 +3,6 @@ export * from "./chain-of-thought";
 export * from "./chat";
 export * from "./checkpoint";
 export * from "./confirmation";
-export * from "./message";
 export * from "./plan";
 export * from "./queue";
 export * from "./reasoning";
