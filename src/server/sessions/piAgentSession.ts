@@ -9,6 +9,7 @@ import {
  ModelRegistry,
 } from "@oh-my-pi/pi-coding-agent";
 import { readPlanFile } from "@oh-my-pi/pi-coding-agent/plan-mode/plan-files";
+import { resolveRoleSelection } from "@oh-my-pi/pi-coding-agent/config/model-resolver";
 import type {
  ExtensionAskDialogQuestion,
  ExtensionAskDialogResult,
@@ -52,6 +53,18 @@ interface PiExtensionBindings {
  onError?: (error: PiExtensionError) => void;
 }
 
+export function resolveRoleModels(
+ settings: Parameters<typeof resolveRoleSelection>[1],
+ available: Parameters<typeof resolveRoleSelection>[2],
+): Record<string, AgentModel> {
+ const roles: Record<string, AgentModel> = {};
+ for (const role of ["default", "smol", "slow"]) {
+  const model = resolveRoleSelection([role], settings, available)?.model;
+  if (model) roles[role] = model;
+ }
+ return roles;
+}
+
 export interface PiAgentSession {
  modelRegistry: ModelRegistryInstance;
  sessionManager: PiSessionManager;
@@ -88,6 +101,7 @@ export interface PiAgentSession {
  getSteeringMessages(): readonly string[];
  getFollowUpMessages(): readonly string[];
  setModel(model: AgentModel, role?: string, options?: { persist?: boolean }): Promise<void>;
+ getRoleModels?(): Record<string, AgentModel>;
  cycleModel(direction?: "forward" | "backward"): Promise<{ model: AgentModel } | undefined>;
  getAvailableThinkingLevels(): ClientThinkingLevel[];
  setThinkingLevel(level: ClientThinkingLevel): void;
@@ -641,6 +655,10 @@ export class DefaultPiAgentSession implements PiAgentSession {
 
  async setModel(model: AgentModel, role = "default", options: { persist?: boolean } = {}): Promise<void> {
   await this.ompSession.setModel(model, role, options);
+ }
+ /** Resolves the configured @default/@smol/@slow roles against currently authenticated models. */
+ getRoleModels(): Record<string, AgentModel> {
+  return resolveRoleModels(this.ompSession.settings, this.ompSession.modelRegistry.getAvailable());
  }
  setThinkingLevel(level: ClientThinkingLevel): void {
   const setLevel = Reflect.get(this.ompSession, "setThinkingLevel");

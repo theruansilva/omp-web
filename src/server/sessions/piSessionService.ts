@@ -6,6 +6,8 @@ import {
  SessionManager,
 } from "@oh-my-pi/pi-coding-agent";
 import { ensureThemeSync } from "@oh-my-pi/pi-tui/theme";
+import { discoverAuthStorage, ModelRegistry, Settings } from "@oh-my-pi/pi-coding-agent";
+import { resolveRoleModels } from "./piAgentSession.js";
 
 ensureThemeSync();
 import type { AskDialogResult } from "../../shared/apiTypes.js";
@@ -947,11 +949,38 @@ export class PiSessionService {
 
  async availableModels(ref: PiSessionLookup): Promise<ClientSessionModel[]> {
   const session = await this.getOrOpen(ref);
-  await session.modelRegistry.refresh();
+  await session.modelRegistry.refresh("offline");
   const models = session.scopedModels.length > 0
    ? session.scopedModels.map((scoped) => scoped.model)
    : session.modelRegistry.getAvailable();
   return models.map(modelToClientModel);
+ }
+
+ // A full refresh() hits provider APIs (1-2s); the offline cache is enough to list models.
+ private modelRegistryPromise: Promise<ModelRegistry> | undefined;
+ private sharedModelRegistry(): Promise<ModelRegistry> {
+  this.modelRegistryPromise ??= (async () => {
+   const registry = new ModelRegistry(await discoverAuthStorage());
+   await registry.refresh("offline");
+   return registry;
+  })();
+  return this.modelRegistryPromise;
+ }
+
+ /** Models and roles before any session exists (home screen). */
+ async roleModelsForCwd(cwd: string): Promise<{ models: ClientSessionModel[]; roles: Record<string, ClientSessionModel> }> {
+  const available = (await this.sharedModelRegistry()).getAvailable();
+  const roles = resolveRoleModels(await Settings.init({ cwd }), available);
+  return {
+   models: available.map(modelToClientModel),
+   roles: Object.fromEntries(Object.entries(roles).map(([role, model]) => [role, modelToClientModel(model)])),
+  };
+ }
+
+ async roleModels(ref: PiSessionLookup): Promise<Record<string, ClientSessionModel>> {
+  const session = await this.getOrOpen(ref);
+  const roles = session.getRoleModels?.() ?? {};
+  return Object.fromEntries(Object.entries(roles).map(([role, model]) => [role, modelToClientModel(model)]));
  }
 
  async setModel(ref: PiSessionLookup, provider: string, modelId: string, options: { persist?: boolean; role?: string } = {}): Promise<ClientSessionStatus> {

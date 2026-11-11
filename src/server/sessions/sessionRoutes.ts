@@ -34,6 +34,16 @@ export function registerSessionRoutes(
     return c.json(sessions.activeSessionsSummary());
   });
 
+  app.get(`${prefix}/sessions/models`, async (c) => {
+    const cwd = c.req.query("cwd");
+    if (cwd === undefined || cwd === "") return c.json({ error: "cwd query parameter is required" }, 400);
+    try {
+      return c.json(await sessions.roleModelsForCwd(normalizeRequestCwd(cwd)));
+    } catch (error) {
+      return c.json({ error: errorMessage(error) }, 400);
+    }
+  });
+
   app.get(`${prefix}/sessions`, async (c) => {
     const cwd = c.req.query("cwd");
     if (cwd === undefined || cwd === "") return c.json({ error: "cwd query parameter is required" }, 400);
@@ -113,7 +123,9 @@ export function registerSessionRoutes(
   app.get(`${prefix}/sessions/:sessionId/models`, async (c) => {
     try {
       const sessionId = c.req.param("sessionId");
-      return c.json({ models: await sessions.availableModels(sessionLookupFromQuery(sessionId, c.req.query("cwd"))) });
+      const lookup = sessionLookupFromQuery(sessionId, c.req.query("cwd"));
+      const models = await sessions.availableModels(lookup);
+      return c.json({ models, roles: await sessions.roleModels(lookup) });
     } catch (error) {
       return c.json({ error: errorMessage(error) }, 404);
     }

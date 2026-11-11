@@ -240,6 +240,8 @@ export const sessionsApi = {
     request<SessionStatus>(sessionQueryUrl(session, "status", machineId)),
   models: (session: SessionLookup, machineId = "local") =>
     request<ModelSelectionResponse>(sessionQueryUrl(session, "models", machineId)),
+  roleModels: (cwd: string, machineId = "local") =>
+    request<ModelSelectionResponse>(`${machinePrefix(machineId)}/sessions/models?${new URLSearchParams({ cwd }).toString()}`),
   setModel: (
     session: SessionLookup,
     provider: string,

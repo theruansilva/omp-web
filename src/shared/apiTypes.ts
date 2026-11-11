@@ -397,6 +397,8 @@ export interface OAuthFlowState {
 
 export interface ModelSelectionResponse {
  models: SessionModel[];
+ /** Resolved models for the @default/@smol/@slow roles, keyed by role. */
+ roles?: Record<string, SessionModel>;
 }
 
 export interface ThinkingLevelsResponse {
