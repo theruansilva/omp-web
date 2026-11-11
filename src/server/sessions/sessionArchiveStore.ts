@@ -1,11 +1,13 @@
 import { randomUUID } from "node:crypto";
-import { constants } from "node:fs";
-import { access, copyFile, mkdir, readFile, rename, unlink, writeFile } from "node:fs/promises";
+import { constants, createReadStream, createWriteStream } from "node:fs";
+import { access, copyFile, cp, mkdir, readFile, rename, rm, unlink, writeFile } from "node:fs/promises";
 import { basename, dirname, join } from "node:path";
 import { homedir } from "node:os";
+import { createGzip, createGunzip } from "node:zlib";
+import { pipeline } from "node:stream/promises";
+import { getAgentDir } from "@oh-my-pi/pi-coding-agent";
 import { canonicalizeStoredCwd } from "../workingDirectory.js";
 import { isRecord, isNodeErrorWithCode } from "../utils.js";
-
 export interface ArchiveSessionInput {
   sessionId: string;
   cwd: string;
@@ -35,13 +37,20 @@ export interface ArchivedSessionRecord {
 interface ArchiveFile {
   sessions: ArchivedSessionRecord[];
 }
+export function defaultSessionArchiveDir(agentDir = getAgentDir()): string {
+  return join(agentDir, "archive", "sessions");
+}
+
+export function defaultSessionArchiveFilePath(agentDir = getAgentDir()): string {
+  return join(agentDir, "archive", "archived-sessions.json");
+}
 
 export class SessionArchiveStore {
   private operationQueue: Promise<void> = Promise.resolve();
 
   constructor(
-    private readonly filePath = join(homedir(), ".omp-web", "archived-sessions.json"),
-    private readonly archiveDir = join(dirname(filePath), "archived-sessions"),
+    private readonly filePath = defaultSessionArchiveFilePath(),
+    private readonly archiveDir = defaultSessionArchiveDir(),
   ) {}
 
   async list(): Promise<ArchivedSessionRecord[]> {
@@ -119,7 +128,13 @@ export class SessionArchiveStore {
       if (records.length === 0) return [];
 
       for (const record of records) {
-        if (record.archivePath !== undefined && await pathExists(record.archivePath)) await unlink(record.archivePath);
+        if (record.archivePath !== undefined && await pathExists(record.archivePath)) {
+          await unlink(record.archivePath);
+          const artifacts = sessionArtifactsPath(record.archivePath);
+          if (await pathExists(artifacts)) {
+            await rm(artifacts, { recursive: true, force: true });
+          }
+        }
       }
       const sessions = data.sessions.filter((session) => !targetIdSet.has(session.sessionId));
       await this.write({ sessions });
@@ -134,7 +149,8 @@ export class SessionArchiveStore {
 
   private archivePathFor(session: ArchiveSessionInput): string {
     const sourceName = basename(session.path);
-    const fileName = sourceName === "" ? `${safeFileName(session.sessionId)}.jsonl` : sourceName;
+    const base = sourceName === "" ? `${safeFileName(session.sessionId)}.jsonl` : sourceName;
+    const fileName = base.endsWith(".gz") ? base : `${base}.gz`;
     return join(this.archiveDir, fileName);
   }
 
@@ -155,7 +171,20 @@ export class SessionArchiveStore {
       const value: unknown = JSON.parse(await readFile(this.filePath, "utf8"));
       return parseArchiveFile(value);
     } catch (error: unknown) {
-      if (isNodeErrorWithCode(error, "ENOENT")) return { sessions: [] };
+      if (isNodeErrorWithCode(error, "ENOENT")) {
+        if (this.filePath === defaultSessionArchiveFilePath()) {
+          const legacyPath = join(homedir(), ".omp-web", "archived-sessions.json");
+          if (await pathExists(legacyPath)) {
+            try {
+              const legacyValue: unknown = JSON.parse(await readFile(legacyPath, "utf8"));
+              return parseArchiveFile(legacyValue);
+            } catch {
+              return { sessions: [] };
+            }
+          }
+        }
+        return { sessions: [] };
+      }
       throw error;
     }
   }
@@ -189,23 +218,99 @@ function archiveRecordFromInput(session: ArchiveSessionInput, archive: { archive
   };
 }
 
+export async function gzipFile(source: string, destination: string): Promise<void> {
+  await mkdir(dirname(destination), { recursive: true });
+  const tempPath = `${destination}.${String(process.pid)}.${Date.now().toString()}.${randomUUID()}.tmp`;
+  try {
+    await pipeline(
+      createReadStream(source),
+      createGzip(),
+      createWriteStream(tempPath),
+    );
+    await rename(tempPath, destination);
+  } catch (error) {
+    await unlink(tempPath).catch(() => undefined);
+    throw error;
+  }
+}
+
+export async function gunzipFile(source: string, destination: string): Promise<void> {
+  await mkdir(dirname(destination), { recursive: true });
+  const tempPath = `${destination}.${String(process.pid)}.${Date.now().toString()}.${randomUUID()}.tmp`;
+  try {
+    await pipeline(
+      createReadStream(source),
+      createGunzip(),
+      createWriteStream(tempPath),
+    );
+    await rename(tempPath, destination);
+  } catch (error) {
+    await unlink(tempPath).catch(() => undefined);
+    throw error;
+  }
+}
+
+export function sessionArtifactsPath(sessionPath: string): string {
+  if (sessionPath.endsWith(".jsonl.gz")) {
+    return sessionPath.slice(0, -".jsonl.gz".length);
+  }
+  if (sessionPath.endsWith(".gz")) {
+    return sessionPath.slice(0, -".gz".length);
+  }
+  if (sessionPath.endsWith(".jsonl")) {
+    return sessionPath.slice(0, -".jsonl".length);
+  }
+  return sessionPath;
+}
+
 async function copySessionFileToArchive(source: string, archivePath: string): Promise<void> {
   if (source === archivePath) return;
   await mkdir(dirname(archivePath), { recursive: true });
   if (await pathExists(archivePath)) return;
-  await copyFile(source, archivePath);
+  if (archivePath.endsWith(".gz") && !source.endsWith(".gz")) {
+    await gzipFile(source, archivePath);
+  } else {
+    await copyFile(source, archivePath);
+  }
 }
 
 async function removeActiveSessionFile(source: string, archivePath: string): Promise<void> {
   if (source === archivePath) return;
   if (await pathExists(source)) await unlink(source);
+  const sourceArtifacts = sessionArtifactsPath(source);
+  const destArtifacts = sessionArtifactsPath(archivePath);
+  if (sourceArtifacts !== destArtifacts && await pathExists(sourceArtifacts)) {
+    await movePath(sourceArtifacts, destArtifacts);
+  }
 }
 
 async function restoreSessionFile(archivePath: string, originalPath: string): Promise<void> {
   if (archivePath === originalPath) return;
   if (await pathExists(originalPath)) throw new Error(`Cannot restore archived session because a session already exists at ${originalPath}`);
   await mkdir(dirname(originalPath), { recursive: true });
-  await moveFile(archivePath, originalPath);
+  if (archivePath.endsWith(".gz") && !originalPath.endsWith(".gz")) {
+    await gunzipFile(archivePath, originalPath);
+    await unlink(archivePath);
+  } else {
+    await moveFile(archivePath, originalPath);
+  }
+  const archiveArtifacts = sessionArtifactsPath(archivePath);
+  const originalArtifacts = sessionArtifactsPath(originalPath);
+  if (archiveArtifacts !== originalArtifacts && await pathExists(archiveArtifacts)) {
+    await movePath(archiveArtifacts, originalArtifacts);
+  }
+}
+
+async function movePath(source: string, destination: string): Promise<void> {
+  await mkdir(dirname(destination), { recursive: true });
+  try {
+    await rename(source, destination);
+    return;
+  } catch (error: unknown) {
+    if (!isNodeErrorWithCode(error, "EXDEV")) throw error;
+  }
+  await cp(source, destination, { recursive: true });
+  await rm(source, { recursive: true, force: true });
 }
 
 async function moveFile(source: string, destination: string): Promise<void> {

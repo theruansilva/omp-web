@@ -14,7 +14,10 @@ import { pageMessagesAtSafeBoundary } from "./messagePaging.js";
 import type { SessionEventHub } from "../realtime/sessionEventHub.js";
 import { BUILTIN_COMMANDS } from "./builtinCommands.js";
 import { SessionCommandService } from "./sessionCommandService.js";
-import { SessionArchiveStore, type ArchivedSessionRecord, type ArchiveSessionInput } from "./sessionArchiveStore.js";
+import { mkdir } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { SessionArchiveStore, defaultSessionArchiveDir, defaultSessionArchiveFilePath, gunzipFile, type ArchivedSessionRecord, type ArchiveSessionInput } from "./sessionArchiveStore.js";
 import { findArchiveCandidateByIdOrPrefix, planSessionArchiveTree } from "./sessionArchiveTree.js";
 import type { ActiveSession } from "./sessionRuntimeStore.js";
 import type { AuthChange } from "./authService.js";
@@ -256,7 +259,7 @@ export interface PiSessionServiceDependencies {
  heartbeatIntervalMs?: number;
  /** Inactivity threshold (ms) before an idle in-memory session is evicted/dormant. Defaults to 10 minutes. */
  idleEvictionMs?: number;
- /** Inactivity threshold (ms) before an inactive session is automatically archived. Defaults to 24 hours. */
+ /** Inactivity threshold (ms) before an inactive session is automatically archived. Defaults to 0 (disabled) to avoid moving CLI sessions without user consent. */
  autoArchiveIdleMs?: number;
  /** Interval (ms) between auto-archive background checks. Defaults to 1 minute. */
  autoArchiveIntervalMs?: number;
@@ -327,8 +330,8 @@ export class PiSessionService {
  private readonly notifiedWorkComplete = new Set<string>();
 
  constructor(private readonly events: SessionEventHub, deps: PiSessionServiceDependencies = {}) {
-  this.archiveStore = deps.archiveStore ?? new SessionArchiveStore();
   this.agentDir = deps.agentDir ?? getAgentDir();
+  this.archiveStore = deps.archiveStore ?? new SessionArchiveStore(defaultSessionArchiveFilePath(this.agentDir), defaultSessionArchiveDir(this.agentDir));
   this.sessionManager = deps.sessionManager ?? createPiSessionManagerGateway({ agentDir: this.agentDir });
   this.modelRegistry = deps.modelRegistry;
   this.spawnTargets = deps.spawnTargets;
@@ -357,7 +360,7 @@ export class PiSessionService {
   this.createAgentRuntime = deps.createAgentRuntime ?? defaultCreateAgentRuntime;
   this.workspaceActivity = deps.workspaceActivity;
   this.idleEvictionMs = deps.idleEvictionMs ?? (10 * 60 * 1000);
-  this.autoArchiveIdleMs = deps.autoArchiveIdleMs ?? (24 * 60 * 60 * 1000);
+  this.autoArchiveIdleMs = deps.autoArchiveIdleMs ?? 0;
   this.autoArchiveIntervalMs = deps.autoArchiveIntervalMs ?? (60 * 1000);
   this.heartbeat = setInterval(() => { this.publishHeartbeats(); }, deps.heartbeatIntervalMs ?? 2000);
   this.commandService = new SessionCommandService(
@@ -1638,7 +1641,10 @@ export class PiSessionService {
   }
 
   const archived = await this.getArchived(ref);
-  if (archived?.archivePath !== undefined) return this.create(await this.sessionManager.open(archived.archivePath), archived.cwd);
+  if (archived?.archivePath !== undefined) {
+   const openPath = await this.ensureReadableSessionFile(archived.archivePath, archived.sessionId);
+   return this.create(await this.sessionManager.open(openPath), archived.cwd);
+  }
   const match = isPiSessionRef(ref)
    ? (await this.sessionManager.list(ref.cwd)).find((s) => s.id === ref.id || s.id.startsWith(ref.id))
    : (await this.sessionManager.listAll?.() ?? []).find((s) => s.id === ref || s.id.startsWith(ref));
@@ -1653,6 +1659,16 @@ export class PiSessionService {
   return archived;
  }
 
+
+ private async ensureReadableSessionFile(archivePath: string, sessionId: string): Promise<string> {
+  if (!archivePath.endsWith(".gz")) return archivePath;
+  const tempDir = join(tmpdir(), "omp-web-archive-view");
+  await mkdir(tempDir, { recursive: true });
+  const safeId = sessionId.replace(/[^a-zA-Z0-9._-]/g, "_") || "session";
+  const tempFile = join(tempDir, `${safeId}.jsonl`);
+  await gunzipFile(archivePath, tempFile);
+  return tempFile;
+ }
  private activeForLookup(ref: PiSessionLookup): ActiveSession<PiSessionRuntime> | undefined {
   const sessionId = sessionIdFromLookup(ref);
   const exact = this.active.get(sessionId);
@@ -2007,6 +2023,7 @@ export class PiSessionService {
  }
 
  private async sweepAutoArchive(): Promise<void> {
+  if (this.autoArchiveIdleMs <= 0) return;
   const now = Date.now();
   if (now - this.lastAutoArchiveSweepAt < this.autoArchiveIntervalMs) return;
   this.lastAutoArchiveSweepAt = now;

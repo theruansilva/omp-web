@@ -11,6 +11,7 @@ import { AuthStorage, ModelRegistry, SqliteAuthCredentialStore } from "@oh-my-pi
 import type { AskDialogQuestion, AskDialogResult, GlobalSessionEvent, SessionUiEvent } from "../../shared/apiTypes.js";
 import { SessionEventHub } from "../realtime/sessionEventHub.js";
 import { PiSessionService, type PiAgentSession, type PiSessionManager, type PiSessionRuntime, type PiSessionServiceDependencies } from "./piSessionService.js";
+import { gzipFile } from "./sessionArchiveStore.js";
 import type { SpawnTargetDecision } from "./spawnTargetResolver.js";
 
 // Module-level model registry for tests that need a real ModelRegistry
@@ -2454,6 +2455,60 @@ describe("PiSessionService", () => {
       expect(archivedEvent).toBeDefined();
 
       await service.dispose();
+    });
+
+    it("does not auto-archive inactive sessions by default", async () => {
+      const hub = new CapturingSessionEventHub();
+      const service = new PiSessionService(hub, {
+        sessionManager: sessionGateway([]),
+        heartbeatIntervalMs: 60_000,
+      });
+
+      // autoArchiveIdleMs must default to 0 (disabled) to protect CLI sessions
+      expect(service["autoArchiveIdleMs"]).toBe(0);
+      await service.dispose();
+    });
+
+    it("transparently decompresses gzipped archived sessions when opened", async () => {
+      const hub = new CapturingSessionEventHub();
+      const tempDir = await mkdtemp(join(tmpdir(), "omp-web-gz-open-"));
+      const rawSessionFile = join(tempDir, "source.jsonl");
+      const gzippedArchiveFile = join(tempDir, "archived.jsonl.gz");
+      await writeFile(rawSessionFile, "header\n", "utf8");
+      await gzipFile(rawSessionFile, gzippedArchiveFile);
+
+      let openedFile: string | undefined;
+      const fake = fakeRuntime("gz-session");
+      const service = new PiSessionService(hub, {
+        createAgentRuntime: runtimeCreator(fake.runtime),
+        sessionManager: {
+          create: () => fakeSessionManager(),
+          list: () => Promise.resolve([]),
+          listAll: () => Promise.resolve([]),
+          open: (filePath: string) => {
+            openedFile = filePath;
+            return Promise.resolve(fakeSessionManager("/workspace"));
+          },
+        },
+        archiveStore: {
+          list: () => Promise.resolve([{ sessionId: "gz-session", cwd: "/workspace", archivedAt: "2026-01-01T00:00:00.000Z", archivePath: gzippedArchiveFile }]),
+          get: (sessionId: string) => Promise.resolve(sessionId === "gz-session" ? { sessionId: "gz-session", cwd: "/workspace", archivedAt: "2026-01-01T00:00:00.000Z", archivePath: gzippedArchiveFile } : undefined),
+          archive: () => Promise.reject(new Error("not used")),
+          restore: () => Promise.resolve(),
+          isArchived: () => Promise.resolve(true),
+        },
+      });
+
+      try {
+        const status = await service.status("gz-session");
+        expect(status.sessionId).toBe("gz-session");
+        expect(openedFile).toBeDefined();
+        expect(openedFile?.endsWith(".jsonl")).toBe(true);
+        expect(openedFile?.endsWith(".gz")).toBe(false);
+      } finally {
+        await service.dispose();
+        await rm(tempDir, { recursive: true, force: true });
+      }
     });
 
     it("closing mutex serializes getActive while closeActive is in flight", async () => {
