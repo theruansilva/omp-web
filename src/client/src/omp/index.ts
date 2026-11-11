@@ -22,3 +22,4 @@ export * from "./OmpMarkdown";
 export * from "./OmpSettingsView";
 export * from "./OmpStatusButton";
 export * from "./OmpUpdateAnnouncementModal";
+export * from "../components/ai";

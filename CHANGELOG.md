@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- 🧩 **AI Elements (Lit)**: Ported shadcn AI Elements for the chat thread as light-DOM `ai-*` components (reasoning, chain of thought, tool, terminal, stack trace, subagent, confirmation, task, plan, queue, message, chat, suggestion, checkpoint). Chat thinking blocks and tool calls now render through `ai-reasoning`, `ai-tool` and `ai-terminal`. Catalogue at `?tab=ai-elements`.
+
 ## v3.0.1
 
 - 🛠️ **AskTool & Interactive Composer**: Natively integrated `ask` tool drawer into composer for keyboard-first interactive choices, deprecating legacy markdown options.

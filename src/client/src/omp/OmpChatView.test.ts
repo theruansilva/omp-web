@@ -245,7 +245,7 @@ describe("OmpChatView rendering", () => {
     expect(messages[0].text).not.toContain("<thinking>");
   });
 
-  it("renders tools in classic tool cards with icons, names, and diff stats", () => {
+  it("maps tools to ai-tool / ai-terminal elements with status, command and error output", () => {
     const chatView = new OmpChatView();
     chatView.messages = [
       {
@@ -254,50 +254,17 @@ describe("OmpChatView rendering", () => {
         text: "Executando...",
         tools: [
           { toolName: "read", target: "src/cli.ts", status: "completed" },
-          { toolName: "edit", target: "src/cli.ts", diffStats: { added: 5, removed: 2 }, status: "running" },
+          { toolName: "bash", status: "error", isError: true, errorText: "Command failed: exit code 1", args: { command: "npm test" } },
         ],
       },
     ];
 
-    const rendered = chatView.render();
-    const text = getAllTemplateText(rendered);
-    expect(text).toContain("read");
+    const text = getAllTemplateText(chatView.render());
+    expect(text).toContain("<ai-tool");
     expect(text).toContain("src/cli.ts");
-    expect(text).toContain("edit");
-    expect(text).toContain("+ 5");
-    expect(text).toContain("- 2");
-  });
-
-  it("renders tool inspection details when expanded", () => {
-    const chatView = new OmpChatView();
-    chatView.messages = [
-      {
-        id: "msg-1",
-        role: "assistant",
-        text: "Teste de erro",
-        tools: [
-          {
-            toolName: "bash",
-            status: "error",
-            isError: true,
-            errorText: "Command failed: exit code 1",
-            args: { command: "npm test" },
-          },
-        ],
-      },
-    ];
-
-    // Expand the tool
-    (chatView as any).expandedToolKey = "msg-1-tool-0";
-
-    const rendered = chatView.render();
-    const text = getAllTemplateText(rendered);
-    expect(text).toContain("bash");
-    expect(text).toContain("Console error");
-    expect(text).toContain("Command");
-    expect(text).toContain("failed");
-    expect(text).toContain("exit");
+    expect(text).toContain("<ai-terminal");
     expect(text).toContain("npm test");
+    expect(text).toContain("Command failed: exit code 1");
   });
 
   it("collapses process block automatically once response is ready, and shows running status line while generating", () => {
@@ -426,39 +393,6 @@ describe("OmpChatView Scroll Behavior with Questions", () => {
     chatView.updated(new Map([["pendingAsk", undefined]]));
     // When question arrives, pinnedToBottom MUST be false so scroll is not locked
     expect((chatView as any).pinnedToBottom).toBe(false);
-  });
-});
-
-describe("OmpChatView Conditional Tool Icons and High Contrast", () => {
-  it("renders red console icon for errors, tool icon for completed (no checkmark), and white spinner for running", () => {
-    const chatView = new OmpChatView();
-    chatView.messages = [
-      {
-        id: "msg-tools",
-        role: "assistant",
-        tools: [
-          { toolName: "bash", summary: "cargo build", status: "error", isError: true },
-          { toolName: "read", target: "src/main.rs", status: "completed" },
-          { toolName: "eval", summary: "running test", status: "running" },
-        ],
-        text: "Relatório de execução",
-      },
-    ];
-
-    const rendered = chatView.render();
-    const text = getAllTemplateText(rendered);
-
-    // Error icon
-    expect(text).toContain("Console error");
-    expect(text).toContain("bash");
-
-    // Completed: only tool icon, no checkmark
-    expect(text).toContain("read");
-    expect(text).not.toContain("Concluído com sucesso");
-
-    // Running animation
-    expect(text).toContain("Running");
-    expect(text).toContain("eval");
   });
 });
 

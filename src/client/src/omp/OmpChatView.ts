@@ -4,6 +4,7 @@ import { highlightCodeBlock } from "../formatting/syntaxHighlight";
 import { customElement, property, state } from "lit/decorators.js";
 import { renderOmpLogo, renderLoadingDots, renderPaperclipIcon, renderBranchIcon, renderPencilIcon, renderDotMatrixIcon } from "./icons";
 import type { PromptAttachment, PlanModeStatus } from "../../../shared/apiTypes";
+import "../components/ai";
 import "./OmpComposer";
 import type { BtwState, ComposerProject, PendingCommandDialog } from "./OmpComposer";
 import type { ArtifactData } from "./OmpArtifactPanel";
@@ -378,178 +379,15 @@ export class OmpChatView extends LitElement {
   }
 
   private renderThinkingSteps(thinking: string, messageId: string, isStreamingBlock = false) {
-    const firstLine = thinking.trim().split("\n")[0]?.replace(/^[\*#\s>-]+|[\*#\s]+$/g, "").trim() || "";
-    const summary = firstLine.length > 60 ? firstLine.slice(0, 58) + "…" : firstLine;
-    const isOpen = this.isThinkingOpen(messageId);
-    const isStreamingThinking = isStreamingBlock && this.isStreaming;
-
     return html`
-      <details
-        class="group/thinking my-1 w-full bg-transparent select-none overflow-hidden"
-        ?open=${isOpen}
-      >
-        <summary
-          class="flex items-center justify-between px-2 py-1.5 rounded-lg cursor-pointer select-none text-xs font-semibold text-foreground-800 hover:text-foreground-900 hover:bg-black/5 dark:hover:bg-white/8 list-none transition-colors"
-          @click=${(e: Event) => {
-            e.preventDefault();
-            this.toggleThinking(messageId);
-          }}
-        >
-          <div class="flex items-center gap-2.5 min-w-0 flex-1">
-            <span class="inline-flex items-center justify-center size-5 rounded-md bg-amber-500/20 text-amber-500 shrink-0 ring-1 ring-amber-500/30">
-              <svg class="size-3.5 text-amber-500 ${isStreamingThinking ? "animate-pulse" : ""}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M12 2a7 7 0 0 0-7 7c0 2.38 1.19 4.47 3 5.74V17a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2v-2.26c1.81-1.27 3-3.36 3-5.74a7 7 0 0 0-7-7z"/>
-                <path d="M9 21h6"/>
-              </svg>
-            </span>
-            <strong class="font-bold text-foreground-900 text-xs shrink-0">
-              ${isStreamingThinking ? "Pensando…" : "Raciocínio"}
-            </strong>
-            ${summary ? html`<span class="text-foreground-700 truncate max-w-[280px] sm:max-w-md font-medium text-xs">${summary}</span>` : nothing}
-          </div>
-          <svg class="size-3.5 text-foreground-600 shrink-0 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}" viewBox="0 0 20 20" fill="currentColor">
-            <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"/>
-          </svg>
-        </summary>
-        ${isOpen ? html`
-          <div class="ml-2.5 my-1 pl-3 py-2 text-xs text-foreground-900 leading-relaxed border-l-2 border-amber-500/40 select-text max-h-96 overflow-y-auto font-sans">
-            <omp-markdown .text=${thinking}></omp-markdown>
-          </div>
-        ` : nothing}
-      </details>
+      <ai-reasoning
+        class="my-1 block"
+        .text=${thinking}
+        .running=${isStreamingBlock && this.isStreaming}
+        .open=${this.isThinkingOpen(messageId)}
+        @ai-toggle=${() => this.toggleThinking(messageId)}
+      ></ai-reasoning>
     `;
-  }
-
-          private renderToolItemIcon(t: ToolItem) {
-    const isError = Boolean(t.isError || t.status === "error");
-    const isRunning = t.status === "running" || t.status === "pending";
-
-    // 1. Error: console icon in red
-    if (isError) {
-      return html`
-        <span class="tool-icon error inline-flex items-center justify-center size-5 shrink-0 text-red-500" style="color: #ef4444;" title="Console error">
-          <svg class="size-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="2" y="2.5" width="12" height="11" rx="2" />
-            <path d="M5 6.5l2 2-2 2M9.5 10.5h2" />
-          </svg>
-        </span>
-      `;
-    }
-
-    // 2. Running: white/light spinning animation
-    if (isRunning) {
-      return html`
-        <span class="tool-icon tool-spinner inline-flex items-center justify-center size-5 shrink-0 text-white dark:text-white" title="Running…">
-          <svg class="size-3.5 animate-spin text-white" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
-            <circle cx="8" cy="8" r="6" stroke-dasharray="28" stroke-dashoffset="10" />
-          </svg>
-        </span>
-      `;
-    }
-
-    // 3. Completed: tool's classic icon in dedicated color (NO CHECKMARK!)
-    const name = (t.toolName || "").toLowerCase();
-
-    if (name === "bash" || name === "sh" || name === "terminal") {
-      return html`
-        <span class="tool-icon inline-flex items-center justify-center size-5 shrink-0" style="color: #10b981;" title="${t.toolName}">
-          <svg class="size-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="2" y="2.5" width="12" height="11" rx="2" />
-            <path d="M5 6l2.5 2L5 10M9 10.5h2" />
-          </svg>
-        </span>
-      `;
-    }
-
-    if (name === "eval") {
-      return html`
-        <span class="tool-icon inline-flex items-center justify-center size-5 shrink-0" style="color: #f59e0b;" title="${t.toolName}">
-          <svg class="size-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M4 3.5L8 8l-4 4.5" />
-            <path d="M8.5 12.5h4" />
-          </svg>
-        </span>
-      `;
-    }
-
-    if (name === "read" || name === "cat") {
-      return html`
-        <span class="tool-icon inline-flex items-center justify-center size-5 shrink-0" style="color: #38bdf8;" title="${t.toolName}">
-          <svg class="size-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M3 2.5h6.5l3.5 3.5V13.5a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1v-10a1 1 0 0 1 1-1z" />
-            <path d="M9.5 2.5V6H13" />
-          </svg>
-        </span>
-      `;
-    }
-
-    if (name === "edit" || name === "patch") {
-      return html`
-        <span class="tool-icon inline-flex items-center justify-center size-5 shrink-0" style="color: #818cf8;" title="${t.toolName}">
-          <svg class="size-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M11 2.5a1.4 1.4 0 0 1 2 2L5.5 12 2 13l1-3.5L10.5 2.5z" />
-          </svg>
-        </span>
-      `;
-    }
-
-    if (name === "write") {
-      return html`
-        <span class="tool-icon inline-flex items-center justify-center size-5 shrink-0" style="color: #14b8a6;" title="${t.toolName}">
-          <svg class="size-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M3 2.5h7l3 3V13.5a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1v-10a1 1 0 0 1 1-1z" />
-            <path d="M8 8v4M6 10h4" />
-          </svg>
-        </span>
-      `;
-    }
-
-    if (name === "task" || name === "todo") {
-      return html`
-        <span class="tool-icon inline-flex items-center justify-center size-5 shrink-0" style="color: #f97316;" title="${t.toolName}">
-          <svg class="size-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="2.5" y="2.5" width="11" height="11" rx="2" />
-            <path d="M5.5 8l2 2 3.5-4" />
-          </svg>
-        </span>
-      `;
-    }
-
-    if (name.startsWith("mcp__") || name.startsWith("mcp:")) {
-      return html`
-        <span class="tool-icon inline-flex items-center justify-center size-5 shrink-0 text-purple-400" style="color: #a855f7;" title="MCP: ${t.toolName}">
-          <svg class="size-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M6 2v3M10 2v3M4 5h8v4a4 4 0 0 1-8 0V5zM8 13v2" />
-          </svg>
-        </span>
-      `;
-    }
-
-    // Default / grep / search
-    return html`
-      <span class="tool-icon inline-flex items-center justify-center size-5 shrink-0" style="color: #ec4899;" title="${t.toolName || "search"}">
-        <svg class="size-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="7" cy="7" r="4.5" />
-          <path d="M10.5 10.5L14 14" />
-        </svg>
-      </span>
-    `;
-  }
-
-  private renderFormattedDiff(diff: string) {
-    const lines = diff.split("\n");
-    return lines.map((line) => {
-      if (line.startsWith("+") && !line.startsWith("+++")) {
-        return html`<span class="text-emerald-400 bg-emerald-500/10 block px-1.5 rounded-xs leading-relaxed font-mono">${line}</span>`;
-      }
-      if (line.startsWith("-") && !line.startsWith("---")) {
-        return html`<span class="text-red-400 bg-red-500/10 block px-1.5 rounded-xs leading-relaxed font-mono">${line}</span>`;
-      }
-      if (line.startsWith("@@")) {
-        return html`<span class="text-sky-400 block px-1.5 leading-relaxed font-mono font-bold">${line}</span>`;
-      }
-      return html`<span class="text-foreground-800 block px-1.5 leading-relaxed font-mono opacity-80">${line}</span>`;
-    });
   }
 
     private renderHighlightedCode(text?: string, defaultLang?: string) {
@@ -643,70 +481,34 @@ export class OmpChatView extends LitElement {
     const isExpanded = this.expandedToolKey
       ? this.expandedToolKey === key
       : (isCurrent && isRunning);
-    const hasDetails = Boolean(t.diff || t.errorText || t.resultText || t.args);
-    const targetText = t.target || t.summary;
-
+    const name = t.toolName.toLowerCase();
+    const rawCommand = (t.args as { command?: unknown } | undefined)?.command;
+    const command = typeof rawCommand === "string" ? rawCommand : undefined;
+    if ((name === "bash" || name === "sh" || name === "terminal") && command !== undefined) {
+      return html`
+        <ai-terminal
+          class="my-0.5 block"
+          .command=${command}
+          .output=${t.errorText || t.resultText || ""}
+          .status=${t.isError || t.status === "error" ? "error" : t.status === "completed" || t.status === undefined ? "done" : t.status}
+        ></ai-terminal>
+      `;
+    }
+    const display = t.toolName.startsWith("mcp__") ? (t.toolName.slice(5).split("__").slice(1).join("__") || t.toolName) : t.toolName;
     return html`
-      <details class="tool-card ${t.status || 'completed'} w-full bg-transparent overflow-hidden my-0.5 select-none" .open=${isExpanded}>
-        <summary
-          class="tool-header inline-flex items-center gap-2 py-1 px-1.5 rounded-lg cursor-pointer transition-colors hover:bg-black/5 dark:hover:bg-white/8 list-none select-none font-sans max-w-full"
-          @click=${(e: Event) => {
-            e.preventDefault();
-            if (hasDetails) this.toggleToolExpand(key);
-          }}
-        >
-          ${this.renderToolItemIcon(t)}
-          ${t.toolName.startsWith("mcp__") || t.toolName.startsWith("mcp:") ? html`
-            <span class="px-1.5 py-0.5 rounded bg-purple-500/15 border border-purple-500/30 text-[10px] font-mono font-bold text-purple-400 shrink-0">
-              MCP${t.toolName.startsWith("mcp__") ? ` · ${t.toolName.slice(5).split("__")[0]}` : ""}
-            </span>
-          ` : nothing}
-          <strong class="font-mono font-bold text-xs shrink-0" style="color: var(--omp-text-primary, #F8FAFC);">${t.toolName.startsWith("mcp__") ? (t.toolName.slice(5).split("__").slice(1).join("__") || t.toolName) : t.toolName}</strong>
-          ${targetText ? html`<span class="path font-mono text-xs font-medium truncate max-w-[280px] sm:max-w-md" style="color: var(--omp-text-primary, #F8FAFC); opacity: 0.85;" title="${targetText}">${targetText}</span>` : nothing}
-          ${t.diffStats ? html`
-            <span class="diff-stats font-mono text-[11px] font-bold shrink-0">
-              <span class="text-emerald-500">+${t.diffStats.added}</span><span class="text-foreground-500 mx-0.5">/</span><span class="text-red-500">-${t.diffStats.removed}</span>
-            </span>
-          ` : nothing}
-          ${hasDetails ? html`
-            <svg class="size-3.5 shrink-0 transition-transform duration-200 ${isExpanded ? "rotate-90" : ""}" style="color: var(--omp-text-primary, #F8FAFC); opacity: 0.6;" viewBox="0 0 20 20" fill="currentColor">
-              <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"/>
-            </svg>
-          ` : nothing}
-        </summary>
-
-        ${isExpanded ? html`
-          <div class="tool-content px-2 pb-2.5 pt-1 space-y-2 text-xs font-sans select-text">
-            ${t.errorText ? html`
-              <div class="p-2.5 rounded-lg bg-red-500/15 border border-red-500/30 text-red-400 font-mono text-xs whitespace-pre-wrap break-all">
-                <span class="text-[10px] uppercase font-bold tracking-wider font-sans block mb-1 text-red-500">Console error</span>
-                <pre class="font-mono text-xs whitespace-pre-wrap break-all leading-relaxed">${this.renderHighlightedCode(t.errorText, "typescript")}</pre>
-              </div>
-            ` : nothing}
-
-            ${t.args ? html`
-              <div>
-                <span class="text-[10px] uppercase font-bold text-foreground-700 tracking-wider font-sans block mb-1">Input / Arguments</span>
-                <pre class="font-mono text-xs p-2.5 rounded-lg border border-black/10 dark:border-white/10 bg-black/10 dark:bg-black/40 text-foreground-900 whitespace-pre-wrap break-all leading-relaxed">${this.renderHighlightedCode(typeof t.args === "string" ? t.args : JSON.stringify(t.args, null, 2), "json")}</pre>
-              </div>
-            ` : nothing}
-
-            ${t.diff ? html`
-              <div>
-                <span class="text-[10px] uppercase font-bold text-foreground-700 tracking-wider font-sans block mb-1">Changes (Diff)</span>
-                <pre class="font-mono text-xs p-2.5 rounded-xl border border-black/10 dark:border-white/10 bg-black/10 dark:bg-black/40 overflow-x-auto max-h-72 leading-relaxed text-foreground-900">${this.renderFormattedDiff(t.diff)}</pre>
-              </div>
-            ` : nothing}
-
-            ${t.resultText && !t.diff && !t.errorText ? html`
-              <div>
-                <span class="text-[10px] uppercase font-bold text-foreground-700 tracking-wider font-sans block mb-1">Output</span>
-                <pre class="font-mono text-xs p-2.5 rounded-lg border border-black/10 dark:border-white/10 bg-black/10 dark:bg-black/40 text-foreground-850 whitespace-pre-wrap break-all max-h-56 overflow-y-auto leading-relaxed">${this.renderHighlightedCode(t.resultText)}</pre>
-              </div>
-            ` : nothing}
-          </div>
-        ` : nothing}
-      </details>
+      <ai-tool
+        class="my-0.5 block"
+        .name=${t.toolName.startsWith("mcp__") ? `MCP · ${display}` : t.toolName}
+        .status=${t.isError ? "error" : (t.status ?? "completed")}
+        .target=${t.target || t.summary}
+        .input=${t.args}
+        .diff=${t.diff}
+        .diffStats=${t.diffStats}
+        .output=${t.diff || t.errorText ? undefined : t.resultText}
+        .errorText=${t.errorText}
+        .open=${isExpanded}
+        @ai-toggle=${() => this.toggleToolExpand(key)}
+      ></ai-tool>
     `;
   }
 

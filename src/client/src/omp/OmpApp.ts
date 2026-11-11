@@ -2368,6 +2368,9 @@ Dica: você pode selecionar uma das opções abaixo para testar a injeção auto
           ></omp-models-view>
         `;
 
+      case "ai-elements":
+        return html`<ai-gallery></ai-gallery>`;
+
       case "library":
         return html`
           <omp-library-view
