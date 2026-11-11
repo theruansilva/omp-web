@@ -1,6 +1,6 @@
 import { html, nothing, type TemplateResult } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
-import { AiElement, aiChevron, aiCode, aiDiff, aiStatusIcon, emit, formatDuration, toolColor, type AiStatus } from "./trace";
+import { AiElement, aiChevron, aiCode, aiDiff, aiStatusIcon, emit, formatDuration, type AiStatus } from "./trace";
 
 const PRE = "max-h-56 overflow-auto whitespace-pre-wrap break-words rounded-lg bg-black/5 p-2 font-mono text-[11px] leading-relaxed text-foreground-800 dark:bg-white/[0.06]";
 
@@ -59,7 +59,7 @@ export class AiTool extends AiElement {
     const meta = html`${this.target ? html`<span class="font-mono">${this.target}</span>` : nothing}${stats ? html` <span class="text-[var(--success)]">+${stats.added}</span> <span class="text-[var(--danger)]">-${stats.removed}</span>` : nothing}${this.durationMs !== undefined ? html` ${formatDuration(this.durationMs)}` : nothing}`;
     const head = html`
       <span class="inline-flex w-4 shrink-0 items-center justify-center">${aiStatusIcon(status)}</span>
-      <span class="min-w-0 truncate text-xs font-semibold ${status === "running" ? "motion-safe:animate-pulse" : ""}" style="color:${status === "error" ? "#f87171" : toolColor(this.name)}">${this.name}</span>
+      <span class="min-w-0 truncate text-xs font-semibold text-foreground-900 ${status === "running" ? "motion-safe:animate-pulse" : ""}">${this.name}</span>
       <span class="min-w-0 truncate text-xs text-foreground-600">${meta}</span>
       ${hasBody ? html`<span class="ml-auto pl-1">${aiChevron(open)}</span>` : nothing}`;
     return html`<div class="text-xs">

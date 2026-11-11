@@ -83,12 +83,41 @@ export function formatDuration(ms: number): string {
   return `${Math.floor(s / 60)}m ${String(s % 60).padStart(2, "0")}s`;
 }
 
+/** Language guess for untagged output (same heuristics the chat used before). */
+export function detectLang(text: string): string | undefined {
+  const t = text.trim();
+  if ((t.startsWith("{") && t.endsWith("}")) || (t.startsWith("[") && t.endsWith("]"))) return "json";
+  if (/\b(expect\(|const |function |import |export )/.test(t)) return "typescript";
+  if (/\b(def |print\()/.test(t)) return "python";
+  return undefined;
+}
+
 /** Syntax-highlighted code (same tokenizer and `.tok-*` theme as the markdown renderer). */
 export function aiCode(text: string, lang?: string): TemplateResult {
-  const t = text.trim();
-  const language = lang ?? ((t.startsWith("{") && t.endsWith("}")) || (t.startsWith("[") && t.endsWith("]")) ? "json" : undefined);
+  const language = lang ?? detectLang(text);
   const body = language === undefined ? escapeHtml(text) : highlightCodeBlock(text, language);
   return html`<code class="tok-code block font-mono text-[11px] leading-relaxed">${unsafeHTML(body)}</code>`;
+}
+
+/** Minimal shell highlighter (the tokenizer has no bash grammar): comments, strings, flags, operators, command names. */
+export function highlightShell(cmd: string): string {
+  const re = /(#.*$)|("(?:[^"\\]|\\.)*"|'[^']*')|(\s-{1,2}[A-Za-z][\w-]*)|(\|\||&&|[|;&<>]+)|(\$\{?\w+\}?)|([^\s|;&<>"']+)/gm;
+  let out = "";
+  let last = 0;
+  let expectCmd = true;
+  for (const m of cmd.matchAll(re)) {
+    out += escapeHtml(cmd.slice(last, m.index));
+    last = m.index + m[0].length;
+    const [tok, comment, str, flag, op, variable] = m;
+    const e = escapeHtml(tok);
+    if (comment !== undefined) out += `<span class="tok-comment">${e}</span>`;
+    else if (str !== undefined) { out += `<span class="tok-string">${e}</span>`; expectCmd = false; }
+    else if (flag !== undefined) out += `<span class="tok-number">${e}</span>`;
+    else if (op !== undefined) { out += `<span class="tok-operator">${e}</span>`; expectCmd = true; }
+    else if (variable !== undefined) out += `<span class="tok-variableName">${e}</span>`;
+    else { out += expectCmd ? `<span class="tok-keyword">${e}</span>` : e; expectCmd = false; }
+  }
+  return out + escapeHtml(cmd.slice(last));
 }
 
 function escapeHtml(s: string): string {
@@ -107,17 +136,4 @@ export function aiDiff(diff: string): TemplateResult[] {
           : "opacity:.8";
     return html`<span class="block rounded-xs px-1.5 font-mono text-[11px] leading-relaxed" style=${style}>${line}</span>`;
   });
-}
-
-/** Accent color per tool kind, matching the previous chat tool icons (inline: the theme remaps Tailwind palette classes). */
-export function toolColor(name: string): string {
-  const n = name.toLowerCase();
-  if (n === "bash" || n === "sh" || n === "terminal") return "#10b981";
-  if (n === "eval") return "#f59e0b";
-  if (n === "read" || n === "cat") return "#38bdf8";
-  if (n === "edit" || n === "patch") return "#818cf8";
-  if (n === "write") return "#14b8a6";
-  if (n === "task" || n === "todo") return "#f97316";
-  if (n.startsWith("mcp")) return "#a855f7";
-  return "#ec4899";
 }

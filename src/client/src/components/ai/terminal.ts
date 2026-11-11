@@ -1,8 +1,7 @@
 import { html, nothing, type TemplateResult } from "lit";
 import { customElement, property, query } from "lit/decorators.js";
 import { unsafeHTML } from "lit/directives/unsafe-html.js";
-import { highlightCodeBlock } from "../../formatting/syntaxHighlight";
-import { AI_CARD_CLASS, AiElement, aiStatusIcon, emit, formatDuration, type AiStatus } from "./trace";
+import { AI_CARD_CLASS, AiElement, aiCode, aiStatusIcon, highlightShell, emit, formatDuration, type AiStatus } from "./trace";
 
 // ESC [ ... final-byte (CSI) and OSC sequences.
 const ANSI_RE = /\u001b\[[0-?]*[ -/]*[@-~]|\u001b\][^\u0007\u001b]*(?:\u0007|\u001b\\)/g;
@@ -64,13 +63,13 @@ export class AiTerminal extends AiElement {
     return html`<div class="${AI_CARD_CLASS} overflow-hidden">
       <div class="flex items-center gap-2 px-3 py-2">
         ${aiStatusIcon(status)}
-        <span class="tok-code min-w-0 flex-1 truncate font-mono text-xs text-foreground-900"><span class="text-foreground-600">$</span> ${unsafeHTML(highlightCodeBlock(this.command, "bash"))}</span>
+        <span class="tok-code min-w-0 flex-1 truncate font-mono text-xs text-foreground-900"><span class="text-foreground-600">$</span> ${unsafeHTML(highlightShell(this.command))}</span>
         ${this.exitCode !== undefined ? html`<span class="text-[10px] ${failed ? "text-[var(--danger)]" : "text-foreground-600"}">exit ${this.exitCode}</span>` : nothing}
         ${this.durationMs !== undefined ? html`<span class="text-[10px] text-foreground-600">${formatDuration(this.durationMs)}</span>` : nothing}
         <button type="button" class="rounded-lg px-2 py-0.5 text-[10px] text-foreground-600 hover:bg-black/5 dark:hover:bg-white/10" aria-label="Copy output" @click=${this.copy}>Copy</button>
       </div>
       ${this.output
-        ? html`<pre class="m-2 mt-0 max-h-64 overflow-auto whitespace-pre-wrap break-words rounded-lg bg-black/5 p-2 font-mono text-[11px] leading-relaxed dark:bg-white/[0.06] text-foreground-800" style=${failed || this.status === "error" ? "color:#f87171" : ""}>${parseAnsi(this.output).map((s) => (s.color === undefined ? s.text : html`<span style="color:${s.color}">${s.text}</span>`))}</pre>`
+        ? html`<pre class="m-2 mt-0 max-h-64 overflow-auto whitespace-pre-wrap break-words rounded-lg bg-black/5 p-2 font-mono text-[11px] leading-relaxed dark:bg-white/[0.06] text-foreground-800" style=${failed || this.status === "error" ? "color:#f87171" : ""}>${this.output.includes("\u001b[") ? parseAnsi(this.output).map((s) => (s.color === undefined ? s.text : html`<span style="color:${s.color}">${s.text}</span>`)) : failed || this.status === "error" ? this.output : aiCode(this.output)}</pre>`
         : nothing}
     </div>`;
   }
