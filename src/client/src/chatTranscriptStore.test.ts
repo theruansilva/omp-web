@@ -71,4 +71,25 @@ describe("ChatTranscriptStore", () => {
       messagePageTotal: 3,
     });
   });
+
+  it("bounds in-memory transcripts via LRU while keeping them in cache", () => {
+    const cache = new MemoryChatHistoryCache();
+    const store = new ChatTranscriptStore(cache, 2);
+
+    store.mergeHistory("s1", page(0, 1, [{ role: "user", content: "1" }]));
+    store.mergeHistory("s2", page(0, 1, [{ role: "user", content: "2" }]));
+    expect(store["rawHistoryPages"].size).toBe(2);
+
+    store.mergeHistory("s3", page(0, 1, [{ role: "user", content: "3" }]));
+    expect(store["rawHistoryPages"].size).toBe(2);
+    expect(store["rawHistoryPages"].has("s1")).toBe(false);
+    expect(store["rawHistoryPages"].has("s2")).toBe(true);
+    expect(store["rawHistoryPages"].has("s3")).toBe(true);
+
+    expect(cache.read("s1")).toBeDefined();
+    const s1View = store.cachedView("s1");
+    expect(s1View.messages).toHaveLength(1);
+    expect(store["rawHistoryPages"].has("s1")).toBe(true);
+    expect(store["rawHistoryPages"].has("s2")).toBe(false);
+  });
 });

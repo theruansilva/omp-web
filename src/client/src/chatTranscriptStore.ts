@@ -25,10 +25,15 @@ const browserChatHistoryCache: ChatHistoryCacheAdapter = {
   remove: removeChatHistoryCache,
 };
 
+export const DEFAULT_MAX_IN_MEMORY_TRANSCRIPTS = 5;
+
 export class ChatTranscriptStore {
   private readonly rawHistoryPages = new Map<string, RawMessagePage>();
 
-  constructor(private readonly cache: ChatHistoryCacheAdapter = browserChatHistoryCache) {}
+  constructor(
+    private readonly cache: ChatHistoryCacheAdapter = browserChatHistoryCache,
+    private readonly maxInMemory = DEFAULT_MAX_IN_MEMORY_TRANSCRIPTS,
+  ) {}
 
   cachedView(sessionId: string): ChatTranscriptView {
     return transcriptViewFromHistory(this.rawHistoryPage(sessionId));
@@ -36,7 +41,7 @@ export class ChatTranscriptStore {
 
   mergeHistory(sessionId: string, page: RawMessagePage): ChatTranscriptView {
     const history = mergeChatHistory(this.rawHistoryPage(sessionId), page);
-    this.rawHistoryPages.set(sessionId, history);
+    this.retainInMemory(sessionId, history);
     this.cache.write(sessionId, history);
     return transcriptViewFromHistory(history);
   }
@@ -55,9 +60,27 @@ export class ChatTranscriptStore {
   }
 
   rawHistoryPage(sessionId: string): RawMessagePage | undefined {
-    const cached = this.rawHistoryPages.get(sessionId) ?? this.cache.read(sessionId);
-    if (cached !== undefined) this.rawHistoryPages.set(sessionId, cached);
+    let cached = this.rawHistoryPages.get(sessionId);
+    if (cached !== undefined) {
+      this.rawHistoryPages.delete(sessionId);
+      this.rawHistoryPages.set(sessionId, cached);
+      return cached;
+    }
+    cached = this.cache.read(sessionId);
+    if (cached !== undefined) {
+      this.retainInMemory(sessionId, cached);
+    }
     return cached;
+  }
+
+  private retainInMemory(sessionId: string, page: RawMessagePage): void {
+    this.rawHistoryPages.delete(sessionId);
+    this.rawHistoryPages.set(sessionId, page);
+    while (this.rawHistoryPages.size > this.maxInMemory) {
+      const oldestKey = this.rawHistoryPages.keys().next().value;
+      if (oldestKey === undefined) break;
+      this.rawHistoryPages.delete(oldestKey);
+    }
   }
 }
 
